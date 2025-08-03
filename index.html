@@ -1,73 +1,373 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Travel Frontiers - Explore as Fronteiras do Mundo</title>
-  <link rel="stylesheet" href="style.css" />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-    rel="stylesheet"
-  />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Frontiers - Explore as Fronteiras do Mundo</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <!-- Header -->
-  <header class="header">
-    <div class="container">
-      <div class="nav-wrapper">
-        <!-- Logo -->
-        <div class="logo">
-          <div class="logo-icon">
-            <div class="globe">
-              <div class="globe-inner">
-                <div class="globe-center"></div>
-              </div>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="nav-wrapper">
+                <!-- Logo -->
+                <div class="logo">
+                    <div class="logo-icon">
+                        <div class="globe">
+                            <div class="globe-inner">
+                                <div class="globe-center"></div>
+                            </div>
+                        </div>
+                        <div class="plane">✈</div>
+                    </div>
+                    <span class="logo-text">Travel Frontiers</span>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <nav class="nav-desktop">
+                    <a href="#home" data-translate="nav.home">Início</a>
+                    <a href="#about" data-translate="nav.about">Sobre</a>
+                    <a href="#services" data-translate="nav.services">Serviços</a>
+                    <a href="#testimonials" data-translate="nav.testimonials">Testemunhos</a>
+                    <a href="#contact" data-translate="nav.contact">Contacto</a>
+                </nav>
+
+                <!-- Language Selector & Mobile Menu -->
+                <div class="nav-actions">
+                    <!-- Language Selector -->
+                    <div class="language-selector">
+                        <button class="lang-button" id="currentLang">
+                            <span>🌐</span>
+                            <span id="langCode">PT</span>
+                        </button>
+                        <div class="lang-dropdown" id="langDropdown">
+                            <button onclick="changeLanguage('pt')">Português</button>
+                            <button onclick="changeLanguage('en')">English</button>
+                            <button onclick="changeLanguage('fr')">Français</button>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Menu Button -->
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
             </div>
-            <div class="plane">✈</div>
-          </div>
-          <span class="logo-text">Travel Frontiers</span>
+
+            <!-- Mobile Menu -->
+            <nav class="nav-mobile" id="mobileMenu">
+                <a href="#home" data-translate="nav.home">Início</a>
+                <a href="#about" data-translate="nav.about">Sobre</a>
+                <a href="#services" data-translate="nav.services">Serviços</a>
+                <a href="#testimonials" data-translate="nav.testimonials">Testemunhos</a>
+                <a href="#contact" data-translate="nav.contact">Contacto</a>
+            </nav>
         </div>
+    </header>
 
-        <!-- Desktop Navigation -->
-        <nav class="nav-desktop">
-          <a href="#home" data-translate="nav.home">Início</a>
-          <a href="#about" data-translate="nav.about">Sobre</a>
-          <a href="#services" data-translate="nav.services">Serviços</a>
-          <a href="#testimonials" data-translate="nav.testimonials">Testemunhos</a>
-          <a href="#contact" data-translate="nav.contact">Contacto</a>
-        </nav>
-
-        <!-- Language Selector & Mobile Menu -->
-        <div class="nav-actions">
-          <!-- Language Selector -->
-          <div class="language-selector">
-            <button class="lang-button" id="currentLang">
-              <span>🌐</span>
-              <span id="langCode">PT</span>
-            </button>
-            <div class="lang-dropdown" id="langDropdown">
-              <button onclick="changeLanguage('pt')">Português</button>
-              <button onclick="changeLanguage('en')">English</button>
-              <button onclick="changeLanguage('fr')">Français</button>
+    <main>
+        <!-- Hero Section -->
+        <section id="home" class="hero">
+            <div class="hero-bg"></div>
+            <div class="container">
+                <div class="hero-content">
+                    <div class="hero-left">
+                        <h1 data-translate="hero.title">Explore as Fronteiras do Mundo</h1>
+                        <p data-translate="hero.subtitle">Descubra novos horizontes com a Travel Frontiers. Planeie a sua próxima aventura com um consultor especializado em experiências personalizadas.</p>
+                        <button class="cta-button" onclick="openQuoteForm()" data-translate="hero.cta">Pedir Orçamento</button>
+                    </div>
+                    <div class="hero-right">
+                        <div class="stats-card">
+                            <div class="stat">
+                                <div class="stat-icon">📈</div>
+                                <div class="stat-content">
+                                    <p class="stat-number" data-translate="hero.stats.experience">15 anos de experiência</p>
+                                    <p class="stat-subtitle" data-translate="hero.stats.subtitle1">Viajando pelo mundo</p>
+                                </div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-icon">📍</div>
+                                <div class="stat-content">
+                                    <p class="stat-number" data-translate="hero.stats.countries">+40 países visitados</p>
+                                    <p class="stat-subtitle" data-translate="hero.stats.subtitle2">Em todos os continentes</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
+        </section>
 
-          <!-- Mobile Menu Button -->
-          <button class="mobile-menu-btn" id="mobileMenuBtn">
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
+        <!-- About Section -->
+        <section id="about" class="about">
+            <div class="container">
+                <div class="about-content">
+                    <h2 data-translate="about.title">Sobre Tiago Ferreira</h2>
+                    <p data-translate="about.description">Viajo há 15 anos e já visitei mais de 40 países, em todos os continentes. Ganhei bastante experiência em planear viagens e roteiros de grupo. Comecei com a consultoria de viagens há um ano e já faturei quase 100.000€, com clientes bastante satisfeitos com o serviço que proporciono, bem como as propostas que apresento para todo o tipo de férias.</p>
+                    
+                    <!-- Achievement Icons -->
+                    <div class="achievements">
+                        <div class="achievement">
+                            <div class="achievement-icon">🌍</div>
+                            <p data-translate="about.achievements.global">Experiência Global</p>
+                        </div>
+                        <div class="achievement">
+                            <div class="achievement-icon">🏆</div>
+                            <p data-translate="about.achievements.certified">Consultor Certificado</p>
+                        </div>
+                        <div class="achievement">
+                            <div class="achievement-icon">❤️</div>
+                            <p data-translate="about.achievements.passion">Paixão por Viajar</p>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Card -->
+                    <div class="stats-summary">
+                        <div class="stat-item">
+                            <div class="stat-value">100+</div>
+                            <p data-translate="about.achievements.trips">Viagens Planeadas</p>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">40+</div>
+                            <p>Países Visitados</p>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">15</div>
+                            <p>Anos de Experiência</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Services Section -->
+        <section id="services" class="services">
+            <div class="container">
+                <div class="section-header">
+                    <h2 data-translate="services.title">Os Nossos Serviços</h2>
+                    <p data-translate="services.subtitle">Experiências únicas adaptadas às suas necessidades</p>
+                </div>
+
+                <div class="services-grid">
+                    <!-- Service cards will be generated by JavaScript -->
+                </div>
+
+                <!-- CTA Section -->
+                <div class="services-cta">
+                    <div class="cta-card">
+                        <h3 data-translate="services.cta.title">Pronto para a sua próxima aventura?</h3>
+                        <p data-translate="services.cta.subtitle">Cada viagem é única. Deixe-nos criar uma experiência inesquecível apenas para si.</p>
+                        <button class="cta-button" onclick="openQuoteForm()" data-translate="services.cta.button">Começar Agora</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testimonials Section -->
+        <section id="testimonials" class="testimonials">
+            <div class="container">
+                <div class="section-header">
+                    <h2 data-translate="testimonials.title">Testemunhos dos Clientes</h2>
+                    <p data-translate="testimonials.subtitle">O que dizem sobre nós</p>
+                </div>
+
+                <div class="testimonial-main">
+                    <div class="testimonial-card">
+                        <div class="quote-icon">❝</div>
+                        <p class="testimonial-text" id="currentTestimonial">Só podemos estar gratos pelo acompanhamento de excelência dedicado. Faz toda a experiência valer muito mais a pena!</p>
+                        
+                        <div class="stars">
+                            <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
+                        </div>
+                        
+                        <div class="testimonial-author">
+                            <p class="author-name" id="currentAuthor">Gil Gaspar</p>
+                            <p class="author-location" id="currentLocation">Porto Santo 2025</p>
+                        </div>
+                    </div>
+                    
+                    <div class="testimonial-nav">
+                        <button class="nav-btn" id="prevTestimonial">‹</button>
+                        <div class="nav-dots" id="testimonialDots"></div>
+                        <button class="nav-btn" id="nextTestimonial">›</button>
+                    </div>
+                </div>
+
+                <!-- Trust Indicators -->
+                <div class="trust-indicators">
+                    <div class="trust-item">
+                        <div class="trust-value">100+</div>
+                        <p data-translate="testimonials.stats.trips">Viagens Planeadas</p>
+                    </div>
+                    <div class="trust-item">
+                        <div class="trust-value">40+</div>
+                        <p data-translate="testimonials.stats.countries">Países Visitados</p>
+                    </div>
+                    <div class="trust-item">
+                        <div class="trust-value">15</div>
+                        <p data-translate="testimonials.stats.experience">Anos de Experiência</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="contact">
+            <div class="container">
+                <div class="section-header">
+                    <h2 data-translate="contact.title">Comece a sua Próxima Aventura</h2>
+                    <p data-translate="contact.subtitle">Peça o seu orçamento personalizado e deixe-nos planear a viagem dos seus sonhos</p>
+                </div>
+
+                <div class="contact-content">
+                    <div class="contact-form-section">
+                        <div class="contact-card">
+                            <h3 data-translate="contact.form.title">Pedir Orçamento Personalizado</h3>
+                            <p data-translate="contact.form.subtitle">Clique no botão abaixo para ser redirecionado para o nosso formulário de pedido de orçamento especializado.</p>
+                            
+                            <div class="contact-icon">
+                                <div class="plane-icon">✈️</div>
+                            </div>
+                            <h4 data-translate="contact.form.ready">Pronto para a aventura?</h4>
+                            <p data-translate="contact.form.description">Preencha o nosso formulário detalhado e receberá uma proposta personalizada em 24-48h.</p>
+                            
+                            <button class="cta-button full-width" onclick="openQuoteForm()">
+                                <span>🔗</span>
+                                <span data-translate="contact.cta">Contactar Agora</span>
+                            </button>
+                            
+                            <p class="redirect-note" data-translate="contact.form.redirect">Será redirecionado para um formulário seguro</p>
+                        </div>
+                    </div>
+
+                    <div class="contact-info">
+                        <!-- Why Choose Us -->
+                        <div class="why-choose-card">
+                            <h3 data-translate="contact.whyChoose.title">Porque Escolher a Travel Frontiers?</h3>
+                            <div class="benefits">
+                                <div class="benefit">
+                                    <span class="check">✓</span>
+                                    <p data-translate="contact.whyChoose.experience">Experiência real de viagem em +40 países</p>
+                                </div>
+                                <div class="benefit">
+                                    <span class="check">✓</span>
+                                    <p data-translate="contact.whyChoose.planning">Planeamento 100% personalizado</p>
+                                </div>
+                                <div class="benefit">
+                                    <span class="check">✓</span>
+                                    <p data-translate="contact.whyChoose.support">Acompanhamento durante toda a viagem</p>
+                                </div>
+                                <div class="benefit">
+                                    <span class="check">✓</span>
+                                    <p data-translate="contact.whyChoose.satisfaction">Clientes 100% satisfeitos</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Methods -->
+                        <div class="contact-methods">
+                            <h3 data-translate="contact.otherMethods.title">Outras Formas de Contacto</h3>
+                            <div class="contact-method">
+                                <div class="method-icon">📧</div>
+                                <div>
+                                    <p class="method-label" data-translate="contact.otherMethods.email">Email</p>
+                                    <p class="method-value">info@travelfrontiers.pt</p>
+                                </div>
+                            </div>
+                            <div class="contact-method">
+                                <div class="method-icon">📞</div>
+                                <div>
+                                    <p class="method-label" data-translate="contact.otherMethods.phone">Telefone</p>
+                                    <p class="method-value">+351 123 456 789</p>
+                                </div>
+                            </div>
+                            <div class="contact-method">
+                                <div class="method-icon">📍</div>
+                                <div>
+                                    <p class="method-label" data-translate="contact.otherMethods.location">Localização</p>
+                                    <p class="method-value">Portugal</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <!-- Company Info -->
+                <div class="footer-company">
+                    <div class="footer-logo">
+                        <div class="logo-icon">
+                            <div class="globe">
+                                <div class="globe-inner">
+                                    <div class="globe-center"></div>
+                                </div>
+                            </div>
+                            <div class="plane">✈</div>
+                        </div>
+                        <span class="logo-text">Travel Frontiers</span>
+                    </div>
+                    <p data-translate="footer.description">Descubra novos horizontes com a Travel Frontiers. Há 15 anos a explorar o mundo e agora ajudando outros a criar as suas próprias aventuras inesquecíveis.</p>
+                    <div class="social-links">
+                        <a href="#" aria-label="Facebook">📘</a>
+                        <a href="#" aria-label="Instagram">📷</a>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div class="footer-section">
+                    <h3 data-translate="footer.quickLinks">Links Rápidos</h3>
+                    <ul>
+                        <li><a href="#home" data-translate="nav.home">Início</a></li>
+                        <li><a href="#about" data-translate="nav.about">Sobre</a></li>
+                        <li><a href="#services" data-translate="nav.services">Serviços</a></li>
+                        <li><a href="#testimonials" data-translate="nav.testimonials">Testemunhos</a></li>
+                        <li><a href="#contact" data-translate="nav.contact">Contacto</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contact Info -->
+                <div class="footer-section">
+                    <h3 data-translate="footer.contact">Contacto</h3>
+                    <div class="footer-contact">
+                        <div class="contact-item">
+                            <span>📧</span>
+                            <span>info@travelfrontiers.pt</span>
+                        </div>
+                        <div class="contact-item">
+                            <span>📞</span>
+                            <span>+351 123 456 789</span>
+                        </div>
+                        <div class="contact-item">
+                            <span>📍</span>
+                            <span>Portugal</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Footer -->
+            <div class="footer-bottom">
+                <div class="footer-bottom-content">
+                    <p>© 2025 Travel Frontiers. <span data-translate="footer.copyright">Todos os direitos reservados.</span></p>
+                    <div class="footer-links">
+                        <a href="#" data-translate="footer.privacy">Política de Privacidade</a>
+                        <a href="#" data-translate="footer.terms">Termos de Serviço</a>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
+    </footer>
 
-      <!-- Mobile Menu -->
-      <nav class="nav-mobile" id="mobileMenu">
-        <a href="#home" data-translate="nav.home">Início</a>
-        <a href="#about" data-translate="nav.about">Sobre</a>
-        <a href="#services" data-translate="nav.services">Serviços</a>
-        <a href="#testimonials" data-translate="nav.testimonials">Testemunhos</a>
-        <a href="#contact" data-translate="nav.contact">Contacto</a>
-      </nav>
-    </div>
-  </header>
+    <script src="script.js"></script>
+</body>
+</html>
