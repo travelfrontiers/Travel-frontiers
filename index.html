@@ -12,7 +12,6 @@
     <header class="header">
         <div class="container">
             <div class="nav-wrapper">
-                <!-- Logo -->
                 <div class="logo">
                     <div class="logo-icon">
                         <div class="globe">
@@ -24,8 +23,6 @@
                     </div>
                     <span class="logo-text">Travel Frontiers</span>
                 </div>
-
-                <!-- Desktop Navigation -->
                 <nav class="nav-desktop">
                     <a href="#home" data-translate="nav.home">Início</a>
                     <a href="#about" data-translate="nav.about">Sobre</a>
@@ -33,10 +30,7 @@
                     <a href="#testimonials" data-translate="nav.testimonials">Testemunhos</a>
                     <a href="#contact" data-translate="nav.contact">Contacto</a>
                 </nav>
-
-                <!-- Language Selector & Mobile Menu -->
                 <div class="nav-actions">
-                    <!-- Language Selector -->
                     <div class="language-selector">
                         <button class="lang-button" id="currentLang">
                             <span>🌐</span>
@@ -48,8 +42,6 @@
                             <button onclick="changeLanguage('fr')">Français</button>
                         </div>
                     </div>
-
-                    <!-- Mobile Menu Button -->
                     <button class="mobile-menu-btn" id="mobileMenuBtn">
                         <span></span>
                         <span></span>
@@ -57,144 +49,7 @@
                     </button>
                 </div>
             </div>
-
-            <!-- Mobile Menu -->
             <nav class="nav-mobile" id="mobileMenu">
                 <a href="#home" data-translate="nav.home">Início</a>
                 <a href="#about" data-translate="nav.about">Sobre</a>
-                <a href="#services" data-translate="nav.services">Serviços</a>
-                <a href="#testimonials" data-translate="nav.testimonials">Testemunhos</a>
-                <a href="#contact" data-translate="nav.contact">Contacto</a>
-            </nav>
-        </div>
-    </header>
-
-    <main>
-        <!-- Hero Section -->
-        <section id="home" class="hero">
-            <div class="hero-bg"></div>
-            <div class="container">
-                <div class="hero-content">
-                    <div class="hero-left">
-                        <h1 data-translate="hero.title">Explore as Fronteiras do Mundo</h1>
-                        <p data-translate="hero.subtitle">Descubra novos horizontes com a Travel Frontiers. Planeie a sua próxima aventura com um consultor especializado em experiências personalizadas.</p>
-                        <button class="cta-button" onclick="openQuoteForm()" data-translate="hero.cta">Pedir Orçamento</button>
-                    </div>
-                    <div class="hero-right">
-                        <div class="stats-card">
-                            <div class="stat">
-                                <div class="stat-icon">📈</div>
-                                <div class="stat-content">
-                                    <p class="stat-number" data-translate="hero.stats.experience">15 anos de experiência</p>
-                                    <p class="stat-subtitle" data-translate="hero.stats.subtitle1">Viajando pelo mundo</p>
-                                </div>
-                            </div>
-                            <div class="stat">
-                                <div class="stat-icon">📍</div>
-                                <div class="stat-content">
-                                    <p class="stat-number" data-translate="hero.stats.countries">+40 países visitados</p>
-                                    <p class="stat-subtitle" data-translate="hero.stats.subtitle2">Em todos os continentes</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- About Section -->
-        <section id="about" class="about">
-            <div class="container">
-                <div class="about-content">
-                    <h2 data-translate="about.title">Sobre Tiago Ferreira</h2>
-                    <p data-translate="about.description">Viajo há 15 anos e já visitei mais de 40 países, em todos os continentes. Ganhei bastante experiência em planear viagens e roteiros de grupo. Comecei com a consultoria de viagens há um ano e já faturei quase 100.000€, com clientes bastante satisfeitos com o serviço que proporciono, bem como as propostas que apresento para todo o tipo de férias.</p>
-                    
-                    <!-- Achievement Icons -->
-                    <div class="achievements">
-                        <div class="achievement">
-                            <div class="achievement-icon">🌍</div>
-                            <p data-translate="about.achievements.global">Experiência Global</p>
-                        </div>
-                        <div class="achievement">
-                            <div class="achievement-icon">🏆</div>
-                            <p data-translate="about.achievements.certified">Consultor Certificado</p>
-                        </div>
-                        <div class="achievement">
-                            <div class="achievement-icon">❤️</div>
-                            <p data-translate="about.achievements.passion">Paixão por Viajar</p>
-                        </div>
-                    </div>
-
-                    <!-- Statistics Card -->
-                    <div class="stats-summary">
-                        <div class="stat-item">
-                            <div class="stat-value">100+</div>
-                            <p data-translate="about.achievements.trips">Viagens Planeadas</p>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">40+</div>
-                            <p>Países Visitados</p>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">15</div>
-                            <p>Anos de Experiência</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Services Section -->
-        <section id="services" class="services">
-            <div class="container">
-                <div class="section-header">
-                    <h2 data-translate="services.title">Os Nossos Serviços</h2>
-                    <p data-translate="services.subtitle">Experiências únicas adaptadas às suas necessidades</p>
-                </div>
-
-                <div class="services-grid">
-                    <!-- Service cards will be generated by JavaScript -->
-                </div>
-
-                <!-- CTA Section -->
-                <div class="services-cta">
-                    <div class="cta-card">
-                        <h3 data-translate="services.cta.title">Pronto para a sua próxima aventura?</h3>
-                        <p data-translate="services.cta.subtitle">Cada viagem é única. Deixe-nos criar uma experiência inesquecível apenas para si.</p>
-                        <button class="cta-button" onclick="openQuoteForm()" data-translate="services.cta.button">Começar Agora</button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Testimonials Section -->
-        <section id="testimonials" class="testimonials">
-            <div class="container">
-                <div class="section-header">
-                    <h2 data-translate="testimonials.title">Testemunhos dos Clientes</h2>
-                    <p data-translate="testimonials.subtitle">O que dizem sobre nós</p>
-                </div>
-
-                <div class="testimonial-main">
-                    <div class="testimonial-card">
-                        <div class="quote-icon">❝</div>
-                        <p class="testimonial-text" id="currentTestimonial">Só podemos estar gratos pelo acompanhamento de excelência dedicado. Faz toda a experiência valer muito mais a pena!</p>
-                        
-                        <div class="stars">
-                            <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
-                        </div>
-                        
-                        <div class="testimonial-author">
-                            <p class="author-name" id="currentAuthor">Gil Gaspar</p>
-                            <p class="author-location" id="currentLocation">Porto Santo 2025</p>
-                        </div>
-                    </div>
-                    
-                    <div class="testimonial-nav">
-                        <button class="nav-btn" id="prevTestimonial">‹</button>
-                        <div class="nav-dots" id="testimonialDots"></div>
-                        <button class="nav-btn" id="nextTestimonial">›</button>
-                    </div>
-                </div>
-
-                <!-- Trust Indicators -->
+                <a href="#services" data-translate="nav.services">
