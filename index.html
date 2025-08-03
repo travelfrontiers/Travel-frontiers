@@ -1,55 +1,73 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Travel Frontiers - Explore as Fronteiras do Mundo</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Travel Frontiers - Explore as Fronteiras do Mundo</title>
+  <link rel="stylesheet" href="style.css" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="container">
-            <div class="nav-wrapper">
-                <div class="logo">
-                    <div class="logo-icon">
-                        <div class="globe">
-                            <div class="globe-inner">
-                                <div class="globe-center"></div>
-                            </div>
-                        </div>
-                        <div class="plane">✈</div>
-                    </div>
-                    <span class="logo-text">Travel Frontiers</span>
-                </div>
-                <nav class="nav-desktop">
-                    <a href="#home" data-translate="nav.home">Início</a>
-                    <a href="#about" data-translate="nav.about">Sobre</a>
-                    <a href="#services" data-translate="nav.services">Serviços</a>
-                    <a href="#testimonials" data-translate="nav.testimonials">Testemunhos</a>
-                    <a href="#contact" data-translate="nav.contact">Contacto</a>
-                </nav>
-                <div class="nav-actions">
-                    <div class="language-selector">
-                        <button class="lang-button" id="currentLang">
-                            <span>🌐</span>
-                            <span id="langCode">PT</span>
-                        </button>
-                        <div class="lang-dropdown" id="langDropdown">
-                            <button onclick="changeLanguage('pt')">Português</button>
-                            <button onclick="changeLanguage('en')">English</button>
-                            <button onclick="changeLanguage('fr')">Français</button>
-                        </div>
-                    </div>
-                    <button class="mobile-menu-btn" id="mobileMenuBtn">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </button>
-                </div>
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <div class="nav-wrapper">
+        <!-- Logo -->
+        <div class="logo">
+          <div class="logo-icon">
+            <div class="globe">
+              <div class="globe-inner">
+                <div class="globe-center"></div>
+              </div>
             </div>
-            <nav class="nav-mobile" id="mobileMenu">
-                <a href="#home" data-translate="nav.home">Início</a>
-                <a href="#about" data-translate="nav.about">Sobre</a>
-                <a href="#services" data-translate="nav.services">
+            <div class="plane">✈</div>
+          </div>
+          <span class="logo-text">Travel Frontiers</span>
+        </div>
+
+        <!-- Desktop Navigation -->
+        <nav class="nav-desktop">
+          <a href="#home" data-translate="nav.home">Início</a>
+          <a href="#about" data-translate="nav.about">Sobre</a>
+          <a href="#services" data-translate="nav.services">Serviços</a>
+          <a href="#testimonials" data-translate="nav.testimonials">Testemunhos</a>
+          <a href="#contact" data-translate="nav.contact">Contacto</a>
+        </nav>
+
+        <!-- Language Selector & Mobile Menu -->
+        <div class="nav-actions">
+          <!-- Language Selector -->
+          <div class="language-selector">
+            <button class="lang-button" id="currentLang">
+              <span>🌐</span>
+              <span id="langCode">PT</span>
+            </button>
+            <div class="lang-dropdown" id="langDropdown">
+              <button onclick="changeLanguage('pt')">Português</button>
+              <button onclick="changeLanguage('en')">English</button>
+              <button onclick="changeLanguage('fr')">Français</button>
+            </div>
+          </div>
+
+          <!-- Mobile Menu Button -->
+          <button class="mobile-menu-btn" id="mobileMenuBtn">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Menu -->
+      <nav class="nav-mobile" id="mobileMenu">
+        <a href="#home" data-translate="nav.home">Início</a>
+        <a href="#about" data-translate="nav.about">Sobre</a>
+        <a href="#services" data-translate="nav.services">Serviços</a>
+        <a href="#testimonials" data-translate="nav.testimonials">Testemunhos</a>
+        <a href="#contact" data-translate="nav.contact">Contacto</a>
+      </nav>
+    </div>
+  </header>
