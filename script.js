@@ -107,7 +107,7 @@ const translations = {
             otherMethods: {
                 title: 'Outras Formas de Contacto',
                 email: 'Email',
-                phone: 'Telefone',
+                "footer.instagramText": 'Segue-me',
                 location: 'Localização'
             }
         },
@@ -227,7 +227,7 @@ const translations = {
             otherMethods: {
                 title: 'Other Contact Methods',
                 email: 'Email',
-                phone: 'Phone',
+                "footer.instagramText": 'Follow me',
                 location: 'Location'
             }
         },
@@ -347,7 +347,7 @@ const translations = {
             otherMethods: {
                 title: 'Autres Méthodes de Contact',
                 email: 'Email',
-                phone: 'Téléphone',
+                "footer.instagramText": 'Suis-moi',
                 location: 'Localisation'
             }
         },
