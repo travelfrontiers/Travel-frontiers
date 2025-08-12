@@ -15,13 +15,13 @@ const translations = {
             stats: {
                 experience: '15 anos de experiência',
                 countries: '+40 países visitados',
-                subtitle1: 'Viajando pelo mundo',
-                subtitle2: 'Em todos os continentes'
+                subtitle1: 'A viajar pelo Mundo',
+                subtitle2: 'Em quase todos os continentes'
             }
         },
         about: {
             title: 'Sobre Tiago Ferreira',
-            description: 'Viajo há 15 anos e já visitei mais de 40 países, em todos os continentes. Ganhei bastante experiência em planear viagens e roteiros de grupo. Comecei com a consultoria de viagens há um ano, com clientes bastante satisfeitos com o serviço que proporciono, bem como as propostas que apresento para todo o tipo de férias.',
+            description: 'Viajo há 15 anos e já visitei mais de 40 países, em quase todos os continentes. Ganhei bastante experiência em planear viagens e roteiros de grupo. Comecei com a consultoria de viagens há um ano, com clientes bastante satisfeitos com o serviço que proporciono, bem como as propostas que apresento para todo o tipo de férias.',
             achievements: {
                 global: 'Experiência Global',
                 certified: 'Consultor Certificado',
@@ -98,7 +98,7 @@ const translations = {
                 redirect: 'Será redirecionado para um formulário seguro'
             },
             whyChoose: {
-                title: 'Porque Escolher a Travel Frontiers?',
+                title: 'Porquê Escolher a Travel Frontiers?',
                 experience: 'Experiência real de viagem em +40 países',
                 planning: 'Planeamento 100% personalizado',
                 support: 'Acompanhamento durante toda a viagem',
