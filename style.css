@@ -109,6 +109,14 @@ body {
     font-weight: 700;
     color: #111;
 }
+}
+
+/* Adicione este novo bloco de código aqui */
+.logo-image {
+    height: 40px; /* <- Ajuste este valor para o tamanho desejado */
+    width: auto;
+    vertical-align: middle;
+}
 
 /* Navigation Styles */
 .nav-desktop {
