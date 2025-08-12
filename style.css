@@ -899,6 +899,15 @@ body {
     transition: color 0.2s ease;
 }
 
+.footer-extra {
+color: #9ca3af;
+font-size: 14px;
+margin-left: 16px;
+}
+@media (max-width: 768px) {
+.footer-extra { margin-left: 0; }
+}
+
 .footer-links a:hover {
     color: #fbbf24;
 }
