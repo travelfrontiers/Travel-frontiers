@@ -112,7 +112,7 @@ const translations = {
             }
         },
         footer: {
-            description: 'Descubra novos horizontes com a Travel Frontiers. Há 15 anos a explorar o mundo e agora ajudando outros a criar as suas próprias aventuras inesquecíveis.',
+            description: 'Descubra novos horizontes com a Travel Frontiers. Há 15 anos a explorar o mundo e agora a ajudar outros a criar as suas próprias aventuras inesquecíveis!',
             quickLinks: 'Links Rápidos',
             contact: 'Contacto',
             copyright: 'Todos os direitos reservados.',
