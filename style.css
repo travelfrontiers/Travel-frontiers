@@ -673,6 +673,12 @@ body {
     margin: 0 auto;
 }
 
+.plane-logo {
+    height: 90px;   /* ajusta este valor à proporção do teu logo no círculo */
+    width: auto;    /* mantém a proporção */
+    display: block; /* evita espaços extra */
+}
+
 .contact-card h4 {
     font-size: 1.25rem;
     font-weight: 600;
