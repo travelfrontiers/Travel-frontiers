@@ -46,7 +46,7 @@ body {
 
 /* Adicione este novo código para a imagem */
 .logo-image {
-    height: 300px; /* <-- Ajuste este valor se a imagem parecer muito grande ou pequena */
+    height: 90px; /* <-- Ajuste este valor se a imagem parecer muito grande ou pequena */
     width: auto;  /* Mantém a proporção da imagem */
 }
 .logo-text {
