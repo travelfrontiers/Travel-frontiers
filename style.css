@@ -674,7 +674,7 @@ body {
 }
 
 .plane-logo {
-    height: 190px;   /* ajusta este valor à proporção do teu logo no círculo */
+    height: 90px;   /* ajusta este valor à proporção do teu logo no círculo */
     width: auto;    /* mantém a proporção */
     display: block; /* evita espaços extra */
 }
