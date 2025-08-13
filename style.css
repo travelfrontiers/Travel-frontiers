@@ -800,6 +800,13 @@ body {
     margin-bottom: 24px;
 }
 
+/* Imagem do logótipo no rodapé */
+.footer-logo-image {
+    height: 48px; /* ajusta para o tamanho que quiseres */
+    width: auto;  /* mantém a proporção correta */
+    display: block;
+}
+
 .footer-logo .logo-text {
     color: white;
     font-size: 24px;
