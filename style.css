@@ -808,7 +808,7 @@ body {
 
 /* Imagem do logótipo no rodapé */
 .footer-logo-image {
-    height: 90px; /* ajusta para o tamanho que quiseres */
+    height: 190px; /* ajusta para o tamanho que quiseres */
     width: auto;  /* mantém a proporção correta */
     display: block;
 }
