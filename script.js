@@ -21,7 +21,7 @@ const translations = {
         },
         about: {
             title: 'Sobre Tiago Ferreira',
-            description: 'Viajo há 15 anos e já visitei mais de 40 países, em quase todos os continentes. Ganhei bastante experiência em planear viagens e roteiros de grupo. Comecei com a consultoria de viagens há um ano, com clientes bastante satisfeitos com o serviço que proporciono, bem como as propostas que apresento para todo o tipo de férias.',
+            description: 'Viajo há 15 anos e já visitei mais de 40 países, em quase todos os continentes. Ganhei bastante experiência em planear viagens e roteiros de grupo. Comecei com a consultoria de viagens há um ano, com clientes bastante satisfeitos com o serviço proporcionado, bem como as propostas apresentadas para todo o tipo de férias.',
             achievements: {
                 global: 'Experiência Global',
                 certified: 'Consultor Certificado',
