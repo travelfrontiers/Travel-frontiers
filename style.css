@@ -883,6 +883,31 @@ body {
     color: #d1d5db;
 }
 
+/* Lightbox */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.85);
+  z-index: 9999;
+}
+.lightbox img {
+  max-width: 90%;
+  max-height: 90%;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+.lightbox.show { display: flex; }
+.lightbox-close {
+  color: #fff;
+  font-size: 32px;
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  cursor: pointer;
+}
+
 /* Footer Bottom */
 .footer-bottom {
     border-top: 1px solid #374151;
