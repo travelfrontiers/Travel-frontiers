@@ -79,11 +79,17 @@ const translations = {
                     author: 'Gil Gaspar',
                     location: 'Porto Santo 2025'
                 },
+                 {
+                    text: 'Adoramos cada momento e já estamos ansiosos, para a próxima aventura... Contamos com a sua colaboração!! Obrigada por tornar estas férias especiais!!!',
+                    author: 'Sandra Bernardo',
+                    location: 'Tenerife 2025'
+                },
                 {
                     text: 'Muito satisfeita com a proposta feita, com todas as atividades para estas férias. O acompanhamento foi perfeito!',
                     author: 'Jéssica Ferreira',
                     location: 'Itália 2024'
                 }
+                 
             ]
         },
         contact: {
@@ -198,6 +204,11 @@ const translations = {
                     text: 'We can only be grateful for the excellent dedicated support. It makes the whole experience so much more worthwhile!',
                     author: 'Gil Gaspar',
                     location: 'Porto Santo 2025'
+                },
+                 {
+                    text: 'We have loved every moment and we're already looking forward to the next adventure... We count on your collaboration!! Thank you for making these holidays special!!!',
+                    author: 'Sandra Bernardo',
+                    location: 'Tenerife 2025'
                 },
                 {
                     text: 'Very satisfied with the proposal made, with all the activities for this vacation. The support was perfect!',
@@ -318,6 +329,11 @@ const translations = {
                     text: 'Nous ne pouvons qu\'être reconnaissants pour l\'excellent soutien dédié. Cela rend toute l\'expérience tellement plus enrichissante!',
                     author: 'Gil Gaspar',
                     location: 'Porto Santo 2025'
+                },
+                    {
+                    text: 'Nous avons adoré chaque instant et nous attendons déjà avec impatience la prochaine aventure... Nous comptons sur votre collaboration !! Merci d'avoir rendu ces vacances spéciales!!!',
+                    author: 'Sandra Bernardo',
+                    location: 'Tenerife 2025'
                 },
                 {
                     text: 'Très satisfaite de la proposition faite, avec toutes les activités pour ces vacances. Le soutien était parfait!',
