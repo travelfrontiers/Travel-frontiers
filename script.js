@@ -472,41 +472,30 @@ function renderServices() {
     const servicesGrid = document.querySelector('.services-grid');
     const services = translations[currentLanguage].services.items;
     
-    servicesGrid.innerHTML = services.map(service => `
-        <div class="service-card">
-            <div class="service-image">
-                <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
-                <div class="service-overlay"></div>
-                <h3 class="service-title">${service.title}</h3>
-            </div>
-            <div class="service-content">
-                <p class="service-description">${service.description}</p>
-            </div>
+   servicesGrid.innerHTML = services.map(service => `
+    <div class="service-card">
+        <div class="service-image">
+            <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
+            <div class="service-overlay"></div>
+            <h3 class="service-title">${service.title}</h3>
         </div>
-    `).join('');
+        <div class="service-content">
+            <p class="service-description">${service.description}</p>
+        </div>
+    </div>
+`).join('');
 
-    // Eventos para abrir o lightbox
-    document.querySelectorAll('.clickable-service').forEach(img => {
-        img.addEventListener('click', () => {
-            const lightbox = document.getElementById('lightbox');
-            lightbox.querySelector('img').src = img.src;
-            lightbox.classList.add('show');
-        });
-    });
-}
-
-// Fecha o lightbox
-document.addEventListener('DOMContentLoaded', () => {
+// Abrir lightbox ao clicar
+document.querySelectorAll('.clickable-service').forEach(img => {
+  img.addEventListener('click', () => {
     const lightbox = document.getElementById('lightbox');
-    const closeBtn = document.querySelector('.lightbox-close');
-
-    if (closeBtn && lightbox) {
-        closeBtn.addEventListener('click', () => lightbox.classList.remove('show'));
-        lightbox.addEventListener('click', (e) => {
-            if (e.target === lightbox) lightbox.classList.remove('show');
-        });
-    }
+    const big = lightbox.querySelector('img');
+    big.src = img.src;
+    lightbox.classList.add('show');
+    lightbox.setAttribute('aria-hidden', 'false');
+  });
 });
+    }
 
 // Testimonials functionality
 function initializeTestimonials() {
@@ -569,6 +558,32 @@ function goToTestimonial(index) {
 function openQuoteForm() {
     window.open('https://www.icligo.com/forms/pt/contact-us/book-your-trip?utm_source=LHw8s4N4', '_blank');
 }
+
+// Fechar o lightbox
+document.addEventListener('DOMContentLoaded', () => {
+  const lightbox = document.getElementById('lightbox');
+  const closeBtn = document.querySelector('.lightbox-close');
+  if (!lightbox || !closeBtn) return;
+
+  closeBtn.addEventListener('click', () => {
+    lightbox.classList.remove('show');
+    lightbox.setAttribute('aria-hidden', 'true');
+  });
+
+  lightbox.addEventListener('click', (e) => {
+    if (e.target === lightbox) {
+      lightbox.classList.remove('show');
+      lightbox.setAttribute('aria-hidden', 'true');
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      lightbox.classList.remove('show');
+      lightbox.setAttribute('aria-hidden', 'true');
+    }
+  });
+});
 
 // Smooth scrolling enhancement
 function smoothScroll() {
