@@ -469,33 +469,35 @@ function initializeNavigation() {
 
 // Services functionality
 function renderServices() {
-    const servicesGrid = document.querySelector('.services-grid');
-    const services = translations[currentLanguage].services.items;
-    
-   servicesGrid.innerHTML = services.map(service => `
+  const servicesGrid = document.querySelector('.services-grid');
+  const services = translations[currentLanguage].services.items;
+  
+  // Gera o HTML das cards de serviço
+  servicesGrid.innerHTML = services.map(service => `
     <div class="service-card">
-        <div class="service-image">
-            <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
-            <div class="service-overlay"></div>
-            <h3 class="service-title">${service.title}</h3>
-        </div>
-        <div class="service-content">
-            <p class="service-description">${service.description}</p>
-        </div>
+      <div class="service-image">
+        <img src="${service.image}" alt="${service.title}" 
+             loading="lazy" class="clickable-service">
+        <div class="service-overlay"></div>
+        <h3 class="service-title">${service.title}</h3>
+      </div>
+      <div class="service-content">
+        <p class="service-description">${service.description}</p>
+      </div>
     </div>
-`).join('');
+  `).join('');
 
-// Abrir lightbox ao clicar
-document.querySelectorAll('.clickable-service').forEach(img => {
-  img.addEventListener('click', () => {
-    const lightbox = document.getElementById('lightbox');
-    const big = lightbox.querySelector('img');
-    big.src = img.src;
-    lightbox.classList.add('show');
-    lightbox.setAttribute('aria-hidden', 'false');
+  // Adiciona evento de clique para abrir o lightbox
+  document.querySelectorAll('.clickable-service').forEach(img => {
+    img.addEventListener('click', () => {
+      const lightbox = document.getElementById('lightbox');
+      const big = lightbox.querySelector('img');
+      big.src = img.src; // Mostra a mesma imagem mas maior
+      lightbox.classList.add('show');
+      lightbox.setAttribute('aria-hidden', 'false');
+    });
   });
-});
-    }
+}
 
 // Testimonials functionality
 function initializeTestimonials() {
