@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Termos de Uso - Travel Frontiers</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  .terms-container {
+    max-width: 900px;
+    margin: 80px auto;
+    padding: 0 20px;
+    line-height: 1.6;
+    color: #374151;
+  }
+  .terms-container h1 {
+    font-size: 2rem;
+    margin-bottom: 16px;
+    color: #111;
+  }
+  .terms-container h2 {
+    font-size: 1.5rem;
+    margin-top: 32px;
+    color: #111;
+  }
+  .lang-switch {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .lang-switch button {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    background: white;
+    cursor: pointer;
+    border-radius: 6px;
+  }
+  .lang-switch button:hover {
+    background: #f3f4f6;
+  }
+  .terms-text {
+    display: none;
+  }
+  .terms-text.active {
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="container">
+    <div class="nav-wrapper">
+      <div class="logo">
+        <img src="img/logo-new-TF2.png" alt="Travel Frontiers Logo" class="logo-image" />
+        <span class="logo-text">Travel Frontiers</span>
+      </div>
+      <nav class="nav-desktop">
+        <a href="index.html#home">Início</a>
+        <a href="index.html#about">Sobre</a>
+        <a href="index.html#services">Serviços</a>
+        <a href="index.html#testimonials">Testemunhos</a>
+        <a href="index.html#contact">Contacto</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<main class="terms-container">
+  <h1>Termos de Uso / Terms of Use / Conditions d'utilisation</h1>
+  <div class="lang-switch">
+    <button onclick="showLang('pt')">Português</button>
+    <button onclick="showLang('en')">English</button>
+    <button onclick="showLang('fr')">Français</button>
+  </div>
+
+  <!-- Português -->
+  <div id="terms-pt" class="terms-text active">
+    <h2>1. Identificação e Licença Legal</h2>
+    <p>
+      Tiago Ferreira atua como consultor independente associado à plataforma iCligo (RNAVT 3301), operador turístico e agência de viagens
+      legalmente licenciada em Portugal. O número RNAVT 3301 refere-se à entidade iCligo que disponibiliza os serviços turísticos e produtos.
+    </p>
+    <h2>2. Natureza dos Serviços</h2>
+    <p>
+      Tiago Ferreira presta serviços de consultoria especializada e planeamento de viagens, utilizando a plataforma iCligo para aceder a uma rede de fornecedores turísticos. Embora participe na preparação das viagens, não é operador turístico e não celebra contratos em nome próprio.
+    </p>
+    <h2>3. Responsabilidades</h2>
+    <p>
+      A iCligo, enquanto operador turístico licenciado, é responsável pelas reservas e contratos finais com fornecedores. Tiago Ferreira compromete-se a prestar consultoria baseada na sua experiência, mas não assume responsabilidade por eventos externos à sua intervenção direta.
+    </p>
+    <h2>4. Obrigações do Cliente</h2>
+    <p>
+      O cliente deve fornecer informações precisas para a correta elaboração dos roteiros e aceitar que as reservas e contratos serão formalizados através da iCligo.
+    </p>
+    <h2>5. Propriedade Intelectual</h2>
+    <p>Todo o material, propostas e roteiros são propriedade intelectual do consultor.</p>
+    <h2>6. Condições Comerciais</h2>
+    <p>
+      Detalhes sobre pagamentos, cancelamentos e alterações serão sempre comunicados ao cliente e respeitam a legislação vigente.
+    </p>
+    <h2>7. Privacidade</h2>
+    <p>Os dados serão tratados conforme a Política de Privacidade, em conformidade com RGPD.</p>
+    <h2>8. Lei Aplicável</h2>
+    <p>
+      Estes termos estão sujeitos à legislação portuguesa e qualquer disputa será tratada nos tribunais competentes em Portugal.
+    </p>
+  </div>
+
+  <!-- English -->
+  <div id="terms-en" class="terms-text">
+    <h2>1. Identification and Legal License</h2>
+    <p>
+      Tiago Ferreira acts as an independent consultant associated with the iCligo platform (RNAVT 3301), a legally licensed travel operator and agency in Portugal. The RNAVT 3301 number refers to the iCligo entity that provides travel products and services.
+    </p>
+    <h2>2. Nature of Services</h2>
+    <p>
+      Tiago Ferreira provides specialized consulting and travel planning services, using the iCligo platform to access a network of travel suppliers. While participating in travel preparations, he is not a travel operator and does not enter contracts in his own name.
+    </p>
+    <h2>3. Responsibilities</h2>
+    <p>
+      iCligo, as a licensed travel operator, is responsible for final bookings and contracts with suppliers. Tiago Ferreira commits to providing consultancy based on his experience but does not assume responsibility for events outside his direct intervention.
+    </p>
+    <h2>4. Client Obligations</h2>
+    <p>
+      Clients must provide accurate information for proper itinerary development and accept that bookings and contracts will be formalized through iCligo.
+    </p>
+    <h2>5. Intellectual Property</h2>
+    <p>All materials, proposals and itineraries are the consultant’s intellectual property.</p>
+    <h2>6. Commercial Conditions</h2>
+    <p>
+      Details about payments, cancellations, and changes will always be communicated to the client and comply with applicable law.
+    </p>
+    <h2>7. Privacy</h2>
+    <p>Data will be processed according to the Privacy Policy, in compliance with GDPR.</p>
+    <h2>8. Governing Law</h2>
+    <p>
+      These terms are governed by Portuguese law and any disputes will be resolved
