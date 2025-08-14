@@ -1020,7 +1020,46 @@ margin-left: 16px;
         gap: 16px;
         text-align: center;
     }
-    
+
+    /* Botão do WhatsApp no footer/contacts */
+.whatsapp-btn {
+  display: inline-flex;          /* Alinha ícone e texto lado a lado */
+  align-items: center;           /* Centra verticalmente */
+  gap: 8px;                      /* Espaço entre ícone e texto */
+  padding: 8px 14px;             /* Espaço interno */
+  border-radius: 50px;           /* Bordas arredondadas */
+  background: transparent;       /* Sem fundo, segue fundo do footer */
+  color: #d1d5db;                /* Texto cinzento claro */
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.whatsapp-btn:hover {
+  color: #fbbf24;                 /* Cor de destaque no hover */
+  background: rgba(255,255,255,0.05);
+}
+
+.whatsapp-btn .whatsapp-icon {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  line-height: 0;                 /* Remove espaçamento extra */
+}
+
+.whatsapp-btn .whatsapp-icon svg {
+  display: block;
+  width: 26px;
+  height: 26px;
+}
+
+.whatsapp-btn .whatsapp-icon circle {
+  fill: #878787; /* fundo cinzento do ícone */
+}
+
+.whatsapp-btn .whatsapp-icon path {
+  fill: #ffffff; /* detalhes a branco */
+}
     .footer-links {
         justify-content: center;
     }
