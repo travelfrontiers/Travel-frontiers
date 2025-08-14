@@ -908,6 +908,17 @@ body {
   cursor: pointer;
 }
 
+/* Torna as imagens clicáveis visivelmente */
+.clickable-service {
+  cursor: zoom-in;
+}
+
+/* Garante que a imagem no lightbox mantém proporção */
+.lightbox img {
+  object-fit: contain;
+  border-radius: 8px; /* opcional - cantos arredondados */
+}
+
 /* Footer Bottom */
 .footer-bottom {
     border-top: 1px solid #374151;
