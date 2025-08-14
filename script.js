@@ -46,7 +46,7 @@ const translations = {
                 {
                     title: 'Roteiros de Grupo',
                     description: 'Organize viagens em grupo com amigos e família, com atividades especiais e experiências memoráveis.',
-                    image: 'https://images.unsplash.com/photo-1450380412196-4e27fb7d2270?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85'
+                    image: 'img/IMG_7336.jpeg'
                 },
                 {
                     title: 'Pacotes Completos',
@@ -61,7 +61,7 @@ const translations = {
                 {
                     title: 'Consultoria Especializada',
                     description: 'Aconselhamento profissional baseado em experiência real de viagem em mais de 40 países.',
-                    image: 'https://images.unsplash.com/photo-1610024552791-c92de4e0394b?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85'
+                    image: 'img/IMG_8984.jpeg'
                 }
             ]
         },
@@ -166,7 +166,7 @@ const translations = {
                 {
                     title: 'Group Itineraries',
                     description: 'Organize group trips with friends and family, featuring special activities and memorable experiences.',
-                    image: 'https://images.unsplash.com/photo-1450380412196-4e27fb7d2270?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85'
+                    image: 'img/IMG_7336.jpeg'
                 },
                 {
                     title: 'Complete Packages',
@@ -181,7 +181,7 @@ const translations = {
                 {
                     title: 'Specialized Consultancy',
                     description: 'Professional advice based on real travel experience in more than 40 countries.',
-                    image: 'https://images.unsplash.com/photo-1610024552791-c92de4e0394b?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85'
+                    image: 'img/IMG_8984.jpeg?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85'
                 }
             ]
         },
@@ -286,7 +286,7 @@ const translations = {
                 {
                     title: 'Itinéraires de Groupe',
                     description: 'Organisez des voyages de groupe avec des amis et la famille, avec des activités spéciales et des expériences mémorables.',
-                    image: 'https://images.unsplash.com/photo-1450380412196-4e27fb7d2270?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85'
+                    image: 'img/IMG_7336.jpeg'
                 },
                 {
                     title: 'Forfaits Complets',
@@ -301,7 +301,7 @@ const translations = {
                 {
                     title: 'Consultation Spécialisée',
                     description: 'Conseils professionnels basés sur une expérience de voyage réelle dans plus de 40 pays.',
-                    image: 'https://images.unsplash.com/photo-1610024552791-c92de4e0394b?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85'
+                    image: 'img/IMG_8984.jpeg?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85'
                 }
             ]
         },
