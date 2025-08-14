@@ -475,7 +475,7 @@ function renderServices() {
     servicesGrid.innerHTML = services.map(service => `
         <div class="service-card">
             <div class="service-image">
-                <img src="${service.image}" alt="${service.title}" loading="lazy">
+                <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
                 <div class="service-overlay"></div>
                 <h3 class="service-title">${service.title}</h3>
             </div>
@@ -485,27 +485,28 @@ function renderServices() {
         </div>
     `).join('');
 
-      // Adiciona eventos para abrir no lightbox
-  document.querySelectorAll('.clickable-service').forEach(img => {
-    img.addEventListener('click', () => {
-      const lightbox = document.getElementById('lightbox');
-      lightbox.querySelector('img').src = img.src;
-      lightbox.classList.add('show');
+    // Eventos para abrir o lightbox
+    document.querySelectorAll('.clickable-service').forEach(img => {
+        img.addEventListener('click', () => {
+            const lightbox = document.getElementById('lightbox');
+            lightbox.querySelector('img').src = img.src;
+            lightbox.classList.add('show');
+        });
     });
-  });
 }
 
 // Fecha o lightbox
 document.addEventListener('DOMContentLoaded', () => {
-  const lightbox = document.getElementById('lightbox');
-  const closeBtn = document.querySelector('.lightbox-close');
+    const lightbox = document.getElementById('lightbox');
+    const closeBtn = document.querySelector('.lightbox-close');
 
-  closeBtn.addEventListener('click', () => lightbox.classList.remove('show'));
-  lightbox.addEventListener('click', (e) => {
-    if (e.target === lightbox) lightbox.classList.remove('show');
-  });
+    if (closeBtn && lightbox) {
+        closeBtn.addEventListener('click', () => lightbox.classList.remove('show'));
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) lightbox.classList.remove('show');
+        });
+    }
 });
-}
 
 // Testimonials functionality
 function initializeTestimonials() {
