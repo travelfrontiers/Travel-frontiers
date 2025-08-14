@@ -908,6 +908,11 @@ body {
   cursor: pointer;
 }
 
+/* Deixa clicar através do overlay do card */
+.service-overlay { 
+  pointer-events: none;
+}
+
 /* Torna as imagens clicáveis visivelmente */
 .clickable-service {
   cursor: zoom-in;
