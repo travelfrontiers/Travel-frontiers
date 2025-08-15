@@ -613,21 +613,18 @@ function smoothScroll() {
         }
     });
 }
-
-// Initialize smooth scrolling
 smoothScroll();
 
-// Passagem automática a cada 5 segundos
+// Passagem automática a cada 5 segundos para testemunhos
 setInterval(() => {
-    // Simula clique no botão "próximo"
     const nextBtn = document.getElementById('nextTestimonial');
     if (nextBtn && !nextBtn.disabled) {
         nextBtn.click();
     }
-}, 5000); // 5000 ms = 5 segundos
+}, 5000); // 5 segundos
 
+// Inicializar carrossel e encapsular imagens em links para abrir em nova aba
 document.addEventListener('DOMContentLoaded', () => {
-  // Inicializar carrossel
   const carousel = document.getElementById('travelCarousel');
   if (!carousel) return;
 
@@ -645,7 +642,7 @@ document.addEventListener('DOMContentLoaded', () => {
     imgs.forEach((img, idx) => img.classList.toggle('active', idx === i));
     const caption = imgs[i].dataset.caption || imgs[i].alt || '';
     capText.textContent = caption;
-    counter.textContent = `${i + 1}/${imgs.length}`;
+    if (counter) counter.textContent = `${i + 1}/${imgs.length}`;
   }
 
   function nextSlide() { i = (i + 1) % imgs.length; update(); }
@@ -672,5 +669,4 @@ document.addEventListener('DOMContentLoaded', () => {
     img.parentNode.insertBefore(link, img);
     link.appendChild(img);
   });
-
-
+});
