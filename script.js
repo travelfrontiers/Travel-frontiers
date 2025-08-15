@@ -627,6 +627,7 @@ setInterval(() => {
 }, 5000); // 5000 ms = 5 segundos
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Inicializar carrossel
   const carousel = document.getElementById('travelCarousel');
   if (!carousel) return;
 
@@ -659,13 +660,16 @@ document.addEventListener('DOMContentLoaded', () => {
   carousel.addEventListener('mouseenter', stop);
   carousel.addEventListener('mouseleave', start);
 
-document.addEventListener('DOMContentLoaded', () => {
+  update();
+  start();
+
+  // Inicializar lightbox
   const lightbox = document.getElementById('lightbox');
   if (!lightbox) return;
 
   const bigImage = lightbox.querySelector('img');
-  // Evento para fechar o lightbox
   const closeBtn = document.querySelector('.lightbox-close');
+
   closeBtn.addEventListener('click', () => {
     lightbox.classList.remove('show');
     lightbox.setAttribute('aria-hidden', 'true');
@@ -683,8 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Evento para abrir lightbox ao clicar nas imagens do carrossel
-  document.querySelectorAll('.carousel-img').forEach(img => {
+  imgs.forEach(img => {
     img.addEventListener('click', () => {
       bigImage.src = img.src;
       lightbox.classList.add('show');
@@ -693,7 +696,4 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-  update();
-  start();
-});
 
