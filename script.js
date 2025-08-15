@@ -627,20 +627,51 @@ setInterval(() => {
 }, 5000); // 5000 ms = 5 segundos
 
 document.addEventListener('DOMContentLoaded', () => {
-  const images = document.querySelectorAll('.photo-carousel .carousel-img');
-  let current = 0;
+  const carousel = document.getElementById('travelCarousel');
+  if (!carousel) return;
 
-  function showImage(idx) {
-    images.forEach((img, i) => {
-      img.classList.toggle('active', i === idx);
-    });
+  const imgs = [...carousel.querySelectorAll('.carousel-img')];
+  const prev = carousel.querySelector('.pc-prev');
+  const next = carousel.querySelector('.pc-next');
+  const capText = carousel.querySelector('.pc-text');
+  const counter = carousel.querySelector('.pc-counter');
+
+  let i = 0;
+  let timer = null;
+  const DURATION = 3000; // Tempo por slide em ms
+
+  function update() {
+    imgs.forEach((img, idx) => img.classList.toggle('active', idx === i));
+    const caption = imgs[i].dataset.caption || imgs[i].alt || '';
+    capText.textContent = caption;
+    counter.textContent = `${i + 1}/${imgs.length}`;
   }
 
-  setInterval(() => {
-    current = (current + 1) % images.length;
-    showImage(current);
-  }, 2300); // 2.3 segundos para um efeito rápido e fluido
+  function nextSlide() {
+    i = (i + 1) % imgs.length;
+    update();
+  }
 
-  showImage(current); // inicializa primeiro
+  function prevSlide() {
+    i = (i - 1 + imgs.length) % imgs.length;
+    update();
+  }
+
+  function start() {
+    stop();
+    timer = setInterval(nextSlide, DURATION);
+  }
+
+  function stop() {
+    if (timer) clearInterval(timer);
+  }
+
+  next.addEventListener('click', () => { nextSlide(); start(); });
+  prev.addEventListener('click', () => { prevSlide(); start(); });
+
+  carousel.addEventListener('mouseenter', stop);
+  carousel.addEventListener('mouseleave', start);
+
+  update();
+  start();
 });
-
