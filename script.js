@@ -616,3 +616,12 @@ function smoothScroll() {
 
 // Initialize smooth scrolling
 smoothScroll();
+
+// Passagem automática a cada 5 segundos
+setInterval(() => {
+    // Simula clique no botão "próximo"
+    const nextBtn = document.getElementById('nextTestimonial');
+    if (nextBtn && !nextBtn.disabled) {
+        nextBtn.click();
+    }
+}, 5000); // 5000 ms = 5 segundos
