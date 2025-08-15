@@ -968,12 +968,12 @@ margin-left: 16px;
 
 .photo-carousel {
   position: relative;
-  width: min(90%, 900px);
+  width: min(92%, 900px);
   aspect-ratio: 16 / 9;
   margin: 32px auto 0;
   border-radius: 16px;
   overflow: hidden;
-  background: #000;
+  background: #000; /* cor das barras/lados */
   box-shadow: 0 10px 28px rgba(0,0,0,0.12);
 }
 
@@ -982,7 +982,7 @@ margin-left: 16px;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain; /* << este é o comando que interessa! */
   object-position: center;
   opacity: 0;
   transition: opacity 0.8s ease;
