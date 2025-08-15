@@ -968,14 +968,13 @@ margin-left: 16px;
 
 .photo-carousel {
   position: relative;
-  width: 100%;
-  max-width: 700px; /* fotos maiores no desktop */
-  height: 350px;    /* altura maior para mais impacto */
-  margin: 24px auto 0;
+  width: min(90%, 900px);
+  aspect-ratio: 16 / 9;
+  margin: 32px auto 0;
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-  background: #fff;
+  background: #000;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.12);
 }
 
 .carousel-img {
@@ -986,31 +985,65 @@ margin-left: 16px;
   object-fit: cover;
   object-position: center;
   opacity: 0;
-  transition: opacity 1s ease;
-  z-index: 0;
+  transition: opacity 0.8s ease;
   border-radius: 16px;
+  z-index: 0;
 }
-
 .carousel-img.active {
   opacity: 1;
   z-index: 1;
 }
 
-@media (max-width: 900px) {
-  .photo-carousel {
-    max-width: 90%;
-    height: 280px;
-  }
+/* Legenda abaixo das imagens */
+.pc-caption {
+  position: absolute;
+  left: 14px; right: 14px; bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.55));
+  color: #fff;
+  font-size: 14px;
 }
-
-@media (max-width: 600px) {
-  .photo-carousel {
-    max-width: 100%;
-    height: 180px;
-    border-radius: 12px;
-  }
+.pc-counter {
+  background: rgba(255,255,255,0.15);
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 13px;
 }
+.pc-text { line-height: 1.35; }
 
+/* Setas de navegação */
+.pc-arrow {
+  position: absolute;
+  top: 50%; transform: translateY(-50%);
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.45);
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+  font-size: 27px;
+  display: grid; place-items: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+.pc-arrow:hover { background: rgba(0,0,0,0.55); }
+.pc-prev { left: 10px; }
+.pc-next { right: 10px; }
+
+@media (max-width: 1000px) {
+  .photo-carousel { width: min(96%, 700px); }
+}
+@media (max-width: 800px) {
+  .photo-carousel { width: min(98%, 480px); }
+}
+@media (max-width: 480px) {
+  .photo-carousel { width: 98%; aspect-ratio: 4 / 3; border-radius: 8px; }
+  .pc-caption { font-size: 12px; padding: 6px 8px; }
+  .pc-arrow { width: 32px; height: 32px; font-size: 19px; }
+}
 
 /* Responsive Design */
 @media (max-width: 768px) {
