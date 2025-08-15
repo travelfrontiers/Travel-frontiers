@@ -1067,8 +1067,8 @@ margin-left: 16px;
 
     .photo-carousel {
   position: relative;
-  height: 260px;          /* altura fixa */
-  max-width: 600px;
+  height: 180px;          /* altura fixa */
+  max-width: 480px;
   margin: 32px auto 0;
   border-radius: 18px;
   overflow: hidden;
