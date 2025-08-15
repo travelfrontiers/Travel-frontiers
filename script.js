@@ -659,6 +659,40 @@ document.addEventListener('DOMContentLoaded', () => {
   carousel.addEventListener('mouseenter', stop);
   carousel.addEventListener('mouseleave', start);
 
+document.addEventListener('DOMContentLoaded', () => {
+  const lightbox = document.getElementById('lightbox');
+  if (!lightbox) return;
+
+  const bigImage = lightbox.querySelector('img');
+  // Evento para fechar o lightbox
+  const closeBtn = document.querySelector('.lightbox-close');
+  closeBtn.addEventListener('click', () => {
+    lightbox.classList.remove('show');
+    lightbox.setAttribute('aria-hidden', 'true');
+  });
+  lightbox.addEventListener('click', e => {
+    if (e.target === lightbox) {
+      lightbox.classList.remove('show');
+      lightbox.setAttribute('aria-hidden', 'true');
+    }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      lightbox.classList.remove('show');
+      lightbox.setAttribute('aria-hidden', 'true');
+    }
+  });
+
+  // Evento para abrir lightbox ao clicar nas imagens do carrossel
+  document.querySelectorAll('.carousel-img').forEach(img => {
+    img.addEventListener('click', () => {
+      bigImage.src = img.src;
+      lightbox.classList.add('show');
+      lightbox.setAttribute('aria-hidden', 'false');
+    });
+  });
+});
+
   update();
   start();
 });
