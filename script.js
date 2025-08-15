@@ -625,48 +625,48 @@ setInterval(() => {
 
 // Inicializar carrossel e encapsular imagens em links para abrir em nova aba
 document.addEventListener('DOMContentLoaded', () => {
-  const carousel = document.getElementById('travelCarousel');
-  if (!carousel) return;
+    const carousel = document.getElementById('travelCarousel');
+    if (!carousel) return;
 
-  const imgs = [...carousel.querySelectorAll('.carousel-img')];
-  const prev = carousel.querySelector('.pc-prev');
-  const next = carousel.querySelector('.pc-next');
-  const capText = carousel.querySelector('.pc-text');
-  const counter = carousel.querySelector('.pc-counter');
+    const imgs = [...carousel.querySelectorAll('.carousel-img')];
+    const prev = carousel.querySelector('.pc-prev');
+    const next = carousel.querySelector('.pc-next');
+    const capText = carousel.querySelector('.pc-text');
+    const counter = carousel.querySelector('.pc-counter');
 
-  let i = 0;
-  let timer = null;
-  const DURATION = 3000; // ms por slide
+    let i = 0;
+    let timer = null;
+    const DURATION = 3000; // ms por slide
 
-  function update() {
-    imgs.forEach((img, idx) => img.classList.toggle('active', idx === i));
-    const caption = imgs[i].dataset.caption || imgs[i].alt || '';
-    capText.textContent = caption;
-    if (counter) counter.textContent = `${i + 1}/${imgs.length}`;
-  }
+    function update() {
+        imgs.forEach((img, idx) => img.classList.toggle('active', idx === i));
+        const caption = imgs[i].dataset.caption || imgs[i].alt || '';
+        capText.textContent = caption;
+        if (counter) counter.textContent = `${i + 1}/${imgs.length}`;
+    }
 
-  function nextSlide() { i = (i + 1) % imgs.length; update(); }
-  function prevSlide() { i = (i - 1 + imgs.length) % imgs.length; update(); }
+    function nextSlide() { i = (i + 1) % imgs.length; update(); }
+    function prevSlide() { i = (i - 1 + imgs.length) % imgs.length; update(); }
 
-  function start() { stop(); timer = setInterval(nextSlide, DURATION); }
-  function stop() { if (timer) clearInterval(timer); }
+    function start() { stop(); timer = setInterval(nextSlide, DURATION); }
+    function stop() { if (timer) clearInterval(timer); }
 
-  next.addEventListener('click', () => { nextSlide(); start(); });
-  prev.addEventListener('click', () => { prevSlide(); start(); });
+    next.addEventListener('click', () => { nextSlide(); start(); });
+    prev.addEventListener('click', () => { prevSlide(); start(); });
 
-  carousel.addEventListener('mouseenter', stop);
-  carousel.addEventListener('mouseleave', start);
+    carousel.addEventListener('mouseenter', stop);
+    carousel.addEventListener('mouseleave', start);
 
-  update();
-  start();
+    update();
+    start();
 
-  imgs.forEach(img => {
-    const link = document.createElement('a');
-    link.href = img.src;
-    link.target = '_blank';
-    link.rel = 'noopener';
+    imgs.forEach(img => {
+        const link = document.createElement('a');
+        link.href = img.src;
+        link.target = '_blank';
+        link.rel = 'noopener';
 
-    img.parentNode.insertBefore(link, img);
-    link.appendChild(img);
-  });
+        img.parentNode.insertBefore(link, img);
+        link.appendChild(img);
+    });
 });
