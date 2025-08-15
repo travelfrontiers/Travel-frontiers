@@ -638,7 +638,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let i = 0;
   let timer = null;
-  const DURATION = 3000; // Tempo por slide em ms
+  const DURATION = 3000; // ms por slide
 
   function update() {
     imgs.forEach((img, idx) => img.classList.toggle('active', idx === i));
@@ -647,24 +647,11 @@ document.addEventListener('DOMContentLoaded', () => {
     counter.textContent = `${i + 1}/${imgs.length}`;
   }
 
-  function nextSlide() {
-    i = (i + 1) % imgs.length;
-    update();
-  }
+  function nextSlide() { i = (i + 1) % imgs.length; update(); }
+  function prevSlide() { i = (i - 1 + imgs.length) % imgs.length; update(); }
 
-  function prevSlide() {
-    i = (i - 1 + imgs.length) % imgs.length;
-    update();
-  }
-
-  function start() {
-    stop();
-    timer = setInterval(nextSlide, DURATION);
-  }
-
-  function stop() {
-    if (timer) clearInterval(timer);
-  }
+  function start() { stop(); timer = setInterval(nextSlide, DURATION); }
+  function stop() { if (timer) clearInterval(timer); }
 
   next.addEventListener('click', () => { nextSlide(); start(); });
   prev.addEventListener('click', () => { prevSlide(); start(); });
@@ -675,3 +662,4 @@ document.addEventListener('DOMContentLoaded', () => {
   update();
   start();
 });
+
