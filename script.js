@@ -625,3 +625,22 @@ setInterval(() => {
         nextBtn.click();
     }
 }, 5000); // 5000 ms = 5 segundos
+
+document.addEventListener('DOMContentLoaded', () => {
+  const images = document.querySelectorAll('.photo-carousel .carousel-img');
+  let current = 0;
+
+  function showImage(idx) {
+    images.forEach((img, i) => {
+      img.classList.toggle('active', i === idx);
+    });
+  }
+
+  setInterval(() => {
+    current = (current + 1) % images.length;
+    showImage(current);
+  }, 2300); // 2.3 segundos para um efeito rápido e fluido
+
+  showImage(current); // inicializa primeiro
+});
+
