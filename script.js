@@ -663,37 +663,14 @@ document.addEventListener('DOMContentLoaded', () => {
   update();
   start();
 
-  // Inicializar lightbox
-  const lightbox = document.getElementById('lightbox');
-  if (!lightbox) return;
-
-  const bigImage = lightbox.querySelector('img');
-  const closeBtn = document.querySelector('.lightbox-close');
-
-  closeBtn.addEventListener('click', () => {
-    lightbox.classList.remove('show');
-    lightbox.setAttribute('aria-hidden', 'true');
-  });
-  lightbox.addEventListener('click', e => {
-    if (e.target === lightbox) {
-      lightbox.classList.remove('show');
-      lightbox.setAttribute('aria-hidden', 'true');
-    }
-  });
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      lightbox.classList.remove('show');
-      lightbox.setAttribute('aria-hidden', 'true');
-    }
-  });
-
   imgs.forEach(img => {
-    img.addEventListener('click', () => {
-      bigImage.src = img.src;
-      lightbox.classList.add('show');
-      lightbox.setAttribute('aria-hidden', 'false');
-    });
+    const link = document.createElement('a');
+    link.href = img.src;
+    link.target = '_blank';
+    link.rel = 'noopener';
+
+    img.parentNode.insertBefore(link, img);
+    link.appendChild(img);
   });
-});
 
 
