@@ -281,7 +281,7 @@ body {
 
 /* About Section */
 .about {
-    padding: 80px 0;
+    padding: 24px 0;
     background: linear-gradient(to bottom, #f9fafb, #ffffff);
 }
 
@@ -366,7 +366,7 @@ body {
 
 /* Services Section */
 .services {
-    padding: 80px 0;
+    padding: 24px 0;
     background: white;
 }
 
