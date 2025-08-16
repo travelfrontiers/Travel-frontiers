@@ -975,6 +975,7 @@ margin-left: 16px;
   overflow: hidden;
   background: #000; /* cor das barras/lados */
   box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+  margin-bottom: 48px; /* Adiciona espaço abaixo da galeria */
 }
 
 .carousel-img {
@@ -1086,7 +1087,7 @@ margin-left: 16px;
     
     .contact-content {
         grid-template-columns: 1fr;
-        gap: 32px;
+        gap: 3px;
     }
     
     .footer-content {
