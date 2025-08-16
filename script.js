@@ -21,7 +21,7 @@ const translations = {
         },
         about: {
             title: 'Sobre Tiago Ferreira',
-            description: 'Viajo há 15 anos e já visitei mais de 40 países, em quase todos os continentes. Ganhei bastante experiência em planear viagens e roteiros de grupo. Comecei com a consultoria de viagens há um ano, com clientes bastante satisfeitos com o serviço proporcionado, bem como as propostas apresentadas para todo o tipo de férias.',
+            description: 'Apaixonado por descobrir o Mundo, viajo há 15 anos e já explorei mais de 40 países, com especial conhecimento da Ásia, Europa e Norte de África. Com experiência em planear desde grandes aventuras até férias relaxantes em família, dedico-me a criar propostas equilibradas entre preço e qualidade. Cada viagem que concebo é inspirada pelo desejo de partilhar experiências autênticas, acompanhando de perto cada cliente, para que a sua próxima viagem seja tão memorável quanto a minha paixão por viajar.',
             achievements: {
                 global: 'Experiência Global',
                 certified: 'Consultor Certificado',
@@ -146,7 +146,7 @@ const translations = {
         },
         about: {
             title: 'About Tiago Ferreira',
-            description: 'I have been traveling for 15 years and have visited more than 40 countries on all continents. I gained extensive experience in planning trips and group itineraries. I started travel consultancy a year ago, with clients very satisfied with the service I provide and the proposals I present for all types of holidays.',
+            description: 'Passionate about exploring the world, I have been traveling for 15 years and have explored over 40 countries, with special knowledge of Asia, Europe, and North Africa. With experience planning everything from great adventures to relaxing family vacations, I am dedicated to creating proposals that balance price and quality. Every trip I design is inspired by the desire to share authentic experiences, providing close support to each client so that their next journey is as memorable as my passion for traveling.',
             achievements: {
                 global: 'Global Experience',
                 certified: 'Certified Consultant',
@@ -271,7 +271,7 @@ const translations = {
         },
         about: {
             title: 'À propos de Tiago Ferreira',
-            description: 'Je voyage depuis 15 ans et j\'ai visité plus de 40 pays sur tous les continents. J\'ai acquis une vaste expérience dans la planification de voyages et d\'itinéraires de groupe. J\'ai commencé la consultation en voyage il y a un an, avec des clients très satisfaits du service que je fournis et des propositions que je présente pour tous types de vacances.',
+            description: 'Passionné par la découverte du monde, je voyage depuis 15 ans et j’ai exploré plus de 40 pays, avec une connaissance particulière de l’Asie, de l’Europe et de l’Afrique du Nord. Fort d’une expérience dans la planification de grandes aventures comme de vacances relaxantes en famille, je m’engage à créer des propositions équilibrant prix et qualité. Chaque voyage que je conçois est inspiré par le désir de partager des expériences authentiques, accompagnant de près chaque client pour que son prochain périple soit aussi mémorable que ma passion du voyage.',
             achievements: {
                 global: 'Expérience Globale',
                 certified: 'Consultant Certifié',
