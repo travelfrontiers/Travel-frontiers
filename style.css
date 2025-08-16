@@ -491,7 +491,7 @@ body {
 
 .testimonial-main {
     max-width: 800px;
-    margin: 0 auto 64px;
+    margin-bottom: 0;
 }
 
 .testimonial-card {
