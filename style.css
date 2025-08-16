@@ -484,8 +484,8 @@ body {
 
 /* Testimonials Section */
 .testimonials {
-    padding-bottom: 0;   /* Antes era 80px 0, agora só pões 0 para baixo */
     padding-top: 80px;
+    padding-bottom: 0;
     background: linear-gradient(to bottom, #f9fafb, #ffffff);
 }
 
