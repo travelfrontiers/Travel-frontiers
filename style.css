@@ -894,6 +894,7 @@ body {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    vertical-align: middle;
 }
 .contact-item img {
     width: 22px;
@@ -915,7 +916,7 @@ body {
   display: inline-flex;          /* Alinha ícone e texto lado a lado */
   align-items: center;           /* Centra verticalmente */
   gap: 8px;                      /* Espaço entre ícone e texto */
-  padding: 8px 14px;             /* Espaço interno */
+  padding: 0;             /* Espaço interno */
   border-radius: 50px;           /* Bordas arredondadas */
   background: transparent;       /* Sem fundo, segue fundo do footer */
   color: #d1d5db;                /* Texto cinzento claro */
@@ -929,17 +930,16 @@ body {
   background: rgba(255,255,255,0.05);
 }
 
-.whatsapp-btn .whatsapp-icon {
-  display: inline-flex;
-  width: 26px;
-  height: 26px;
-  line-height: 0;                 /* Remove espaçamento extra */
-}
-
+.whatsapp-btn .whatsapp-icon,
 .whatsapp-btn .whatsapp-icon svg {
-  display: block;
-  width: 26px;
-  height: 26px;
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px;
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
 }
 
 .whatsapp-btn .whatsapp-icon circle {
