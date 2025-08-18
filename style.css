@@ -874,14 +874,40 @@ body {
 .footer-contact {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 10px;
 }
 
 .contact-item {
     display: flex;
-    align-items: center;
-    gap: 12px;
+    align-items: center;      /* Alinha ícones e texto pelo centro */
+    gap: 8px;                 /* Reduz o espaço entre ícone e texto */
     color: #d1d5db;
+    line-height: 1.4;
+    min-height: 32px;
+}
+
+.contact-item svg,
+.contact-item .whatsapp-icon {
+    width: 22px !important;
+    height: 22px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.contact-item img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    margin-right: 2px;
+}
+
+.contact-item a, .contact-item span {
+    font-size: 16px;
+    font-weight: 500;
+    color: #d1d5db;
+    text-decoration: none;
+    word-break: break-word;
 }
 
 /* Lightbox */
