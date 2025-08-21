@@ -409,13 +409,13 @@ function initializeLanguageSelector() {
 }
 
 function changeLanguage(lang) {
-    currentLanguage = lang;
-    document.getElementById('langCode').textContent = lang.toUpperCase();
-    document.getElementById('langDropdown').classList.remove('show');
-    document.documentElement.lang = lang;
-    updateContent();
-    renderServices();
-    updateTestimonials();
+  currentLanguage = lang;
+  document.getElementById('langCode').textContent = lang.toUpperCase();
+  document.getElementById('langDropdown').classList.remove('show');
+  document.documentElement.lang = lang;
+  renderServices();  // first render dynamic content in the new language
+  updateContent();   // then update translations everywhere else
+  updateTestimonials();
 }
 
 function updateContent() {
@@ -486,21 +486,21 @@ function initializeNavigation() {
 function renderServices() {
   const servicesGrid = document.querySelector('.services-grid');
   const services = translations[currentLanguage].services.items;
-  
-  // Gera o HTML das cards de serviço
-  servicesGrid.innerHTML = services.map(service => `
+
+  servicesGrid.innerHTML = services.map((service, index) => `
     <div class="service-card">
       <div class="service-image">
-        <img src="${service.image}" alt="${service.title}" 
-             loading="lazy" class="clickable-service">
+        <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
         <div class="service-overlay"></div>
-        <h3 class="service-title">${service.title}</h3>
+        <h3 class="service-title" data-translate="services.items.${index}.title">${service.title}</h3>
       </div>
       <div class="service-content">
-        <p class="service-description">${service.description}</p>
+        <p class="service-description" data-translate="services.items.${index}.description">${service.description}</p>
       </div>
     </div>
   `).join('');
+  updateContent(); // update translations after render
+}
 
   // Adiciona evento de clique para abrir o lightbox
   document.querySelectorAll('.clickable-service').forEach(img => {
