@@ -21,7 +21,7 @@ const translations = {
         },
         about: {
             title: 'Sobre Tiago Ferreira',
-            description: 'Viajo há 15 anos e já visitei mais de 40 países, em quase todos os continentes. Ganhei bastante experiência em planear viagens e roteiros de grupo. Comecei com a consultoria de viagens há um ano, com clientes bastante satisfeitos com o serviço proporcionado, bem como as propostas apresentadas para todo o tipo de férias.',
+            description: 'Apaixonado por descobrir o Mundo, viajo há 15 anos e já explorei mais de 40 países, com especial conhecimento da Ásia, Europa e Norte de África. Com experiência em planear desde grandes aventuras até férias relaxantes em família, dedico-me a criar propostas equilibradas entre preço e qualidade. Cada viagem que concebo é inspirada pelo desejo de partilhar experiências autênticas, acompanhando de perto cada cliente, para que a sua próxima viagem seja tão memorável quanto a minha paixão por viajar.',
             achievements: {
                 global: 'Experiência Global',
                 certified: 'Consultor Certificado',
@@ -73,24 +73,24 @@ const translations = {
                 countries: 'Países Visitados',
                 experience: 'Anos de Experiência'
             },
-           items: [
-        {
-            text: 'Só podemos estar gratos pelo acompanhamento de excelência dedicado. Faz toda a experiência valer muito mais a pena!',
-            author: 'Gil Gaspar',
-            location: 'Porto Santo 2025'
+            items: [
+                {
+                    text: 'Só podemos estar gratos pelo acompanhamento de excelência dedicado. Faz toda a experiência valer muito mais a pena!',
+                    author: 'Gil Gaspar',
+                    location: 'Porto Santo 2025'
+                },
+                {
+                    text: 'Adoramos cada momento e já estamos ansiosos para a próxima aventura... Contamos com a sua colaboração!! Obrigada por tornar estas férias especiais!!!',
+                    author: 'Sandra Bernardo',
+                    location: 'Tenerife 2025'
+                },
+                {
+                    text: 'Muito satisfeita com a proposta feita, com todas as atividades para estas férias. O acompanhamento foi perfeito!',
+                    author: 'Jéssica Ferreira',
+                    location: 'Itália 2024'
+                }
+            ]
         },
-        {
-            text: 'Adoramos cada momento e já estamos ansiosos para a próxima aventura... Contamos com a sua colaboração!! Obrigada por tornar estas férias especiais!!!',
-            author: 'Sandra Bernardo',
-            location: 'Tenerife 2025'
-        },
-        {
-            text: 'Muito satisfeita com a proposta feita, com todas as atividades para estas férias. O acompanhamento foi perfeito!',
-            author: 'Jéssica Ferreira',
-            location: 'Itália 2024'
-        }
-    ]
-},
         contact: {
             title: 'Comece a sua Próxima Aventura',
             subtitle: 'Peça o seu orçamento personalizado e deixe-nos planear a viagem dos seus sonhos',
@@ -146,7 +146,7 @@ const translations = {
         },
         about: {
             title: 'About Tiago Ferreira',
-            description: 'I have been traveling for 15 years and have visited more than 40 countries on all continents. I gained extensive experience in planning trips and group itineraries. I started travel consultancy a year ago, with clients very satisfied with the service I provide and the proposals I present for all types of holidays.',
+            description: 'Passionate about exploring the world, I have been traveling for 15 years and have explored over 40 countries, with special knowledge of Asia, Europe, and North Africa. With experience planning everything from great adventures to relaxing family vacations, I am dedicated to creating proposals that balance price and quality. Every trip I design is inspired by the desire to share authentic experiences, providing close support to each client so that their next journey is as memorable as my passion for traveling.',
             achievements: {
                 global: 'Global Experience',
                 certified: 'Certified Consultant',
@@ -186,7 +186,7 @@ const translations = {
                 {
                     title: 'Specialized Consultancy',
                     description: 'Professional advice based on real travel experience in more than 40 countries.',
-                    image: 'img/IMG_8984.jpeg?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85'
+                    image: 'img/IMG_8984.jpeg'
                 }
             ]
         },
@@ -198,24 +198,24 @@ const translations = {
                 countries: 'Countries Visited',
                 experience: 'Years of Experience'
             },
-           items: [
-        {
-            text: 'We can only be grateful for the excellent dedicated support. It makes the whole experience so much more worthwhile!',
-            author: 'Gil Gaspar',
-            location: 'Porto Santo 2025'
+            items: [
+                {
+                    text: 'We can only be grateful for the excellent dedicated support. It makes the whole experience so much more worthwhile!',
+                    author: 'Gil Gaspar',
+                    location: 'Porto Santo 2025'
+                },
+                {
+                    text: 'We loved every moment and we are already looking forward to the next adventure... We count on your collaboration!! Thank you for making these holidays special!!!',
+                    author: 'Sandra Bernardo',
+                    location: 'Tenerife 2025'
+                },
+                {
+                    text: 'Very satisfied with the proposal made, with all the activities for this vacation. The support was perfect!',
+                    author: 'Jéssica Ferreira',
+                    location: 'Italy 2024'
+                }
+            ]
         },
-        {
-            text: 'We loved every moment and we are already looking forward to the next adventure... We count on your collaboration!! Thank you for making these holidays special!!!',
-            author: 'Sandra Bernardo',
-            location: 'Tenerife 2025'
-        },
-        {
-            text: 'Very satisfied with the proposal made, with all the activities for this vacation. The support was perfect!',
-            author: 'Jéssica Ferreira',
-            location: 'Italy 2024'
-        }
-    ]
-},
         contact: {
             title: 'Start Your Next Adventure',
             subtitle: 'Request your personalized quote and let us plan the trip of your dreams',
@@ -271,7 +271,7 @@ const translations = {
         },
         about: {
             title: 'À propos de Tiago Ferreira',
-            description: 'Je voyage depuis 15 ans et j\'ai visité plus de 40 pays sur tous les continents. J\'ai acquis une vaste expérience dans la planification de voyages et d\'itinéraires de groupe. J\'ai commencé la consultation en voyage il y a un an, avec des clients très satisfaits du service que je fournis et des propositions que je présente pour tous types de vacances.',
+            description: 'Passionné par la découverte du monde, je voyage depuis 15 ans et j\'ai exploré plus de 40 pays, avec une connaissance particulière de l\'Asie, de l\'Europe et de l\'Afrique du Nord. Fort d\'une expérience dans la planification de grandes aventures comme de vacances relaxantes en famille, je m\'engage à créer des propositions équilibrant prix et qualité. Chaque voyage que je conçois est inspiré par le désir de partager des expériences authentiques, accompagnant de près chaque client pour que son prochain périple soit aussi mémorable que ma passion du voyage.',
             achievements: {
                 global: 'Expérience Globale',
                 certified: 'Consultant Certifié',
@@ -311,7 +311,7 @@ const translations = {
                 {
                     title: 'Consultation Spécialisée',
                     description: 'Conseils professionnels basés sur une expérience de voyage réelle dans plus de 40 pays.',
-                    image: 'img/IMG_8984.jpeg?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85'
+                    image: 'img/IMG_8984.jpeg'
                 }
             ]
         },
@@ -323,24 +323,24 @@ const translations = {
                 countries: 'Pays Visités',
                 experience: 'Années d\'Expérience'
             },
-             items: [
-        {
-            text: 'Nous ne pouvons qu\'être reconnaissants pour l\'excellent soutien dédié. Cela rend toute l\'expérience tellement plus enrichissante!',
-            author: 'Gil Gaspar',
-            location: 'Porto Santo 2025'
+            items: [
+                {
+                    text: 'Nous ne pouvons qu\'être reconnaissants pour l\'excellent soutien dédié. Cela rend toute l\'expérience tellement plus enrichissante!',
+                    author: 'Gil Gaspar',
+                    location: 'Porto Santo 2025'
+                },
+                {
+                    text: 'Nous avons adoré chaque instant et nous attendons déjà avec impatience la prochaine aventure... Nous comptons sur votre collaboration !! Merci d\'avoir rendu ces vacances spéciales !!!',
+                    author: 'Sandra Bernardo',
+                    location: 'Tenerife 2025'
+                },
+                {
+                    text: 'Très satisfaite de la proposition faite, avec toutes les activités pour ces vacances. Le soutien était parfait!',
+                    author: 'Jéssica Ferreira',
+                    location: 'Italie 2024'
+                }
+            ]
         },
-        {
-            text: 'Nous avons adoré chaque instant et nous attendons déjà avec impatience la prochaine aventure... Nous comptons sur votre collaboration !! Merci d\'avoir rendu ces vacances spéciales !!!',
-            author: 'Sandra Bernardo',
-            location: 'Tenerife 2025'
-        },
-        {
-            text: 'Très satisfaite de la proposition faite, avec toutes les activités pour ces vacances. Le soutien était parfait!',
-            author: 'Jéssica Ferreira',
-            location: 'Italie 2024'
-        }
-    ]
-},
         contact: {
             title: 'Commencez Votre Prochaine Aventure',
             subtitle: 'Demandez votre devis personnalisé et laissez-nous planifier le voyage de vos rêves',
@@ -396,26 +396,38 @@ function initializeLanguageSelector() {
     const langButton = document.getElementById('currentLang');
     const langDropdown = document.getElementById('langDropdown');
     
-    langButton.addEventListener('click', function() {
-        langDropdown.classList.toggle('show');
-    });
+    if (langButton) {
+        langButton.addEventListener('click', function() {
+            if (langDropdown) {
+                langDropdown.classList.toggle('show');
+            }
+        });
+    }
     
     // Close dropdown when clicking outside
     document.addEventListener('click', function(event) {
-        if (!langButton.contains(event.target) && !langDropdown.contains(event.target)) {
+        if (langButton && langDropdown && !langButton.contains(event.target) && !langDropdown.contains(event.target)) {
             langDropdown.classList.remove('show');
         }
     });
 }
 
 function changeLanguage(lang) {
-  currentLanguage = lang;
-  document.getElementById('langCode').textContent = lang.toUpperCase();
-  document.getElementById('langDropdown').classList.remove('show');
-  document.documentElement.lang = lang;
-  renderServices();  // first render dynamic content in the new language
-  updateContent();   // then update translations everywhere else
-  updateTestimonials();
+    currentLanguage = lang;
+    const langCode = document.getElementById('langCode');
+    const langDropdown = document.getElementById('langDropdown');
+    
+    if (langCode) {
+        langCode.textContent = lang.toUpperCase();
+    }
+    if (langDropdown) {
+        langDropdown.classList.remove('show');
+    }
+    
+    document.documentElement.lang = lang;
+    updateContent();
+    renderServices();
+    updateTestimonials();
 }
 
 function updateContent() {
@@ -445,19 +457,21 @@ function initializeMobileMenu() {
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileMenu = document.getElementById('mobileMenu');
     
-    mobileMenuBtn.addEventListener('click', function() {
-        mobileMenu.classList.toggle('show');
-        mobileMenuBtn.classList.toggle('active');
-    });
-    
-    // Close mobile menu when clicking on links
-    const mobileLinks = mobileMenu.querySelectorAll('a');
-    mobileLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            mobileMenu.classList.remove('show');
-            mobileMenuBtn.classList.remove('active');
+    if (mobileMenuBtn && mobileMenu) {
+        mobileMenuBtn.addEventListener('click', function() {
+            mobileMenu.classList.toggle('show');
+            mobileMenuBtn.classList.toggle('active');
         });
-    });
+        
+        // Close mobile menu when clicking on links
+        const mobileLinks = mobileMenu.querySelectorAll('a');
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                mobileMenu.classList.remove('show');
+                mobileMenuBtn.classList.remove('active');
+            });
+        });
+    }
 }
 
 // Navigation functionality
@@ -470,7 +484,7 @@ function initializeNavigation() {
             const targetSection = document.getElementById(targetId);
             
             if (targetSection) {
-                const headerHeight = document.querySelector('.header').offsetHeight;
+                const headerHeight = document.querySelector('.header')?.offsetHeight || 0;
                 const targetPosition = targetSection.offsetTop - headerHeight;
                 
                 window.scrollTo({
@@ -484,34 +498,39 @@ function initializeNavigation() {
 
 // Services functionality
 function renderServices() {
-  const servicesGrid = document.querySelector('.services-grid');
-  const services = translations[currentLanguage].services.items;
+    const servicesGrid = document.querySelector('.services-grid');
+    if (!servicesGrid) return;
+    
+    const services = translations[currentLanguage].services.items;
+    
+    servicesGrid.innerHTML = services.map(service => `
+        <div class="service-card">
+            <div class="service-image">
+                <img src="${service.image}" alt="${service.title}" 
+                     loading="lazy" class="clickable-service">
+                <div class="service-overlay"></div>
+                <h3 class="service-title">${service.title}</h3>
+            </div>
+            <div class="service-content">
+                <p class="service-description">${service.description}</p>
+            </div>
+        </div>
+    `).join('');
 
-  servicesGrid.innerHTML = services.map((service, index) => `
-    <div class="service-card">
-      <div class="service-image">
-        <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
-        <div class="service-overlay"></div>
-        <h3 class="service-title" data-translate="services.items.${index}.title">${service.title}</h3>
-      </div>
-      <div class="service-content">
-        <p class="service-description" data-translate="services.items.${index}.description">${service.description}</p>
-      </div>
-    </div>
-  `).join('');
-  updateContent(); // update translations after render
-}
-
-  // Adiciona evento de clique para abrir o lightbox
-  document.querySelectorAll('.clickable-service').forEach(img => {
-    img.addEventListener('click', () => {
-      const lightbox = document.getElementById('lightbox');
-      const big = lightbox.querySelector('img');
-      big.src = img.src; // Mostra a mesma imagem mas maior
-      lightbox.classList.add('show');
-      lightbox.setAttribute('aria-hidden', 'false');
+    // Add click events for lightbox
+    document.querySelectorAll('.clickable-service').forEach(img => {
+        img.addEventListener('click', () => {
+            const lightbox = document.getElementById('lightbox');
+            if (lightbox) {
+                const lightboxImg = lightbox.querySelector('img');
+                if (lightboxImg) {
+                    lightboxImg.src = img.src;
+                    lightbox.classList.add('show');
+                    lightbox.setAttribute('aria-hidden', 'false');
+                }
+            }
+        });
     });
-  });
 }
 
 // Testimonials functionality
@@ -519,17 +538,21 @@ function initializeTestimonials() {
     const prevBtn = document.getElementById('prevTestimonial');
     const nextBtn = document.getElementById('nextTestimonial');
     
-    prevBtn.addEventListener('click', function() {
-        currentTestimonialIndex = currentTestimonialIndex === 0 
-            ? translations[currentLanguage].testimonials.items.length - 1 
-            : currentTestimonialIndex - 1;
-        updateTestimonials();
-    });
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function() {
+            currentTestimonialIndex = currentTestimonialIndex === 0 
+                ? translations[currentLanguage].testimonials.items.length - 1 
+                : currentTestimonialIndex - 1;
+            updateTestimonials();
+        });
+    }
     
-    nextBtn.addEventListener('click', function() {
-        currentTestimonialIndex = (currentTestimonialIndex + 1) % translations[currentLanguage].testimonials.items.length;
-        updateTestimonials();
-    });
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+            currentTestimonialIndex = (currentTestimonialIndex + 1) % translations[currentLanguage].testimonials.items.length;
+            updateTestimonials();
+        });
+    }
     
     createTestimonialDots();
     updateTestimonials();
@@ -537,6 +560,8 @@ function initializeTestimonials() {
 
 function createTestimonialDots() {
     const dotsContainer = document.getElementById('testimonialDots');
+    if (!dotsContainer) return;
+    
     const testimonials = translations[currentLanguage].testimonials.items;
     
     dotsContainer.innerHTML = testimonials.map((_, index) => 
@@ -546,18 +571,24 @@ function createTestimonialDots() {
 
 function updateTestimonials() {
     const testimonials = translations[currentLanguage].testimonials.items;
+    if (!testimonials || !testimonials[currentTestimonialIndex]) return;
+    
     const currentTestimonial = testimonials[currentTestimonialIndex];
     
-    document.getElementById('currentTestimonial').textContent = `"${currentTestimonial.text}"`;
-    document.getElementById('currentAuthor').textContent = currentTestimonial.author;
-    document.getElementById('currentLocation').textContent = currentTestimonial.location;
+    const testimonialText = document.getElementById('currentTestimonial');
+    const testimonialAuthor = document.getElementById('currentAuthor');
+    const testimonialLocation = document.getElementById('currentLocation');
+    
+    if (testimonialText) testimonialText.textContent = `"${currentTestimonial.text}"`;
+    if (testimonialAuthor) testimonialAuthor.textContent = currentTestimonial.author;
+    if (testimonialLocation) testimonialLocation.textContent = currentTestimonial.location;
     
     // Update navigation buttons
     const prevBtn = document.getElementById('prevTestimonial');
     const nextBtn = document.getElementById('nextTestimonial');
     
-    prevBtn.disabled = testimonials.length <= 1;
-    nextBtn.disabled = testimonials.length <= 1;
+    if (prevBtn) prevBtn.disabled = testimonials.length <= 1;
+    if (nextBtn) nextBtn.disabled = testimonials.length <= 1;
     
     // Update dots
     const dots = document.querySelectorAll('.dot');
@@ -576,54 +607,57 @@ function openQuoteForm() {
     window.open('https://www.icligo.com/forms/pt/contact-us/book-your-trip?utm_source=LHw8s4N4', '_blank');
 }
 
-// Fechar o lightbox
+// Close lightbox functionality
 document.addEventListener('DOMContentLoaded', () => {
-  const lightbox = document.getElementById('lightbox');
-  const closeBtn = document.querySelector('.lightbox-close');
-  if (!lightbox || !closeBtn) return;
+    const lightbox = document.getElementById('lightbox');
+    const closeBtn = document.querySelector('.lightbox-close');
+    
+    if (lightbox && closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            lightbox.classList.remove('show');
+            lightbox.setAttribute('aria-hidden', 'true');
+        });
 
-  closeBtn.addEventListener('click', () => {
-    lightbox.classList.remove('show');
-    lightbox.setAttribute('aria-hidden', 'true');
-  });
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) {
+                lightbox.classList.remove('show');
+                lightbox.setAttribute('aria-hidden', 'true');
+            }
+        });
 
-  lightbox.addEventListener('click', (e) => {
-    if (e.target === lightbox) {
-      lightbox.classList.remove('show');
-      lightbox.setAttribute('aria-hidden', 'true');
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                lightbox.classList.remove('show');
+                lightbox.setAttribute('aria-hidden', 'true');
+            }
+        });
     }
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      lightbox.classList.remove('show');
-      lightbox.setAttribute('aria-hidden', 'true');
-    }
-  });
 });
 
 // Smooth scrolling enhancement
 function smoothScroll() {
     window.addEventListener('scroll', function() {
         const header = document.querySelector('.header');
-        if (window.scrollY > 100) {
-            header.style.background = 'rgba(255, 255, 255, 0.95)';
-        } else {
-            header.style.background = 'rgba(255, 255, 255, 0.9)';
+        if (header) {
+            if (window.scrollY > 100) {
+                header.style.background = 'rgba(255, 255, 255, 0.95)';
+            } else {
+                header.style.background = 'rgba(255, 255, 255, 0.9)';
+            }
         }
     });
 }
 smoothScroll();
 
-// Passagem automática a cada 5 segundos para testemunhos
+// Auto testimonial rotation every 5 seconds
 setInterval(() => {
     const nextBtn = document.getElementById('nextTestimonial');
     if (nextBtn && !nextBtn.disabled) {
         nextBtn.click();
     }
-}, 5000); // 5 segundos
+}, 5000);
 
-// Inicializar carrossel e encapsular imagens em links para abrir em nova aba
+// Initialize carousel for photos
 document.addEventListener('DOMContentLoaded', () => {
     const carousel = document.getElementById('travelCarousel');
     if (!carousel) return;
@@ -636,23 +670,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let i = 0;
     let timer = null;
-    const DURATION = 3000; // ms por slide
+    const DURATION = 3000;
 
     function update() {
         imgs.forEach((img, idx) => img.classList.toggle('active', idx === i));
         const caption = imgs[i].dataset.caption || imgs[i].alt || '';
-        capText.textContent = caption;
+        if (capText) capText.textContent = caption;
         if (counter) counter.textContent = `${i + 1}/${imgs.length}`;
     }
 
-    function nextSlide() { i = (i + 1) % imgs.length; update(); }
-    function prevSlide() { i = (i - 1 + imgs.length) % imgs.length; update(); }
+    function nextSlide() { 
+        i = (i + 1) % imgs.length; 
+        update(); 
+    }
+    
+    function prevSlide() { 
+        i = (i - 1 + imgs.length) % imgs.length; 
+        update(); 
+    }
 
-    function start() { stop(); timer = setInterval(nextSlide, DURATION); }
-    function stop() { if (timer) clearInterval(timer); }
+    function start() { 
+        stop(); 
+        timer = setInterval(nextSlide, DURATION); 
+    }
+    
+    function stop() { 
+        if (timer) clearInterval(timer); 
+    }
 
-    next.addEventListener('click', () => { nextSlide(); start(); });
-    prev.addEventListener('click', () => { prevSlide(); start(); });
+    if (next) next.addEventListener('click', () => { nextSlide(); start(); });
+    if (prev) prev.addEventListener('click', () => { prevSlide(); start(); });
 
     carousel.addEventListener('mouseenter', stop);
     carousel.addEventListener('mouseleave', start);
@@ -660,6 +707,7 @@ document.addEventListener('DOMContentLoaded', () => {
     update();
     start();
 
+    // Make images clickable to open in new tab
     imgs.forEach(img => {
         const link = document.createElement('a');
         link.href = img.src;
