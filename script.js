@@ -271,7 +271,7 @@ const translations = {
         },
         about: {
             title: 'À propos de Tiago Ferreira',
-            description: 'Passionné par la découverte du monde, je voyage depuis 15 ans et j'ai exploré plus de 40 pays, avec une connaissance particulière de l'Asie, de l'Europe et de l'Afrique du Nord. Fort d'une expérience dans la planification de grandes aventures comme de vacances relaxantes en famille, je m'engage à créer des propositions équilibrant prix et qualité. Chaque voyage que je conçois est inspiré par le désir de partager des expériences authentiques, accompagnant de près chaque client pour que son prochain périple soit aussi mémorable que ma passion du voyage.',
+            description: 'Passionné par la découverte du monde, je voyage depuis 15 ans et j’ai exploré plus de 40 pays, avec une connaissance particulière de l’Asie, de l’Europe et de l’Afrique du Nord. Fort d’une expérience dans la planification de grandes aventures comme de vacances relaxantes en famille, je m’engage à créer des propositions équilibrant prix et qualité. Chaque voyage que je conçois est inspiré par le désir de partager des expériences authentiques, accompagnant de près chaque client pour que son prochain périple soit aussi mémorable que ma passion du voyage.',
             achievements: {
                 global: 'Expérience Globale',
                 certified: 'Consultant Certifié',
@@ -405,24 +405,21 @@ document.addEventListener('DOMContentLoaded', function() {
     startTestimonialTimer();
 });
 
-// Enhanced Language functionality
+// Language selector with ARIA
 function initializeLanguageSelector() {
     const langButton = document.getElementById('currentLang');
     const langDropdown = document.getElementById('langDropdown');
-    
     if (!langButton || !langDropdown) return;
 
-    // Accessibility attributes
     langButton.setAttribute('aria-expanded', 'false');
     langButton.setAttribute('aria-haspopup', 'true');
     langButton.setAttribute('aria-label', 'Select language');
-    
+
     langButton.addEventListener('click', function() {
         const isOpen = langDropdown.classList.toggle('show');
         langButton.setAttribute('aria-expanded', String(isOpen));
     });
-    
-    // Close dropdown when clicking outside
+
     document.addEventListener('click', function(event) {
         if (!langButton.contains(event.target) && !langDropdown.contains(event.target)) {
             langDropdown.classList.remove('show');
@@ -430,7 +427,6 @@ function initializeLanguageSelector() {
         }
     });
 
-    // Close on Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             langDropdown.classList.remove('show');
@@ -439,18 +435,21 @@ function initializeLanguageSelector() {
     });
 }
 
+// Change language, save preference and update UI
 function changeLanguage(lang) {
     currentLanguage = lang;
-    localStorage.setItem('tf_lang', lang); // Save preference
+    localStorage.setItem('tf_lang', lang);
     document.getElementById('langCode').textContent = lang.toUpperCase();
     document.getElementById('langDropdown').classList.remove('show');
     document.documentElement.lang = lang;
+
     updateContent();
     renderServices();
     updateTestimonials();
     createTestimonialDots();
 }
 
+// Update all translatable elements
 function updateContent() {
     const elements = document.querySelectorAll('[data-translate]');
     elements.forEach(element => {
@@ -458,216 +457,188 @@ function updateContent() {
         const translation = getTranslation(key);
         if (translation) {
             element.textContent = translation;
+        } else {
+            // Optional: log missing translations
+            // console.warn(`Missing translation for key: "${key}"`);
         }
     });
 }
 
+// Helper: Get nested translation by dot notation key
 function getTranslation(key) {
     const keys = key.split('.');
     let value = translations[currentLanguage];
-    
     for (const k of keys) {
         value = value?.[k];
     }
-    
     return value;
 }
 
-// Enhanced Mobile menu functionality with scroll lock
+// Mobile menu toggle with body scroll lock
 function initializeMobileMenu() {
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileMenu = document.getElementById('mobileMenu');
-    
     if (!mobileMenuBtn || !mobileMenu) return;
-    
-    mobileMenuBtn.addEventListener('click', function() {
+
+    mobileMenuBtn.addEventListener('click', () => {
         const isOpen = mobileMenu.classList.toggle('show');
         mobileMenuBtn.classList.toggle('active');
-        
-        // Lock/unlock body scroll
         document.body.style.overflow = isOpen ? 'hidden' : '';
-        
-        // Close language dropdown when menu opens
         const langDropdown = document.getElementById('langDropdown');
-        if (langDropdown) {
-            langDropdown.classList.remove('show');
-        }
+        if (langDropdown) langDropdown.classList.remove('show');
     });
-    
-    // Close mobile menu when clicking on links
-    const mobileLinks = mobileMenu.querySelectorAll('a');
-    mobileLinks.forEach(link => {
-        link.addEventListener('click', function() {
+
+    mobileMenu.querySelectorAll('a').forEach(link =>
+        link.addEventListener('click', () => {
             mobileMenu.classList.remove('show');
             mobileMenuBtn.classList.remove('active');
             document.body.style.overflow = '';
-        });
-    });
+        })
+    );
 }
 
-// Navigation functionality
+// Smooth scrolling for internal navigation
 function initializeNavigation() {
-    const navLinks = document.querySelectorAll('a[href^="#"]');
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', e => {
             e.preventDefault();
-            const targetId = this.getAttribute('href').substring(1);
-            const targetSection = document.getElementById(targetId);
-            
-            if (targetSection) {
-                const headerHeight = document.querySelector('.header').offsetHeight;
-                const targetPosition = targetSection.offsetTop - headerHeight;
-                
-                window.scrollTo({
-                    top: targetPosition,
-                    behavior: 'smooth'
-                });
-            }
+            const targetId = link.getAttribute('href').substring(1);
+            const target = document.getElementById(targetId);
+            if (!target) return;
+            const headerHeight = document.querySelector('.header').offsetHeight || 0;
+            const pos = target.offsetTop - headerHeight;
+            window.scrollTo({ top: pos, behavior: 'smooth' });
         });
     });
 }
 
-// Enhanced Services functionality
+// Render services dynamically with data-translate keys
 function renderServices() {
     const servicesGrid = document.querySelector('.services-grid');
     if (!servicesGrid) return;
-    
     const services = translations[currentLanguage].services.items;
-    
-    // Generate service cards with proper dimensions for CLS prevention
-    servicesGrid.innerHTML = services.map(service => `
-        <div class="service-card">
-            <div class="service-image">
-                <img src="${service.image}" 
-                     alt="${service.title} — Travel Frontiers"
-                     loading="lazy" 
-                     class="clickable-service"
-                     width="600" 
-                     height="400">
-                <div class="service-overlay"></div>
-                <h3 class="service-title">${service.title}</h3>
-            </div>
-            <div class="service-content">
-                <p class="service-description">${service.description}</p>
-            </div>
+
+    servicesGrid.innerHTML = services.map((service, index) => `
+      <div class="service-card">
+        <div class="service-image">
+          <img src="${service.image}" alt="${service.title} — Travel Frontiers" loading="lazy" class="clickable-service" width="600" height="400" />
+          <div class="service-overlay"></div>
+          <h3 class="service-title" data-translate="services.items.${index}.title">${service.title}</h3>
         </div>
+        <div class="service-content">
+          <p class="service-description" data-translate="services.items.${index}.description">${service.description}</p>
+        </div>
+      </div>
     `).join('');
+
+    updateContent();
 }
 
-// Enhanced Lightbox functionality
+// Lightbox functionality
 function initializeLightbox() {
     const lightbox = document.getElementById('lightbox');
     const closeBtn = document.querySelector('.lightbox-close');
-    
     if (!lightbox || !closeBtn) return;
 
-    function openLightbox(imgSrc, imgAlt) {
-        const lightboxImg = lightbox.querySelector('img');
-        lightboxImg.src = imgSrc;
-        lightboxImg.alt = imgAlt || 'Imagem ampliada';
+    function open(imgSrc, imgAlt) {
+        const img = lightbox.querySelector('img');
+        img.src = imgSrc;
+        img.alt = imgAlt || 'Imagem ampliada';
         lightbox.classList.add('show');
         lightbox.setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden'; // Prevent background scroll
+        document.body.style.overflow = 'hidden';
     }
-
-    function closeLightbox() {
+    function close() {
         lightbox.classList.remove('show');
         lightbox.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = ''; // Restore scroll
+        document.body.style.overflow = '';
     }
 
-    // Close handlers
-    closeBtn.addEventListener('click', closeLightbox);
-    lightbox.addEventListener('click', (e) => {
-        if (e.target === lightbox) closeLightbox();
+    closeBtn.addEventListener('click', close);
+    lightbox.addEventListener('click', e => {
+        if (e.target === lightbox) close();
     });
-    
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeLightbox();
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') close();
     });
 
-    // Service image clicks
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', e => {
         if (e.target.matches('.clickable-service')) {
-            openLightbox(e.target.src, e.target.alt);
+            open(e.target.src, e.target.alt);
         }
     });
 }
 
-// Enhanced Testimonials functionality
+// Testimonials initialization and navigation
 function initializeTestimonials() {
     const prevBtn = document.getElementById('prevTestimonial');
     const nextBtn = document.getElementById('nextTestimonial');
-    
     if (!prevBtn || !nextBtn) return;
-    
-    prevBtn.addEventListener('click', function() {
-        currentTestimonialIndex = currentTestimonialIndex === 0 
-            ? translations[currentLanguage].testimonials.items.length - 1 
+
+    prevBtn.addEventListener('click', () => {
+        currentTestimonialIndex = (currentTestimonialIndex === 0)
+            ? translations[currentLanguage].testimonials.items.length - 1
             : currentTestimonialIndex - 1;
         updateTestimonials();
         restartTestimonialTimer();
     });
-    
-    nextBtn.addEventListener('click', function() {
+
+    nextBtn.addEventListener('click', () => {
         currentTestimonialIndex = (currentTestimonialIndex + 1) % translations[currentLanguage].testimonials.items.length;
         updateTestimonials();
         restartTestimonialTimer();
     });
-    
+
     createTestimonialDots();
     updateTestimonials();
 }
 
+// Create dots for testimonials navigation
 function createTestimonialDots() {
     const dotsContainer = document.getElementById('testimonialDots');
     if (!dotsContainer) return;
-    
     const testimonials = translations[currentLanguage].testimonials.items;
-    
-    dotsContainer.innerHTML = testimonials.map((_, index) => 
-        `<div class="dot ${index === currentTestimonialIndex ? 'active' : ''}" 
-              onclick="goToTestimonial(${index})" 
-              aria-label="Go to testimonial ${index + 1}"></div>`
+
+    dotsContainer.innerHTML = testimonials.map((_, i) =>
+        `<div class="dot ${i === currentTestimonialIndex ? 'active' : ''}" onclick="goToTestimonial(${i})" aria-label="Go to testimonial ${i + 1}"></div>`
     ).join('');
 }
 
+// Update testimonial content
 function updateTestimonials() {
     const testimonials = translations[currentLanguage].testimonials.items;
-    const currentTestimonial = testimonials[currentTestimonialIndex];
-    
-    const testimonialText = document.getElementById('currentTestimonial');
-    const authorName = document.getElementById('currentAuthor');
-    const authorLocation = document.getElementById('currentLocation');
-    
-    if (testimonialText) testimonialText.textContent = `"${currentTestimonial.text}"`;
-    if (authorName) authorName.textContent = currentTestimonial.author;
-    if (authorLocation) authorLocation.textContent = currentTestimonial.location;
-    
-    // Update navigation buttons
+    if (testimonials.length === 0) return;
+    const cur = testimonials[currentTestimonialIndex];
+
+    const textEl = document.getElementById('currentTestimonial');
+    const authorEl = document.getElementById('currentAuthor');
+    const locationEl = document.getElementById('currentLocation');
+
+    if (textEl) textEl.textContent = `"${cur.text}"`;
+    if (authorEl) authorEl.textContent = cur.author;
+    if (locationEl) locationEl.textContent = cur.location;
+
     const prevBtn = document.getElementById('prevTestimonial');
     const nextBtn = document.getElementById('nextTestimonial');
-    
+
     if (prevBtn) prevBtn.disabled = testimonials.length <= 1;
     if (nextBtn) nextBtn.disabled = testimonials.length <= 1;
-    
-    // Update dots
-    const dots = document.querySelectorAll('.dot');
-    dots.forEach((dot, index) => {
-        dot.classList.toggle('active', index === currentTestimonialIndex);
+
+    document.querySelectorAll('.dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === currentTestimonialIndex);
     });
 }
 
+// Direct go to testimonial by index
 function goToTestimonial(index) {
     currentTestimonialIndex = index;
     updateTestimonials();
     restartTestimonialTimer();
 }
 
-// Auto-advance testimonials with visibility management
+// Testimonial auto-advance timer
 function startTestimonialTimer() {
     if (testimonialTimer) return;
-    
     testimonialTimer = setInterval(() => {
         const nextBtn = document.getElementById('nextTestimonial');
         if (nextBtn && !nextBtn.disabled && translations[currentLanguage].testimonials.items.length > 1) {
@@ -688,167 +659,41 @@ function restartTestimonialTimer() {
     startTestimonialTimer();
 }
 
-// Stop/start timer based on page visibility
+// Pause/resume testimonial timer on page visibility change
 document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        stopTestimonialTimer();
-    } else {
-        startTestimonialTimer();
-    }
+    if (document.hidden) stopTestimonialTimer();
+    else startTestimonialTimer();
 });
 
-// Enhanced Carousel functionality
+// Carousel initialization
 function initializeCarousel() {
     const carousel = document.getElementById('travelCarousel');
     if (!carousel) return;
 
-    const imgs = [...carousel.querySelectorAll('.carousel-img')];
-    const prev = carousel.querySelector('.pc-prev');
-    const next = carousel.querySelector('.pc-next');
-    const capText = carousel.querySelector('.pc-text');
-    const counter = carousel.querySelector('.pc-counter');
+    const imgs = Array.from(carousel.querySelectorAll('.carousel-img'));
+    const prevBtn = carousel.querySelector('.pc-prev');
+    const nextBtn = carousel.querySelector('.pc-next');
+    const captionEl = carousel.querySelector('.pc-text');
+    const counterEl = carousel.querySelector('.pc-counter');
 
-    let i = 0;
+    let currentIndex = 0;
     let timer = null;
-    const DURATION = 3000;
+    const duration = 3000;
 
     function update() {
         imgs.forEach((img, idx) => {
-            const active = idx === i;
+            const active = idx === currentIndex;
             img.classList.toggle('active', active);
-            img.setAttribute('aria-hidden', active ? 'false' : 'true'); // Accessibility
+            img.setAttribute('aria-hidden', active ? 'false' : 'true');
         });
-        
-        const caption = imgs[i].dataset.caption || imgs[i].alt || '';
-        if (capText) capText.textContent = caption;
-        if (counter) counter.textContent = `${i + 1}/${imgs.length}`;
-        
-        // Update aria-labels based on current language
+        if(captionEl) captionEl.textContent = imgs[currentIndex].dataset.caption || imgs[currentIndex].alt || '';
+        if(counterEl) counterEl.textContent = `${currentIndex + 1}/${imgs.length}`;
+
         const lang = currentLanguage || 'pt';
-        if (prev) prev.setAttribute('aria-label', lang === 'pt' ? 'Anterior' : lang === 'fr' ? 'Précédent' : 'Previous');
-        if (next) next.setAttribute('aria-label', lang === 'pt' ? 'Seguinte' : lang === 'fr' ? 'Suivant' : 'Next');
+        if(prevBtn) prevBtn.setAttribute('aria-label', lang === 'pt' ? 'Anterior' : lang === 'fr' ? 'Précédent' : 'Previous');
+        if(nextBtn) nextBtn.setAttribute('aria-label', lang === 'pt' ? 'Seguinte' : lang === 'fr' ? 'Suivant' : 'Next');
     }
 
-    function nextSlide() { i = (i + 1) % imgs.length; update(); }
-    function prevSlide() { i = (i - 1 + imgs.length) % imgs.length; update(); }
-
-    function start() { stop(); timer = setInterval(nextSlide, DURATION); }
-    function stop() { if (timer) clearInterval(timer); }
-
-    if (next) next.addEventListener('click', () => { nextSlide(); start(); });
-    if (prev) prev.addEventListener('click', () => { prevSlide(); start(); });
-
-    carousel.addEventListener('mouseenter', stop);
-    carousel.addEventListener('mouseleave', start);
-
-    // Optimize first image for LCP
-    if (imgs[0]) {
-        imgs.loading = 'eager';
-        imgs.fetchPriority = 'high';
-    }
-
-    // Wrap images in links for new tab opening
-    imgs.forEach(img => {
-        if (!img.parentElement.matches('a')) {
-            const link = document.createElement('a');
-            link.href = img.src;
-            link.target = '_blank';
-            link.rel = 'noopener';
-            img.parentNode.insertBefore(link, img);
-            link.appendChild(img);
-        }
-    });
-
-    update();
-    start();
-}
-
-// Enhanced Quote form with tracking
-function openQuoteForm() {
-    // Track click event
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({ 
-        event: 'click_quote_cta', 
-        lang: currentLanguage || 'pt',
-        source: 'website_form'
-    });
-    
-    // Small delay for tracking, then open
-    setTimeout(() => {
-        window.open('https://www.icligo.com/forms/pt/contact-us/book-your-trip?utm_source=LHw8s4N4', '_blank', 'noopener');
-    }, 150);
-}
-
-// Contact tracking initialization
-function initializeContactTracking() {
-    // Track contact method clicks (WhatsApp, Email, Phone)
-    document.addEventListener('click', (e) => {
-        const link = e.target.closest('a[href^="https://wa.me/"], a[href^="mailto:"], a[href^="tel:"]');
-        if (!link) return;
-
-        window.dataLayer = window.dataLayer || [];
-        const href = link.href;
-        const type = href.startsWith('https://wa.me/') ? 'click_whatsapp' :
-                     href.startsWith('mailto:') ? 'click_email' : 'click_call';
-        
-        window.dataLayer.push({ 
-            event: type, 
-            href: href,
-            lang: currentLanguage || 'pt'
-        });
-    });
-}
-
-// Enhanced smooth scrolling with header adjustment
-function smoothScroll() {
-    window.addEventListener('scroll', function() {
-        const header = document.querySelector('.header');
-        if (!header) return;
-        
-        if (window.scrollY > 100) {
-            header.style.background = 'rgba(255, 255, 255, 0.95)';
-        } else {
-            header.style.background = 'rgba(255, 255, 255, 0.9)';
-        }
-    });
-}
-
-// Initialize smooth scroll
-smoothScroll();
-
-// Performance optimization: Intersection Observer for lazy loading
-function initializeIntersectionObserver() {
-    if ('IntersectionObserver' in window) {
-        const imageObserver = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = entry.target;
-                    if (img.dataset.src) {
-                        img.src = img.dataset.src;
-                        img.removeAttribute('data-src');
-                        observer.unobserve(img);
-                    }
-                }
-            });
-        });
-
-        // Observe images with data-src
-        document.querySelectorAll('img[data-src]').forEach(img => {
-            imageObserver.observe(img);
-        });
-    }
-}
-
-// Initialize intersection observer
-initializeIntersectionObserver();
-
-// Error handling
-window.addEventListener('error', function(e) {
-    console.warn('Travel Frontiers: Script error handled', e.error);
-    // Don't break the user experience for non-critical errors
-});
-
-// Prevent memory leaks on page unload
-window.addEventListener('beforeunload', function() {
-    stopTestimonialTimer();
-});
+    function nextSlide() {
+        currentIndex = (currentIndex + 1) % imgs.length;
+        update();
