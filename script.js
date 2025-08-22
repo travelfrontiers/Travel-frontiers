@@ -381,6 +381,71 @@ const translations = {
 let currentLanguage = 'pt';
 let currentTestimonialIndex = 0;
 
+// Função do Lightbox - ADICIONA ANTES DO DOMContentLoaded
+function initializeLightbox() {
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = lightbox ? lightbox.querySelector('img') : null;
+    const closeBtn = lightbox ? lightbox.querySelector('.lightbox-close') : null;
+
+    if (!lightbox || !lightboxImg || !closeBtn) {
+        console.log('Elementos do lightbox não encontrados');
+        return;
+    }
+
+    let scale = 1, translateX = 0, translateY = 0, startX = 0, startY = 0, dragging = false;
+
+    function closeLightbox() {
+        lightbox.style.display = 'none';
+        lightbox.classList.remove('show');
+        lightbox.setAttribute('aria-hidden', 'true');
+        lightboxImg.src = '';
+        scale = 1; translateX = 0; translateY = 0;
+        lightboxImg.style.transform = 'translate(0, 0) scale(1)';
+    }
+
+    // Eventos de fechar
+    closeBtn.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) closeLightbox();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox();
+    });
+
+    // Zoom
+    lightbox.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 0.15 : -0.15;
+        scale = Math.min(Math.max(0.5, scale + delta), 4);
+        lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    });
+
+    // Arrasto
+    lightboxImg.addEventListener('mousedown', (e) => {
+        if (scale > 1) {
+            dragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            lightboxImg.style.cursor = 'grabbing';
+        }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (dragging) {
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        dragging = false;
+        if (lightboxImg) lightboxImg.style.cursor = 'grab';
+    });
+
+    console.log('Lightbox inicializado com sucesso!');
+}
+
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
     initializeLanguageSelector();
