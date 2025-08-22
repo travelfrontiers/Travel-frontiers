@@ -585,7 +585,7 @@ function renderServices() {
         </div>
     `).join('');
 
-    // LIGHTBOX INTEGRADO DIRETAMENTE AQUI
+    // LIGHTBOX FUNCIONAL COM ZOOM E ARRASTO
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = lightbox ? lightbox.querySelector('img') : null;
     const closeBtn = lightbox ? lightbox.querySelector('.lightbox-close') : null;
@@ -593,21 +593,21 @@ function renderServices() {
     if (lightbox && lightboxImg && closeBtn) {
         let scale = 1, translateX = 0, translateY = 0, startX = 0, startY = 0, dragging = false;
 
+        // FUNÇÃO PARA FECHAR LIGHTBOX
         function closeLightbox() {
             lightbox.style.display = 'none';
             lightbox.classList.remove('show');
-            lightbox.setAttribute('aria-hidden', 'true');
             lightboxImg.src = '';
             scale = 1; translateX = 0; translateY = 0;
             lightboxImg.style.transform = 'translate(0, 0) scale(1)';
         }
 
-        // Eventos de fechar (remove antigos primeiro)
+        // EVENTOS DE FECHAR
         closeBtn.onclick = closeLightbox;
         lightbox.onclick = (e) => { if (e.target === lightbox) closeLightbox(); };
         document.onkeydown = (e) => { if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox(); };
 
-        // Zoom
+        // ZOOM COM SCROLL
         lightbox.onwheel = (e) => {
             e.preventDefault();
             const delta = e.deltaY < 0 ? 0.15 : -0.15;
@@ -615,7 +615,7 @@ function renderServices() {
             lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
         };
 
-        // Arrasto
+        // ARRASTO
         lightboxImg.onmousedown = (e) => {
             if (scale > 1) {
                 dragging = true;
@@ -636,18 +636,44 @@ function renderServices() {
             if (lightboxImg) lightboxImg.style.cursor = 'grab';
         };
 
-        // Adicionar clicks às imagens
-        document.querySelectorAll('.clickable-service').forEach(img => {
-            img.addEventListener('click', () => {
-                lightboxImg.src = img.src;
-                lightbox.style.display = 'flex';
-                lightbox.classList.add('show');
-                lightbox.setAttribute('aria-hidden', 'false');
-                console.log('Lightbox aberto:', img.src);
+        // ADICIONAR CLICKS ÀS IMAGENS COM CSS FORÇADO
+        document.querySelectorAll('.service-image').forEach((serviceImg, index) => {
+            serviceImg.addEventListener('click', function(e) {
+                const img = this.querySelector('img');
+                if (img) {
+                    // FORÇA CSS INLINE PARA GARANTIR QUE FUNCIONA
+                    lightbox.setAttribute('style', `
+                        position: fixed !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        width: 100vw !important;
+                        height: 100vh !important;
+                        background: rgba(0, 0, 0, 0.9) !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        z-index: 999999 !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                    `);
+                    
+                    lightboxImg.setAttribute('style', `
+                        max-width: 90vw !important;
+                        max-height: 90vh !important;
+                        object-fit: contain !important;
+                        border-radius: 8px !important;
+                        cursor: grab !important;
+                        transition: transform 0.2s ease !important;
+                        user-select: none !important;
+                    `);
+                    
+                    lightboxImg.src = img.src;
+                    lightbox.classList.add('show');
+                }
             });
         });
         
-        console.log('Lightbox configurado com sucesso!');
+        console.log('✅ Lightbox configurado com zoom e arrasto!');
     }
 }
 
