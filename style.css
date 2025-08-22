@@ -979,16 +979,13 @@ body {
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
   object-fit: contain;
   border-radius: 8px;
-  cursor: grab;
+  cursor: grab;              /* ← cursor normal no lightbox */
   transition: transform 0.2s ease;
   user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
 }
 
 .lightbox img:active {
-  cursor: grabbing;
+  cursor: grabbing;          /* ← cursor quando arrasta */
 }
 
 .lightbox-close {
@@ -1016,7 +1013,7 @@ body {
 
 /* Torna as imagens clicáveis visivelmente */
 .clickable-service {
-  cursor: pointer;
+  cursor: zoom-in;
   transition: transform 0.2s ease;
 }
 
