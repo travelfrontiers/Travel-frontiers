@@ -674,6 +674,11 @@ function renderServices() {
         });
         
         console.log('✅ Lightbox configurado com zoom e arrasto!');
+
+         // ADICIONAR LUPA NAS IMAGENS
+        document.querySelectorAll('.clickable-service').forEach(img => {
+            img.style.cursor = 'zoom-in';
+        });
     }
 }
 
