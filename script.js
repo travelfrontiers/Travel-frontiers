@@ -607,52 +607,75 @@ function openQuoteForm() {
     window.open('https://www.icligo.com/forms/pt/contact-us/book-your-trip?utm_source=LHw8s4N4', '_blank');
 }
 
-// Lightbox com suporte a zoom
+// Lightbox com zoom e arrasto
 document.addEventListener('DOMContentLoaded', () => {
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = lightbox ? lightbox.querySelector('img') : null;
     const closeBtn = document.querySelector('.lightbox-close');
 
-    let scale = 1;      // nível de zoom
-    let originX = 0;    // posição inicial X para arrasto
-    let originY = 0;    // posição inicial Y para arrasto
-    let translateX = 0; 
+    let scale = 1;
+    let translateX = 0;
     let translateY = 0;
+    let startX = 0;
+    let startY = 0;
     let dragging = false;
-
-    function resetZoom() {
-        scale = 1;
-        translateX = 0;
-        translateY = 0;
-        if (lightboxImg) {
-            lightboxImg.style.transform = 'translate(0, 0) scale(1)';
-        }
-    }
 
     if (lightbox && closeBtn && lightboxImg) {
         // Fechar lightbox
-        closeBtn.addEventListener('click', () => {
+        closeBtn.addEventListener('click', closeLightbox);
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) closeLightbox();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox();
+        });
+
+        // Zoom com scroll
+        lightboxImg.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? 0.1 : -0.1;
+            scale = Math.min(Math.max(0.5, scale + delta), 3);
+            updateTransform();
+        });
+
+        // Arrasto da imagem
+        lightboxImg.addEventListener('mousedown', (e) => {
+            if (scale > 1) {
+                dragging = true;
+                startX = e.clientX - translateX;
+                startY = e.clientY - translateY;
+                lightboxImg.style.cursor = 'grabbing';
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (dragging) {
+                translateX = e.clientX - startX;
+                translateY = e.clientY - startY;
+                updateTransform();
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            dragging = false;
+            if (lightboxImg) lightboxImg.style.cursor = 'grab';
+        });
+
+        function updateTransform() {
+            lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        }
+
+        function closeLightbox() {
             lightbox.classList.remove('show');
             lightbox.setAttribute('aria-hidden', 'true');
-            resetZoom();
-        });
-
-        lightbox.addEventListener('click', (e) => {
-            if (e.target === lightbox) {
-                lightbox.classList.remove('show');
-                lightbox.setAttribute('aria-hidden', 'true');
-                resetZoom();
-            }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                lightbox.classList.remove('show');
-                lightbox.setAttribute('aria-hidden', 'true');
-                resetZoom();
-            }
-        });
-
+            lightboxImg.src = '';
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateTransform();
+        }
+    }
+});
         // Zoom com scroll do rato
         lightbox.addEventListener('wheel', (e) => {
             e.preventDefault();
