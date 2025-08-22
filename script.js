@@ -511,7 +511,7 @@ function renderServices() {
         <div class="service-card">
             <div class="service-image">
                 <img src="${service.image}" alt="${service.title}" 
-                     loading="lazy" class="clickable-service" data-lightbox="true">
+                     loading="lazy" class="clickable-service">
                 <div class="service-overlay"></div>
                 <h3 class="service-title">${service.title}</h3>
             </div>
@@ -521,166 +521,19 @@ function renderServices() {
         </div>
     `).join('');
 
-    // Reinicializa lightbox após renderizar serviços
-    setTimeout(() => {
-        initializeLightbox();
-    }, 100);
-}
-
-// NOVA FUNÇÃO - Lightbox simples que funciona
-function initializeLightbox() {
-    const lightbox = document.getElementById('lightbox');
-    const lightboxImg = lightbox ? lightbox.querySelector('img') : null;
-    const closeBtn = lightbox ? lightbox.querySelector('.lightbox-close') : null;
-
-    if (!lightbox || !lightboxImg || !closeBtn) {
-        console.error('Elementos do lightbox não encontrados');
-        return;
-    }
-
-    let scale = 1;
-    let translateX = 0;
-    let translateY = 0;
-    let startX = 0;
-    let startY = 0;
-    let dragging = false;
-
-    // FUNÇÃO PARA ABRIR LIGHTBOX
-    function openLightbox(imageSrc, imageAlt = '') {
-        lightboxImg.src = imageSrc;
-        lightboxImg.alt = imageAlt;
-        lightbox.style.display = 'flex';
-        lightbox.classList.add('show');
-        lightbox.setAttribute('aria-hidden', 'false');
-        
-        // Reset zoom
-        scale = 1;
-        translateX = 0;
-        translateY = 0;
-        updateTransform();
-        
-        console.log('Lightbox aberto com:', imageSrc);
-    }
-
-    // FUNÇÃO PARA FECHAR LIGHTBOX
-    function closeLightbox() {
-        lightbox.style.display = 'none';
-        lightbox.classList.remove('show');
-        lightbox.setAttribute('aria-hidden', 'true');
-        lightboxImg.src = '';
-        scale = 1;
-        translateX = 0;
-        translateY = 0;
-        updateTransform();
-        console.log('Lightbox fechado');
-    }
-
-    // FUNÇÃO PARA ATUALIZAR TRANSFORM
-    function updateTransform() {
-        if (lightboxImg) {
-            lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-        }
-    }
-
-    // ADICIONAR CLICKS ÀS IMAGENS (REMOVE LISTENERS ANTIGOS)
-    function addClickToImages() {
-        // Remove listeners antigos
-        document.querySelectorAll('.clickable-service').forEach(img => {
-            img.replaceWith(img.cloneNode(true));
+    // Add click events for lightbox - SIMPLES E DIRETO
+    document.querySelectorAll('.clickable-service').forEach(img => {
+        img.addEventListener('click', () => {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = lightbox.querySelector('img');
+            if (lightbox && lightboxImg) {
+                lightboxImg.src = img.src;
+                lightbox.style.display = 'flex';
+                lightbox.classList.add('show');
+                lightbox.setAttribute('aria-hidden', 'false');
+            }
         });
-
-        // Adiciona novos listeners
-        document.querySelectorAll('.clickable-service').forEach(img => {
-            img.addEventListener('click', function(e) {
-                e.preventDefault();
-                console.log('Clique na imagem:', this.src);
-                openLightbox(this.src, this.alt);
-            });
-        });
-
-        console.log('Listeners adicionados a', document.querySelectorAll('.clickable-service').length, 'imagens');
-    }
-
-    // EVENTOS DE FECHAR
-    closeBtn.addEventListener('click', closeLightbox);
-    lightbox.addEventListener('click', function(e) {
-        if (e.target === lightbox) closeLightbox();
     });
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox();
-    });
-
-    // ZOOM COM SCROLL
-    lightbox.addEventListener('wheel', function(e) {
-        e.preventDefault();
-        const delta = e.deltaY < 0 ? 0.15 : -0.15;
-        scale = Math.min(Math.max(0.5, scale + delta), 4);
-        updateTransform();
-    });
-
-    // ARRASTO
-    lightboxImg.addEventListener('mousedown', function(e) {
-        if (scale > 1) {
-            dragging = true;
-            startX = e.clientX - translateX;
-            startY = e.clientY - translateY;
-            lightboxImg.style.cursor = 'grabbing';
-            e.preventDefault();
-        }
-    });
-
-    document.addEventListener('mousemove', function(e) {
-        if (dragging) {
-            translateX = e.clientX - startX;
-            translateY = e.clientY - startY;
-            updateTransform();
-        }
-    });
-
-    document.addEventListener('mouseup', function() {
-        dragging = false;
-        if (lightboxImg) {
-            lightboxImg.style.cursor = scale > 1 ? 'grab' : 'default';
-        }
-    });
-
-    // ADICIONAR CLICKS INICIALMENTE
-    addClickToImages();
-
-    // TORNAR FUNÇÃO GLOBAL PARA USAR EM renderServices
-    window.addClickToImages = addClickToImages;
-}
-    document.addEventListener('mousemove', function(e) {
-        if (dragging) {
-            translateX = e.clientX - startX;
-            translateY = e.clientY - startY;
-            updateTransform();
-        }
-    });
-
-    document.addEventListener('mouseup', function() {
-        dragging = false;
-        if (lightboxImg) {
-            lightboxImg.style.cursor = scale > 1 ? 'grab' : 'default';
-        }
-    });
-
-    function updateTransform() {
-        if (lightboxImg) {
-            lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-        }
-    }
-
-    function closeLightbox() {
-        lightbox.style.display = 'none';
-        lightbox.classList.remove('show');
-        lightbox.setAttribute('aria-hidden', 'true');
-        lightboxImg.src = '';
-        scale = 1;
-        translateX = 0;
-        translateY = 0;
-        updateTransform();
-    }
 }
 
 // Testimonials functionality (mantém todas as funções iguais)
