@@ -527,14 +527,14 @@ function renderServices() {
     }, 100);
 }
 
-// NOVA FUNÇÃO - Lightbox com zoom e arrasto
+// NOVA FUNÇÃO - Lightbox simples que funciona
 function initializeLightbox() {
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = lightbox ? lightbox.querySelector('img') : null;
     const closeBtn = lightbox ? lightbox.querySelector('.lightbox-close') : null;
 
     if (!lightbox || !lightboxImg || !closeBtn) {
-        console.log('Lightbox elements not found');
+        console.error('Elementos do lightbox não encontrados');
         return;
     }
 
@@ -545,57 +545,80 @@ function initializeLightbox() {
     let startY = 0;
     let dragging = false;
 
-    // Remove event listeners existentes para evitar duplicados
-    const images = document.querySelectorAll('.clickable-service');
-    images.forEach(img => {
-        const newImg = img.cloneNode(true);
-        img.parentNode.replaceChild(newImg, img);
-    });
+    // FUNÇÃO PARA ABRIR LIGHTBOX
+    function openLightbox(imageSrc, imageAlt = '') {
+        lightboxImg.src = imageSrc;
+        lightboxImg.alt = imageAlt;
+        lightbox.style.display = 'flex';
+        lightbox.classList.add('show');
+        lightbox.setAttribute('aria-hidden', 'false');
+        
+        // Reset zoom
+        scale = 1;
+        translateX = 0;
+        translateY = 0;
+        updateTransform();
+        
+        console.log('Lightbox aberto com:', imageSrc);
+    }
 
-    // Adiciona event listeners às imagens
-    document.querySelectorAll('.clickable-service').forEach(img => {
-        img.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Image clicked:', this.src);
-            
-            lightboxImg.src = this.src;
-            lightboxImg.alt = this.alt;
-            lightbox.style.display = 'flex';
-            lightbox.classList.add('show');
-            lightbox.setAttribute('aria-hidden', 'false');
-            
-            // Reset zoom
-            scale = 1;
-            translateX = 0;
-            translateY = 0;
-            updateTransform();
+    // FUNÇÃO PARA FECHAR LIGHTBOX
+    function closeLightbox() {
+        lightbox.style.display = 'none';
+        lightbox.classList.remove('show');
+        lightbox.setAttribute('aria-hidden', 'true');
+        lightboxImg.src = '';
+        scale = 1;
+        translateX = 0;
+        translateY = 0;
+        updateTransform();
+        console.log('Lightbox fechado');
+    }
+
+    // FUNÇÃO PARA ATUALIZAR TRANSFORM
+    function updateTransform() {
+        if (lightboxImg) {
+            lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        }
+    }
+
+    // ADICIONAR CLICKS ÀS IMAGENS (REMOVE LISTENERS ANTIGOS)
+    function addClickToImages() {
+        // Remove listeners antigos
+        document.querySelectorAll('.clickable-service').forEach(img => {
+            img.replaceWith(img.cloneNode(true));
         });
-    });
 
-    // Fechar lightbox
+        // Adiciona novos listeners
+        document.querySelectorAll('.clickable-service').forEach(img => {
+            img.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Clique na imagem:', this.src);
+                openLightbox(this.src, this.alt);
+            });
+        });
+
+        console.log('Listeners adicionados a', document.querySelectorAll('.clickable-service').length, 'imagens');
+    }
+
+    // EVENTOS DE FECHAR
     closeBtn.addEventListener('click', closeLightbox);
-    
     lightbox.addEventListener('click', function(e) {
-        if (e.target === lightbox) {
-            closeLightbox();
-        }
+        if (e.target === lightbox) closeLightbox();
     });
-
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && lightbox.classList.contains('show')) {
-            closeLightbox();
-        }
+        if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox();
     });
 
-    // Zoom com scroll
-    lightboxImg.addEventListener('wheel', function(e) {
+    // ZOOM COM SCROLL
+    lightbox.addEventListener('wheel', function(e) {
         e.preventDefault();
         const delta = e.deltaY < 0 ? 0.15 : -0.15;
         scale = Math.min(Math.max(0.5, scale + delta), 4);
         updateTransform();
     });
 
-    // Arrasto
+    // ARRASTO
     lightboxImg.addEventListener('mousedown', function(e) {
         if (scale > 1) {
             dragging = true;
@@ -606,6 +629,27 @@ function initializeLightbox() {
         }
     });
 
+    document.addEventListener('mousemove', function(e) {
+        if (dragging) {
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateTransform();
+        }
+    });
+
+    document.addEventListener('mouseup', function() {
+        dragging = false;
+        if (lightboxImg) {
+            lightboxImg.style.cursor = scale > 1 ? 'grab' : 'default';
+        }
+    });
+
+    // ADICIONAR CLICKS INICIALMENTE
+    addClickToImages();
+
+    // TORNAR FUNÇÃO GLOBAL PARA USAR EM renderServices
+    window.addClickToImages = addClickToImages;
+}
     document.addEventListener('mousemove', function(e) {
         if (dragging) {
             translateX = e.clientX - startX;
