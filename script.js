@@ -389,9 +389,10 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeTestimonials();
     renderServices();
     updateContent();
+    initializeLightbox(); // NOVA FUNÇÃO
 });
 
-// Language functionality
+// Language functionality (mantém todas as tuas funções de língua iguais)
 function initializeLanguageSelector() {
     const langButton = document.getElementById('currentLang');
     const langDropdown = document.getElementById('langDropdown');
@@ -404,7 +405,6 @@ function initializeLanguageSelector() {
         });
     }
     
-    // Close dropdown when clicking outside
     document.addEventListener('click', function(event) {
         if (langButton && langDropdown && !langButton.contains(event.target) && !langDropdown.contains(event.target)) {
             langDropdown.classList.remove('show');
@@ -428,6 +428,11 @@ function changeLanguage(lang) {
     updateContent();
     renderServices();
     updateTestimonials();
+    
+    // Reinicializa lightbox após mudança de língua
+    setTimeout(() => {
+        initializeLightbox();
+    }, 100);
 }
 
 function updateContent() {
@@ -452,7 +457,7 @@ function getTranslation(key) {
     return value;
 }
 
-// Mobile menu functionality
+// Mobile menu functionality (mantém igual)
 function initializeMobileMenu() {
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileMenu = document.getElementById('mobileMenu');
@@ -463,7 +468,6 @@ function initializeMobileMenu() {
             mobileMenuBtn.classList.toggle('active');
         });
         
-        // Close mobile menu when clicking on links
         const mobileLinks = mobileMenu.querySelectorAll('a');
         mobileLinks.forEach(link => {
             link.addEventListener('click', function() {
@@ -474,7 +478,7 @@ function initializeMobileMenu() {
     }
 }
 
-// Navigation functionality
+// Navigation functionality (mantém igual)
 function initializeNavigation() {
     const navLinks = document.querySelectorAll('a[href^="#"]');
     navLinks.forEach(link => {
@@ -507,7 +511,7 @@ function renderServices() {
         <div class="service-card">
             <div class="service-image">
                 <img src="${service.image}" alt="${service.title}" 
-                     loading="lazy" class="clickable-service">
+                     loading="lazy" class="clickable-service" data-lightbox="true">
                 <div class="service-overlay"></div>
                 <h3 class="service-title">${service.title}</h3>
             </div>
@@ -517,23 +521,125 @@ function renderServices() {
         </div>
     `).join('');
 
-    // Add click events for lightbox
-    document.querySelectorAll('.clickable-service').forEach(img => {
-        img.addEventListener('click', () => {
-            const lightbox = document.getElementById('lightbox');
-            if (lightbox) {
-                const lightboxImg = lightbox.querySelector('img');
-                if (lightboxImg) {
-                    lightboxImg.src = img.src;
-                    lightbox.classList.add('show');
-                    lightbox.setAttribute('aria-hidden', 'false');
-                }
-            }
-        });
-    });
+    // Reinicializa lightbox após renderizar serviços
+    setTimeout(() => {
+        initializeLightbox();
+    }, 100);
 }
 
-// Testimonials functionality
+// NOVA FUNÇÃO - Lightbox com zoom e arrasto
+function initializeLightbox() {
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = lightbox ? lightbox.querySelector('img') : null;
+    const closeBtn = lightbox ? lightbox.querySelector('.lightbox-close') : null;
+
+    if (!lightbox || !lightboxImg || !closeBtn) {
+        console.log('Lightbox elements not found');
+        return;
+    }
+
+    let scale = 1;
+    let translateX = 0;
+    let translateY = 0;
+    let startX = 0;
+    let startY = 0;
+    let dragging = false;
+
+    // Remove event listeners existentes para evitar duplicados
+    const images = document.querySelectorAll('.clickable-service');
+    images.forEach(img => {
+        const newImg = img.cloneNode(true);
+        img.parentNode.replaceChild(newImg, img);
+    });
+
+    // Adiciona event listeners às imagens
+    document.querySelectorAll('.clickable-service').forEach(img => {
+        img.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Image clicked:', this.src);
+            
+            lightboxImg.src = this.src;
+            lightboxImg.alt = this.alt;
+            lightbox.style.display = 'flex';
+            lightbox.classList.add('show');
+            lightbox.setAttribute('aria-hidden', 'false');
+            
+            // Reset zoom
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateTransform();
+        });
+    });
+
+    // Fechar lightbox
+    closeBtn.addEventListener('click', closeLightbox);
+    
+    lightbox.addEventListener('click', function(e) {
+        if (e.target === lightbox) {
+            closeLightbox();
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && lightbox.classList.contains('show')) {
+            closeLightbox();
+        }
+    });
+
+    // Zoom com scroll
+    lightboxImg.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 0.15 : -0.15;
+        scale = Math.min(Math.max(0.5, scale + delta), 4);
+        updateTransform();
+    });
+
+    // Arrasto
+    lightboxImg.addEventListener('mousedown', function(e) {
+        if (scale > 1) {
+            dragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            lightboxImg.style.cursor = 'grabbing';
+            e.preventDefault();
+        }
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (dragging) {
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateTransform();
+        }
+    });
+
+    document.addEventListener('mouseup', function() {
+        dragging = false;
+        if (lightboxImg) {
+            lightboxImg.style.cursor = scale > 1 ? 'grab' : 'default';
+        }
+    });
+
+    function updateTransform() {
+        if (lightboxImg) {
+            lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        }
+    }
+
+    function closeLightbox() {
+        lightbox.style.display = 'none';
+        lightbox.classList.remove('show');
+        lightbox.setAttribute('aria-hidden', 'true');
+        lightboxImg.src = '';
+        scale = 1;
+        translateX = 0;
+        translateY = 0;
+        updateTransform();
+    }
+}
+
+// Testimonials functionality (mantém todas as funções iguais)
 function initializeTestimonials() {
     const prevBtn = document.getElementById('prevTestimonial');
     const nextBtn = document.getElementById('nextTestimonial');
@@ -583,14 +689,12 @@ function updateTestimonials() {
     if (testimonialAuthor) testimonialAuthor.textContent = currentTestimonial.author;
     if (testimonialLocation) testimonialLocation.textContent = currentTestimonial.location;
     
-    // Update navigation buttons
     const prevBtn = document.getElementById('prevTestimonial');
     const nextBtn = document.getElementById('nextTestimonial');
     
     if (prevBtn) prevBtn.disabled = testimonials.length <= 1;
     if (nextBtn) nextBtn.disabled = testimonials.length <= 1;
     
-    // Update dots
     const dots = document.querySelectorAll('.dot');
     dots.forEach((dot, index) => {
         dot.classList.toggle('active', index === currentTestimonialIndex);
@@ -606,109 +710,6 @@ function goToTestimonial(index) {
 function openQuoteForm() {
     window.open('https://www.icligo.com/forms/pt/contact-us/book-your-trip?utm_source=LHw8s4N4', '_blank');
 }
-
-// Lightbox com zoom e arrasto
-document.addEventListener('DOMContentLoaded', () => {
-    const lightbox = document.getElementById('lightbox');
-    const lightboxImg = lightbox ? lightbox.querySelector('img') : null;
-    const closeBtn = document.querySelector('.lightbox-close');
-
-    let scale = 1;
-    let translateX = 0;
-    let translateY = 0;
-    let startX = 0;
-    let startY = 0;
-    let dragging = false;
-
-    if (lightbox && closeBtn && lightboxImg) {
-        // Fechar lightbox
-        closeBtn.addEventListener('click', closeLightbox);
-        lightbox.addEventListener('click', (e) => {
-            if (e.target === lightbox) closeLightbox();
-        });
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox();
-        });
-
-        // Zoom com scroll
-        lightboxImg.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const delta = e.deltaY < 0 ? 0.1 : -0.1;
-            scale = Math.min(Math.max(0.5, scale + delta), 3);
-            updateTransform();
-        });
-
-        // Arrasto da imagem
-        lightboxImg.addEventListener('mousedown', (e) => {
-            if (scale > 1) {
-                dragging = true;
-                startX = e.clientX - translateX;
-                startY = e.clientY - translateY;
-                lightboxImg.style.cursor = 'grabbing';
-            }
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (dragging) {
-                translateX = e.clientX - startX;
-                translateY = e.clientY - startY;
-                updateTransform();
-            }
-        });
-
-        document.addEventListener('mouseup', () => {
-            dragging = false;
-            if (lightboxImg) lightboxImg.style.cursor = 'grab';
-        });
-
-        function updateTransform() {
-            lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-        }
-
-        function closeLightbox() {
-            lightbox.classList.remove('show');
-            lightbox.setAttribute('aria-hidden', 'true');
-            lightboxImg.src = '';
-            scale = 1;
-            translateX = 0;
-            translateY = 0;
-            updateTransform();
-        }
-    }
-});
-        // Zoom com scroll do rato
-        lightbox.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? -0.1 : 0.1;
-            scale = Math.min(Math.max(0.5, scale + delta), 3); // limite entre 0.5x e 3x
-            lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-        });
-
-        // Arrastar a imagem se estiver com zoom
-        lightboxImg.addEventListener('mousedown', (e) => {
-            if (scale > 1) {
-                dragging = true;
-                originX = e.clientX - translateX;
-                originY = e.clientY - translateY;
-                lightboxImg.style.cursor = 'grabbing';
-            }
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (dragging) {
-                translateX = e.clientX - originX;
-                translateY = e.clientY - originY;
-                lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-            }
-        });
-
-        document.addEventListener('mouseup', () => {
-            dragging = false;
-            if (lightboxImg) lightboxImg.style.cursor = 'grab';
-        });
-    }
-});
-
 
 // Smooth scrolling enhancement
 function smoothScroll() {
@@ -733,7 +734,7 @@ setInterval(() => {
     }
 }, 5000);
 
-// Initialize carousel for photos
+// Initialize carousel for photos (mantém igual)
 document.addEventListener('DOMContentLoaded', () => {
     const carousel = document.getElementById('travelCarousel');
     if (!carousel) return;
@@ -783,7 +784,6 @@ document.addEventListener('DOMContentLoaded', () => {
     update();
     start();
 
-    // Make images clickable to open in new tab
     imgs.forEach(img => {
         const link = document.createElement('a');
         link.href = img.src;
