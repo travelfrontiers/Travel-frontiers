@@ -954,29 +954,59 @@ body {
     }
 }
 
-/* Lightbox */
+/* Lightbox com zoom e arrasto */
 .lightbox {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   display: none;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.85);
+  background: rgba(0, 0, 0, 0.9);
   z-index: 9999;
+  overflow: hidden;
 }
+
+.lightbox.show { 
+  display: flex; 
+}
+
 .lightbox img {
-  max-width: 90%;
-  max-height: 90%;
-  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  max-width: 90vw;
+  max-height: 90vh;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  object-fit: contain;
+  border-radius: 8px;
+  cursor: grab;
+  transition: transform 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
-.lightbox.show { display: flex; }
+
+.lightbox img:active {
+  cursor: grabbing;
+}
+
 .lightbox-close {
-  color: #fff;
-  font-size: 32px;
   position: absolute;
-  top: 20px;
-  right: 30px;
+  top: 25px;
+  right: 40px;
+  color: #fff;
+  font-size: 3rem;
+  background: transparent;
+  border: none;
   cursor: pointer;
+  z-index: 10000;
+  line-height: 1;
+  transition: opacity 0.2s ease;
+}
+
+.lightbox-close:hover {
+  opacity: 0.8;
 }
 
 /* Deixa clicar através do overlay do card */
@@ -986,13 +1016,26 @@ body {
 
 /* Torna as imagens clicáveis visivelmente */
 .clickable-service {
-  cursor: zoom-in;
+  cursor: pointer;
+  transition: transform 0.2s ease;
 }
 
-/* Garante que a imagem no lightbox mantém proporção */
-.lightbox img {
-  object-fit: contain;
-  border-radius: 8px; /* opcional - cantos arredondados */
+.clickable-service:hover {
+  transform: scale(1.05);
+}
+
+/* Responsive lightbox */
+@media (max-width: 768px) {
+  .lightbox img {
+    max-width: 95vw;
+    max-height: 85vh;
+  }
+  
+  .lightbox-close {
+    top: 15px;
+    right: 20px;
+    font-size: 2.5rem;
+  }
 }
 
 /* Footer Bottom */
