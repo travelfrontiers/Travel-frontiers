@@ -954,71 +954,49 @@ body {
     }
 }
 
-/* Lightbox com zoom e arrasto */
+/* Lightbox - VERSÃO CORRIGIDA */
 .lightbox {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.9);
-  z-index: 9999;
-  overflow: hidden;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.9) !important;
+  display: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 999999 !important;
 }
 
-.lightbox.show { 
-  display: flex; 
+.lightbox.show {
+  display: flex !important;
 }
 
 .lightbox img {
-  max-width: 90vw;
-  max-height: 90vh;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-  object-fit: contain;
-  border-radius: 8px;
-  cursor: grab;              /* ← cursor normal no lightbox */
-  transition: transform 0.2s ease;
-  user-select: none;
-}
-
-.lightbox img:active {
-  cursor: grabbing;          /* ← cursor quando arrasta */
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+  object-fit: contain !important;
+  cursor: grab !important;
+  transition: transform 0.2s ease !important;
+  user-select: none !important;
+  border-radius: 8px !important;
 }
 
 .lightbox-close {
-  position: absolute;
-  top: 25px;
-  right: 40px;
-  color: #fff;
-  font-size: 3rem;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  z-index: 10000;
-  line-height: 1;
-  transition: opacity 0.2s ease;
+  position: absolute !important;
+  top: 25px !important;
+  right: 40px !important;
+  color: white !important;
+  font-size: 3rem !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  z-index: 1000000 !important;
+  line-height: 1 !important;
 }
 
-.lightbox-close:hover {
-  opacity: 0.8;
-}
-
-/* Deixa clicar através do overlay do card */
-.service-overlay { 
-  pointer-events: none;
-}
-
-/* Torna as imagens clicáveis visivelmente */
 .clickable-service {
-  cursor: zoom-in;
-  transition: transform 0.2s ease;
-}
-
-.clickable-service:hover {
-  transform: scale(1.05);
+  cursor: zoom-in !important;
 }
 
 /* Responsive lightbox */
