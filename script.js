@@ -454,7 +454,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeTestimonials();
     renderServices();
     updateContent();
-    initializeLightbox(); // NOVA FUNÇÃO
 });
 
 // Language functionality (mantém todas as tuas funções de língua iguais)
@@ -586,19 +585,70 @@ function renderServices() {
         </div>
     `).join('');
 
-    // Add click events for lightbox - SIMPLES E DIRETO
-    document.querySelectorAll('.clickable-service').forEach(img => {
-        img.addEventListener('click', () => {
-            const lightbox = document.getElementById('lightbox');
-            const lightboxImg = lightbox.querySelector('img');
-            if (lightbox && lightboxImg) {
+    // LIGHTBOX INTEGRADO DIRETAMENTE AQUI
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = lightbox ? lightbox.querySelector('img') : null;
+    const closeBtn = lightbox ? lightbox.querySelector('.lightbox-close') : null;
+
+    if (lightbox && lightboxImg && closeBtn) {
+        let scale = 1, translateX = 0, translateY = 0, startX = 0, startY = 0, dragging = false;
+
+        function closeLightbox() {
+            lightbox.style.display = 'none';
+            lightbox.classList.remove('show');
+            lightbox.setAttribute('aria-hidden', 'true');
+            lightboxImg.src = '';
+            scale = 1; translateX = 0; translateY = 0;
+            lightboxImg.style.transform = 'translate(0, 0) scale(1)';
+        }
+
+        // Eventos de fechar (remove antigos primeiro)
+        closeBtn.onclick = closeLightbox;
+        lightbox.onclick = (e) => { if (e.target === lightbox) closeLightbox(); };
+        document.onkeydown = (e) => { if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox(); };
+
+        // Zoom
+        lightbox.onwheel = (e) => {
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? 0.15 : -0.15;
+            scale = Math.min(Math.max(0.5, scale + delta), 4);
+            lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        };
+
+        // Arrasto
+        lightboxImg.onmousedown = (e) => {
+            if (scale > 1) {
+                dragging = true;
+                startX = e.clientX - translateX;
+                startY = e.clientY - translateY;
+                lightboxImg.style.cursor = 'grabbing';
+            }
+        };
+        document.onmousemove = (e) => {
+            if (dragging) {
+                translateX = e.clientX - startX;
+                translateY = e.clientY - startY;
+                lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            }
+        };
+        document.onmouseup = () => {
+            dragging = false;
+            if (lightboxImg) lightboxImg.style.cursor = 'grab';
+        };
+
+        // Adicionar clicks às imagens
+        document.querySelectorAll('.clickable-service').forEach(img => {
+            img.addEventListener('click', () => {
                 lightboxImg.src = img.src;
                 lightbox.style.display = 'flex';
                 lightbox.classList.add('show');
                 lightbox.setAttribute('aria-hidden', 'false');
-            }
+                console.log('Lightbox aberto:', img.src);
+            });
         });
-    });
+        
+        console.log('Lightbox configurado com sucesso!');
+    }
 }
 
 // Testimonials functionality (mantém todas as funções iguais)
