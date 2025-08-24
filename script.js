@@ -41,27 +41,27 @@ const translations = {
                 {
                     title: 'Planeamento Personalizado',
                     description: 'Criamos roteiros únicos baseados nos seus interesses e orçamento, com todos os detalhes cuidadosamente planeados.',
-                    image: 'https://images.unsplash.com/photo-1718302661620-0404ab653acb?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85'
+                    image: 'img/China.jpg'
                 },
                 {
                     title: 'Roteiros de Grupo',
                     description: 'Organize viagens em grupo com amigos e família, com atividades especiais e experiências memoráveis.',
-                    image: 'img/IMG_7336.jpeg'
+                    image: 'img/Japao.jpg'
                 },
                 {
                     title: 'Pacotes Completos',
                     description: 'Desde voos a alojamento, atividades e transfers - tudo incluído para uma viagem sem preocupações.',
-                    image: 'https://images.unsplash.com/photo-1554366347-897a5113f6ab?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85'
+                    image: 'img/Veneza.jpg'
                 },
                 {
                     title: 'Cruzeiros',
                     description: 'Experiências marítimas exclusivas com os melhores roteiros de cruzeiros pelo mundo, adaptados ao seu perfil.',
-                    image: 'https://images.unsplash.com/photo-1594661745200-810105bcf054?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85'
+                    image: 'img/Fiordes.jpg'
                 },
                 {
                     title: 'Consultoria Especializada',
                     description: 'Aconselhamento profissional baseado em experiência real de viagem em mais de 40 países.',
-                    image: 'img/IMG_8984.jpeg'
+                    image: 'img/Marrocos.jpg'
                 }
             ]
         },
