@@ -504,42 +504,13 @@ document.addEventListener('DOMContentLoaded', function() {
     renderServices();
     updateContent();
     
-    // Setup lazy loading with IntersectionObserver for better performance
-    if ('IntersectionObserver' in window) {
-        const imageObserver = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = entry.target;
-                    if (img.dataset.src) {
-                        img.src = img.dataset.src;
-                        img.removeAttribute('data-src');
-                        observer.unobserve(img);
-                    }
-                }
-            });
-        }, {
-            rootMargin: '50px 0px',
-            threshold: 0.01
-        });
-
-        document.querySelectorAll('img[data-src]').forEach(img => {
-            imageObserver.observe(img);
-        });
-    }
-
-    // Setup native lazy loading as fallback
+    // Setup lazy loading for images
     if ('loading' in HTMLImageElement.prototype) {
         document.querySelectorAll('img').forEach(img => {
             if (!img.hasAttribute('loading')) {
                 img.loading = 'lazy';
             }
             img.decoding = 'async';
-            // Add srcset for responsive images
-            if (img.classList.contains('responsive')) {
-                const src = img.src;
-                img.srcset = `${src}?w=300 300w, ${src}?w=600 600w, ${src}?w=900 900w`;
-                img.sizes = '(max-width: 300px) 300px, (max-width: 600px) 600px, 900px';
-            }
         });
     }
     
@@ -620,75 +591,18 @@ function initializeMobileMenu() {
     const mobileMenu = document.getElementById('mobileMenu');
     
     if (mobileMenuBtn && mobileMenu) {
-        // Use passive event listener for better mobile performance
         mobileMenuBtn.addEventListener('click', function() {
-            // Add will-change to optimize animations
-            mobileMenu.style.willChange = 'transform, opacity';
             mobileMenu.classList.toggle('show');
             mobileMenuBtn.classList.toggle('active');
-            
-            // Remove will-change after animation
-            setTimeout(() => {
-                mobileMenu.style.willChange = 'auto';
-            }, 300);
-        }, { passive: true });
-        
-        // Optimize mobile link clicks
-        const mobileLinks = mobileMenu.querySelectorAll('a');
-        const handleLinkClick = (e) => {
-            const link = e.currentTarget;
-            
-            // Prevent default only if it's a hash link
-            if (link.getAttribute('href').startsWith('#')) {
-                e.preventDefault();
-                
-                // Smooth scroll to section
-                const targetId = link.getAttribute('href').substring(1);
-                const targetSection = document.getElementById(targetId);
-                
-                if (targetSection) {
-                    const headerHeight = document.querySelector('.header')?.offsetHeight || 0;
-                    const targetPosition = targetSection.offsetTop - headerHeight;
-                    
-                    window.scrollTo({
-                        top: targetPosition,
-                        behavior: 'smooth'
-                    });
-                }
-            }
-            
-            // Close menu with animation optimization
-            mobileMenu.style.willChange = 'transform, opacity';
-            mobileMenu.classList.remove('show');
-            mobileMenuBtn.classList.remove('active');
-            
-            setTimeout(() => {
-                mobileMenu.style.willChange = 'auto';
-            }, 300);
-        };
-        
-        mobileLinks.forEach(link => {
-            link.addEventListener('click', handleLinkClick, { passive: false });
         });
         
-        // Add touch event optimization
-        let touchStartY = 0;
-        mobileMenu.addEventListener('touchstart', (e) => {
-            touchStartY = e.touches[0].clientY;
-        }, { passive: true });
-        
-        mobileMenu.addEventListener('touchmove', (e) => {
-            const touchY = e.touches[0].clientY;
-            const scrollTop = mobileMenu.scrollTop;
-            const scrollHeight = mobileMenu.scrollHeight;
-            const clientHeight = mobileMenu.clientHeight;
-            
-            // Prevent overscroll only when needed
-            if ((scrollTop <= 0 && touchY > touchStartY) || 
-                (scrollTop + clientHeight >= scrollHeight && touchY < touchStartY)) {
-                e.preventDefault();
-            }
-        }, { passive: false });
+        const mobileLinks = mobileMenu.querySelectorAll('a');
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                mobileMenu.classList.remove('show');
+                mobileMenuBtn.classList.remove('active');
+            });
+        });
     }
 }
 
@@ -721,44 +635,19 @@ function renderServices() {
     
     const services = translations[currentLanguage].services.items;
     
-    // Create a document fragment for better performance
-    const fragment = document.createDocumentFragment();
-    
-    services.forEach(service => {
-        const serviceCard = document.createElement('div');
-        serviceCard.className = 'service-card';
-        
-        // Optimize image loading for mobile
-        const imageSrc = service.image;
-        const imageWebp = service.image.replace(/\.(jpg|jpeg|png)$/i, '.webp');
-        
-        serviceCard.innerHTML = `
+    servicesGrid.innerHTML = services.map(service => `
+        <div class="service-card">
             <div class="service-image">
-                <picture>
-                    <source type="image/webp" 
-                            srcset="${imageWebp}?w=300 300w, ${imageWebp}?w=600 600w" 
-                            sizes="(max-width: 600px) 300px, 600px">
-                    <img data-src="${imageSrc}" 
-                         alt="${service.title}"
-                         loading="lazy"
-                         class="clickable-service"
-                         width="600"
-                         height="400">
-                </picture>
+                <img src="${service.image}" alt="${service.title}" 
+                     loading="lazy" class="clickable-service">
                 <div class="service-overlay"></div>
                 <h3 class="service-title">${service.title}</h3>
             </div>
             <div class="service-content">
                 <p class="service-description">${service.description}</p>
             </div>
-        `;
-        
-        fragment.appendChild(serviceCard);
-    });
-    
-    // Clear and update the grid with the fragment
-    servicesGrid.innerHTML = '';
-    servicesGrid.appendChild(fragment);
+        </div>
+    `).join('');
 
     // LIGHTBOX FUNCIONAL COM ZOOM E ARRASTO
     const lightbox = document.getElementById('lightbox');
