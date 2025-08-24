@@ -10,9 +10,6 @@
     --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     --shadow-md: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
     --transition-base: all 0.3s ease;
-    --container-width: min(100% - 2rem, 1200px);
-    --mobile-breakpoint: 768px;
-    --tablet-breakpoint: 1024px;
 }
 
 /* Modern CSS Reset */
@@ -40,7 +37,7 @@ body {
 }
 
 .container {
-    width: var(--container-width);
+    width: min(100% - 2rem, 1200px);
     margin-inline: auto;
     padding: 0 1rem;
 }
@@ -238,59 +235,44 @@ body {
     gap: 48px;
     align-items: center;
     color: white;
-    padding: 64px 0;
-    max-width: var(--container-width);
-    margin: 0 auto;
-}
-
-.hero-left {
-    max-width: 600px;
+    padding: 24px 0;
 }
 
 .hero-left h1 {
     font-size: clamp(2.5rem, 5vw, 4rem);
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1.1;
     margin-bottom: 24px;
-    letter-spacing: -0.02em;
 }
 
 .hero-left p {
-    font-size: clamp(1.125rem, 2vw, 1.25rem);
+    font-size: 1.25rem;
     line-height: 1.6;
     margin-bottom: 32px;
     color: rgba(255, 255, 255, 0.9);
-    max-width: 540px;
 }
 
 /* CTA Button */
 .cta-button {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
     padding: 16px 32px;
-    background: var(--gradient-primary);
+    background: linear-gradient(135deg, #f97316, #fbbf24);
     color: white;
     border: none;
     border-radius: 50px;
-    font-size: clamp(1rem, 1.5vw, 1.125rem);
+    font-size: 18px;
     font-weight: 600;
     cursor: pointer;
-    transition: var(--transition-base);
-    box-shadow: var(--shadow-sm);
-    min-width: 200px;
-    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
 }
 
 .cta-button:hover {
-    background: linear-gradient(135deg, var(--primary-hover), var(--secondary-color));
+    background: linear-gradient(135deg, #ea580c, #f59e0b);
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-
-.cta-button:active {
-    transform: translateY(0);
+    box-shadow: 0 8px 25px rgba(249, 115, 22, 0.4);
 }
 
 .cta-button.full-width {
@@ -1276,41 +1258,8 @@ margin-left: 16px;
   .pc-arrow { width: 32px; height: 32px; font-size: 19px; }
 }
 
-/* Navigation Styles */
-.nav-wrapper {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 0;
-}
-
-.nav-desktop {
-    display: flex;
-    gap: 2rem;
-    align-items: center;
-}
-
-.nav-desktop a {
-    color: var(--text-color);
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.3s ease;
-}
-
-/* Remove duplicate styles */
-
-/* Final Media Queries */
-@media screen and (max-width: 1024px) {
-    .hero-content {
-        gap: 32px;
-    }
-    
-    .stats-card {
-        padding: 20px;
-    }
-}
-
-@media screen and (max-width: 768px) {
+/* Responsive Design */
+@media (max-width: 768px) {
     .nav-desktop {
         display: none;
     }
@@ -1327,16 +1276,6 @@ margin-left: 16px;
         grid-template-columns: 1fr;
         gap: 32px;
         text-align: center;
-        padding: 32px 0;
-    }
-    
-    .hero-left {
-        margin: 0 auto;
-    }
-    
-    .hero-left p {
-        margin-left: auto;
-        margin-right: auto;
     }
     
     .achievements {
@@ -1350,7 +1289,7 @@ margin-left: 16px;
     }
     
     .services-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     }
     
     .trust-indicators {
@@ -1373,40 +1312,6 @@ margin-left: 16px;
         gap: 16px;
         text-align: center;
     }
-}
-
-@media screen and (max-width: 480px) {
-    .container {
-        padding: 0 1rem;
-    }
-    
-    .hero-left h1 {
-        font-size: 2rem;
-    }
-    
-    .hero-left p {
-        font-size: 1rem;
-    }
-    
-    .cta-button {
-        width: 100%;
-        padding: 14px 24px;
-    }
-    
-    .stats-card {
-        padding: 16px;
-    }
-    
-    .stat {
-        flex-direction: column;
-        text-align: center;
-        gap: 8px;
-    }
-    
-    .stat-icon {
-        margin: 0 auto;
-    }
-}
 
 @media (max-width: 480px) {
     .hero-left h1 {
@@ -1424,15 +1329,16 @@ margin-left: 16px;
     .stats-card {
         padding: 24px;
     }
-    
-    .testimonial-card {
-        padding: 32px 24px;
-    }
-}
+
 
 @media (max-width: 700px) {
-    .photo-carousel {
-        height: 180px;
-        max-width: 100%;
+  .photo-carousel {
+    height: 180px;
+    max-width: 100%;
+  }
+}
+
+    .testimonial-card {
+        padding: 32px 24px;
     }
 }
