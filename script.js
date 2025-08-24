@@ -571,11 +571,30 @@ function renderServices() {
     
     const services = translations[currentLanguage].services.items;
     
-    servicesGrid.innerHTML = services.map(service => `
+    servicesGrid.innerHTML = services.map(service => {
+    // Verifica se a imagem é local e termina com .jpeg ou .jpg ou .png
+    let imageHtml;
+    if (
+      service.image.startsWith('img/') &&
+      (service.image.endsWith('.jpeg') || service.image.endsWith('.jpg') || service.image.endsWith('.png'))
+    ) {
+        // Substitui por .webp
+        const webpSrc = service.image.replace(/\.(jpeg|jpg|png)$/i, '.webp');
+        imageHtml = `
+          <picture>
+            <source srcset="${webpSrc}" type="image/webp">
+            <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
+          </picture>
+        `;
+    } else {
+        // Para imagens externas (Unsplash), mantém normal
+        imageHtml = `<img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">`;
+    }
+
+    return `
         <div class="service-card">
             <div class="service-image">
-                <img src="${service.image}" alt="${service.title}" 
-                     loading="lazy" class="clickable-service">
+                ${imageHtml}
                 <div class="service-overlay"></div>
                 <h3 class="service-title">${service.title}</h3>
             </div>
@@ -583,7 +602,9 @@ function renderServices() {
                 <p class="service-description">${service.description}</p>
             </div>
         </div>
-    `).join('');
+    `;
+}).join('');
+
 
     // LIGHTBOX FUNCIONAL COM ZOOM E ARRASTO
     const lightbox = document.getElementById('lightbox');
