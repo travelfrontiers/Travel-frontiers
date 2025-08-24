@@ -2,28 +2,64 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" co    <header class="header" role="banner">
+        <div class="container">
+            <div class="nav-wrapper">
+                <!-- Logo -->
+                <div class="logo" itemscope itemtype="https://schema.org/Organization">
+                    <a href="/" aria-label="Travel Frontiers Homepage">
+                        <img src="img/logo-new-TF2.png" 
+                             alt="Travel Frontiers Logo" 
+                             class="logo-image"
+                             itemprop="logo"
+                             width="150"
+                             height="50">
+                        <span class="logo-text" itemprop="name">Travel Frontiers</span>
+                    </a>
+                </div>dth=device-width, initial-scale=1">
 
-  <!-- SEO -->
-  <title>Consultor de Viagens Personalizadas em Portugal | Travel Frontiers</title>
-  <meta name="description" content="Planeamento 100% personalizado com proposta em 24–48h. 15+ anos, 40+ países. Peça o seu orçamento agora.">
-  <meta name="robots" content="index, follow">
-
+  <!-- SEO Essentials -->
+  <title>Consultor de Viagens Personalizadas em Portugal | Travel Frontiers | Experiências Únicas</title>
+  <meta name="description" content="Especialista em viagens personalizadas com 15+ anos de experiência em 40+ países. Planeamento 100% personalizado, proposta em 24–48h. Ásia, Europa e África do Norte. ✈️">
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <meta name="author" content="Tiago Ferreira">
+  <meta name="keywords" content="viagens personalizadas, consultor de viagens portugal, agência de viagens personalizada, roteiros personalizados, viagens de luxo, pacotes de viagem à medida, travel frontiers">
+  
+  <!-- Language Alternatives -->
+  <link rel="alternate" hreflang="pt" href="https://www.travelfrontiers.pt/">
+  <link rel="alternate" hreflang="en" href="https://www.travelfrontiers.pt/en/">
+  <link rel="alternate" hreflang="fr" href="https://www.travelfrontiers.pt/fr/">
+  <link rel="alternate" hreflang="x-default" href="https://www.travelfrontiers.pt/">
+  
   <!-- Canonical -->
   <link rel="canonical" href="https://www.travelfrontiers.pt/">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="Consultor de Viagens Personalizadas em Portugal | Travel Frontiers">
-  <meta property="og:description" content="Planeamos viagens sob medida com proposta em 24–48h. 15+ anos, 40+ países.">
-  <meta property="og:image" content="https://www.travelfrontiers.pt/img/Min-TF.png">
-  <meta property="og:url" content="https://www.travelfrontiers.pt/">
+  <meta property="og:site_name" content="Travel Frontiers">
+  <meta property="og:locale" content="pt_PT">
   <meta property="og:type" content="website">
+  <meta property="og:title" content="Travel Frontiers | Consultor de Viagens Personalizadas em Portugal">
+  <meta property="og:description" content="Especialista em viagens personalizadas: 15+ anos de experiência, 40+ países visitados. Planeamento personalizado com proposta em 24-48h. Descubra o mundo connosco! ✈️">
+  <meta property="og:url" content="https://www.travelfrontiers.pt/">
+  <meta property="og:image" content="https://www.travelfrontiers.pt/img/Min-TF.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Travel Frontiers - Viagens Personalizadas">
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Consultor de Viagens Personalizadas | Travel Frontiers">
-  <meta name="twitter:description" content="Itinerários sob medida, proposta em 24–48h.">
+  <meta name="twitter:site" content="@travelfrontiers">
+  <meta name="twitter:creator" content="@tiagoferreira">
+  <meta name="twitter:title" content="Travel Frontiers | Viagens Personalizadas em Portugal">
+  <meta name="twitter:description" content="Especialista em viagens personalizadas: 15+ anos, 40+ países. Planeamento personalizado com proposta em 24-48h. ✈️">
   <meta name="twitter:image" content="https://www.travelfrontiers.pt/img/Min-TF.png">
+  <meta name="twitter:image:alt" content="Travel Frontiers - Viagens Personalizadas">
+  
+  <!-- Geo Tags -->
+  <meta name="geo.region" content="PT">
+  <meta name="geo.placename" content="Lisboa">
+  <meta name="geo.position" content="38.736946;-9.142685">
+  <meta name="ICBM" content="38.736946, -9.142685">
 
   <!-- Favicon -->
   <link rel="icon" href="/img/favicon.ico" type="image/x-icon">
@@ -79,8 +115,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 
                 <!-- Desktop Navigation -->
-                <nav class="nav-desktop">
-                    <a href="#home" data-translate="nav.home">Início</a>
+                <nav class="nav-desktop" role="navigation" aria-label="Main navigation">
+                    <a href="#home" data-translate="nav.home" aria-current="page">Início</a>
                     <a href="#about" data-translate="nav.about">Sobre</a>
                     <a href="#services" data-translate="nav.services">Serviços</a>
                     <a href="#testimonials" data-translate="nav.testimonials">Testemunhos</a>
