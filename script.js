@@ -446,7 +446,56 @@ function initializeLightbox() {
     console.log('Lightbox inicializado com sucesso!');
 }
 
-// Initialize the page
+// Performance optimizations for the header
+let lastScrollY = 0;
+let ticking = false;
+const header = document.querySelector('.header');
+const scrollThreshold = 100;
+let scrollTimer = null;
+
+function handleScroll() {
+    const currentScrollY = window.scrollY;
+    
+    // Add scrolled class for background change
+    if (header) {
+        header.classList.toggle('scrolled', currentScrollY > scrollThreshold);
+        
+        // Hide header when scrolling down, show when scrolling up
+        if (currentScrollY > lastScrollY && currentScrollY > 150) {
+            header.classList.add('nav-hidden');
+        } else {
+            header.classList.remove('nav-hidden');
+        }
+    }
+    
+    lastScrollY = currentScrollY;
+    ticking = false;
+}
+
+// Throttled scroll listener
+window.addEventListener('scroll', () => {
+    if (!ticking) {
+        window.requestAnimationFrame(() => {
+            handleScroll();
+            ticking = false;
+        });
+        ticking = true;
+    }
+    
+    // Reset scroll timer
+    if (scrollTimer !== null) {
+        clearTimeout(scrollTimer);
+    }
+    
+    // Show header after scrolling stops
+    scrollTimer = setTimeout(() => {
+        if (header) {
+            header.classList.remove('nav-hidden');
+        }
+    }, 150);
+}, { passive: true });
+
+// Initialize the page with optimizations
 document.addEventListener('DOMContentLoaded', function() {
     initializeLanguageSelector();
     initializeMobileMenu();
@@ -454,6 +503,21 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeTestimonials();
     renderServices();
     updateContent();
+    
+    // Setup lazy loading for images
+    if ('loading' in HTMLImageElement.prototype) {
+        document.querySelectorAll('img').forEach(img => {
+            if (!img.hasAttribute('loading')) {
+                img.loading = 'lazy';
+            }
+            img.decoding = 'async';
+        });
+    }
+    
+    // Start testimonial rotation only when page is visible
+    if (!document.hidden) {
+        startTestimonialRotation();
+    }
 });
 
 // Language functionality (mantém todas as tuas funções de língua iguais)
@@ -769,13 +833,35 @@ function smoothScroll() {
 }
 smoothScroll();
 
-// Auto testimonial rotation every 5 seconds
-setInterval(() => {
-    const nextBtn = document.getElementById('nextTestimonial');
-    if (nextBtn && !nextBtn.disabled) {
-        nextBtn.click();
+// Optimized testimonial rotation
+let testimonialRotationTimer = null;
+const TESTIMONIAL_INTERVAL = 5000;
+
+function startTestimonialRotation() {
+    stopTestimonialRotation();
+    testimonialRotationTimer = setInterval(() => {
+        const nextBtn = document.getElementById('nextTestimonial');
+        if (nextBtn && !nextBtn.disabled) {
+            nextBtn.click();
+        }
+    }, TESTIMONIAL_INTERVAL);
+}
+
+function stopTestimonialRotation() {
+    if (testimonialRotationTimer) {
+        clearInterval(testimonialRotationTimer);
+        testimonialRotationTimer = null;
     }
-}, 5000);
+}
+
+// Handle page visibility changes
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        stopTestimonialRotation();
+    } else {
+        startTestimonialRotation();
+    }
+});
 
 // Initialize carousel for photos (mantém igual)
 document.addEventListener('DOMContentLoaded', () => {
