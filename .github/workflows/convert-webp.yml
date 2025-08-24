@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Instala cwebp
         run: sudo apt-get update && sudo apt-get install -y webp
 
@@ -16,12 +17,14 @@ jobs:
         run: |
           find ./img \( -iname "*.png" -o -iname "*.jpg" \) -exec sh -c 'cwebp -q 80 "$0" -o "${0%.*}.webp"' {} \;
 
+      - name: Configura autenticação GitHub
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+
       - name: Faz commit das webp geradas
         run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            git config --global user.name "github-actions"
-            git config --global user.email "github-actions@github.com"
-            git add img/*.webp
-            git commit -m "Geradas imagens WebP via Action"
-            git push
-          fi
+          git add img/*.webp || true
+          git commit -m "Geradas imagens WebP via Action" || exit 0
+          git push
