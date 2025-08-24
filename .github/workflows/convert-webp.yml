@@ -15,7 +15,7 @@ jobs:
 
       - name: Converte PNG/JPG -> WebP
         run: |
-          find ./img \( -iname "*.png" -o -iname "*.jpg" \) -exec sh -c 'cwebp -q 80 "$0" -o "${0%.*}.webp"' {} \;
+          find ./img \( -iname "*.png" -o -iname "*.jpg" \) -exec sh -c '[ ! -f "${0%.*}.webp" ] || [ "$0" -nt "${0%.*}.webp" ] && cwebp -q 80 "$0" -o "${0%.*}.webp"' {} \;
 
       - name: Configura autenticação GitHub
         run: |
