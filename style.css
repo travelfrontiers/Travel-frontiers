@@ -1021,8 +1021,9 @@ body {
 .whatsapp-btn .whatsapp-icon path {
   fill: #ffffff; /* detalhes a branco */
 }
-.footer-links {
-    justify-content: center;
+    .footer-links {
+        justify-content: center;
+    }
 }
 
 /* Performance Optimizations */
@@ -1299,8 +1300,7 @@ margin-left: 16px;
 /* Remove duplicate styles */
 
 /* Final Media Queries */
-/* Media Queries */
-@media (max-width: 1024px) {
+@media screen and (max-width: 1024px) {
     .hero-content {
         gap: 32px;
     }
@@ -1310,7 +1310,7 @@ margin-left: 16px;
     }
 }
 
-@media (max-width: 768px) {
+@media screen and (max-width: 768px) {
     .nav-desktop {
         display: none;
     }
@@ -1375,7 +1375,7 @@ margin-left: 16px;
     }
 }
 
-@media (max-width: 480px) {
+@media screen and (max-width: 480px) {
     .container {
         padding: 0 1rem;
     }
@@ -1406,6 +1406,12 @@ margin-left: 16px;
     .stat-icon {
         margin: 0 auto;
     }
+}
+
+@media (max-width: 480px) {
+    .hero-left h1 {
+        font-size: 2rem;
+    }
     
     .section-header h2 {
         font-size: 2rem;
@@ -1413,6 +1419,10 @@ margin-left: 16px;
     
     .services-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .stats-card {
+        padding: 24px;
     }
     
     .testimonial-card {
@@ -1426,5 +1436,3 @@ margin-left: 16px;
         max-width: 100%;
     }
 }
-
-/* End of file */
