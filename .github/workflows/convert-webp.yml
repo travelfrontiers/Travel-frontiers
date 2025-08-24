@@ -1,0 +1,30 @@
+name: Converter imagens para WebP
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  convert_webp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instala cwebp
+        run: sudo apt-get update && sudo apt-get install -y webp
+
+      - name: Converte PNG/JPG/JPEG -> WebP
+        run: |
+          find ./img \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" \) -exec sh -c '[ ! -f "${0%.*}.webp" ] || [ "$0" -nt "${0%.*}.webp" ] && cwebp -q 80 "$0" -o "${0%.*}.webp"' {} \;
+
+      - name: Configura autenticação GitHub
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+
+      - name: Faz commit das webp geradas
+        run: |
+          git add img/*.webp || true
+          git commit -m "Geradas imagens WebP via Action" || exit 0
+          git push

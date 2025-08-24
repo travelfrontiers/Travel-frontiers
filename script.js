@@ -446,56 +446,7 @@ function initializeLightbox() {
     console.log('Lightbox inicializado com sucesso!');
 }
 
-// Performance optimizations for the header
-let lastScrollY = 0;
-let ticking = false;
-const header = document.querySelector('.header');
-const scrollThreshold = 100;
-let scrollTimer = null;
-
-function handleScroll() {
-    const currentScrollY = window.scrollY;
-    
-    // Add scrolled class for background change
-    if (header) {
-        header.classList.toggle('scrolled', currentScrollY > scrollThreshold);
-        
-        // Hide header when scrolling down, show when scrolling up
-        if (currentScrollY > lastScrollY && currentScrollY > 150) {
-            header.classList.add('nav-hidden');
-        } else {
-            header.classList.remove('nav-hidden');
-        }
-    }
-    
-    lastScrollY = currentScrollY;
-    ticking = false;
-}
-
-// Throttled scroll listener
-window.addEventListener('scroll', () => {
-    if (!ticking) {
-        window.requestAnimationFrame(() => {
-            handleScroll();
-            ticking = false;
-        });
-        ticking = true;
-    }
-    
-    // Reset scroll timer
-    if (scrollTimer !== null) {
-        clearTimeout(scrollTimer);
-    }
-    
-    // Show header after scrolling stops
-    scrollTimer = setTimeout(() => {
-        if (header) {
-            header.classList.remove('nav-hidden');
-        }
-    }, 150);
-}, { passive: true });
-
-// Initialize the page with optimizations
+// Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
     initializeLanguageSelector();
     initializeMobileMenu();
@@ -503,21 +454,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeTestimonials();
     renderServices();
     updateContent();
-    
-    // Setup lazy loading for images
-    if ('loading' in HTMLImageElement.prototype) {
-        document.querySelectorAll('img').forEach(img => {
-            if (!img.hasAttribute('loading')) {
-                img.loading = 'lazy';
-            }
-            img.decoding = 'async';
-        });
-    }
-    
-    // Start testimonial rotation only when page is visible
-    if (!document.hidden) {
-        startTestimonialRotation();
-    }
 });
 
 // Language functionality (mantém todas as tuas funções de língua iguais)
@@ -635,11 +571,30 @@ function renderServices() {
     
     const services = translations[currentLanguage].services.items;
     
-    servicesGrid.innerHTML = services.map(service => `
+    servicesGrid.innerHTML = services.map(service => {
+    // Verifica se a imagem é local e termina com .jpeg ou .jpg ou .png
+    let imageHtml;
+    if (
+      service.image.startsWith('img/') &&
+      (service.image.endsWith('.jpeg') || service.image.endsWith('.jpg') || service.image.endsWith('.png'))
+    ) {
+        // Substitui por .webp
+        const webpSrc = service.image.replace(/\.(jpeg|jpg|png)$/i, '.webp');
+        imageHtml = `
+          <picture>
+            <source srcset="${webpSrc}" type="image/webp">
+            <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
+          </picture>
+        `;
+    } else {
+        // Para imagens externas (Unsplash), mantém normal
+        imageHtml = `<img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">`;
+    }
+
+    return `
         <div class="service-card">
             <div class="service-image">
-                <img src="${service.image}" alt="${service.title}" 
-                     loading="lazy" class="clickable-service">
+                ${imageHtml}
                 <div class="service-overlay"></div>
                 <h3 class="service-title">${service.title}</h3>
             </div>
@@ -647,7 +602,9 @@ function renderServices() {
                 <p class="service-description">${service.description}</p>
             </div>
         </div>
-    `).join('');
+    `;
+}).join('');
+
 
     // LIGHTBOX FUNCIONAL COM ZOOM E ARRASTO
     const lightbox = document.getElementById('lightbox');
@@ -833,35 +790,13 @@ function smoothScroll() {
 }
 smoothScroll();
 
-// Optimized testimonial rotation
-let testimonialRotationTimer = null;
-const TESTIMONIAL_INTERVAL = 5000;
-
-function startTestimonialRotation() {
-    stopTestimonialRotation();
-    testimonialRotationTimer = setInterval(() => {
-        const nextBtn = document.getElementById('nextTestimonial');
-        if (nextBtn && !nextBtn.disabled) {
-            nextBtn.click();
-        }
-    }, TESTIMONIAL_INTERVAL);
-}
-
-function stopTestimonialRotation() {
-    if (testimonialRotationTimer) {
-        clearInterval(testimonialRotationTimer);
-        testimonialRotationTimer = null;
+// Auto testimonial rotation every 5 seconds
+setInterval(() => {
+    const nextBtn = document.getElementById('nextTestimonial');
+    if (nextBtn && !nextBtn.disabled) {
+        nextBtn.click();
     }
-}
-
-// Handle page visibility changes
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        stopTestimonialRotation();
-    } else {
-        startTestimonialRotation();
-    }
-});
+}, 5000);
 
 // Initialize carousel for photos (mantém igual)
 document.addEventListener('DOMContentLoaded', () => {
