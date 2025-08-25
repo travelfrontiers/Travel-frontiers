@@ -403,33 +403,14 @@ function initializeLightbox() {
         lightboxImg.style.transform = 'translate(0, 0) scale(1)';
     }
 
-    // ------------------ FECHAR LIGHTBOX (único sítio do fecho) ------------------
-function closeLightbox() {
-  const lightbox = document.getElementById('lightbox');
-  const lightboxImg = lightbox.querySelector('img');
-
-  lightbox.classList.remove('show');   // remove opacidade / transição
-  lightbox.style.display = 'none';     // some completamente
-  lightboxImg.src = '';                // limpa a imagem
-}
-// ---------------------------------------------------------------------------
-
-// BOTÃO X
-document.querySelector('.lightbox-close')
-        .addEventListener('click', closeLightbox);
-
-// CLIQUE NA ÁREA ESCURA
-document.getElementById('lightbox')
-        .addEventListener('click', e => {
-            if (e.target.id === 'lightbox') closeLightbox();
-        });
-
-// ESC
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && document.getElementById('lightbox').classList.contains('show')) {
-    closeLightbox();
-  }
-});
+    // Eventos de fechar
+    closeBtn.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) closeLightbox();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox();
+    });
 
     // Zoom
     lightbox.addEventListener('wheel', (e) => {
