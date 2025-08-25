@@ -901,25 +901,38 @@ document.addEventListener('DOMContentLoaded', () => {
     carousel.addEventListener('mouseenter', stop);
     carousel.addEventListener('mouseleave', start);
 
+    function setupLightboxForImage(picture) {
+        const img = picture.querySelector('img');
+        if (!img.parentNode.matches('a')) {
+            const link = document.createElement('a');
+            link.href = 'javascript:void(0)';
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const lightbox = document.querySelector('.lightbox') || createLightbox();
+                const lightboxImg = lightbox.querySelector('img');
+                lightboxImg.src = img.src;
+                lightboxImg.alt = img.alt;
+                lightbox.classList.add('show');
+            });
+            
+            img.parentNode.insertBefore(link, img);
+            link.appendChild(img);
+        }
+    }
+
+    // Setup lightbox for initial images
+    pictures.forEach(setupLightboxForImage);
+
+    // Modify the update function to setup lightbox after moving images
+    const originalUpdate = update;
+    update = function() {
+        originalUpdate();
+        // Setup lightbox for all visible images after the carousel moves
+        pictures.forEach(setupLightboxForImage);
+    }
+
     update();
     start();
-
-    pictures.forEach(picture => {
-        const img = picture.querySelector('img');
-        const link = document.createElement('a');
-        link.href = 'javascript:void(0)';
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const lightbox = document.querySelector('.lightbox') || createLightbox();
-            const lightboxImg = lightbox.querySelector('img');
-            lightboxImg.src = img.src;
-            lightboxImg.alt = img.alt;
-            lightbox.classList.add('show');
-        });
-        
-        img.parentNode.insertBefore(link, img);
-        link.appendChild(img);
-    });
 
     function createLightbox() {
         const lightbox = document.createElement('div');
