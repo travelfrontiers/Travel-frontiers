@@ -838,6 +838,59 @@ document.addEventListener('DOMContentLoaded', () => {
         if (timer) clearInterval(timer); 
     }
 
+    // Adiciona funcionalidade de lightbox
+    pictures.forEach(picture => {
+        picture.style.cursor = 'pointer';
+        picture.addEventListener('click', (e) => {
+            e.preventDefault();
+            const img = picture.querySelector('img');
+            const lightbox = document.querySelector('.lightbox') || createLightbox();
+            
+            lightbox.querySelector('img').src = img.src;
+            lightbox.querySelector('img').alt = img.alt;
+            lightbox.classList.add('show');
+            
+            // Para o carrossel quando a lightbox está aberta
+            stop();
+        });
+    });
+
+    // Cria a lightbox se não existir
+    function createLightbox() {
+        const lightbox = document.createElement('div');
+        lightbox.className = 'lightbox';
+        
+        const img = document.createElement('img');
+        lightbox.appendChild(img);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'lightbox-close';
+        closeBtn.innerHTML = '×';
+        lightbox.appendChild(closeBtn);
+
+        // Fecha a lightbox e reinicia o carrossel
+        function closeLightbox() {
+            lightbox.classList.remove('show');
+            start();
+        }
+
+        closeBtn.addEventListener('click', closeLightbox);
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) {
+                closeLightbox();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && lightbox.classList.contains('show')) {
+                closeLightbox();
+            }
+        });
+
+        document.body.appendChild(lightbox);
+        return lightbox;
+    }
+
     if (next) next.addEventListener('click', () => { nextSlide(); start(); });
     if (prev) prev.addEventListener('click', () => { prevSlide(); start(); });
 

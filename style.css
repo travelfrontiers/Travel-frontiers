@@ -1187,9 +1187,9 @@ margin-left: 16px;
   margin: 32px auto 0;
   border-radius: 16px;
   overflow: hidden;
-  background: #000; /* cor das barras/lados */
+  background: #000;
   box-shadow: 0 10px 28px rgba(0,0,0,0.12);
-  margin-bottom: 48px !important; /* Adiciona espaço abaixo da galeria */
+  margin-bottom: 48px !important;
   display: block;
   clear: both;
 }
@@ -1203,27 +1203,23 @@ margin-left: 16px;
 .carousel-img {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
   opacity: 0;
-  transition: all 0.8s ease;
-  border-radius: 16px;
+  transition: opacity 0.8s ease;
   z-index: 0;
 }
 
-.carousel-img a {
+.carousel-img picture {
   display: block;
   width: 100%;
   height: 100%;
-  cursor: zoom-in;
 }
 
 .carousel-img img {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Mudamos para cover para manter a proporção e preencher todo o espaço */
+  object-fit: cover;
   object-position: center;
-  transition: transform 0.5s ease;
+  transition: transform 0.3s ease;
 }
 
 .carousel-img.active {
@@ -1231,18 +1227,51 @@ margin-left: 16px;
   z-index: 1;
 }
 
-/* Efeito de zoom ao passar o mouse */
-.carousel-img a:hover img {
-  transform: scale(1.05);
+/* Lightbox styles */
+.lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.95);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+  padding: 40px;
 }
 
-/* Estilo para a imagem quando aberta na lightbox */
+.lightbox.show {
+  display: flex;
+  animation: lightboxFadeIn 0.3s ease forwards;
+}
+
 .lightbox img {
-  max-width: 90vw;
-  max-height: 90vh;
-  object-fit: contain !important; /* Garante que a imagem inteira seja visível */
+  max-width: min(90vw, 1200px);
+  max-height: 80vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
   border-radius: 8px;
-  transition: transform 0.3s ease;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  animation: lightboxImageIn 0.4s ease forwards;
+}
+
+@keyframes lightboxFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes lightboxImageIn {
+  from { 
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to { 
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Legenda abaixo das imagens */
