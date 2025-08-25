@@ -51,10 +51,9 @@ img {
 }
 
 /* Correção para a imagem de Moscovo na lightbox */
-.lightbox img[src*="Moscovo"] {
-    transform: rotate(90deg);
-    max-height: 80vh;
-    width: auto;
+.lightbox img[src*="Moscovo.webp"],
+.lightbox img[src*="Moscovo.JPG"] {
+    transform: rotate(-90deg) scale(0.9);
 }
 
 .lightbox-close {
