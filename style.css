@@ -45,6 +45,8 @@ img {
 }
 
 .lightbox img {
+    width: 90%;
+    height: 90vh;
     max-width: 90%;
     max-height: 90vh;
     object-fit: contain;
