@@ -381,7 +381,7 @@ const translations = {
 let currentLanguage = 'pt';
 let currentTestimonialIndex = 0;
 
-// Services functionality CORRIGIDA
+// Services functionality - VERSÃO CORRIGIDA
 function renderServices() {
     const servicesGrid = document.querySelector('.services-grid');
     if (!servicesGrid) return;
@@ -420,83 +420,55 @@ function renderServices() {
         `;
     }).join('');
 
-    // INICIALIZAR LIGHTBOX FUNCIONAL
+    // Aguarda o DOM ser atualizado e depois inicializa o lightbox
     setTimeout(() => {
-        initializeLightboxForServices();
-    }, 100);
+        setupLightbox();
+    }, 50);
 }
 
-// FUNÇÃO ESPECÍFICA PARA INICIALIZAR O LIGHTBOX DOS SERVIÇOS
-function initializeLightboxForServices() {
+// Função para configurar o lightbox (adiciona esta nova função)
+function setupLightbox() {
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = lightbox ? lightbox.querySelector('img') : null;
     const closeBtn = lightbox ? lightbox.querySelector('.lightbox-close') : null;
 
     if (!lightbox || !lightboxImg || !closeBtn) {
-        console.log('❌ Elementos do lightbox não encontrados');
+        console.log('Elementos do lightbox não encontrados');
         return;
     }
 
     let scale = 1, translateX = 0, translateY = 0, startX = 0, startY = 0, dragging = false;
 
-    // FUNÇÃO PARA FECHAR LIGHTBOX
+    // Função para fechar
     function closeLightbox() {
         lightbox.style.display = 'none';
         lightbox.classList.remove('show');
-        lightbox.setAttribute('aria-hidden', 'true');
         lightboxImg.src = '';
-        lightboxImg.alt = '';
-        scale = 1; 
-        translateX = 0; 
-        translateY = 0;
+        scale = 1; translateX = 0; translateY = 0;
         lightboxImg.style.transform = 'translate(0, 0) scale(1)';
-        document.body.style.overflow = ''; // Restaura scroll da página
     }
 
-    // FUNÇÃO PARA ABRIR LIGHTBOX
-    function openLightbox(imgSrc, imgAlt) {
-        lightbox.style.display = 'flex';
-        lightbox.classList.add('show');
-        lightbox.setAttribute('aria-hidden', 'false');
-        lightboxImg.src = imgSrc;
-        lightboxImg.alt = imgAlt || '';
-        document.body.style.overflow = 'hidden'; // Previne scroll da página
-    }
-
-    // EVENTOS DE FECHAR
-    closeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        closeLightbox();
-    });
+    // Remover eventos antigos para evitar duplicados
+    closeBtn.replaceWith(closeBtn.cloneNode(true));
+    const newCloseBtn = lightbox.querySelector('.lightbox-close');
     
+    // Eventos de fechar
+    newCloseBtn.addEventListener('click', closeLightbox);
     lightbox.addEventListener('click', (e) => {
-        if (e.target === lightbox) {
-            closeLightbox();
-        }
+        if (e.target === lightbox) closeLightbox();
     });
     
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && lightbox.classList.contains('show')) {
-            closeLightbox();
-        }
-    });
-
-    // ZOOM COM SCROLL (funciona apenas quando lightbox está aberto)
+    // Zoom
     lightbox.addEventListener('wheel', (e) => {
-        if (!lightbox.classList.contains('show')) return;
-        
         e.preventDefault();
-        e.stopPropagation();
-        
-        const delta = e.deltaY < 0 ? 0.2 : -0.2;
-        scale = Math.min(Math.max(0.5, scale + delta), 5);
+        const delta = e.deltaY < 0 ? 0.15 : -0.15;
+        scale = Math.min(Math.max(0.5, scale + delta), 4);
         lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
     });
 
-    // ARRASTO PARA IMAGENS COM ZOOM
+    // Arrasto
     lightboxImg.addEventListener('mousedown', (e) => {
         if (scale > 1) {
-            e.preventDefault();
             dragging = true;
             startX = e.clientX - translateX;
             startY = e.clientY - translateY;
@@ -505,7 +477,7 @@ function initializeLightboxForServices() {
     });
 
     document.addEventListener('mousemove', (e) => {
-        if (dragging && lightbox.classList.contains('show')) {
+        if (dragging) {
             translateX = e.clientX - startX;
             translateY = e.clientY - startY;
             lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
@@ -513,25 +485,22 @@ function initializeLightboxForServices() {
     });
 
     document.addEventListener('mouseup', () => {
-        if (dragging) {
-            dragging = false;
-            lightboxImg.style.cursor = 'grab';
-        }
+        dragging = false;
+        if (lightboxImg) lightboxImg.style.cursor = 'grab';
     });
 
-    // ADICIONAR CLIQUES ÀS IMAGENS DOS SERVIÇOS
-    document.querySelectorAll('.service-image').forEach((serviceContainer) => {
-        serviceContainer.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
+    // Adicionar cliques às imagens
+    document.querySelectorAll('.service-image').forEach((serviceImg) => {
+        serviceImg.addEventListener('click', function() {
             const img = this.querySelector('img');
-            if (img && img.src) {
-                openLightbox(img.src, img.alt);
+            if (img) {
+                lightbox.style.display = 'flex';
+                lightbox.classList.add('show');
+                lightboxImg.src = img.src;
             }
         });
     });
-
+    
     // ESTILO DA LUPA NAS IMAGENS
     document.querySelectorAll('.clickable-service').forEach(img => {
         img.style.cursor = 'zoom-in';
