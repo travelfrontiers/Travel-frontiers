@@ -393,58 +393,17 @@ function initializeLightbox() {
     }
 
     let scale = 1, translateX = 0, translateY = 0, startX = 0, startY = 0, dragging = false;
-    let initialDistance = 0, lastTouchY = 0;
-
-    function updateTransform() {
-        // Limit panning to image bounds when zoomed
-        if (scale > 1) {
-            const bounds = lightboxImg.getBoundingClientRect();
-            const maxX = (bounds.width * (scale - 1)) / 2;
-            const maxY = (bounds.height * (scale - 1)) / 2;
-            translateX = Math.min(Math.max(-maxX, translateX), maxX);
-            translateY = Math.min(Math.max(-maxY, translateY), maxY);
-        } else {
-            translateX = 0;
-            translateY = 0;
-        }
-        lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-    }
 
     function closeLightbox() {
+        lightbox.style.display = 'none';
         lightbox.classList.remove('show');
-        setTimeout(() => {
-            lightbox.style.display = 'none';
-            lightboxImg.src = '';
-            scale = 1;
-            translateX = 0;
-            translateY = 0;
-            updateTransform();
-        }, 300);
+        lightbox.setAttribute('aria-hidden', 'true');
+        lightboxImg.src = '';
+        scale = 1; translateX = 0; translateY = 0;
+        lightboxImg.style.transform = 'translate(0, 0) scale(1)';
     }
 
-    function handleDragStart(clientX, clientY) {
-        if (scale > 1) {
-            dragging = true;
-            startX = clientX - translateX;
-            startY = clientY - translateY;
-            lightboxImg.style.cursor = 'grabbing';
-        }
-    }
-
-    function handleDragMove(clientX, clientY) {
-        if (dragging) {
-            translateX = clientX - startX;
-            translateY = clientY - startY;
-            updateTransform();
-        }
-    }
-
-    function handleDragEnd() {
-        dragging = false;
-        lightboxImg.style.cursor = scale > 1 ? 'grab' : 'auto';
-    }
-
-    // Close events
+    // Eventos de fechar
     closeBtn.addEventListener('click', closeLightbox);
     lightbox.addEventListener('click', (e) => {
         if (e.target === lightbox) closeLightbox();
@@ -453,66 +412,35 @@ function initializeLightbox() {
         if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox();
     });
 
-    // Mouse zoom
+    // Zoom
     lightbox.addEventListener('wheel', (e) => {
         e.preventDefault();
         const delta = e.deltaY < 0 ? 0.15 : -0.15;
-        scale = Math.min(Math.max(1, scale + delta), 4);
-        updateTransform();
+        scale = Math.min(Math.max(0.5, scale + delta), 4);
+        lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
     });
 
-    // Mouse drag
+    // Arrasto
     lightboxImg.addEventListener('mousedown', (e) => {
-        handleDragStart(e.clientX, e.clientY);
+        if (scale > 1) {
+            dragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            lightboxImg.style.cursor = 'grabbing';
+        }
     });
+
     document.addEventListener('mousemove', (e) => {
-        handleDragMove(e.clientX, e.clientY);
+        if (dragging) {
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        }
     });
-    document.addEventListener('mouseup', handleDragEnd);
 
-    // Touch events
-    lightbox.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 2) {
-            e.preventDefault();
-            initialDistance = Math.hypot(
-                e.touches[0].clientX - e.touches[1].clientX,
-                e.touches[0].clientY - e.touches[1].clientY
-            );
-        } else if (e.touches.length === 1) {
-            lastTouchY = e.touches[0].clientY;
-            if (scale > 1) {
-                handleDragStart(e.touches[0].clientX, e.touches[0].clientY);
-            }
-        }
-    }, { passive: false });
-
-    lightbox.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 2) {
-            e.preventDefault();
-            const currentDistance = Math.hypot(
-                e.touches[0].clientX - e.touches[1].clientX,
-                e.touches[0].clientY - e.touches[1].clientY
-            );
-            const delta = (currentDistance - initialDistance) / 200;
-            scale = Math.min(Math.max(1, scale + delta), 4);
-            initialDistance = currentDistance;
-            updateTransform();
-        } else if (e.touches.length === 1) {
-            if (scale > 1) {
-                handleDragMove(e.touches[0].clientX, e.touches[0].clientY);
-            } else {
-                // Enable swipe to close when not zoomed
-                const touchY = e.touches[0].clientY;
-                const deltaY = touchY - lastTouchY;
-                if (Math.abs(deltaY) > 100) {
-                    closeLightbox();
-                }
-            }
-        }
-    }, { passive: false });
-
-    lightbox.addEventListener('touchend', () => {
-        handleDragEnd();
+    document.addEventListener('mouseup', () => {
+        dragging = false;
+        if (lightboxImg) lightboxImg.style.cursor = 'grab';
     });
 
     console.log('Lightbox inicializado com sucesso!');
@@ -698,112 +626,36 @@ function renderServices() {
         lightbox.onclick = (e) => { if (e.target === lightbox) closeLightbox(); };
         document.onkeydown = (e) => { if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox(); };
 
-        // Zoom with both scroll and pinch
-        let initialDistance = 0;
-        
-        // Mouse wheel zoom
-        lightbox.addEventListener('wheel', (e) => {
+        // ZOOM COM SCROLL
+        lightbox.onwheel = (e) => {
             e.preventDefault();
             const delta = e.deltaY < 0 ? 0.15 : -0.15;
             scale = Math.min(Math.max(0.5, scale + delta), 4);
-            updateTransform();
-        });
+            lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        };
 
-        // Touch events for pinch zoom
-        lightbox.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 2) {
-                e.preventDefault();
-                initialDistance = getTouchDistance(e.touches);
-            }
-        }, { passive: false });
-
-        lightbox.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 2) {
-                e.preventDefault();
-                const currentDistance = getTouchDistance(e.touches);
-                const delta = (currentDistance - initialDistance) / 100;
-                scale = Math.min(Math.max(0.5, scale + delta), 4);
-                initialDistance = currentDistance;
-                updateTransform();
-            }
-        }, { passive: false });
-
-        // Mouse and touch drag
-        function handleDragStart(e) {
+        // ARRASTO
+        lightboxImg.onmousedown = (e) => {
             if (scale > 1) {
                 dragging = true;
-                startX = (e.clientX || e.touches[0].clientX) - translateX;
-                startY = (e.clientY || e.touches[0].clientY) - translateY;
-                if (lightboxImg) lightboxImg.style.cursor = 'grabbing';
+                startX = e.clientX - translateX;
+                startY = e.clientY - translateY;
+                lightboxImg.style.cursor = 'grabbing';
             }
-        }
-
-        function handleDragMove(e) {
+        };
+        document.onmousemove = (e) => {
             if (dragging) {
-                const clientX = e.clientX || e.touches[0].clientX;
-                const clientY = e.clientY || e.touches[0].clientY;
-                translateX = clientX - startX;
-                translateY = clientY - startY;
-                updateTransform();
-            }
-        }
-
-        function handleDragEnd() {
-            dragging = false;
-            if (lightboxImg) lightboxImg.style.cursor = 'grab';
-        }
-
-        // Mouse events
-        lightboxImg.addEventListener('mousedown', handleDragStart);
-        document.addEventListener('mousemove', handleDragMove);
-        document.addEventListener('mouseup', handleDragEnd);
-
-        // Touch events
-        lightboxImg.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) handleDragStart(e.touches[0]);
-        });
-        document.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 1) handleDragMove(e.touches[0]);
-        });
-        document.addEventListener('touchend', handleDragEnd);
-
-        // Helper function for pinch zoom
-        function getTouchDistance(touches) {
-            return Math.hypot(
-                touches[1].clientX - touches[0].clientX,
-                touches[1].clientY - touches[0].clientY
-            );
-        }
-
-        // Helper function to update transform
-        function updateTransform() {
-            if (lightboxImg) {
+                translateX = e.clientX - startX;
+                translateY = e.clientY - startY;
                 lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
             }
-        }
+        };
+        document.onmouseup = () => {
+            dragging = false;
+            if (lightboxImg) lightboxImg.style.cursor = 'grab';
+        };
 
-        // Add swipe to close functionality
-        let touchStartY = 0;
-        let touchMoveY = 0;
-
-        lightbox.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1 && scale === 1) {
-                touchStartY = e.touches[0].clientY;
-            }
-        }, { passive: true });
-
-        lightbox.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 1 && scale === 1) {
-                touchMoveY = e.touches[0].clientY;
-                const deltaY = touchMoveY - touchStartY;
-                
-                if (Math.abs(deltaY) > 100) {
-                    closeLightbox();
-                }
-            }
-        }, { passive: true });
-
-    // Add clicks to images with forced CSS
+        // ADICIONAR CLICKS ÀS IMAGENS COM CSS FORÇADO
         document.querySelectorAll('.service-image').forEach((serviceImg, index) => {
             serviceImg.addEventListener('click', function(e) {
                 const img = this.querySelector('img');
@@ -988,26 +840,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Adiciona funcionalidade de lightbox
     pictures.forEach(picture => {
-        const img = picture.querySelector('img');
-        if (img) {
-            img.style.cursor = 'zoom-in';
-            img.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                const lightbox = document.querySelector('.lightbox') || createLightbox();
-                const lightboxImg = lightbox.querySelector('img');
-                
-                // Pré-carrega a imagem antes de mostrar
-                const tempImage = new Image();
-                tempImage.onload = function() {
-                    lightboxImg.src = this.src;
-                    lightboxImg.alt = img.alt;
-                    lightbox.classList.add('show');
-                    stop(); // Para o carrossel
-                };
-                tempImage.src = img.src;
-            });
-        }
+        picture.style.cursor = 'pointer';
+        picture.addEventListener('click', (e) => {
+            e.preventDefault();
+            const img = picture.querySelector('img');
+            const lightbox = document.querySelector('.lightbox') || createLightbox();
+            const lightboxImg = lightbox.querySelector('img');
+            
+            lightboxImg.src = img.src;
+            lightboxImg.alt = img.alt;
+            
+            lightbox.querySelector('img').src = img.src;
+            lightbox.querySelector('img').alt = img.alt;
+            lightbox.classList.add('show');
+            
+            // Para o carrossel quando a lightbox está aberta
+            stop();
+        });
     });
 
     // Cria a lightbox se não existir
@@ -1016,23 +865,22 @@ document.addEventListener('DOMContentLoaded', () => {
         lightbox.className = 'lightbox';
         
         const img = document.createElement('img');
-        img.style.cursor = 'zoom-out';
         lightbox.appendChild(img);
 
         const closeBtn = document.createElement('button');
         closeBtn.className = 'lightbox-close';
         closeBtn.innerHTML = '×';
-        closeBtn.setAttribute('aria-label', 'Fechar');
         lightbox.appendChild(closeBtn);
 
+        // Fecha a lightbox e reinicia o carrossel
         function closeLightbox() {
             lightbox.classList.remove('show');
-            start(); // Reinicia o carrossel
+            start();
         }
 
         closeBtn.addEventListener('click', closeLightbox);
         lightbox.addEventListener('click', (e) => {
-            if (e.target === lightbox || e.target === img) {
+            if (e.target === lightbox) {
                 closeLightbox();
             }
         });
@@ -1056,4 +904,51 @@ document.addEventListener('DOMContentLoaded', () => {
     update();
     start();
 
+    pictures.forEach(picture => {
+        const img = picture.querySelector('img');
+        const link = document.createElement('a');
+        link.href = 'javascript:void(0)';
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const lightbox = document.querySelector('.lightbox') || createLightbox();
+            const lightboxImg = lightbox.querySelector('img');
+            lightboxImg.src = img.src;
+            lightboxImg.alt = img.alt;
+            lightbox.classList.add('show');
+        });
+        
+        img.parentNode.insertBefore(link, img);
+        link.appendChild(img);
+    });
+
+    function createLightbox() {
+        const lightbox = document.createElement('div');
+        lightbox.className = 'lightbox';
+        
+        const img = document.createElement('img');
+        lightbox.appendChild(img);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'lightbox-close';
+        closeBtn.innerHTML = '×';
+        closeBtn.addEventListener('click', () => lightbox.classList.remove('show'));
+        lightbox.appendChild(closeBtn);
+
+        // Fecha lightbox ao clicar fora da imagem
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) {
+                lightbox.classList.remove('show');
+            }
+        });
+
+        // Fecha lightbox com a tecla ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && lightbox.classList.contains('show')) {
+                lightbox.classList.remove('show');
+            }
+        });
+
+        document.body.appendChild(lightbox);
+        return lightbox;
+    }
 });

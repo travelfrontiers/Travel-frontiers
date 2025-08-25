@@ -38,15 +38,10 @@ img {
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    touch-action: none;
-    -webkit-user-select: none;
-    user-select: none;
-    transition: opacity 0.3s ease;
 }
 
 .lightbox.show {
     display: flex;
-    opacity: 1;
 }
 
 .lightbox::after {
@@ -66,10 +61,6 @@ img {
     height: auto;
     object-fit: contain;
     image-orientation: none;
-    will-change: transform;
-    transition: transform 0.2s ease;
-    -webkit-user-drag: none;
-    touch-action: none;
 }
 
 .lightbox-close {
@@ -1273,14 +1264,11 @@ picture.carousel-img.active {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.95);
+    background: rgba(0, 0, 0, 0.9);
     display: none;
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    touch-action: none;
-    -webkit-user-select: none;
-    user-select: none;
 }
 
 .lightbox.show {
