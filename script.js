@@ -810,9 +810,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let i = 0;
     let timer = null;
     const DURATION = 3000;
-    
-    let lightbox = null;
-    const PADDING = 40; // Padding da lightbox
 
     function update() {
         pictures.forEach((picture, idx) => picture.classList.toggle('active', idx === i));
@@ -841,87 +838,56 @@ document.addEventListener('DOMContentLoaded', () => {
         if (timer) clearInterval(timer); 
     }
 
-    // Função para ajustar o tamanho da imagem na lightbox
-    function adjustImageSize(img) {
-        const viewportWidth = window.innerWidth - (PADDING * 2);
-        const viewportHeight = window.innerHeight - (PADDING * 2);
-        const imageRatio = img.naturalWidth / img.naturalHeight;
-        const viewportRatio = viewportWidth / viewportHeight;
-        
-        let width, height;
-        
-        if (imageRatio > viewportRatio) {
-            // Imagem é mais larga que o viewport
-            width = Math.min(img.naturalWidth, viewportWidth);
-            height = width / imageRatio;
-        } else {
-            // Imagem é mais alta que o viewport
-            height = Math.min(img.naturalHeight, viewportHeight);
-            width = height * imageRatio;
-        }
-        
-        img.style.width = `${width}px`;
-        img.style.height = `${height}px`;
-    }
-
     // Adiciona funcionalidade de lightbox
     pictures.forEach(picture => {
         picture.style.cursor = 'pointer';
         picture.addEventListener('click', (e) => {
             e.preventDefault();
             const img = picture.querySelector('img');
-            if (!lightbox) lightbox = createLightbox();
+            const lightbox = document.querySelector('.lightbox') || createLightbox();
             const lightboxImg = lightbox.querySelector('img');
             
-            // Load the high resolution image
             lightboxImg.src = img.src;
             lightboxImg.alt = img.alt;
             
-            // After image loads, adjust size
-            lightboxImg.onload = () => {
-                adjustImageSize(lightboxImg);
-                lightbox.classList.add('show');
-            };
+            // Resetar transformações anteriores
+            lightboxImg.style.transform = 'none';
             
-            stop(); // Para o carrossel quando a lightbox está aberta
+            // Aplicar rotação apenas para a imagem de Moscovo
+            if (img.src.includes('Moscovo')) {
+                lightboxImg.style.transform = 'rotate(-90deg)';
+            }
+            
+            lightbox.classList.add('show');
+            
+            // Para o carrossel quando a lightbox está aberta
+            stop();
         });
     });
 
-    // Cria a lightbox
+    // Cria a lightbox se não existir
     function createLightbox() {
         const lightbox = document.createElement('div');
         lightbox.className = 'lightbox';
         
-        const container = document.createElement('div');
-        container.className = 'lightbox-container';
-        lightbox.appendChild(container);
-        
         const img = document.createElement('img');
-        container.appendChild(img);
+        lightbox.appendChild(img);
 
         const closeBtn = document.createElement('button');
         closeBtn.className = 'lightbox-close';
         closeBtn.innerHTML = '×';
-        container.appendChild(closeBtn);
+        lightbox.appendChild(closeBtn);
 
-        // Função para fechar a lightbox
+        // Fecha a lightbox e reinicia o carrossel
         function closeLightbox() {
             lightbox.classList.remove('show');
-            start(); // Reinicia o carrossel
+            start();
         }
 
         closeBtn.addEventListener('click', closeLightbox);
         lightbox.addEventListener('click', (e) => {
             if (e.target === lightbox) {
                 closeLightbox();
-            }
-        });
-
-        // Ajusta tamanho da imagem quando a janela é redimensionada
-        window.addEventListener('resize', () => {
-            const lightboxImg = img;
-            if (lightboxImg.complete && lightbox.classList.contains('show')) {
-                adjustImageSize(lightboxImg);
             }
         });
 
@@ -944,5 +910,51 @@ document.addEventListener('DOMContentLoaded', () => {
     update();
     start();
 
-    // Remove o código duplicado pois já temos a funcionalidade implementada acima
+    pictures.forEach(picture => {
+        const img = picture.querySelector('img');
+        const link = document.createElement('a');
+        link.href = 'javascript:void(0)';
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const lightbox = document.querySelector('.lightbox') || createLightbox();
+            const lightboxImg = lightbox.querySelector('img');
+            lightboxImg.src = img.src;
+            lightboxImg.alt = img.alt;
+            lightbox.classList.add('show');
+        });
+        
+        img.parentNode.insertBefore(link, img);
+        link.appendChild(img);
+    });
+
+    function createLightbox() {
+        const lightbox = document.createElement('div');
+        lightbox.className = 'lightbox';
+        
+        const img = document.createElement('img');
+        lightbox.appendChild(img);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'lightbox-close';
+        closeBtn.innerHTML = '×';
+        closeBtn.addEventListener('click', () => lightbox.classList.remove('show'));
+        lightbox.appendChild(closeBtn);
+
+        // Fecha lightbox ao clicar fora da imagem
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) {
+                lightbox.classList.remove('show');
+            }
+        });
+
+        // Fecha lightbox com a tecla ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && lightbox.classList.contains('show')) {
+                lightbox.classList.remove('show');
+            }
+        });
+
+        document.body.appendChild(lightbox);
+        return lightbox;
+    }
 });

@@ -38,6 +38,7 @@ img {
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    padding: 20px;
 }
 
 .lightbox.show {
@@ -45,15 +46,11 @@ img {
 }
 
 .lightbox img {
-    max-width: 90%;
-    max-height: 90vh;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
     object-fit: contain;
-}
-
-/* Correção para a imagem de Moscovo na lightbox */
-.lightbox img[src*="Moscovo.webp"],
-.lightbox img[src*="Moscovo.JPG"] {
-    transform: rotate(-90deg) scale(0.9);
 }
 
 .lightbox-close {
