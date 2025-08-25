@@ -572,22 +572,20 @@ function renderServices() {
     const services = translations[currentLanguage].services.items;
     
     servicesGrid.innerHTML = services.map(service => {
-    // Verifica se a imagem é local e termina com .jpeg ou .jpg ou .png
+    // Prepare image HTML with WebP support
     let imageHtml;
-    if (
-      service.image.startsWith('img/') &&
-      (service.image.endsWith('.jpeg') || service.image.endsWith('.jpg') || service.image.endsWith('.png'))
-    ) {
-        // Substitui por .webp
-        const webpSrc = service.image.replace(/\.(jpeg|jpg|png)$/i, '.webp');
+    if (service.image.startsWith('img/')) {
+        // For local images, add WebP support
+        const baseImage = service.image.replace(/\.(jpeg|jpg|png)$/i, '');
         imageHtml = `
           <picture>
-            <source srcset="${webpSrc}" type="image/webp">
+            <source srcset="${baseImage}.webp" type="image/webp">
+            <source srcset="${service.image}" type="image/${service.image.split('.').pop()}">
             <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
           </picture>
         `;
     } else {
-        // Para imagens externas (Unsplash), mantém normal
+        // For external images, keep original format
         imageHtml = `<img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">`;
     }
 
