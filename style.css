@@ -44,20 +44,23 @@ img {
     display: flex;
 }
 
-.lightbox img {
-    width: auto;
-    height: auto;
-    max-width: min(90%, 1200px);
-    max-height: 90vh;
-    object-fit: contain;
-    image-orientation: none;
+.lightbox::after {
+    content: '';
+    display: block;
+    width: 90%;
+    max-width: 1200px;
+    height: 90vh;
+    position: absolute;
 }
 
-/* Ajustes responsivos para a lightbox */
-@media (max-width: 768px) {
-    .lightbox img {
-        max-width: 90%;
-    }
+.lightbox img {
+    position: absolute;
+    max-width: 90%;
+    max-height: 90vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    image-orientation: none;
 }
 
 .lightbox-close {
@@ -1226,17 +1229,16 @@ margin-left: 16px;
 }
 
 .photo-carousel {
-  position: relative;
-  width: min(92%, 900px);
-  aspect-ratio: 16 / 9;
-  margin: 32px auto 0;
-  border-radius: 16px;
-  overflow: hidden;
-  background: #000;
-  box-shadow: 0 10px 28px rgba(0,0,0,0.12);
-  margin-bottom: 48px !important;
-  display: block;
-  clear: both;
+    position: relative;
+    width: min(94%, 900px);
+    aspect-ratio: 4 / 3;
+    margin: 0 auto;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .carousel-container {
@@ -1246,33 +1248,31 @@ margin-left: 16px;
 }
 
 .carousel-img {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity 0.8s ease;
-  z-index: 0;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .carousel-img picture {
-  display: block;
-  width: 100%;
-  height: 100%;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .carousel-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  transition: transform 0.3s ease;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
-.carousel-img.active {
-  opacity: 1;
-  z-index: 1;
-}
-
-/* Lightbox styles */
+.carousel-img.active {/* Lightbox styles */
 .lightbox {
   position: fixed;
   top: 0;
