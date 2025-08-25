@@ -26,54 +26,6 @@ img {
     display: block;
 }
 
-/* Lightbox styles */
-.lightbox {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.9);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.lightbox.show {
-    display: flex;
-}
-
-.lightbox::after {
-    content: '';
-    display: block;
-    width: 90%;
-    max-width: 1200px;
-    height: 90vh;
-    position: absolute;
-}
-
-.lightbox img {
-    position: absolute;
-    max-width: 90%;
-    max-height: 90vh;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    image-orientation: none;
-}
-
-.lightbox-close {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    color: white;
-    font-size: 30px;
-    background: none;
-    border: none;
-    cursor: pointer;
-}
-
 /* Improved font loading performance */
 body {
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1124,7 +1076,6 @@ body {
     z-index: 999999;
     opacity: 0;
     will-change: opacity;
-    padding: 40px;
 }
 
 .lightbox.show {
@@ -1136,16 +1087,11 @@ body {
 .lightbox img {
     max-width: 90vw;
     max-height: 90vh;
-    width: auto;
-    height: auto;
     object-fit: contain;
-    object-position: center !important;
-    image-orientation: from-image !important;
     cursor: grab;
     user-select: none;
     border-radius: 8px;
     will-change: transform;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
 
 .lightbox-close {
@@ -1231,76 +1177,39 @@ margin-left: 16px;
 }
 
 .photo-carousel {
-    position: relative;
-    width: min(94%, 900px);
-    aspect-ratio: 4 / 3;
-    margin: 0 auto;
-    border-radius: 12px;
-    overflow: hidden;
-    background: #000;
+  position: relative;
+  width: min(92%, 900px);
+  aspect-ratio: 16 / 9;
+  margin: 32px auto 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #000; /* cor das barras/lados */
+  box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+  margin-bottom: 48px !important; /* Adiciona espaço abaixo da galeria */
+  display: block;
+  clear: both;
 }
 
-picture.carousel-img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    transition: opacity 0.5s ease;
+.carousel-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  border-radius: 16px;
+  z-index: 0;
 }
 
-picture.carousel-img img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+.carousel-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
 }
-
-picture.carousel-img.active {
-    opacity: 1;
-    z-index: 1;
-}/* Lightbox styles */
-.lightbox {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.9);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.lightbox.show {
-    display: flex;
-}
-
-.lightbox img {
-    max-width: 90%;
-    max-height: 90vh;
-    object-fit: contain;
-    image-orientation: none;
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-  animation: lightboxImageIn 0.4s ease forwards;
-}
-
-@keyframes lightboxFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes lightboxImageIn {
-  from { 
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to { 
-    opacity: 1;
-    transform: scale(1);
-  }
+.carousel-img.active {
+  opacity: 1;
+  z-index: 1;
 }
 
 /* Legenda abaixo das imagens */
