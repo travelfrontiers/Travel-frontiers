@@ -901,6 +901,47 @@ document.addEventListener('DOMContentLoaded', () => {
     carousel.addEventListener('mouseenter', stop);
     carousel.addEventListener('mouseleave', start);
 
+    // Criar um único lightbox para ser reutilizado
+    let globalLightbox = null;
+
+    function getOrCreateLightbox() {
+        if (!globalLightbox) {
+            globalLightbox = document.createElement('div');
+            globalLightbox.className = 'lightbox';
+            
+            const img = document.createElement('img');
+            globalLightbox.appendChild(img);
+
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'lightbox-close';
+            closeBtn.innerHTML = '×';
+            closeBtn.addEventListener('click', () => {
+                globalLightbox.classList.remove('show');
+                globalLightbox.querySelector('img').src = '';
+            });
+            globalLightbox.appendChild(closeBtn);
+
+            // Fecha lightbox ao clicar fora da imagem
+            globalLightbox.addEventListener('click', (e) => {
+                if (e.target === globalLightbox) {
+                    globalLightbox.classList.remove('show');
+                    globalLightbox.querySelector('img').src = '';
+                }
+            });
+
+            // Fecha lightbox com a tecla ESC
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && globalLightbox.classList.contains('show')) {
+                    globalLightbox.classList.remove('show');
+                    globalLightbox.querySelector('img').src = '';
+                }
+            });
+
+            document.body.appendChild(globalLightbox);
+        }
+        return globalLightbox;
+    }
+
     function setupLightboxForImage(picture) {
         const img = picture.querySelector('img');
         if (!img.parentNode.matches('a')) {
@@ -908,11 +949,15 @@ document.addEventListener('DOMContentLoaded', () => {
             link.href = 'javascript:void(0)';
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                const lightbox = document.querySelector('.lightbox') || createLightbox();
+                const lightbox = getOrCreateLightbox();
                 const lightboxImg = lightbox.querySelector('img');
-                lightboxImg.src = img.src;
-                lightboxImg.alt = img.alt;
-                lightbox.classList.add('show');
+                // Limpa a imagem atual e define a nova
+                lightboxImg.src = '';
+                setTimeout(() => {
+                    lightboxImg.src = img.src;
+                    lightboxImg.alt = img.alt;
+                    lightbox.classList.add('show');
+                }, 50);
             });
             
             img.parentNode.insertBefore(link, img);
@@ -933,35 +978,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     update();
     start();
-
-    function createLightbox() {
-        const lightbox = document.createElement('div');
-        lightbox.className = 'lightbox';
-        
-        const img = document.createElement('img');
-        lightbox.appendChild(img);
-
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'lightbox-close';
-        closeBtn.innerHTML = '×';
-        closeBtn.addEventListener('click', () => lightbox.classList.remove('show'));
-        lightbox.appendChild(closeBtn);
-
-        // Fecha lightbox ao clicar fora da imagem
-        lightbox.addEventListener('click', (e) => {
-            if (e.target === lightbox) {
-                lightbox.classList.remove('show');
-            }
-        });
-
-        // Fecha lightbox com a tecla ESC
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && lightbox.classList.contains('show')) {
-                lightbox.classList.remove('show');
-            }
-        });
-
-        document.body.appendChild(lightbox);
-        return lightbox;
-    }
 });
