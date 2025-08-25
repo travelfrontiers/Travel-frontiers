@@ -514,6 +514,16 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeTestimonials();
     renderServices();
     updateContent();
+    
+     // Adiciona esta linha para tratar da tecla ESC
+    document.addEventListener('keydown', (e) => {
+        const lightbox = document.getElementById('lightbox');
+        if (e.key === 'Escape' && lightbox && lightbox.classList.contains('show')) {
+            lightbox.style.display = 'none';
+            lightbox.classList.remove('show');
+            lightbox.querySelector('img').src = '';
+        }
+    });
 });
 
 // Language functionality (mantém todas as tuas funções de língua iguais)
