@@ -634,7 +634,8 @@ function initializeNavigation() {
     });
 }
 
-// Services functionality
+// Serviços e Lightbox funcional
+
 function renderServices() {
     const servicesGrid = document.querySelector('.services-grid');
     if (!servicesGrid) return;
@@ -642,127 +643,128 @@ function renderServices() {
     const services = translations[currentLanguage].services.items;
     
     servicesGrid.innerHTML = services.map(service => {
-    // Prepare image HTML with WebP support
-    let imageHtml;
-    if (service.image.startsWith('img/')) {
-        // For local images, add WebP support
-        const baseImage = service.image.replace(/\.(jpeg|jpg|png)$/i, '');
-        imageHtml = `
-          <picture>
-            <source srcset="${baseImage}.webp" type="image/webp">
-            <source srcset="${service.image}" type="image/${service.image.split('.').pop()}">
-            <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
-          </picture>
-        `;
-    } else {
-        // For external images, keep original format
-        imageHtml = `<img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">`;
-    }
-
-    return `
-        <div class="service-card">
-            <div class="service-image">
-                ${imageHtml}
-                <div class="service-overlay"></div>
-                <h3 class="service-title">${service.title}</h3>
-            </div>
-            <div class="service-content">
-                <p class="service-description">${service.description}</p>
-            </div>
-        </div>
-    `;
-}).join('');
-
-
-    // LIGHTBOX FUNCIONAL COM ZOOM E ARRASTO
-    const lightbox = document.getElementById('lightbox');
-    const lightboxImg = lightbox ? lightbox.querySelector('img') : null;
-    const closeBtn = lightbox ? lightbox.querySelector('.lightbox-close') : null;
-
-    if (lightbox && lightboxImg && closeBtn) {
-        let scale = 1, translateX = 0, translateY = 0, startX = 0, startY = 0, dragging = false;
-
-        // FUNÇÃO PARA FECHAR LIGHTBOX
-        function closeLightbox() {
-            lightbox.style.display = 'none';
-            lightbox.classList.remove('show');
-            lightboxImg.src = '';
-            scale = 1; translateX = 0; translateY = 0;
-            lightboxImg.style.transform = 'translate(0, 0) scale(1)';
+        let imageHtml;
+        if (service.image.startsWith('img/')) {
+            const baseImage = service.image.replace(/\.(jpeg|jpg|png)$/i, '');
+            imageHtml = `
+              <picture>
+                <source srcset="${baseImage}.webp" type="image/webp">
+                <source srcset="${service.image}" type="image/${service.image.split('.').pop()}">
+                <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
+              </picture>
+            `;
+        } else {
+            imageHtml = `<img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">`;
         }
 
-        // EVENTOS DE FECHAR
-        closeBtn.onclick = closeLightbox;
-        lightbox.onclick = (e) => { if (e.target === lightbox) closeLightbox(); };
-        document.onkeydown = (e) => { if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox(); };
+        return `
+            <div class="service-card">
+                <div class="service-image">
+                    ${imageHtml}
+                    <div class="service-overlay"></div>
+                    <h3 class="service-title">${service.title}</h3>
+                </div>
+                <div class="service-content">
+                    <p class="service-description">${service.description}</p>
+                </div>
+            </div>
+        `;
+    }).join('');
 
-        // ZOOM COM SCROLL
-        lightbox.onwheel = (e) => {
+    setTimeout(setupLightbox, 50);
+}
+
+function setupLightbox() {
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = lightbox?.querySelector('img');
+    const closeBtn = lightbox?.querySelector('.lightbox-close');
+    if (!lightbox || !lightboxImg || !closeBtn) return;
+
+    let scale = 1, translateX = 0, translateY = 0;
+    let startX = 0, startY = 0, dragging = false;
+
+    function closeLightbox() {
+        lightbox.classList.remove('show');
+        lightboxImg.src = '';
+        lightboxImg.style.transform = 'translate(0, 0) scale(1)';
+        scale = 1; translateX = 0; translateY = 0;
+        document.body.style.overflow = '';
+    }
+
+    function openLightbox(src, alt) {
+        lightboxImg.src = src;
+        lightboxImg.alt = alt || '';
+        lightbox.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Remove listeners to avoid duplicates
+    closeBtn.replaceWith(closeBtn.cloneNode(true));
+    const newCloseBtn = lightbox.querySelector('.lightbox-close');
+
+    newCloseBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        closeLightbox();
+    });
+
+    lightbox.addEventListener('click', e => {
+        if (e.target === lightbox) closeLightbox();
+    });
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && lightbox.classList.contains('show')) {
+            closeLightbox();
+        }
+    });
+
+    lightbox.addEventListener('wheel', e => {
+        if (!lightbox.classList.contains('show')) return;
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 0.2 : -0.2;
+        scale = Math.min(Math.max(0.5, scale + delta), 5);
+        lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    });
+
+    lightboxImg.addEventListener('mousedown', e => {
+        if (scale > 1) {
             e.preventDefault();
-            const delta = e.deltaY < 0 ? 0.15 : -0.15;
-            scale = Math.min(Math.max(0.5, scale + delta), 4);
+            dragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            lightboxImg.style.cursor = 'grabbing';
+        }
+    });
+
+    document.addEventListener('mousemove', e => {
+        if (dragging) {
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
             lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-        };
+        }
+    });
 
-        // ARRASTO
-        lightboxImg.onmousedown = (e) => {
-            if (scale > 1) {
-                dragging = true;
-                startX = e.clientX - translateX;
-                startY = e.clientY - translateY;
-                lightboxImg.style.cursor = 'grabbing';
-            }
-        };
-        document.onmousemove = (e) => {
-            if (dragging) {
-                translateX = e.clientX - startX;
-                translateY = e.clientY - startY;
-                lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-            }
-        };
-        document.onmouseup = () => {
-            dragging = false;
-            if (lightboxImg) lightboxImg.style.cursor = 'grab';
-        };
+    document.addEventListener('mouseup', () => {
+        dragging = false;
+        lightboxImg.style.cursor = 'grab';
+    });
 
-        // ADICIONAR CLICKS ÀS IMAGENS COM CSS FORÇADO
-        document.querySelectorAll('.service-image').forEach((serviceImg, index) => {
-            serviceImg.addEventListener('click', function(e) {
-                const img = this.querySelector('img');
-                if (img) {
-                    // FORÇA CSS INLINE PARA GARANTIR QUE FUNCIONA
-                    lightbox.setAttribute('style', `
-                        position: fixed !important;
-                        top: 0 !important;
-                        left: 0 !important;
-                        width: 100vw !important;
-                        height: 100vh !important;
-                        background: rgba(0, 0, 0, 0.9) !important;
-                        display: flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                        z-index: 999999 !important;
-                        visibility: visible !important;
-                        opacity: 1 !important;
-                    `);
-                    
-                    lightboxImg.setAttribute('style', `
-                        max-width: 90vw !important;
-                        max-height: 90vh !important;
-                        object-fit: contain !important;
-                        border-radius: 8px !important;
-                        cursor: grab !important;
-                        transition: transform 0.2s ease !important;
-                        user-select: none !important;
-                    `);
-                    
-                    lightboxImg.src = img.src;
-                    lightbox.classList.add('show');
-                }
-            });
+    document.querySelectorAll('.service-image').forEach(container => {
+        container.addEventListener('click', function() {
+            const img = this.querySelector('img');
+            if (img) openLightbox(img.src, img.alt);
         });
-        
-        console.log('✅ Lightbox configurado com zoom e arrasto!');
+    });
+}
+
+// Certifique-se de chamar renderServices() após o DOM carregar:
+document.addEventListener('DOMContentLoaded', function() {
+    initializeLanguageSelector();
+    initializeMobileMenu();
+    initializeNavigation();
+    initializeTestimonials();
+    renderServices();
+    updateContent();
+});
 
          // ADICIONAR LUPA NAS IMAGENS
         document.querySelectorAll('.clickable-service').forEach(img => {
