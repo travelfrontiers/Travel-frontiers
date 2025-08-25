@@ -1190,6 +1190,12 @@ margin-left: 16px;
   clear: both;
 }
 
+.carousel-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 .carousel-img {
   position: absolute;
   inset: 0;
@@ -1199,6 +1205,7 @@ margin-left: 16px;
   transition: opacity 0.8s ease;
   border-radius: 16px;
   z-index: 0;
+  pointer-events: none;
 }
 
 .carousel-img img {
@@ -1207,6 +1214,7 @@ margin-left: 16px;
   object-fit: contain;
   object-position: center;
 }
+
 .carousel-img.active {
   opacity: 1;
   z-index: 1;

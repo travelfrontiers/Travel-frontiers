@@ -801,7 +801,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const carousel = document.getElementById('travelCarousel');
     if (!carousel) return;
 
-    const imgs = [...carousel.querySelectorAll('.carousel-img')];
+    const pictures = [...carousel.querySelectorAll('.carousel-img')];
     const prev = carousel.querySelector('.pc-prev');
     const next = carousel.querySelector('.pc-next');
     const capText = carousel.querySelector('.pc-text');
@@ -812,19 +812,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const DURATION = 3000;
 
     function update() {
-        imgs.forEach((img, idx) => img.classList.toggle('active', idx === i));
-        const caption = imgs[i].dataset.caption || imgs[i].alt || '';
+        pictures.forEach((picture, idx) => picture.classList.toggle('active', idx === i));
+        const img = pictures[i].querySelector('img');
+        const caption = img.dataset.caption || img.alt || '';
         if (capText) capText.textContent = caption;
-        if (counter) counter.textContent = `${i + 1}/${imgs.length}`;
+        if (counter) counter.textContent = `${i + 1}/${pictures.length}`;
     }
 
     function nextSlide() { 
-        i = (i + 1) % imgs.length; 
+        i = (i + 1) % pictures.length; 
         update(); 
     }
     
     function prevSlide() { 
-        i = (i - 1 + imgs.length) % imgs.length; 
+        i = (i - 1 + pictures.length) % pictures.length; 
         update(); 
     }
 
@@ -846,12 +847,13 @@ document.addEventListener('DOMContentLoaded', () => {
     update();
     start();
 
-    imgs.forEach(img => {
+    pictures.forEach(picture => {
+        const img = picture.querySelector('img');
         const link = document.createElement('a');
         link.href = img.src;
         link.target = '_blank';
         link.rel = 'noopener';
-
+        
         img.parentNode.insertBefore(link, img);
         link.appendChild(img);
     });
