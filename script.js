@@ -850,11 +850,48 @@ document.addEventListener('DOMContentLoaded', () => {
     pictures.forEach(picture => {
         const img = picture.querySelector('img');
         const link = document.createElement('a');
-        link.href = img.src;
-        link.target = '_blank';
-        link.rel = 'noopener';
+        link.href = 'javascript:void(0)';
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const lightbox = document.querySelector('.lightbox') || createLightbox();
+            const lightboxImg = lightbox.querySelector('img');
+            lightboxImg.src = img.src;
+            lightboxImg.alt = img.alt;
+            lightbox.classList.add('show');
+        });
         
         img.parentNode.insertBefore(link, img);
         link.appendChild(img);
     });
+
+    function createLightbox() {
+        const lightbox = document.createElement('div');
+        lightbox.className = 'lightbox';
+        
+        const img = document.createElement('img');
+        lightbox.appendChild(img);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'lightbox-close';
+        closeBtn.innerHTML = '×';
+        closeBtn.addEventListener('click', () => lightbox.classList.remove('show'));
+        lightbox.appendChild(closeBtn);
+
+        // Fecha lightbox ao clicar fora da imagem
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) {
+                lightbox.classList.remove('show');
+            }
+        });
+
+        // Fecha lightbox com a tecla ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && lightbox.classList.contains('show')) {
+                lightbox.classList.remove('show');
+            }
+        });
+
+        document.body.appendChild(lightbox);
+        return lightbox;
+    }
 });

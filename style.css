@@ -1202,22 +1202,43 @@ margin-left: 16px;
   width: 100%;
   height: 100%;
   opacity: 0;
-  transition: opacity 0.8s ease;
+  transition: all 0.8s ease;
   border-radius: 16px;
   z-index: 0;
-  pointer-events: none;
+}
+
+.carousel-img a {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: zoom-in;
 }
 
 .carousel-img img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover; /* Mudamos para cover para manter a proporção e preencher todo o espaço */
   object-position: center;
+  transition: transform 0.5s ease;
 }
 
 .carousel-img.active {
   opacity: 1;
   z-index: 1;
+}
+
+/* Efeito de zoom ao passar o mouse */
+.carousel-img a:hover img {
+  transform: scale(1.05);
+}
+
+/* Estilo para a imagem quando aberta na lightbox */
+.lightbox img {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain !important; /* Garante que a imagem inteira seja visível */
+  border-radius: 8px;
+  transition: transform 0.3s ease;
 }
 
 /* Legenda abaixo das imagens */
