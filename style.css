@@ -1006,7 +1006,7 @@ body {
     .footer-links {
         justify-content: center;
     }
-
+}
 
 /* Performance Optimizations */
 /* Reduce repaints */
@@ -1062,7 +1062,7 @@ body {
     }
 }
 
-/* Lightbox corrigido */
+/* Lightbox with performance improvements */
 .lightbox {
     position: fixed;
     top: 0;
@@ -1075,33 +1075,23 @@ body {
     justify-content: center;
     z-index: 999999;
     opacity: 0;
-    transition: opacity 0.3s ease;
     will-change: opacity;
-    padding: 20px;
-    box-sizing: border-box;
 }
 
 .lightbox.show {
     display: flex;
     opacity: 1;
+    transition: opacity 0.3s ease;
 }
 
 .lightbox img {
     max-width: 90vw;
     max-height: 90vh;
-    width: auto;
-    height: auto;
     object-fit: contain;
-    object-position: center;
     cursor: grab;
     user-select: none;
     border-radius: 8px;
     will-change: transform;
-    transition: transform 0.2s ease;
-}
-
-.lightbox img:active {
-    cursor: grabbing;
 }
 
 .lightbox-close {
@@ -1110,57 +1100,38 @@ body {
     right: 40px;
     color: white;
     font-size: 3rem;
-    background: rgba(0, 0, 0, 0.5);
+    background: transparent;
     border: none;
     cursor: pointer;
     z-index: 1000000;
     line-height: 1;
-    padding: 10px;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 1;
-    visibility: visible;
-    transition: background 0.2s ease;
+    padding: 0.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
-.lightbox-close:hover {
-    background: rgba(0, 0, 0, 0.8);
-    color: #f97316;
+.lightbox.show .lightbox-close {
+    opacity: 1;
+    visibility: visible;
 }
 
 .clickable-service {
     cursor: zoom-in;
 }
 
-/* Mobile ajustes */
+/* Responsive lightbox */
 @media (max-width: 768px) {
-    .lightbox {
-        padding: 10px;
-    }
-    .lightbox img {
-        max-width: 95vw;
-        max-height: 85vh;
-    }
-    .lightbox-close {
-        top: 15px;
-        right: 20px;
-        font-size: 2.5rem;
-        width: 50px;
-        height: 50px;
-        padding: 8px;
-    }
-}
-
-/* Para imagens muito altas (verticais), garantir que ficam bem centradas */
-@media (orientation: portrait) {
-    .lightbox img {
-        max-width: 85vw !important;
-        max-height: 80vh !important;
-    }
+  .lightbox img {
+    max-width: 95vw;
+    max-height: 85vh;
+  }
+  
+  .lightbox-close {
+    top: 15px;
+    right: 20px;
+    font-size: 2.5rem;
+  }
 }
 
 /* Footer Bottom */
@@ -1224,17 +1195,12 @@ margin-left: 16px;
   inset: 0;
   width: 100%;
   height: 100%;
+  object-fit: contain; /* << este é o comando que interessa! */
+  object-position: center;
   opacity: 0;
   transition: opacity 0.8s ease;
   border-radius: 16px;
   z-index: 0;
-}
-
-.carousel-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
 }
 .carousel-img.active {
   opacity: 1;
