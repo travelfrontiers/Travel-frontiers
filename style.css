@@ -45,12 +45,19 @@ img {
 }
 
 .lightbox img {
-    width: 90%;
-    height: 90vh;
-    max-width: 90%;
+    width: auto;
+    height: auto;
+    max-width: min(90%, 1200px);
     max-height: 90vh;
     object-fit: contain;
     image-orientation: none;
+}
+
+/* Ajustes responsivos para a lightbox */
+@media (max-width: 768px) {
+    .lightbox img {
+        max-width: 90%;
+    }
 }
 
 .lightbox-close {
