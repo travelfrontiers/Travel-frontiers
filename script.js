@@ -381,48 +381,122 @@ const translations = {
 let currentLanguage = 'pt';
 let currentTestimonialIndex = 0;
 
-// Função do Lightbox - ADICIONA ANTES DO DOMContentLoaded
-function initializeLightbox() {
+// Services functionality CORRIGIDA
+function renderServices() {
+    const servicesGrid = document.querySelector('.services-grid');
+    if (!servicesGrid) return;
+    
+    const services = translations[currentLanguage].services.items;
+    
+    servicesGrid.innerHTML = services.map(service => {
+        // Prepare image HTML with WebP support
+        let imageHtml;
+        if (service.image.startsWith('img/')) {
+            // For local images, add WebP support
+            const baseImage = service.image.replace(/\.(jpeg|jpg|png)$/i, '');
+            imageHtml = `
+              <picture>
+                <source srcset="${baseImage}.webp" type="image/webp">
+                <source srcset="${service.image}" type="image/${service.image.split('.').pop()}">
+                <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
+              </picture>
+            `;
+        } else {
+            // For external images, keep original format
+            imageHtml = `<img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">`;
+        }
+
+        return `
+            <div class="service-card">
+                <div class="service-image">
+                    ${imageHtml}
+                    <div class="service-overlay"></div>
+                    <h3 class="service-title">${service.title}</h3>
+                </div>
+                <div class="service-content">
+                    <p class="service-description">${service.description}</p>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // INICIALIZAR LIGHTBOX FUNCIONAL
+    setTimeout(() => {
+        initializeLightboxForServices();
+    }, 100);
+}
+
+// FUNÇÃO ESPECÍFICA PARA INICIALIZAR O LIGHTBOX DOS SERVIÇOS
+function initializeLightboxForServices() {
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = lightbox ? lightbox.querySelector('img') : null;
     const closeBtn = lightbox ? lightbox.querySelector('.lightbox-close') : null;
 
     if (!lightbox || !lightboxImg || !closeBtn) {
-        console.log('Elementos do lightbox não encontrados');
+        console.log('❌ Elementos do lightbox não encontrados');
         return;
     }
 
     let scale = 1, translateX = 0, translateY = 0, startX = 0, startY = 0, dragging = false;
 
+    // FUNÇÃO PARA FECHAR LIGHTBOX
     function closeLightbox() {
         lightbox.style.display = 'none';
         lightbox.classList.remove('show');
         lightbox.setAttribute('aria-hidden', 'true');
         lightboxImg.src = '';
-        scale = 1; translateX = 0; translateY = 0;
+        lightboxImg.alt = '';
+        scale = 1; 
+        translateX = 0; 
+        translateY = 0;
         lightboxImg.style.transform = 'translate(0, 0) scale(1)';
+        document.body.style.overflow = ''; // Restaura scroll da página
     }
 
-    // Eventos de fechar
-    closeBtn.addEventListener('click', closeLightbox);
-    lightbox.addEventListener('click', (e) => {
-        if (e.target === lightbox) closeLightbox();
+    // FUNÇÃO PARA ABRIR LIGHTBOX
+    function openLightbox(imgSrc, imgAlt) {
+        lightbox.style.display = 'flex';
+        lightbox.classList.add('show');
+        lightbox.setAttribute('aria-hidden', 'false');
+        lightboxImg.src = imgSrc;
+        lightboxImg.alt = imgAlt || '';
+        document.body.style.overflow = 'hidden'; // Previne scroll da página
+    }
+
+    // EVENTOS DE FECHAR
+    closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeLightbox();
     });
+    
+    lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) {
+            closeLightbox();
+        }
+    });
+    
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox();
+        if (e.key === 'Escape' && lightbox.classList.contains('show')) {
+            closeLightbox();
+        }
     });
 
-    // Zoom
+    // ZOOM COM SCROLL (funciona apenas quando lightbox está aberto)
     lightbox.addEventListener('wheel', (e) => {
+        if (!lightbox.classList.contains('show')) return;
+        
         e.preventDefault();
-        const delta = e.deltaY < 0 ? 0.15 : -0.15;
-        scale = Math.min(Math.max(0.5, scale + delta), 4);
+        e.stopPropagation();
+        
+        const delta = e.deltaY < 0 ? 0.2 : -0.2;
+        scale = Math.min(Math.max(0.5, scale + delta), 5);
         lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
     });
 
-    // Arrasto
+    // ARRASTO PARA IMAGENS COM ZOOM
     lightboxImg.addEventListener('mousedown', (e) => {
         if (scale > 1) {
+            e.preventDefault();
             dragging = true;
             startX = e.clientX - translateX;
             startY = e.clientY - translateY;
@@ -431,7 +505,7 @@ function initializeLightbox() {
     });
 
     document.addEventListener('mousemove', (e) => {
-        if (dragging) {
+        if (dragging && lightbox.classList.contains('show')) {
             translateX = e.clientX - startX;
             translateY = e.clientY - startY;
             lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
@@ -439,12 +513,29 @@ function initializeLightbox() {
     });
 
     document.addEventListener('mouseup', () => {
-        dragging = false;
-        if (lightboxImg) lightboxImg.style.cursor = 'grab';
+        if (dragging) {
+            dragging = false;
+            lightboxImg.style.cursor = 'grab';
+        }
     });
 
-    console.log('Lightbox inicializado com sucesso!');
-}
+    // ADICIONAR CLIQUES ÀS IMAGENS DOS SERVIÇOS
+    document.querySelectorAll('.service-image').forEach((serviceContainer) => {
+        serviceContainer.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const img = this.querySelector('img');
+            if (img && img.src) {
+                openLightbox(img.src, img.alt);
+            }
+        });
+    });
+
+    // ESTILO DA LUPA NAS IMAGENS
+    document.querySelectorAll('.clickable-service').forEach(img => {
+        img.style.cursor = 'zoom-in';
+    });
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
