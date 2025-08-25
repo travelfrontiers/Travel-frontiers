@@ -494,10 +494,10 @@ function changeLanguage(lang) {
     updateTestimonials();
     
     // Reinicializa lightbox após mudança de língua
-   // setTimeout(() => {
-    //  initializeLightbox();
-    // }, 100);
-// }
+    setTimeout(() => {
+        initializeLightbox();
+    }, 100);
+}
 
 function updateContent() {
     const elements = document.querySelectorAll('[data-translate]');
@@ -572,79 +572,133 @@ function renderServices() {
     const services = translations[currentLanguage].services.items;
     
     servicesGrid.innerHTML = services.map(service => {
-        let imageHtml;
-        if (service.image.startsWith('img/')) {
-            const baseImage = service.image.replace(/\.(jpeg|jpg|png)$/i, '');
-            imageHtml = `
-              <picture>
-                <source srcset="${baseImage}.webp" type="image/webp">
-                <source srcset="${service.image}" type="image/${service.image.split('.').pop()}">
-                <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
-              </picture>
-            `;
-        } else {
-            imageHtml = `<img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">`;
-        }
-
-        return `
-            <div class="service-card">
-                <div class="service-image">
-                    ${imageHtml}
-                    <div class="service-overlay"></div>
-                    <h3 class="service-title">${service.title}</h3>
-                </div>
-                <div class="service-content">
-                    <p class="service-description">${service.description}</p>
-                </div>
-            </div>
+    // Prepare image HTML with WebP support
+    let imageHtml;
+    if (service.image.startsWith('img/')) {
+        // For local images, add WebP support
+        const baseImage = service.image.replace(/\.(jpeg|jpg|png)$/i, '');
+        imageHtml = `
+          <picture>
+            <source srcset="${baseImage}.webp" type="image/webp">
+            <source srcset="${service.image}" type="image/${service.image.split('.').pop()}">
+            <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
+          </picture>
         `;
-    }).join('');
+    } else {
+        // For external images, keep original format
+        imageHtml = `<img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">`;
+    }
 
-    // LIGHTBOX SIMPLES E FUNCIONAL
+    return `
+        <div class="service-card">
+            <div class="service-image">
+                ${imageHtml}
+                <div class="service-overlay"></div>
+                <h3 class="service-title">${service.title}</h3>
+            </div>
+            <div class="service-content">
+                <p class="service-description">${service.description}</p>
+            </div>
+        </div>
+    `;
+}).join('');
+
+
+    // LIGHTBOX FUNCIONAL COM ZOOM E ARRASTO
     const lightbox = document.getElementById('lightbox');
-    const lightboxImg = lightbox?.querySelector('img');
-    const closeBtn = lightbox?.querySelector('.lightbox-close');
+    const lightboxImg = lightbox ? lightbox.querySelector('img') : null;
+    const closeBtn = lightbox ? lightbox.querySelector('.lightbox-close') : null;
 
-    if (!lightbox || !lightboxImg || !closeBtn) return;
+    if (lightbox && lightboxImg && closeBtn) {
+        let scale = 1, translateX = 0, translateY = 0, startX = 0, startY = 0, dragging = false;
 
-    // FECHAR LIGHTBOX - FUNÇÃO SIMPLES
-    window.closeLightbox = function() {
-        lightbox.style.display = 'none';
-        lightbox.classList.remove('show');
-        lightboxImg.src = '';
-        lightboxImg.style.transform = 'translate(0px, 0px) scale(1)';
-    };
-
-    // EVENT LISTENERS DIRETOS
-    closeBtn.onclick = window.closeLightbox;
-    lightbox.onclick = function(e) {
-        if (e.target === lightbox) window.closeLightbox();
-    };
-    
-    // ESC para fechar
-    document.onkeydown = function(e) {
-        if (e.key === 'Escape' && lightbox.classList.contains('show')) {
-            window.closeLightbox();
+        // FUNÇÃO PARA FECHAR LIGHTBOX
+        function closeLightbox() {
+            lightbox.style.display = 'none';
+            lightbox.classList.remove('show');
+            lightboxImg.src = '';
+            scale = 1; translateX = 0; translateY = 0;
+            lightboxImg.style.transform = 'translate(0, 0) scale(1)';
         }
-    };
 
-    // ABRIR LIGHTBOX
-    document.querySelectorAll('.service-image').forEach(serviceImg => {
-        serviceImg.onclick = function() {
-            const img = this.querySelector('img');
-            if (img) {
-                lightboxImg.src = img.src;
-                lightboxImg.style.transform = 'translate(0px, 0px) scale(1)';
-                lightbox.style.display = 'flex';
-                lightbox.classList.add('show');
+        // EVENTOS DE FECHAR
+        closeBtn.onclick = closeLightbox;
+        lightbox.onclick = (e) => { if (e.target === lightbox) closeLightbox(); };
+        document.onkeydown = (e) => { if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox(); };
+
+        // ZOOM COM SCROLL
+        lightbox.onwheel = (e) => {
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? 0.15 : -0.15;
+            scale = Math.min(Math.max(0.5, scale + delta), 4);
+            lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        };
+
+        // ARRASTO
+        lightboxImg.onmousedown = (e) => {
+            if (scale > 1) {
+                dragging = true;
+                startX = e.clientX - translateX;
+                startY = e.clientY - translateY;
+                lightboxImg.style.cursor = 'grabbing';
             }
         };
-    });
+        document.onmousemove = (e) => {
+            if (dragging) {
+                translateX = e.clientX - startX;
+                translateY = e.clientY - startY;
+                lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            }
+        };
+        document.onmouseup = () => {
+            dragging = false;
+            if (lightboxImg) lightboxImg.style.cursor = 'grab';
+        };
 
-    // Cursor de lupa
-    document.querySelectorAll('.clickable-service').forEach(img => {
-        img.style.cursor = 'zoom-in';
-    });
+        // ADICIONAR CLICKS ÀS IMAGENS COM CSS FORÇADO
+        document.querySelectorAll('.service-image').forEach((serviceImg, index) => {
+            serviceImg.addEventListener('click', function(e) {
+                const img = this.querySelector('img');
+                if (img) {
+                    // FORÇA CSS INLINE PARA GARANTIR QUE FUNCIONA
+                    lightbox.setAttribute('style', `
+                        position: fixed !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        width: 100vw !important;
+                        height: 100vh !important;
+                        background: rgba(0, 0, 0, 0.9) !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        z-index: 999999 !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                    `);
+                    
+                    lightboxImg.setAttribute('style', `
+                        max-width: 90vw !important;
+                        max-height: 90vh !important;
+                        object-fit: contain !important;
+                        border-radius: 8px !important;
+                        cursor: grab !important;
+                        transition: transform 0.2s ease !important;
+                        user-select: none !important;
+                    `);
+                    
+                    lightboxImg.src = img.src;
+                    lightbox.classList.add('show');
+                }
+            });
+        });
+        
+        console.log('✅ Lightbox configurado com zoom e arrasto!');
+
+         // ADICIONAR LUPA NAS IMAGENS
+        document.querySelectorAll('.clickable-service').forEach(img => {
+            img.style.cursor = 'zoom-in';
+        });
+    }
 }
 
 // Testimonials functionality (mantém todas as funções iguais)
@@ -747,7 +801,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const carousel = document.getElementById('travelCarousel');
     if (!carousel) return;
 
-    const pictures = [...carousel.querySelectorAll('.carousel-img')];
+    const imgs = [...carousel.querySelectorAll('.carousel-img')];
     const prev = carousel.querySelector('.pc-prev');
     const next = carousel.querySelector('.pc-next');
     const capText = carousel.querySelector('.pc-text');
@@ -758,20 +812,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const DURATION = 3000;
 
     function update() {
-        pictures.forEach((picture, idx) => picture.classList.toggle('active', idx === i));
-        const img = pictures[i].querySelector('img');
-        const caption = img.dataset.caption || img.alt || '';
+        imgs.forEach((img, idx) => img.classList.toggle('active', idx === i));
+        const caption = imgs[i].dataset.caption || imgs[i].alt || '';
         if (capText) capText.textContent = caption;
-        if (counter) counter.textContent = `${i + 1}/${pictures.length}`;
+        if (counter) counter.textContent = `${i + 1}/${imgs.length}`;
     }
 
     function nextSlide() { 
-        i = (i + 1) % pictures.length; 
+        i = (i + 1) % imgs.length; 
         update(); 
     }
     
     function prevSlide() { 
-        i = (i - 1 + pictures.length) % pictures.length; 
+        i = (i - 1 + imgs.length) % imgs.length; 
         update(); 
     }
 
@@ -784,144 +837,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (timer) clearInterval(timer); 
     }
 
-    // Adiciona funcionalidade de lightbox
-    pictures.forEach(picture => {
-        picture.style.cursor = 'pointer';
-        picture.addEventListener('click', (e) => {
-            e.preventDefault();
-            const img = picture.querySelector('img');
-            const lightbox = document.querySelector('.lightbox') || createLightbox();
-            const lightboxImg = lightbox.querySelector('img');
-            
-            lightboxImg.src = img.src;
-            lightboxImg.alt = img.alt;
-            
-            lightbox.querySelector('img').src = img.src;
-            lightbox.querySelector('img').alt = img.alt;
-            lightbox.classList.add('show');
-            
-            // Para o carrossel quando a lightbox está aberta
-            stop();
-        });
-    });
-
-    // Cria a lightbox se não existir
-    function createLightbox() {
-        const lightbox = document.createElement('div');
-        lightbox.className = 'lightbox';
-        
-        const img = document.createElement('img');
-        lightbox.appendChild(img);
-
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'lightbox-close';
-        closeBtn.innerHTML = '×';
-        lightbox.appendChild(closeBtn);
-
-        // Fecha a lightbox e reinicia o carrossel
-        function closeLightbox() {
-            lightbox.classList.remove('show');
-            start();
-        }
-
-        closeBtn.addEventListener('click', closeLightbox);
-        lightbox.addEventListener('click', (e) => {
-            if (e.target === lightbox) {
-                closeLightbox();
-            }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && lightbox.classList.contains('show')) {
-                closeLightbox();
-            }
-        });
-
-        document.body.appendChild(lightbox);
-        return lightbox;
-    }
-
     if (next) next.addEventListener('click', () => { nextSlide(); start(); });
     if (prev) prev.addEventListener('click', () => { prevSlide(); start(); });
 
     carousel.addEventListener('mouseenter', stop);
     carousel.addEventListener('mouseleave', start);
 
-    // Criar um único lightbox para ser reutilizado
-    let globalLightbox = null;
-
-    function getOrCreateLightbox() {
-        if (!globalLightbox) {
-            globalLightbox = document.createElement('div');
-            globalLightbox.className = 'lightbox';
-            
-            const img = document.createElement('img');
-            globalLightbox.appendChild(img);
-
-            const closeBtn = document.createElement('button');
-            closeBtn.className = 'lightbox-close';
-            closeBtn.innerHTML = '×';
-            closeBtn.addEventListener('click', () => {
-                globalLightbox.classList.remove('show');
-                globalLightbox.querySelector('img').src = '';
-            });
-            globalLightbox.appendChild(closeBtn);
-
-            // Fecha lightbox ao clicar fora da imagem
-            globalLightbox.addEventListener('click', (e) => {
-                if (e.target === globalLightbox) {
-                    globalLightbox.classList.remove('show');
-                    globalLightbox.querySelector('img').src = '';
-                }
-            });
-
-            // Fecha lightbox com a tecla ESC
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && globalLightbox.classList.contains('show')) {
-                    globalLightbox.classList.remove('show');
-                    globalLightbox.querySelector('img').src = '';
-                }
-            });
-
-            document.body.appendChild(globalLightbox);
-        }
-        return globalLightbox;
-    }
-
-    function setupLightboxForImage(picture) {
-        const img = picture.querySelector('img');
-        if (!img.parentNode.matches('a')) {
-            const link = document.createElement('a');
-            link.href = 'javascript:void(0)';
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const lightbox = getOrCreateLightbox();
-                const lightboxImg = lightbox.querySelector('img');
-                // Limpa a imagem atual e define a nova
-                lightboxImg.src = '';
-                setTimeout(() => {
-                    lightboxImg.src = img.src;
-                    lightboxImg.alt = img.alt;
-                    lightbox.classList.add('show');
-                }, 50);
-            });
-            
-            img.parentNode.insertBefore(link, img);
-            link.appendChild(img);
-        }
-    }
-
-    // Setup lightbox for initial images
-    pictures.forEach(setupLightboxForImage);
-
-    // Modify the update function to setup lightbox after moving images
-    const originalUpdate = update;
-    update = function() {
-        originalUpdate();
-        // Setup lightbox for all visible images after the carousel moves
-        pictures.forEach(setupLightboxForImage);
-    }
-
     update();
     start();
+
+    imgs.forEach(img => {
+        const link = document.createElement('a');
+        link.href = img.src;
+        link.target = '_blank';
+        link.rel = 'noopener';
+
+        img.parentNode.insertBefore(link, img);
+        link.appendChild(img);
+    });
 });
