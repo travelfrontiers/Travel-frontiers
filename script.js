@@ -494,10 +494,10 @@ function changeLanguage(lang) {
     updateTestimonials();
     
     // Reinicializa lightbox após mudança de língua
-    setTimeout(() => {
-        initializeLightbox();
-    }, 100);
-}
+   // setTimeout(() => {
+    //  initializeLightbox();
+    // }, 100);
+// }
 
 function updateContent() {
     const elements = document.querySelectorAll('[data-translate]');
@@ -600,87 +600,45 @@ function renderServices() {
         `;
     }).join('');
 
-    // CONFIGURAR LIGHTBOX APENAS UMA VEZ
-    setupLightbox();
-}
-
-// Nova função separada e limpa para o lightbox
-function setupLightbox() {
+    // LIGHTBOX SIMPLES E FUNCIONAL
     const lightbox = document.getElementById('lightbox');
-    const lightboxImg = lightbox ? lightbox.querySelector('img') : null;
-    const closeBtn = lightbox ? lightbox.querySelector('.lightbox-close') : null;
+    const lightboxImg = lightbox?.querySelector('img');
+    const closeBtn = lightbox?.querySelector('.lightbox-close');
 
     if (!lightbox || !lightboxImg || !closeBtn) return;
 
-    let scale = 1, translateX = 0, translateY = 0, startX = 0, startY = 0, dragging = false;
-
-    // Função para fechar lightbox
-    function closeLightbox() {
+    // FECHAR LIGHTBOX - FUNÇÃO SIMPLES
+    window.closeLightbox = function() {
         lightbox.style.display = 'none';
         lightbox.classList.remove('show');
         lightboxImg.src = '';
-        scale = 1; translateX = 0; translateY = 0;
-        lightboxImg.style.transform = 'translate(0px, 0px) scale(1) rotate(0deg)';
-    }
+        lightboxImg.style.transform = 'translate(0px, 0px) scale(1)';
+    };
 
-    // REMOVER EVENT LISTENERS ANTIGOS
-    closeBtn.replaceWith(closeBtn.cloneNode(true));
-    const newCloseBtn = lightbox.querySelector('.lightbox-close');
-
-    // ADICIONAR EVENT LISTENERS LIMPOS
-    newCloseBtn.addEventListener('click', closeLightbox);
+    // EVENT LISTENERS DIRETOS
+    closeBtn.onclick = window.closeLightbox;
+    lightbox.onclick = function(e) {
+        if (e.target === lightbox) window.closeLightbox();
+    };
     
-    lightbox.addEventListener('click', function(e) {
-        if (e.target === lightbox) closeLightbox();
-    });
-    
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox();
-    });
-
-    // Zoom com scroll
-    lightbox.addEventListener('wheel', function(e) {
-        e.preventDefault();
-        const delta = e.deltaY < 0 ? 0.15 : -0.15;
-        scale = Math.min(Math.max(0.5, scale + delta), 4);
-        lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-    });
-
-    // Arrasto
-    lightboxImg.addEventListener('mousedown', function(e) {
-        if (scale > 1) {
-            dragging = true;
-            startX = e.clientX - translateX;
-            startY = e.clientY - translateY;
-            lightboxImg.style.cursor = 'grabbing';
+    // ESC para fechar
+    document.onkeydown = function(e) {
+        if (e.key === 'Escape' && lightbox.classList.contains('show')) {
+            window.closeLightbox();
         }
-    });
+    };
 
-    document.addEventListener('mousemove', function(e) {
-        if (dragging) {
-            translateX = e.clientX - startX;
-            translateY = e.clientY - startY;
-            lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-        }
-    });
-
-    document.addEventListener('mouseup', function() {
-        dragging = false;
-        if (lightboxImg) lightboxImg.style.cursor = 'grab';
-    });
-
-    // Cliques nas imagens para abrir lightbox
+    // ABRIR LIGHTBOX
     document.querySelectorAll('.service-image').forEach(serviceImg => {
-        serviceImg.addEventListener('click', function(e) {
+        serviceImg.onclick = function() {
             const img = this.querySelector('img');
             if (img) {
+                lightboxImg.src = img.src;
+                lightboxImg.style.transform = 'translate(0px, 0px) scale(1)';
                 lightbox.style.display = 'flex';
                 lightbox.classList.add('show');
-                lightboxImg.style.transform = 'translate(0px, 0px) scale(1) rotate(0deg)';
-                lightboxImg.src = img.src;
-                scale = 1; translateX = 0; translateY = 0;
             }
-        });
+        };
     });
 
     // Cursor de lupa
