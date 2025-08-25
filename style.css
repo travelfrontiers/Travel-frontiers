@@ -52,7 +52,9 @@ img {
 
 /* Correção para a imagem de Moscovo na lightbox */
 .lightbox img[src*="Moscovo"] {
-    image-orientation: from-image;
+    transform: rotate(90deg);
+    max-height: 80vh;
+    width: auto;
 }
 
 .lightbox-close {
