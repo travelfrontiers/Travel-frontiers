@@ -850,14 +850,8 @@ document.addEventListener('DOMContentLoaded', () => {
             lightboxImg.src = img.src;
             lightboxImg.alt = img.alt;
             
-            // Resetar transformações anteriores
-            lightboxImg.style.transform = 'none';
-            
-            // Aplicar rotação apenas para a imagem de Moscovo
-            if (img.src.includes('Moscovo')) {
-                lightboxImg.style.transform = 'rotate(-90deg)';
-            }
-            
+            lightbox.querySelector('img').src = img.src;
+            lightbox.querySelector('img').alt = img.alt;
             lightbox.classList.add('show');
             
             // Para o carrossel quando a lightbox está aberta

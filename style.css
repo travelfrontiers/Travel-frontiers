@@ -38,7 +38,6 @@ img {
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    padding: 20px;
 }
 
 .lightbox.show {
@@ -46,11 +45,10 @@ img {
 }
 
 .lightbox img {
-    max-width: 100%;
-    max-height: 100%;
-    width: auto;
-    height: auto;
+    max-width: 90%;
+    max-height: 90vh;
     object-fit: contain;
+    image-orientation: none;
 }
 
 .lightbox-close {
