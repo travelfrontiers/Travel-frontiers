@@ -1238,69 +1238,48 @@ margin-left: 16px;
     background: #000;
 }
 
-.carousel-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.carousel-img {
+picture.carousel-img {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     opacity: 0;
-    visibility: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    transition: opacity 0.5s ease;
 }
 
-.carousel-img picture {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.carousel-img img {
+picture.carousel-img img {
     width: 100%;
     height: 100%;
     object-fit: contain;
 }
 
-.carousel-img.active {
+picture.carousel-img.active {
     opacity: 1;
-    visibility: visible;
     z-index: 1;
-    transition: opacity 0.5s ease;/* Lightbox styles */
+}/* Lightbox styles */
 .lightbox {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.95);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 999999;
-  padding: 40px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
 }
 
 .lightbox.show {
-  display: flex;
-  animation: lightboxFadeIn 0.3s ease forwards;
+    display: flex;
 }
 
 .lightbox img {
-  max-width: min(90vw, 1200px);
-  max-height: 80vh;
-  width: auto;
-  height: auto;
-  object-fit: contain;
+    max-width: 90%;
+    max-height: 90vh;
+    object-fit: contain;
+    image-orientation: none;
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.3);
   animation: lightboxImageIn 0.4s ease forwards;
