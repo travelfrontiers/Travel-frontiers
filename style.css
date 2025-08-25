@@ -1062,7 +1062,7 @@ body {
     }
 }
 
-/* Lightbox corrigido - substitui apenas esta secção */
+/* Lightbox corrigido */
 .lightbox {
     position: fixed;
     top: 0;
@@ -1075,13 +1075,15 @@ body {
     justify-content: center;
     z-index: 999999;
     opacity: 0;
+    transition: opacity 0.3s ease;
     will-change: opacity;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .lightbox.show {
     display: flex;
     opacity: 1;
-    transition: opacity 0.3s ease;
 }
 
 .lightbox img {
@@ -1095,6 +1097,7 @@ body {
     user-select: none;
     border-radius: 8px;
     will-change: transform;
+    transition: transform 0.2s ease;
 }
 
 .lightbox img:active {
@@ -1114,13 +1117,13 @@ body {
     line-height: 1;
     padding: 10px;
     border-radius: 50%;
-    opacity: 1;
-    visibility: visible;
     width: 60px;
     height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
+    opacity: 1;
+    visibility: visible;
     transition: background 0.2s ease;
 }
 
@@ -1133,20 +1136,23 @@ body {
     cursor: zoom-in;
 }
 
-/* Responsive lightbox */
+/* Mobile ajustes */
 @media (max-width: 768px) {
-  .lightbox img {
-    max-width: 95vw;
-    max-height: 85vh;
-  }
-  
-  .lightbox-close {
-    top: 15px;
-    right: 20px;
-    font-size: 2.5rem;
-    width: 50px;
-    height: 50px;
-  }
+    .lightbox {
+        padding: 10px;
+    }
+    .lightbox img {
+        max-width: 95vw;
+        max-height: 85vh;
+    }
+    .lightbox-close {
+        top: 15px;
+        right: 20px;
+        font-size: 2.5rem;
+        width: 50px;
+        height: 50px;
+        padding: 8px;
+    }
 }
 
 /* Para imagens muito altas (verticais), garantir que ficam bem centradas */
