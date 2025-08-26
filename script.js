@@ -703,6 +703,43 @@ function renderServices() {
     }
 }
 
+// ================================
+// Lightbox para o Carousel
+// ================================
+document.addEventListener('DOMContentLoaded', function() {
+  const lightbox = document.getElementById('lightbox');
+  const lbImage  = lightbox.querySelector('img');
+  const closeBtn = lightbox.querySelector('.lightbox-close');
+
+  // Abrir lightbox ao clicar numa imagem do carousel
+  document.querySelectorAll('.carousel-img').forEach(img => {
+    img.addEventListener('click', () => {
+      const fullSrc = img.dataset.full || img.src;
+      lbImage.src = fullSrc;
+      lightbox.classList.add('show');
+    });
+  });
+
+  // Fechar ao clicar no botão
+  closeBtn.addEventListener('click', () => {
+    lightbox.classList.remove('show');
+  });
+
+  // Fechar ao clicar fora da imagem
+  lightbox.addEventListener('click', e => {
+    if (e.target === lightbox) {
+      lightbox.classList.remove('show');
+    }
+  });
+
+  // Fechar com a tecla Esc
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      lightbox.classList.remove('show');
+    }
+  });
+});
+
 // Testimonials functionality (mantém todas as funções iguais)
 function initializeTestimonials() {
     const prevBtn = document.getElementById('prevTestimonial');
