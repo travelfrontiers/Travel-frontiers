@@ -885,13 +885,4 @@ document.addEventListener('DOMContentLoaded', () => {
     update();
     start();
 
-    imgs.forEach(img => {
-        const link = document.createElement('a');
-        link.href = img.src;
-        link.target = '_blank';
-        link.rel = 'noopener';
-
-        img.parentNode.insertBefore(link, img);
-        link.appendChild(img);
-    });
 });
