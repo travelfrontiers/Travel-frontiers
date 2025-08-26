@@ -890,35 +890,3 @@ document.addEventListener('DOMContentLoaded', () => {
     start();
 
 });
-     // === Ativação do Carrossel de Fotos ===
-document.addEventListener('DOMContentLoaded', () => {
-  const images = Array.from(document.querySelectorAll('.carousel-img'));
-  const prevBtn = document.querySelector('.pc-prev');
-  const nextBtn = document.querySelector('.pc-next');
-  const captionText = document.querySelector('.pc-text');
-  const counterText = document.querySelector('.pc-counter');
-
-  let currentSlide = images.findIndex(img => img.classList.contains('active'));
-  if (currentSlide < 0) currentSlide = 0;
-
-  function updateCarousel() {
-    images.forEach((img, idx) => {
-      img.classList.toggle('active', idx === currentSlide);
-    });
-    counterText.textContent = `${currentSlide + 1} / ${images.length}`;
-    captionText.textContent = images[currentSlide].getAttribute('data-caption') || '';
-  }
-
-  prevBtn.addEventListener('click', () => {
-    currentSlide = (currentSlide - 1 + images.length) % images.length;
-    updateCarousel();
-  });
-
-  nextBtn.addEventListener('click', () => {
-    currentSlide = (currentSlide + 1) % images.length;
-    updateCarousel();
-  });
-
-  updateCarousel();
-});
-
