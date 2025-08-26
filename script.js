@@ -703,48 +703,6 @@ function renderServices() {
     }
 }
 
-// ================================
-// Lightbox para o Carousel
-// ================================
- document.addEventListener('DOMContentLoaded', function() {
-  const carousel = document.getElementById('travelCarousel');
-  const lightbox = document.getElementById('lightbox');
-  const lbImage  = lightbox.querySelector('img');
-  const closeBtn = lightbox.querySelector('.lightbox-close');
-  let scale = 1, translateX = 0, translateY = 0;
-
-  // Delegação: abrir lightbox
-  carousel.addEventListener('click', function(e) {
-    const img = e.target.closest('.carousel-img');
-    if (!img) return;
-    e.preventDefault();
-
-    // Reset zoom/state antes de usar
-    scale = 1; translateX = 0; translateY = 0;
-    lbImage.style.transform = '';
-    lbImage.src = img.dataset.full || img.src;
-    lightbox.removeAttribute('style');        // limpa inline do lightbox
-    lightbox.classList.add('show');
-  });
-
-  // Função de fechar comum
-  function closeLightbox() {
-    lightbox.classList.remove('show');
-    lbImage.src = '';
-    lbImage.removeAttribute('style');         // limpa inline da imagem
-    lightbox.removeAttribute('style');        // garante remover inline
-  }
-
-  closeBtn.addEventListener('click', closeLightbox);
-  lightbox.addEventListener('click', e => {
-    if (e.target === lightbox) closeLightbox();
-  });
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && lightbox.classList.contains('show')) {
-      closeLightbox();
-    }
-  });
-     
 // Testimonials functionality (mantém todas as funções iguais)
 function initializeTestimonials() {
     const prevBtn = document.getElementById('prevTestimonial');
@@ -840,10 +798,13 @@ setInterval(() => {
     }
 }, 5000);
 
-// Initialize carousel for photos (mantém igual)
+// FIXED: Carousel initialization
 document.addEventListener('DOMContentLoaded', () => {
     const carousel = document.getElementById('travelCarousel');
-    if (!carousel) return;
+    if (!carousel) {
+        console.error('❌ Carousel not found!');
+        return;
+    }
 
     const imgs = [...carousel.querySelectorAll('.carousel-img')];
     const prev = carousel.querySelector('.pc-prev');
@@ -851,24 +812,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const capText = carousel.querySelector('.pc-text');
     const counter = carousel.querySelector('.pc-counter');
 
-    let i = 0;
+    console.log(`🎠 Found ${imgs.length} carousel images`);
+
+    // CRITICAL: Remove active class from all images except first
+    imgs.forEach((img, idx) => {
+        if (idx === 0) {
+            img.classList.add('active');
+        } else {
+            img.classList.remove('active');
+        }
+    });
+
+    let currentIndex = 0;
     let timer = null;
-    const DURATION = 3000;
+    const DURATION = 3500;
 
     function update() {
-        imgs.forEach((img, idx) => img.classList.toggle('active', idx === i));
-        const caption = imgs[i].dataset.caption || imgs[i].alt || '';
+        // Hide all images
+        imgs.forEach((img, idx) => {
+            img.classList.toggle('active', idx === currentIndex);
+        });
+        
+        const caption = imgs[currentIndex]?.dataset?.caption || imgs[currentIndex]?.alt || '';
         if (capText) capText.textContent = caption;
-        if (counter) counter.textContent = `${i + 1}/${imgs.length}`;
+        if (counter) counter.textContent = `${currentIndex + 1}/${imgs.length}`;
+        
+        console.log(`🖼️ Showing: ${caption} (${currentIndex + 1}/${imgs.length})`);
     }
 
     function nextSlide() { 
-        i = (i + 1) % imgs.length; 
+        currentIndex = (currentIndex + 1) % imgs.length; 
         update(); 
     }
     
     function prevSlide() { 
-        i = (i - 1 + imgs.length) % imgs.length; 
+        currentIndex = (currentIndex - 1 + imgs.length) % imgs.length; 
         update(); 
     }
 
@@ -887,7 +865,65 @@ document.addEventListener('DOMContentLoaded', () => {
     carousel.addEventListener('mouseenter', stop);
     carousel.addEventListener('mouseleave', start);
 
+    // Initialize
     update();
     start();
-
+    
+    console.log('✅ Carousel fixed and initialized!');
 });
+
+    imgs.forEach(img => {
+        const link = document.createElement('a');
+        link.href = img.src;
+        link.target = '_blank';
+        link.rel = 'noopener';
+
+        img.parentNode.insertBefore(link, img);
+        link.appendChild(img);
+    });
+});
+// EMERGENCY FIX: Force services rendering
+function emergencyServicesRender() {
+    console.log('🔧 Emergency services render...');
+    const servicesGrid = document.querySelector('.services-grid');
+    
+    if (!servicesGrid) {
+        console.error('❌ Services grid not found!');
+        return;
+    }
+    
+    // Clear any existing content
+    servicesGrid.innerHTML = '';
+    
+    // Get current language services
+    const services = translations[currentLanguage]?.services?.items || translations.pt.services.items;
+    
+    if (!services || services.length === 0) {
+        console.error('❌ No services data found!');
+        return;
+    }
+    
+    const servicesHTML = services.map(service => `
+        <div class="service-card">
+            <div class="service-image">
+                <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
+                <div class="service-overlay"></div>
+                <h3 class="service-title">${service.title}</h3>
+            </div>
+            <div class="service-content">
+                <p class="service-description">${service.description}</p>
+            </div>
+        </div>
+    `).join('');
+    
+    servicesGrid.innerHTML = servicesHTML;
+    console.log(`✅ Services rendered: ${services.length} items`);
+}
+
+// Force run immediately and on DOM ready
+emergencyServicesRender();
+document.addEventListener('DOMContentLoaded', emergencyServicesRender);
+
+// Also run after a delay as backup
+setTimeout(emergencyServicesRender, 500);
+setTimeout(emergencyServicesRender, 1000);
