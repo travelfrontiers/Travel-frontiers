@@ -723,7 +723,6 @@ function renderServices() {
     scale = 1; translateX = 0; translateY = 0;
     lbImage.style.transform = '';
     lbImage.src = img.dataset.full || img.src;
-    lightbox.removeAttribute('style');        // limpa inline do lightbox
     lightbox.classList.add('show');
   });
 
