@@ -706,18 +706,20 @@ function renderServices() {
 // ================================
 // Lightbox para o Carousel
 // ================================
-document.addEventListener('DOMContentLoaded', function() {
+ document.addEventListener('DOMContentLoaded', function() {
   const lightbox = document.getElementById('lightbox');
   const lbImage  = lightbox.querySelector('img');
-  const closeBtn = lightbox.querySelector('.lightbox-close');
+  const container = document.getElementById('travelCarousel');
 
-  // Abrir lightbox ao clicar numa imagem do carousel
-  document.querySelectorAll('.carousel-img').forEach(img => {
-    img.addEventListener('click', () => {
-      const fullSrc = img.dataset.full || img.src;
-      lbImage.src = fullSrc;
-      lightbox.classList.add('show');
-    });
+  // Delegação: capta cliques em qualquer .carousel-img dentro do carousel
+  container.addEventListener('click', function(e) {
+    const img = e.target.closest('.carousel-img');
+    if (!img) return;
+    e.preventDefault();
+
+    const fullSrc = img.dataset.full || img.src;
+    lbImage.src = fullSrc;
+    lightbox.classList.add('show');
   });
 
   // Fechar ao clicar no botão
