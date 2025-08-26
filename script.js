@@ -798,78 +798,69 @@ setInterval(() => {
     }
 }, 5000);
 
-// FIXED: Carousel initialization
+// Carousel initialization (corrected)
 document.addEventListener('DOMContentLoaded', () => {
-    const carousel = document.getElementById('travelCarousel');
-    if (!carousel) {
-        console.error('❌ Carousel not found!');
-        return;
-    }
+  const carousel = document.getElementById('travelCarousel');
+  if (!carousel) return;
 
-    const imgs = [...carousel.querySelectorAll('.carousel-img')];
-    const prev = carousel.querySelector('.pc-prev');
-    const next = carousel.querySelector('.pc-next');
-    const capText = carousel.querySelector('.pc-text');
-    const counter = carousel.querySelector('.pc-counter');
+  const imgs = Array.from(carousel.querySelectorAll('.carousel-img'));
+  const prev = carousel.querySelector('.pc-prev');
+  const next = carousel.querySelector('.pc-next');
+  const capText = carousel.querySelector('.pc-text');
+  const counter = carousel.querySelector('.pc-counter');
 
-    console.log(`🎠 Found ${imgs.length} carousel images`);
+  let currentIndex = 0;
+  let timer = null;
+  const DURATION = 3500;
 
-    // CRITICAL: Remove active class from all images except first
+  function update() {
     imgs.forEach((img, idx) => {
-        if (idx === 0) {
-            img.classList.add('active');
-        } else {
-            img.classList.remove('active');
-        }
+      img.classList.toggle('active', idx === currentIndex);
     });
+    const caption = imgs[currentIndex]?.dataset?.caption || imgs[currentIndex]?.alt || '';
+    if (capText) capText.textContent = caption;
+    if (counter) counter.textContent = `${currentIndex + 1}/${imgs.length}`;
+  }
 
-    let currentIndex = 0;
-    let timer = null;
-    const DURATION = 3500;
-
-    function update() {
-        // Hide all images
-        imgs.forEach((img, idx) => {
-            img.classList.toggle('active', idx === currentIndex);
-        });
-        
-        const caption = imgs[currentIndex]?.dataset?.caption || imgs[currentIndex]?.alt || '';
-        if (capText) capText.textContent = caption;
-        if (counter) counter.textContent = `${currentIndex + 1}/${imgs.length}`;
-        
-        console.log(`🖼️ Showing: ${caption} (${currentIndex + 1}/${imgs.length})`);
-    }
-
-    function nextSlide() { 
-        currentIndex = (currentIndex + 1) % imgs.length; 
-        update(); 
-    }
-    
-    function prevSlide() { 
-        currentIndex = (currentIndex - 1 + imgs.length) % imgs.length; 
-        update(); 
-    }
-
-    function start() { 
-        stop(); 
-        timer = setInterval(nextSlide, DURATION); 
-    }
-    
-    function stop() { 
-        if (timer) clearInterval(timer); 
-    }
-
-    if (next) next.addEventListener('click', () => { nextSlide(); start(); });
-    if (prev) prev.addEventListener('click', () => { prevSlide(); start(); });
-
-    carousel.addEventListener('mouseenter', stop);
-    carousel.addEventListener('mouseleave', start);
-
-    // Initialize
+  function nextSlide() {
+    currentIndex = (currentIndex + 1) % imgs.length;
     update();
+  }
+
+  function prevSlide() {
+    currentIndex = (currentIndex - 1 + imgs.length) % imgs.length;
+    update();
+  }
+
+  function start() {
+    stop();
+    timer = setInterval(nextSlide, DURATION);
+  }
+
+  function stop() {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+  }
+
+  if (next) next.addEventListener('click', () => { nextSlide(); start(); });
+  if (prev) prev.addEventListener('click', () => { prevSlide(); start(); });
+
+  // Optional: click anywhere on the carousel to go to the next slide
+  carousel.addEventListener('click', (e) => {
+    // ignore clicks on the arrows to avoid double-advance
+    if (e.target.classList.contains('pc-arrow')) return;
+    nextSlide();
     start();
-    
-    console.log('✅ Carousel fixed and initialized!');
+  });
+
+  carousel.addEventListener('mouseenter', stop);
+  carousel.addEventListener('mouseleave', start);
+
+  // Initialize
+  update();
+  start();
 });
 
     imgs.forEach(img => {
@@ -882,48 +873,3 @@ document.addEventListener('DOMContentLoaded', () => {
         link.appendChild(img);
     });
 });
-// EMERGENCY FIX: Force services rendering
-function emergencyServicesRender() {
-    console.log('🔧 Emergency services render...');
-    const servicesGrid = document.querySelector('.services-grid');
-    
-    if (!servicesGrid) {
-        console.error('❌ Services grid not found!');
-        return;
-    }
-    
-    // Clear any existing content
-    servicesGrid.innerHTML = '';
-    
-    // Get current language services
-    const services = translations[currentLanguage]?.services?.items || translations.pt.services.items;
-    
-    if (!services || services.length === 0) {
-        console.error('❌ No services data found!');
-        return;
-    }
-    
-    const servicesHTML = services.map(service => `
-        <div class="service-card">
-            <div class="service-image">
-                <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
-                <div class="service-overlay"></div>
-                <h3 class="service-title">${service.title}</h3>
-            </div>
-            <div class="service-content">
-                <p class="service-description">${service.description}</p>
-            </div>
-        </div>
-    `).join('');
-    
-    servicesGrid.innerHTML = servicesHTML;
-    console.log(`✅ Services rendered: ${services.length} items`);
-}
-
-// Force run immediately and on DOM ready
-emergencyServicesRender();
-document.addEventListener('DOMContentLoaded', emergencyServicesRender);
-
-// Also run after a delay as backup
-setTimeout(emergencyServicesRender, 500);
-setTimeout(emergencyServicesRender, 1000);
