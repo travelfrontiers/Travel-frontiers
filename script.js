@@ -707,41 +707,44 @@ function renderServices() {
 // Lightbox para o Carousel
 // ================================
  document.addEventListener('DOMContentLoaded', function() {
+  const carousel = document.getElementById('travelCarousel');
   const lightbox = document.getElementById('lightbox');
   const lbImage  = lightbox.querySelector('img');
-  const container = document.getElementById('travelCarousel');
+  const closeBtn = lightbox.querySelector('.lightbox-close');
+  let scale = 1, translateX = 0, translateY = 0;
 
-  // Delegação: capta cliques em qualquer .carousel-img dentro do carousel
-  container.addEventListener('click', function(e) {
+  // Delegação: abrir lightbox
+  carousel.addEventListener('click', function(e) {
     const img = e.target.closest('.carousel-img');
     if (!img) return;
     e.preventDefault();
 
-    const fullSrc = img.dataset.full || img.src;
-    lbImage.src = fullSrc;
+    // Reset zoom/state antes de usar
+    scale = 1; translateX = 0; translateY = 0;
+    lbImage.style.transform = '';
+    lbImage.src = img.dataset.full || img.src;
+    lightbox.removeAttribute('style');        // limpa inline do lightbox
     lightbox.classList.add('show');
   });
 
-  // Fechar ao clicar no botão
-  closeBtn.addEventListener('click', () => {
+  // Função de fechar comum
+  function closeLightbox() {
     lightbox.classList.remove('show');
-  });
+    lbImage.src = '';
+    lbImage.removeAttribute('style');         // limpa inline da imagem
+    lightbox.removeAttribute('style');        // garante remover inline
+  }
 
-  // Fechar ao clicar fora da imagem
+  closeBtn.addEventListener('click', closeLightbox);
   lightbox.addEventListener('click', e => {
-    if (e.target === lightbox) {
-      lightbox.classList.remove('show');
-    }
+    if (e.target === lightbox) closeLightbox();
   });
-
-  // Fechar com a tecla Esc
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      lightbox.classList.remove('show');
+    if (e.key === 'Escape' && lightbox.classList.contains('show')) {
+      closeLightbox();
     }
   });
-});
-
+     
 // Testimonials functionality (mantém todas as funções iguais)
 function initializeTestimonials() {
     const prevBtn = document.getElementById('prevTestimonial');
