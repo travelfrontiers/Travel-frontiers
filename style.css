@@ -536,38 +536,6 @@ body {
     line-height: 1.6;
 }
 
-/* ================================
-   Lightbox Carrossel
-   ================================ */
-.lightbox {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.8);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.lightbox.show {
-  display: flex;
-}
-
-.lightbox img {
-  max-width: 90%;
-  max-height: 90%;
-}
-
-.lightbox-close {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  font-size: 2rem;
-  color: #fff;
-  cursor: pointer;
-}
-
 /* Testimonials Section */
 .testimonials {
     padding-top: 80px;
