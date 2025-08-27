@@ -513,14 +513,15 @@ function renderServices() {
       </div>`;
   }).join('');
 
-  // ⬇️ Bind click events to open lightbox
-  document.querySelectorAll('.clickable-service').forEach(imgEl => {
-    imgEl.addEventListener('click', e => {
-      const lightboxImg = document.querySelector('#lightbox img');
-      lightboxImg.src = e.currentTarget.src;
-      document.getElementById('lightbox').classList.add('show');
-    });
+ // Bind new service images to open lightbox
+document.querySelectorAll('.clickable-service').forEach(imgEl => {
+  imgEl.addEventListener('click', () => {
+    const lightboxImg = document.querySelector('#lightbox img');
+    lightboxImg.src = imgEl.src;
+    document.getElementById('lightbox').classList.add('show');
+    document.getElementById('lightbox').setAttribute('aria-hidden', 'false');
   });
+});
 
   // Now wire up close/arrow/keyboard logic
   initializeLightbox();
