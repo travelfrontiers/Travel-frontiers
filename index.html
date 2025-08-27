@@ -604,7 +604,36 @@
   <img src="" alt="Imagem ampliada">
 </div>
 
-    <script src="script.js"></script>
-	<script>(function(){var js,fs,d=document,id="tars-widget-script",b="https://tars-file-upload.s3.amazonaws.com/bulb/";if(!d.getElementById(id)){js=d.createElement("script");js.id=id;js.type="text/javascript";js.src=b+"js/widget.js";fs=d.getElementsByTagName("script")[0];fs.parentNode.insertBefore(js,fs)}})();window.tarsSettings = {"convid":"oORlVw"};</script>
+<!-- Your main JS -->
+<script src="script.js"></script>
+
+<!-- Tars widget code -->
+<script>
+(function(){
+  var js, fs, d=document, id="tars-widget-script", 
+      b="https://tars-file-upload.s3.amazonaws.com/bulb/";
+  if(!d.getElementById(id)){
+    js=d.createElement("script");
+    js.id=id;
+    js.type="text/javascript";
+    js.src=b+"js/widget.js";
+    fs=d.getElementsByTagName("script")[0];
+    fs.parentNode.insertBefore(js, fs);
+  }
+})();
+window.tarsSettings = {"convid":"oORlVw"};
+</script>
+
+<!-- Startup initialisation (my snippet) -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof renderServices === 'function') renderServices();
+  if (typeof initializeLightbox === 'function') initializeLightbox();
+  if (typeof startCarousel === 'function') startCarousel();
+  if (typeof initTestimonials === 'function') initTestimonials();
+
+  console.log('✅ Page scripts initialised');
+});
+</script>
 </body>
 </html>
