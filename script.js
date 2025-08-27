@@ -482,35 +482,45 @@ function initializeNavigation() {
 function renderServices() {
   const servicesGrid = document.querySelector('.services-grid');
   if (!servicesGrid) return;
+
   const services = translations[currentLanguage].services.items;
+
   servicesGrid.innerHTML = services.map(service => {
     let imageHtml;
+
+    // Verifica se é uma imagem local com extensão jpg/jpeg/png
     if (service.image.startsWith('img/') && /\.(jpeg|jpg|png)$/i.test(service.image)) {
       const webpSrc = service.image.replace(/\.(jpeg|jpg|png)$/i, '.webp');
       imageHtml = `
-        <picture>
-          <source srcset="${webpSrc}" type="image/webp">
-          <img src="${service.image}" alt="${service.title}" loading="lazy">
-        </picture>`;
+<a href="${webpSrc}" data-lightbox="services" data-title="${service.title}">
+  <picture>
+    <source srcset="${webpSrc}" type="image/webp">
+    <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service" data-full="${webpSrc}">
+  </picture>
+</a>`;
     } else {
-      imageHtml = `<img src="${service.image}" alt="${service.title}" loading="lazy">`;
+      // Caso de URL externo ou formato não convertido para webp
+      imageHtml = `
+<a href="${service.image}" data-lightbox="services" data-title="${service.title}">
+  <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service" data-full="${service.image}">
+</a>`;
     }
+
     return `
-      <div class="service-card">
-        <div class="service-image">
-          ${imageHtml}
-          <div class="service-overlay"></div>
-          <h3 class="service-title">${service.title}</h3>
-        </div>
-        <div class="service-content">
-          <p class="service-description">${service.description}</p>
-        </div>
-      </div>`;
+<div class="service-card">
+  <div class="service-image">
+    ${imageHtml}
+    <div class="service-overlay"></div>
+    <h3 class="service-title">${service.title}</h3>
+  </div>
+  <div class="service-content">
+    <p class="service-description">${service.description}</p>
+  </div>
+</div>`;
   }).join('');
 
-    console.log('[Services] Render complete, initializing lightbox...');
-
-  // Call lightbox binding after replacing HTML
+  console.log('[Services] Render complete, initializing lightbox...');
+  // Garante que o lightbox é inicializado após o HTML estar no DOM
   initializeLightbox();
 }
 
@@ -604,15 +614,18 @@ function initializeLightbox() {
     lightbox.dataset.bound = 'true';
   }
 
-  // 👉 UPDATED: binding using helper + debug
-  document.querySelectorAll('.service-image img, #travelCarousel .carousel-img').forEach(img => {
-    if (!img.dataset.lbBound) {
-      img.style.cursor = 'zoom-in';
-      img.addEventListener('click', () => openInLightbox(img.src));
-      img.dataset.lbBound = 'true';
-    }
-  });
-}
+ document.body.addEventListener('click', function (e) {
+  const target = e.target.closest('.service-image img, #travelCarousel .carousel-img, [data-lightbox], .clickable-service');
+  if (!target) return;
+
+  e.preventDefault();
+
+  // Determina o URL da imagem grande
+  const fullSrc = target.getAttribute('data-full') || target.getAttribute('href') || target.src;
+  if (fullSrc) {
+    openInLightbox(fullSrc);
+  }
+});
 
 function initializeCarousel() {
   const carousel = document.getElementById('travelCarousel');
