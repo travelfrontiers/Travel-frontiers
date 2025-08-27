@@ -381,34 +381,38 @@ const translations = {
 let currentLanguage = 'pt';
 let currentTestimonialIndex = 0;
 
-// Função do Lightbox - ADICIONA ANTES DO DOMContentLoaded
+// Função do Lightbox 
 function initializeLightbox() {
     const lightbox = document.getElementById('lightbox');
-    const lightboxImg = lightbox ? lightbox.querySelector('img') : null;
-    const closeBtn = lightbox ? lightbox.querySelector('.lightbox-close') : null;
+    const lightboxImg = lightbox?.querySelector('img');
+    const closeBtn = lightbox?.querySelector('.lightbox-close');
 
-    if (!lightbox || !lightboxImg || !closeBtn) {
-        console.log('Elementos do lightbox não encontrados');
-        return;
-    }
+    if (!lightbox || !lightboxImg) return;
 
-    let scale = 1, translateX = 0, translateY = 0, startX = 0, startY = 0, dragging = false;
+    let scale = 1;
+    let translateX = 0;
+    let translateY = 0;
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
 
+    // Close logic
     function closeLightbox() {
-        lightbox.style.display = 'none';
-        lightbox.classList.remove('show');
-        lightbox.setAttribute('aria-hidden', 'true');
-        lightboxImg.src = '';
-        scale = 1; translateX = 0; translateY = 0;
-        lightboxImg.style.transform = 'translate(0, 0) scale(1)';
-    }
+    lightbox.classList.remove('show');
+    lightbox.setAttribute('aria-hidden', 'true');
+    lightboxImg.src = '';
+    scale = 1;
+    translateX = 0;
+    translateY = 0;
+    lightboxImg.style.transform = '';
+    lightboxImg.style.cursor = '';
+}
 
-    // Eventos de fechar
     closeBtn.addEventListener('click', closeLightbox);
-    lightbox.addEventListener('click', (e) => {
+    lightbox.addEventListener('click', e => {
         if (e.target === lightbox) closeLightbox();
     });
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', e => {
         if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox();
     });
 
@@ -421,7 +425,7 @@ function initializeLightbox() {
     });
 
     // Arrasto
-    lightboxImg.addEventListener('mousedown', (e) => {
+    lightboxImg.addEventListener('dragstart', e => e.preventDefault());
         if (scale > 1) {
             dragging = true;
             startX = e.clientX - translateX;
@@ -442,8 +446,16 @@ function initializeLightbox() {
         dragging = false;
         if (lightboxImg) lightboxImg.style.cursor = 'grab';
     });
-
-    console.log('Lightbox inicializado com sucesso!');
+    
+    // Attach to both services and carousel images
+    document.querySelectorAll('.service-image img, #travelCarousel .carousel-img').forEach(img => {
+        img.style.cursor = 'zoom-in';
+        img.addEventListener('click', () => {
+            lightboxImg.src = img.src;
+            lightbox.classList.add('show');
+            lightbox.setAttribute('aria-hidden', 'false');
+        });
+    });
 }
 
 // Initialize the page
@@ -454,6 +466,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeTestimonials();
     updateContent();
     renderServices();
+    initializeLightbox()
 });
 
 // Language functionality (mantém todas as tuas funções de língua iguais)
@@ -566,7 +579,6 @@ function initializeNavigation() {
 
 // Services functionality
 function renderServices() {
-    console.log("Função de serviços está a correr");
     const servicesGrid = document.querySelector('.services-grid');
     if (!servicesGrid) return;
     
@@ -657,45 +669,6 @@ function renderServices() {
             dragging = false;
             if (lightboxImg) lightboxImg.style.cursor = 'grab';
         };
-
-        // ADICIONAR CLICKS ÀS IMAGENS COM CSS FORÇADO
-        document.querySelectorAll('.service-image').forEach((serviceImg, index) => {
-            serviceImg.addEventListener('click', function(e) {
-                const img = this.querySelector('img');
-                if (img) {
-                    // FORÇA CSS INLINE PARA GARANTIR QUE FUNCIONA
-                    lightbox.setAttribute('style', `
-                        position: fixed !important;
-                        top: 0 !important;
-                        left: 0 !important;
-                        width: 100vw !important;
-                        height: 100vh !important;
-                        background: rgba(0, 0, 0, 0.9) !important;
-                        display: flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                        z-index: 999999 !important;
-                        visibility: visible !important;
-                        opacity: 1 !important;
-                    `);
-                    
-                    lightboxImg.setAttribute('style', `
-                        max-width: 90vw !important;
-                        max-height: 90vh !important;
-                        object-fit: contain !important;
-                        border-radius: 8px !important;
-                        cursor: grab !important;
-                        transition: transform 0.2s ease !important;
-                        user-select: none !important;
-                    `);
-                    
-                    lightboxImg.src = img.src;
-                    lightbox.classList.add('show');
-                }
-            });
-        });
-        
-        console.log('✅ Lightbox configurado com zoom e arrasto!');
 
          // ADICIONAR LUPA NAS IMAGENS
         document.querySelectorAll('.clickable-service').forEach(img => {
@@ -864,17 +837,6 @@ document.addEventListener('DOMContentLoaded', () => {
   start();
 });
 
-let imgs = document.querySelectorAll(".services-grid img");
-
-    imgs.forEach(img => {
-        const link = document.createElement('a');
-        link.href = img.src;
-        link.target = '_blank';
-        link.rel = 'noopener';
-
-        img.parentNode.insertBefore(link, img);
-        link.appendChild(img);
-});
 document.addEventListener("DOMContentLoaded", function() {
     renderServices();
 });
