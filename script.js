@@ -535,7 +535,7 @@ function initializeLightbox() {
     lightbox.id = 'lightbox';
     lightbox.className = 'lightbox';
     lightbox.setAttribute('aria-hidden', 'true');
-    llightbox.innerHTML = `
+    lightbox.innerHTML = `
   <button class="lightbox-close" aria-label="Close">×</button>
   <img alt="">
   <button class="pc-prev" aria-label="Anterior">‹</button>
