@@ -650,11 +650,12 @@ function initializeCarousel() {
     setInterval(() => {
       idx = (idx + 1) % slides.length;
       show(idx);
-    }, 4000); // change every 4s
-  }
-}
+   }, 4000); // change every 4s
+} // fecha o if
 
-    }
+} // fecha a função (por exemplo, initializeCarousel)
+
+} // fecha a função initializeLightbox
     
 // ============================
 // Testimonials
