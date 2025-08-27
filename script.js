@@ -452,8 +452,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeMobileMenu();
     initializeNavigation();
     initializeTestimonials();
-    renderServices();
     updateContent();
+    renderServices();
 });
 
 // Language functionality (mantém todas as tuas funções de língua iguais)
