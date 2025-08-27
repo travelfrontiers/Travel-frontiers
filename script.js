@@ -482,7 +482,9 @@ function initializeNavigation() {
 function renderServices() {
   const servicesGrid = document.querySelector('.services-grid');
   if (!servicesGrid) return;
+  
   const services = translations[currentLanguage].services.items;
+  
   servicesGrid.innerHTML = services.map(service => {
     let imageHtml;
     if (
@@ -510,6 +512,17 @@ function renderServices() {
         </div>
       </div>`;
   }).join('');
+
+  // ⬇️ Bind click-to-open-lightbox *after* DOM is populated
+  document.querySelectorAll('.clickable-service').forEach(imgEl => {
+    imgEl.addEventListener('click', e => {
+      const lightboxImg = document.querySelector('#lightbox img');
+      lightboxImg.src = e.currentTarget.src;
+      document.getElementById('lightbox').classList.add('show');
+    });
+  });
+
+  // Finally, initialize close/arrow/keyboard logic
   initializeLightbox();
 }
 
@@ -547,7 +560,20 @@ function initializeLightbox() {
 
     closeBtn.addEventListener('click', closeLightbox);
     lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox(); 
+});
+
+      // Lightbox arrow navigation
+document.querySelector('.lightbox .pc-prev')?.addEventListener('click', () => {
+  // use your carousel's previous‑image function here
+  prevSlide();
+});
+
+document.querySelector('.lightbox .pc-next')?.addEventListener('click', () => {
+  // use your carousel's next‑image function here
+  nextSlide();
+});
+
 
     lightbox.dataset.bound = 'true';
   }
