@@ -566,6 +566,7 @@ function initializeNavigation() {
 
 // Services functionality
 function renderServices() {
+    console.log("Função de serviços está a correr");
     const servicesGrid = document.querySelector('.services-grid');
     if (!servicesGrid) return;
     
@@ -873,3 +874,7 @@ document.addEventListener('DOMContentLoaded', () => {
         link.appendChild(img);
     });
 });
+document.addEventListener("DOMContentLoaded", function() {
+    renderServices();
+});
+
