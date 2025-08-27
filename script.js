@@ -431,7 +431,6 @@ function initializeLightbox() {
             startX = e.clientX - translateX;
             startY = e.clientY - translateY;
             lightboxImg.style.cursor = 'grabbing';
-        }
     });
 
     document.addEventListener('mousemove', (e) => {
