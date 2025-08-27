@@ -872,7 +872,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         img.parentNode.insertBefore(link, img);
         link.appendChild(img);
-    });
 });
 document.addEventListener("DOMContentLoaded", function() {
     renderServices();
