@@ -378,11 +378,6 @@ const translations = {
 };
 
 // ============================
-// Multi-language data (unchanged)
-// ============================
-const translations = { /* ... your full translations object as before ... */ };
-
-// ============================
 // Global variables
 // ============================
 let currentLanguage = 'pt';
@@ -394,17 +389,15 @@ let currentTestimonialIndex = 0;
 function initializeLanguageSelector() {
   const langButton = document.getElementById('currentLang');
   const langDropdown = document.getElementById('langDropdown');
-
   if (langButton) {
-    langButton.addEventListener('click', () => {
-      if (langDropdown) langDropdown.classList.toggle('show');
+    langButton.addEventListener('click', function() {
+      if (langDropdown) {
+        langDropdown.classList.toggle('show');
+      }
     });
   }
-
-  document.addEventListener('click', e => {
-    if (langButton && langDropdown &&
-        !langButton.contains(e.target) &&
-        !langDropdown.contains(e.target)) {
+  document.addEventListener('click', function(event) {
+    if (langButton && langDropdown && !langButton.contains(event.target) && !langDropdown.contains(event.target)) {
       langDropdown.classList.remove('show');
     }
   });
@@ -414,45 +407,51 @@ function changeLanguage(lang) {
   currentLanguage = lang;
   const langCode = document.getElementById('langCode');
   const langDropdown = document.getElementById('langDropdown');
-
   if (langCode) langCode.textContent = lang.toUpperCase();
   if (langDropdown) langDropdown.classList.remove('show');
   document.documentElement.lang = lang;
-
   updateContent();
   renderServices();
   updateTestimonials();
   createTestimonialDots();
+    
+  setTimeout(() => { initializeLightbox(); }, 100);
 }
 
 function updateContent() {
-  document.querySelectorAll('[data-translate]').forEach(el => {
-    const key = el.getAttribute('data-translate');
+  const elements = document.querySelectorAll('[data-translate]');
+  elements.forEach(element => {
+    const key = element.getAttribute('data-translate');
     const translation = getTranslation(key);
-    if (translation) el.textContent = translation;
+    if (translation) element.textContent = translation;
   });
 }
 
 function getTranslation(key) {
-  return key.split('.').reduce((obj, k) => obj?.[k], translations[currentLanguage]);
+  const keys = key.split('.');
+  let value = translations[currentLanguage];
+  for (const k of keys) {
+    value = value?.[k];
+  }
+  return value;
 }
 
 // ============================
 // Mobile menu
 // ============================
 function initializeMobileMenu() {
-  const btn = document.getElementById('mobileMenuBtn');
-  const menu = document.getElementById('mobileMenu');
-
-  if (btn && menu) {
-    btn.addEventListener('click', () => {
-      menu.classList.toggle('show');
-      btn.classList.toggle('active');
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  if (mobileMenuBtn && mobileMenu) {
+    mobileMenuBtn.addEventListener('click', function() {
+      mobileMenu.classList.toggle('show');
+      mobileMenuBtn.classList.toggle('active');
     });
-    menu.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', () => {
-        menu.classList.remove('show');
-        btn.classList.remove('active');
+    const mobileLinks = mobileMenu.querySelectorAll('a');
+    mobileLinks.forEach(link => {
+      link.addEventListener('click', function() {
+        mobileMenu.classList.remove('show');
+        mobileMenuBtn.classList.remove('active');
       });
     });
   }
@@ -462,17 +461,16 @@ function initializeMobileMenu() {
 // Navigation
 // ============================
 function initializeNavigation() {
-  document.querySelectorAll('a[href^="#"]').forEach(link => {
-    link.addEventListener('click', e => {
+  const navLinks = document.querySelectorAll('a[href^="#"]');
+  navLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
       e.preventDefault();
-      const id = link.getAttribute('href').substring(1);
-      const target = document.getElementById(id);
-      if (target) {
+      const targetId = this.getAttribute('href').substring(1);
+      const targetSection = document.getElementById(targetId);
+      if (targetSection) {
         const headerHeight = document.querySelector('.header')?.offsetHeight || 0;
-        window.scrollTo({
-          top: target.offsetTop - headerHeight,
-          behavior: 'smooth'
-        });
+        const targetPosition = targetSection.offsetTop - headerHeight;
+        window.scrollTo({ top: targetPosition, behavior: 'smooth' });
       }
     });
   });
@@ -482,36 +480,45 @@ function initializeNavigation() {
 // Services
 // ============================
 function renderServices() {
-  const grid = document.querySelector('.services-grid');
-  if (!grid) return;
-
+  const servicesGrid = document.querySelector('.services-grid');
+  if (!servicesGrid) return;
   const services = translations[currentLanguage].services.items;
-  grid.innerHTML = services.map(s => {
-    const isLocalImg = s.image.startsWith('img/') && /\.(jpeg|jpg|png)$/i.test(s.image);
-    const imageHtml = isLocalImg
-      ? `<picture>
-           <source srcset="${s.image.replace(/\.(jpeg|jpg|png)$/i, '.webp')}" type="image/webp">
-           <img src="${s.image}" alt="${s.title}" loading="lazy">
-         </picture>`
-      : `<img src="${s.image}" alt="${s.title}" loading="lazy">`;
-
-    return `<div class="service-card">
-              <div class="service-image">
-                ${imageHtml}
-                <div class="service-overlay"></div>
-                <h3 class="service-title">${s.title}</h3>
-              </div>
-              <div class="service-content">
-                <p class="service-description">${s.description}</p>
-              </div>
-            </div>`;
+  servicesGrid.innerHTML = services.map(service => {
+    let imageHtml;
+    if (service.image.startsWith('img/') && /\.(jpeg|jpg|png)$/i.test(service.image)) {
+      const webpSrc = service.image.replace(/\.(jpeg|jpg|png)$/i, '.webp');
+      imageHtml = `
+        <picture>
+          <source srcset="${webpSrc}" type="image/webp">
+          <img src="${service.image}" alt="${service.title}" loading="lazy">
+        </picture>`;
+    } else {
+      imageHtml = `<img src="${service.image}" alt="${service.title}" loading="lazy">`;
+    }
+    return `
+      <div class="service-card">
+        <div class="service-image">
+          ${imageHtml}
+          <div class="service-overlay"></div>
+          <h3 class="service-title">${service.title}</h3>
+        </div>
+        <div class="service-content">
+          <p class="service-description">${service.description}</p>
+        </div>
+      </div>`;
   }).join('');
+
+    console.log('[Services] Render complete, initializing lightbox...');
+
+  // Call lightbox binding after replacing HTML
+  initializeLightbox();
 }
 
 // ============================
 // Lightbox with Zoom + Drag
 // ============================
 function initializeLightbox() {
+  // Ensure a lightbox exists
   let lightbox = document.getElementById('lightbox');
   if (!lightbox) {
     lightbox = document.createElement('div');
@@ -528,41 +535,51 @@ function initializeLightbox() {
   const lightboxImg = lightbox.querySelector('img');
   const closeBtn = lightbox.querySelector('.lightbox-close');
 
+  // Track zoom/drag
   let scale = 1, translateX = 0, translateY = 0;
   let dragging = false, startX = 0, startY = 0;
 
+  // 👉 NEW: central open helper
   function openInLightbox(url) {
+    console.log('[Lightbox] Opening:', url);
     lightboxImg.src = url;
     lightbox.classList.add('show');
     lightbox.setAttribute('aria-hidden', 'false');
-    resetTransform();
-  }
-
-  function resetTransform() {
     scale = 1; translateX = 0; translateY = 0;
     lightboxImg.style.transform = '';
     lightboxImg.style.cursor = '';
   }
 
-  function closeLightbox() {
-    lightbox.classList.remove('show');
-    lightbox.setAttribute('aria-hidden', 'true');
-    lightboxImg.src = '';
-    resetTransform();
-  }
-
+  // Bind static handlers only once
   if (!lightbox.dataset.bound) {
+    function closeLightbox() {
+      lightbox.classList.remove('show');
+      lightbox.setAttribute('aria-hidden', 'true');
+      lightboxImg.src = '';
+      lightboxImg.style.transform = '';
+      lightboxImg.style.cursor = '';
+      scale = 1; translateX = 0; translateY = 0;
+    }
+
     closeBtn.addEventListener('click', closeLightbox);
     lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox();
     });
+
+    // Lightbox arrow navigation
+    document.querySelector('.lightbox .pc-prev')?.addEventListener('click', () => prevSlide?.());
+    document.querySelector('.lightbox .pc-next')?.addEventListener('click', () => nextSlide?.());
+
+    // Zoom with mouse wheel
     lightbox.addEventListener('wheel', e => {
       e.preventDefault();
       const delta = e.deltaY < 0 ? 0.15 : -0.15;
       scale = Math.min(Math.max(0.5, scale + delta), 4);
       lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
     });
+
+    // Drag logic
     lightboxImg.addEventListener('dragstart', e => e.preventDefault());
     lightboxImg.addEventListener('mousedown', e => {
       if (scale > 1) {
@@ -583,27 +600,23 @@ function initializeLightbox() {
       dragging = false;
       lightboxImg.style.cursor = scale > 1 ? 'grab' : '';
     });
+
     lightbox.dataset.bound = 'true';
   }
 
-  // Event delegation for all service images & carousel
-  document.querySelector('.services-grid')?.addEventListener('click', e => {
-    const img = e.target.closest('.service-image img');
-    if (img) openInLightbox(img.src);
-  });
-  document.getElementById('travelCarousel')?.addEventListener('click', e => {
-    const img = e.target.closest('.carousel-img');
-    if (img) openInLightbox(img.src);
+  // 👉 UPDATED: binding using helper + debug
+  document.querySelectorAll('.service-image img, #travelCarousel .carousel-img').forEach(img => {
+    if (!img.dataset.lbBound) {
+      img.style.cursor = 'zoom-in';
+      img.addEventListener('click', () => openInLightbox(img.src));
+      img.dataset.lbBound = 'true';
+    }
   });
 }
 
-// ============================
-// Carousel
-// ============================
 function initializeCarousel() {
   const carousel = document.getElementById('travelCarousel');
   if (!carousel) return;
-
   const slides = Array.from(carousel.querySelectorAll('.carousel-img'));
   if (slides.length <= 1) return;
 
@@ -618,7 +631,7 @@ function initializeCarousel() {
     setInterval(() => {
       idx = (idx + 1) % slides.length;
       show(idx);
-    }, 4000);
+    }, 4000); // change every 4s
   }
 }
 
@@ -628,61 +641,84 @@ function initializeCarousel() {
 function initializeTestimonials() {
   const prevBtn = document.getElementById('prevTestimonial');
   const nextBtn = document.getElementById('nextTestimonial');
-
-  prevBtn?.addEventListener('click', () => {
-    const items = translations[currentLanguage].testimonials.items;
-    currentTestimonialIndex =
-      currentTestimonialIndex === 0 ? items.length - 1 : currentTestimonialIndex - 1;
-    updateTestimonials();
-  });
-  nextBtn?.addEventListener('click', () => {
-    const items = translations[currentLanguage].testimonials.items;
-    currentTestimonialIndex = (currentTestimonialIndex + 1) % items.length;
-    updateTestimonials();
-  });
-
-  createTestimonialDots();
-}
-
-function updateTestimonials() {
-  const testimonial = translations[currentLanguage].testimonials.items[currentTestimonialIndex];
-  const container = document.getElementById('testimonialContainer');
-  if (testimonial && container) {
-    container.innerHTML = `
-      <p class="testimonial-quote">"${testimonial.quote}"</p>
-      <p class="testimonial-author">- ${testimonial.author}</p>
-    `;
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      currentTestimonialIndex = currentTestimonialIndex === 0
+        ? translations[currentLanguage].testimonials.items.length - 1
+        : currentTestimonialIndex - 1;
+      updateTestimonials();
+    });
   }
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      currentTestimonialIndex = (currentTestimonialIndex + 1) % translations[currentLanguage].testimonials.items.length;
+      updateTestimonials();
+    });
+  }
+  createTestimonialDots();
+  updateTestimonials();
 }
+
+// Auto‑rotate testimonials every 5 seconds
+setInterval(() => {
+  const nextBtn = document.getElementById('nextTestimonial');
+  if (nextBtn && !nextBtn.disabled) {
+    nextBtn.click();
+  }
+}, 5000);
 
 function createTestimonialDots() {
   const dotsContainer = document.getElementById('testimonialDots');
   if (!dotsContainer) return;
-
-  const items = translations[currentLanguage].testimonials.items;
-  dotsContainer.innerHTML = items
-    .map((_, i) => `<span class="dot ${i === currentTestimonialIndex ? 'active' : ''}" data-index="${i}"></span>`)
-    .join('');
-
-  dotsContainer.querySelectorAll('.dot').forEach(dot => {
-    dot.addEventListener('click', () => {
-      currentTestimonialIndex = parseInt(dot.dataset.index, 10);
-      updateTestimonials();
-      createTestimonialDots();
-    });
-  });
+  const testimonials = translations[currentLanguage].testimonials.items;
+  dotsContainer.innerHTML = testimonials.map((_, index) =>
+    `<div class="dot ${index === currentTestimonialIndex ? 'active' : ''}" onclick="goToTestimonial(${index})"></div>`
+  ).join('');
 }
 
-// ============================
-// Init on DOM ready
-// ============================
+function updateTestimonials() {
+  const list = translations[currentLanguage].testimonials.items || [];
+  if (!list.length || !list[currentTestimonialIndex]) return;
+
+  const t = list[currentTestimonialIndex];
+
+  const tEl = document.getElementById('currentTestimonial');
+  if (tEl) tEl.textContent = `"${t.text}"`;
+
+  const aEl = document.getElementById('currentAuthor');
+  if (aEl) aEl.textContent = t.author;
+
+  const lEl = document.getElementById('currentLocation');
+  if (lEl) lEl.textContent = t.location;
+
+  // refresh dot active state
+  const dots = document.querySelectorAll('#testimonialDots .dot');
+  dots.forEach((dot, i) => dot.classList.toggle('active', i === currentTestimonialIndex));
+
+  // optional: disable arrows if only one testimonial
+  const prevBtn = document.getElementById('prevTestimonial');
+  const nextBtn = document.getElementById('nextTestimonial');
+  const disableArrows = list.length <= 1;
+  if (prevBtn) prevBtn.disabled = disableArrows;
+  if (nextBtn) nextBtn.disabled = disableArrows;
+}
+
+window.goToTestimonial = function (index) {
+  const list = translations[currentLanguage].testimonials.items || [];
+  if (!list.length) return;
+  currentTestimonialIndex = Math.max(0, Math.min(index, list.length - 1));
+  updateTestimonials();
+};
+
 document.addEventListener('DOMContentLoaded', () => {
+  // set your starting language if needed
+  currentLanguage = 'pt'; // or whatever default you want
+
   initializeLanguageSelector();
   initializeMobileMenu();
   initializeNavigation();
   renderServices();
+  initializeTestimonials();
   initializeLightbox();
   initializeCarousel();
-  initializeTestimonials();
-  updateContent();
 });
