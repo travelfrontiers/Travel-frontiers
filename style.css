@@ -439,6 +439,8 @@ body {
 
 .services-grid {
     display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
     visibility: visible !important;
     opacity: 1 !important;
 }
