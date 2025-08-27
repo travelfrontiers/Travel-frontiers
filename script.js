@@ -377,472 +377,244 @@ const translations = {
     }
 };
 
+// ============================
 // Global variables
+// ============================
 let currentLanguage = 'pt';
 let currentTestimonialIndex = 0;
 
-// Função do Lightbox 
-function initializeLightbox() {
-    const lightbox = document.getElementById('lightbox');
-    const lightboxImg = lightbox?.querySelector('img');
-    const closeBtn = lightbox?.querySelector('.lightbox-close');
-
-    if (!lightbox || !lightboxImg) return;
-
-    let scale = 1;
-    let translateX = 0;
-    let translateY = 0;
-    let dragging = false;
-    let startX = 0;
-    let startY = 0;
-
-    // Close logic
-    function closeLightbox() {
-        lightbox.classList.remove('show');
-        lightbox.setAttribute('aria-hidden', 'true');
-        lightboxImg.src = '';
-        scale = 1;
-        translateX = 0;
-        translateY = 0;
-        lightboxImg.style.transform = '';
-        lightboxImg.style.cursor = '';
-    }
-
-    closeBtn.addEventListener('click', closeLightbox);
-    lightbox.addEventListener('click', e => {
-        if (e.target === lightbox) closeLightbox();
-    });
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox();
-    });
-
-    // Zoom
-    lightbox.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        const delta = e.deltaY < 0 ? 0.15 : -0.15;
-        scale = Math.min(Math.max(0.5, scale + delta), 4);
-        lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-    });
-
-    // Prevent default image dragging
-    lightboxImg.addEventListener('dragstart', e => e.preventDefault());
-
-    // Drag start
-    lightboxImg.addEventListener('mousedown', (e) => {
-        if (scale > 1) {
-            dragging = true;
-            startX = e.clientX - translateX;
-            startY = e.clientY - translateY;
-            lightboxImg.style.cursor = 'grabbing';
-        }
-    });
-
-    // Drag move
-    document.addEventListener('mousemove', (e) => {
-        if (dragging) {
-            translateX = e.clientX - startX;
-            translateY = e.clientY - startY;
-            lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-        }
-    });
-
-    // Drag end
-    document.addEventListener('mouseup', () => {
-        dragging = false;
-        if (lightboxImg) lightboxImg.style.cursor = 'grab';
-    });
-    
-    // Attach open to both services and carousel images
-    document.querySelectorAll('.service-image img, #travelCarousel .carousel-img').forEach(img => {
-        img.style.cursor = 'zoom-in';
-        img.addEventListener('click', () => {
-            lightboxImg.src = img.src;
-            lightbox.classList.add('show');
-            lightbox.setAttribute('aria-hidden', 'false');
-        });
-    });
-}
-
-// Initialize the page
-document.addEventListener('DOMContentLoaded', function() {
-    initializeLanguageSelector();
-    initializeMobileMenu();
-    initializeNavigation();
-    initializeTestimonials();
-    updateContent();
-    renderServices();
-    initializeLightbox()
-});
-
-// Language functionality (mantém todas as tuas funções de língua iguais)
+// ============================
+// Language functionality
+// ============================
 function initializeLanguageSelector() {
-    const langButton = document.getElementById('currentLang');
-    const langDropdown = document.getElementById('langDropdown');
-    
-    if (langButton) {
-        langButton.addEventListener('click', function() {
-            if (langDropdown) {
-                langDropdown.classList.toggle('show');
-            }
-        });
-    }
-    
-    document.addEventListener('click', function(event) {
-        if (langButton && langDropdown && !langButton.contains(event.target) && !langDropdown.contains(event.target)) {
-            langDropdown.classList.remove('show');
-        }
+  const langButton = document.getElementById('currentLang');
+  const langDropdown = document.getElementById('langDropdown');
+  if (langButton) {
+    langButton.addEventListener('click', function() {
+      if (langDropdown) {
+        langDropdown.classList.toggle('show');
+      }
     });
+  }
+  document.addEventListener('click', function(event) {
+    if (langButton && langDropdown && !langButton.contains(event.target) && !langDropdown.contains(event.target)) {
+      langDropdown.classList.remove('show');
+    }
+  });
 }
 
 function changeLanguage(lang) {
-    currentLanguage = lang;
-    const langCode = document.getElementById('langCode');
-    const langDropdown = document.getElementById('langDropdown');
-    
-    if (langCode) {
-        langCode.textContent = lang.toUpperCase();
-    }
-    if (langDropdown) {
-        langDropdown.classList.remove('show');
-    }
-    
-    document.documentElement.lang = lang;
-    updateContent();
-    renderServices();
-    updateTestimonials();
-    
-    // Reinicializa lightbox após mudança de língua
-    setTimeout(() => {
-        initializeLightbox();
-    }, 100);
+  currentLanguage = lang;
+  const langCode = document.getElementById('langCode');
+  const langDropdown = document.getElementById('langDropdown');
+  if (langCode) langCode.textContent = lang.toUpperCase();
+  if (langDropdown) langDropdown.classList.remove('show');
+  document.documentElement.lang = lang;
+  updateContent();
+  renderServices();
+  updateTestimonials();
+  setTimeout(() => { initializeLightbox(); }, 100);
 }
 
 function updateContent() {
-    const elements = document.querySelectorAll('[data-translate]');
-    elements.forEach(element => {
-        const key = element.getAttribute('data-translate');
-        const translation = getTranslation(key);
-        if (translation) {
-            element.textContent = translation;
-        }
-    });
+  const elements = document.querySelectorAll('[data-translate]');
+  elements.forEach(element => {
+    const key = element.getAttribute('data-translate');
+    const translation = getTranslation(key);
+    if (translation) element.textContent = translation;
+  });
 }
 
 function getTranslation(key) {
-    const keys = key.split('.');
-    let value = translations[currentLanguage];
-    
-    for (const k of keys) {
-        value = value?.[k];
-    }
-    
-    return value;
+  const keys = key.split('.');
+  let value = translations[currentLanguage];
+  for (const k of keys) {
+    value = value?.[k];
+  }
+  return value;
 }
 
-// Mobile menu functionality (mantém igual)
+// ============================
+// Mobile menu
+// ============================
 function initializeMobileMenu() {
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
-    
-    if (mobileMenuBtn && mobileMenu) {
-        mobileMenuBtn.addEventListener('click', function() {
-            mobileMenu.classList.toggle('show');
-            mobileMenuBtn.classList.toggle('active');
-        });
-        
-        const mobileLinks = mobileMenu.querySelectorAll('a');
-        mobileLinks.forEach(link => {
-            link.addEventListener('click', function() {
-                mobileMenu.classList.remove('show');
-                mobileMenuBtn.classList.remove('active');
-            });
-        });
-    }
-}
-
-// Navigation functionality (mantém igual)
-function initializeNavigation() {
-    const navLinks = document.querySelectorAll('a[href^="#"]');
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const targetId = this.getAttribute('href').substring(1);
-            const targetSection = document.getElementById(targetId);
-            
-            if (targetSection) {
-                const headerHeight = document.querySelector('.header')?.offsetHeight || 0;
-                const targetPosition = targetSection.offsetTop - headerHeight;
-                
-                window.scrollTo({
-                    top: targetPosition,
-                    behavior: 'smooth'
-                });
-            }
-        });
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  if (mobileMenuBtn && mobileMenu) {
+    mobileMenuBtn.addEventListener('click', function() {
+      mobileMenu.classList.toggle('show');
+      mobileMenuBtn.classList.toggle('active');
     });
+    const mobileLinks = mobileMenu.querySelectorAll('a');
+    mobileLinks.forEach(link => {
+      link.addEventListener('click', function() {
+        mobileMenu.classList.remove('show');
+        mobileMenuBtn.classList.remove('active');
+      });
+    });
+  }
 }
 
-// Services functionality
+// ============================
+// Navigation
+// ============================
+function initializeNavigation() {
+  const navLinks = document.querySelectorAll('a[href^="#"]');
+  navLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const targetId = this.getAttribute('href').substring(1);
+      const targetSection = document.getElementById(targetId);
+      if (targetSection) {
+        const headerHeight = document.querySelector('.header')?.offsetHeight || 0;
+        const targetPosition = targetSection.offsetTop - headerHeight;
+        window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+      }
+    });
+  });
+}
+
+// ============================
+// Services
+// ============================
 function renderServices() {
-    const servicesGrid = document.querySelector('.services-grid');
-    if (!servicesGrid) return;
-    
-    const services = translations[currentLanguage].services.items;
-    
-    servicesGrid.innerHTML = services.map(service => {
-    // Verifica se a imagem é local e termina com .jpeg ou .jpg ou .png
+  const servicesGrid = document.querySelector('.services-grid');
+  if (!servicesGrid) return;
+  const services = translations[currentLanguage].services.items;
+  servicesGrid.innerHTML = services.map(service => {
     let imageHtml;
     if (
       service.image.startsWith('img/') &&
       (service.image.endsWith('.jpeg') || service.image.endsWith('.jpg') || service.image.endsWith('.png'))
     ) {
-        // Substitui por .webp
-        const webpSrc = service.image.replace(/\.(jpeg|jpg|png)$/i, '.webp');
-        imageHtml = `
-          <picture>
-            <source srcset="${webpSrc}" type="image/webp">
-            <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
-          </picture>
-        `;
+      const webpSrc = service.image.replace(/\.(jpeg|jpg|png)$/i, '.webp');
+      imageHtml = `
+        <picture>
+          <source srcset="${webpSrc}" type="image/webp">
+          <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
+        </picture>`;
     } else {
-        // Para imagens externas (Unsplash), mantém normal
-        imageHtml = `<img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">`;
+      imageHtml = `<img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">`;
     }
-
     return `
-        <div class="service-card">
-            <div class="service-image">
-                ${imageHtml}
-                <div class="service-overlay"></div>
-                <h3 class="service-title">${service.title}</h3>
-            </div>
-            <div class="service-content">
-                <p class="service-description">${service.description}</p>
-            </div>
+      <div class="service-card">
+        <div class="service-image">
+          ${imageHtml}
+          <div class="service-overlay"></div>
+          <h3 class="service-title">${service.title}</h3>
         </div>
-    `;
-}).join('');
-
-
-    // LIGHTBOX FUNCIONAL COM ZOOM E ARRASTO
-    const lightbox = document.getElementById('lightbox');
-    const lightboxImg = lightbox ? lightbox.querySelector('img') : null;
-    const closeBtn = lightbox ? lightbox.querySelector('.lightbox-close') : null;
-
-    if (lightbox && lightboxImg && closeBtn) {
-        let scale = 1, translateX = 0, translateY = 0, startX = 0, startY = 0, dragging = false;
-
-        // FUNÇÃO PARA FECHAR LIGHTBOX
-        function closeLightbox() {
-            lightbox.style.display = 'none';
-            lightbox.classList.remove('show');
-            lightboxImg.src = '';
-            scale = 1; translateX = 0; translateY = 0;
-            lightboxImg.style.transform = 'translate(0, 0) scale(1)';
-        }
-
-        // EVENTOS DE FECHAR
-        closeBtn.onclick = closeLightbox;
-        lightbox.onclick = (e) => { if (e.target === lightbox) closeLightbox(); };
-        document.onkeydown = (e) => { if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox(); };
-
-        // ZOOM COM SCROLL
-        lightbox.onwheel = (e) => {
-            e.preventDefault();
-            const delta = e.deltaY < 0 ? 0.15 : -0.15;
-            scale = Math.min(Math.max(0.5, scale + delta), 4);
-            lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-        };
-
-        // ARRASTO
-        lightboxImg.onmousedown = (e) => {
-            if (scale > 1) {
-                dragging = true;
-                startX = e.clientX - translateX;
-                startY = e.clientY - translateY;
-                lightboxImg.style.cursor = 'grabbing';
-            }
-        };
-        document.onmousemove = (e) => {
-            if (dragging) {
-                translateX = e.clientX - startX;
-                translateY = e.clientY - startY;
-                lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-            }
-        };
-        document.onmouseup = () => {
-            dragging = false;
-            if (lightboxImg) lightboxImg.style.cursor = 'grab';
-        };
-
-         // ADICIONAR LUPA NAS IMAGENS
-        document.querySelectorAll('.clickable-service').forEach(img => {
-            img.style.cursor = 'zoom-in';
-        });
-    }
+        <div class="service-content">
+          <p class="service-description">${service.description}</p>
+        </div>
+      </div>`;
+  }).join('');
+  initializeLightbox();
 }
 
-// Testimonials functionality (mantém todas as funções iguais)
+// ============================
+// Lightbox with Zoom + Drag
+// ============================
+function initializeLightbox() {
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = lightbox?.querySelector('img');
+  const closeBtn = lightbox?.querySelector('.lightbox-close');
+  if (!lightbox || !lightboxImg) return;
+
+  let scale = 1, translateX = 0, translateY = 0;
+  let dragging = false, startX = 0, startY = 0;
+
+  function closeLightbox() {
+    lightbox.classList.remove('show');
+    lightbox.setAttribute('aria-hidden', 'true');
+    lightboxImg.src = '';
+    scale = 1; translateX = 0; translateY = 0;
+    lightboxImg.style.transform = '';
+    lightboxImg.style.cursor = '';
+  }
+
+  closeBtn.addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox(); });
+
+  lightbox.addEventListener('wheel', e => {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.15 : -0.15;
+    scale = Math.min(Math.max(0.5, scale + delta), 4);
+    lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+  });
+
+  lightboxImg.addEventListener('dragstart', e => e.preventDefault());
+  lightboxImg.addEventListener('mousedown', e => {
+    if (scale > 1) {
+      dragging = true;
+      startX = e.clientX - translateX;
+      startY = e.clientY - translateY;
+      lightboxImg.style.cursor = 'grabbing';
+    }
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (dragging) {
+      translateX = e.clientX - startX;
+      translateY = e.clientY - startY;
+      lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    dragging = false;
+    if (lightboxImg) lightboxImg.style.cursor = 'grab';
+  });
+
+  document.querySelectorAll('.service-image img, #travelCarousel .carousel-img').forEach(img => {
+    img.style.cursor = 'zoom-in';
+    img.addEventListener('click', () => {
+      lightboxImg.src = img.src;
+      lightbox.classList.add('show');
+      lightbox.setAttribute('aria-hidden', 'false');
+    });
+  });
+}
+
+// ============================
+// Testimonials
+// ============================
 function initializeTestimonials() {
-    const prevBtn = document.getElementById('prevTestimonial');
-    const nextBtn = document.getElementById('nextTestimonial');
-    
-    if (prevBtn) {
-        prevBtn.addEventListener('click', function() {
-            currentTestimonialIndex = currentTestimonialIndex === 0 
-                ? translations[currentLanguage].testimonials.items.length - 1 
-                : currentTestimonialIndex - 1;
-            updateTestimonials();
-        });
-    }
-    
-    if (nextBtn) {
-        nextBtn.addEventListener('click', function() {
-            currentTestimonialIndex = (currentTestimonialIndex + 1) % translations[currentLanguage].testimonials.items.length;
-            updateTestimonials();
-        });
-    }
-    
-    createTestimonialDots();
-    updateTestimonials();
+  const prevBtn = document.getElementById('prevTestimonial');
+  const nextBtn = document.getElementById('nextTestimonial');
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      currentTestimonialIndex = currentTestimonialIndex === 0
+        ? translations[currentLanguage].testimonials.items.length - 1
+        : currentTestimonialIndex - 1;
+      updateTestimonials();
+    });
+  }
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      currentTestimonialIndex = (currentTestimonialIndex + 1) % translations[currentLanguage].testimonials.items.length;
+      updateTestimonials();
+    });
+  }
+  createTestimonialDots();
+  updateTestimonials();
 }
 
 function createTestimonialDots() {
-    const dotsContainer = document.getElementById('testimonialDots');
-    if (!dotsContainer) return;
-    
-    const testimonials = translations[currentLanguage].testimonials.items;
-    
-    dotsContainer.innerHTML = testimonials.map((_, index) => 
-        `<div class="dot ${index === currentTestimonialIndex ? 'active' : ''}" onclick="goToTestimonial(${index})"></div>`
-    ).join('');
+  const dotsContainer = document.getElementById('testimonialDots');
+  if (!dotsContainer) return;
+  const testimonials = translations[currentLanguage].testimonials.items;
+  dotsContainer.innerHTML = testimonials.map((_, index) =>
+    `<div class="dot ${index === currentTestimonialIndex ? 'active' : ''}" onclick="goToTestimonial(${index})"></div>`
+  ).join('');
 }
 
 function updateTestimonials() {
-    const testimonials = translations[currentLanguage].testimonials.items;
-    if (!testimonials || !testimonials[currentTestimonialIndex]) return;
-    
-    const currentTestimonial = testimonials[currentTestimonialIndex];
-    
-    const testimonialText = document.getElementById('currentTestimonial');
-    const testimonialAuthor = document.getElementById('currentAuthor');
-    const testimonialLocation = document.getElementById('currentLocation');
-    
-    if (testimonialText) testimonialText.textContent = `"${currentTestimonial.text}"`;
-    if (testimonialAuthor) testimonialAuthor.textContent = currentTestimonial.author;
-    if (testimonialLocation) testimonialLocation.textContent = currentTestimonial.location;
-    
-    const prevBtn = document.getElementById('prevTestimonial');
-    const nextBtn = document.getElementById('nextTestimonial');
-    
-    if (prevBtn) prevBtn.disabled = testimonials.length <= 1;
-    if (nextBtn) nextBtn.disabled = testimonials.length <= 1;
-    
-    const dots = document.querySelectorAll('.dot');
-    dots.forEach((dot, index) => {
-        dot.classList.toggle('active', index === currentTestimonialIndex);
-    });
-}
+  const testimonials = translations[currentLanguage].testimonials.items;
+  if (!testimonials || !testimonials[currentTestimonialIndex]) return;
+  const currentTestimonial = testimonials[currentTestimonialIndex];
+  document.getElementById('currentTestimonial').textContent = `"${currentTestimonial.text}"`;
+  document.getElementById('currentAuthor').textContent = currentTestimonial.author;
+  document.getElementById('currentLocation').textContent = currentTestimonial.location;
 
-function goToTestimonial(index) {
-    currentTestimonialIndex = index;
-    updateTestimonials();
-}
-
-// Quote form functionality
-function openQuoteForm() {
-    window.open('https://www.icligo.com/forms/pt/contact-us/book-your-trip?utm_source=LHw8s4N4', '_blank');
-}
-
-// Smooth scrolling enhancement
-function smoothScroll() {
-    window.addEventListener('scroll', function() {
-        const header = document.querySelector('.header');
-        if (header) {
-            if (window.scrollY > 100) {
-                header.style.background = 'rgba(255, 255, 255, 0.95)';
-            } else {
-                header.style.background = 'rgba(255, 255, 255, 0.9)';
-            }
-        }
-    });
-}
-smoothScroll();
-
-// Auto testimonial rotation every 5 seconds
-setInterval(() => {
-    const nextBtn = document.getElementById('nextTestimonial');
-    if (nextBtn && !nextBtn.disabled) {
-        nextBtn.click();
-    }
-}, 5000);
-
-// Carousel initialization (corrected)
-document.addEventListener('DOMContentLoaded', () => {
-  const carousel = document.getElementById('travelCarousel');
-  if (!carousel) return;
-
-  const imgs = Array.from(carousel.querySelectorAll('.carousel-img'));
-  const prev = carousel.querySelector('.pc-prev');
-  const next = carousel.querySelector('.pc-next');
-  const capText = carousel.querySelector('.pc-text');
-  const counter = carousel.querySelector('.pc-counter');
-
-  let currentIndex = 0;
-  let timer = null;
-  const DURATION = 3500;
-
-  function update() {
-    imgs.forEach((img, idx) => {
-      img.classList.toggle('active', idx === currentIndex);
-    });
-    const caption = imgs[currentIndex]?.dataset?.caption || imgs[currentIndex]?.alt || '';
-    if (capText) capText.textContent = caption;
-    if (counter) counter.textContent = `${currentIndex + 1}/${imgs.length}`;
-  }
-
-  function nextSlide() {
-    currentIndex = (currentIndex + 1) % imgs.length;
-    update();
-  }
-
-  function prevSlide() {
-    currentIndex = (currentIndex - 1 + imgs.length) % imgs.length;
-    update();
-  }
-
-  function start() {
-    stop();
-    timer = setInterval(nextSlide, DURATION);
-  }
-
-  function stop() {
-    if (timer) {
-      clearInterval(timer);
-      timer = null;
-    }
-  }
-
-  if (next) next.addEventListener('click', () => { nextSlide(); start(); });
-  if (prev) prev.addEventListener('click', () => { prevSlide(); start(); });
-
-  // Optional: click anywhere on the carousel to go to the next slide
-  carousel.addEventListener('click', (e) => {
-    // ignore clicks on the arrows to avoid double-advance
-    if (e.target.classList.contains('pc-arrow')) return;
-    nextSlide();
-    start();
-  });
-
-  carousel.addEventListener('mouseenter', stop);
-  carousel.addEventListener('mouseleave', start);
-
-  // Initialize
-  update();
-  start();
-});
-
-document.addEventListener("DOMContentLoaded", function() {
-    renderServices();
-});
-
+  const prevBtn = document.getElementById('
