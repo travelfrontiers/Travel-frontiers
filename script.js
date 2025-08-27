@@ -413,6 +413,8 @@ function changeLanguage(lang) {
   updateContent();
   renderServices();
   updateTestimonials();
+  createTestimonialDots();
+    
   setTimeout(() => { initializeLightbox(); }, 100);
 }
 
@@ -515,26 +517,43 @@ function renderServices() {
 // Lightbox with Zoom + Drag
 // ============================
 function initializeLightbox() {
-  const lightbox = document.getElementById('lightbox');
-  const lightboxImg = lightbox?.querySelector('img');
-  const closeBtn = lightbox?.querySelector('.lightbox-close');
-  if (!lightbox || !lightboxImg) return;
+  // Ensure a lightbox exists
+  let lightbox = document.getElementById('lightbox');
+  if (!lightbox) {
+    lightbox = document.createElement('div');
+    lightbox.id = 'lightbox';
+    lightbox.className = 'lightbox';
+    lightbox.setAttribute('aria-hidden', 'true');
+    lightbox.innerHTML = `
+      <button class="lightbox-close" aria-label="Close">×</button>
+      <img alt="">
+    `;
+    document.body.appendChild(lightbox);
+  }
+
+  const lightboxImg = lightbox.querySelector('img');
+  const closeBtn = lightbox.querySelector('.lightbox-close');
+
+  // Bind static handlers only once
+  if (!lightbox.dataset.bound) {
+    function closeLightbox() {
+      lightbox.classList.remove('show');
+      lightbox.setAttribute('aria-hidden', 'true');
+      lightboxImg.src = '';
+      lightboxImg.style.transform = '';
+      lightboxImg.style.cursor = '';
+      scale = 1; translateX = 0; translateY = 0;
+    }
+
+    closeBtn.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox(); });
+
+    lightbox.dataset.bound = 'true';
+  }
 
   let scale = 1, translateX = 0, translateY = 0;
   let dragging = false, startX = 0, startY = 0;
-
-  function closeLightbox() {
-    lightbox.classList.remove('show');
-    lightbox.setAttribute('aria-hidden', 'true');
-    lightboxImg.src = '';
-    scale = 1; translateX = 0; translateY = 0;
-    lightboxImg.style.transform = '';
-    lightboxImg.style.cursor = '';
-  }
-
-  closeBtn.addEventListener('click', closeLightbox);
-  lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox(); });
 
   lightbox.addEventListener('wheel', e => {
     e.preventDefault();
@@ -552,7 +571,6 @@ function initializeLightbox() {
       lightboxImg.style.cursor = 'grabbing';
     }
   });
-
   document.addEventListener('mousemove', e => {
     if (dragging) {
       translateX = e.clientX - startX;
@@ -560,20 +578,47 @@ function initializeLightbox() {
       lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
     }
   });
-
   document.addEventListener('mouseup', () => {
     dragging = false;
-    if (lightboxImg) lightboxImg.style.cursor = 'grab';
+    lightboxImg.style.cursor = scale > 1 ? 'grab' : '';
   });
 
+  // Bind click to all service and carousel images (safe to call multiple times)
   document.querySelectorAll('.service-image img, #travelCarousel .carousel-img').forEach(img => {
-    img.style.cursor = 'zoom-in';
-    img.addEventListener('click', () => {
-      lightboxImg.src = img.src;
-      lightbox.classList.add('show');
-      lightbox.setAttribute('aria-hidden', 'false');
-    });
+    if (!img.dataset.lbBound) {
+      img.style.cursor = 'zoom-in';
+      img.addEventListener('click', () => {
+        lightboxImg.src = img.src;
+        lightbox.classList.add('show');
+        lightbox.setAttribute('aria-hidden', 'false');
+        scale = 1; translateX = 0; translateY = 0;
+        lightboxImg.style.transform = '';
+        lightboxImg.style.cursor = '';
+      });
+      img.dataset.lbBound = 'true';
+    }
   });
+}
+
+function initializeCarousel() {
+  const carousel = document.getElementById('travelCarousel');
+  if (!carousel) return;
+  const slides = Array.from(carousel.querySelectorAll('.carousel-img'));
+  if (slides.length <= 1) return;
+
+  let idx = 0;
+  function show(i) {
+    slides.forEach((el, n) => el.classList.toggle('active', n === i));
+  }
+  show(idx);
+
+  if (!carousel.dataset.bound) {
+    carousel.dataset.bound = 'true';
+    setInterval(() => {
+      idx = (idx + 1) % slides.length;
+      show(idx);
+    }, 4000); // change every 4s
+  }
 }
 
 // ============================
@@ -636,6 +681,13 @@ function updateTestimonials() {
   if (nextBtn) nextBtn.disabled = disableArrows;
 }
 
+window.goToTestimonial = function (index) {
+  const list = translations[currentLanguage].testimonials.items || [];
+  if (!list.length) return;
+  currentTestimonialIndex = Math.max(0, Math.min(index, list.length - 1));
+  updateTestimonials();
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   // set your starting language if needed
   currentLanguage = 'pt'; // or whatever default you want
@@ -646,4 +698,5 @@ document.addEventListener('DOMContentLoaded', () => {
   renderServices();
   initializeTestimonials();
   initializeLightbox();
+  initializeCarousel();
 });
