@@ -509,8 +509,7 @@ function renderServices() {
   }).join('');
 
     console.log('[Services] Render complete, initializing lightbox...');
-  initializeLightbox();
-}
+
   // Call lightbox binding after replacing HTML
   initializeLightbox();
 }
@@ -536,15 +535,20 @@ function initializeLightbox() {
   const lightboxImg = lightbox.querySelector('img');
   const closeBtn = lightbox.querySelector('.lightbox-close');
 
-    function openInLightbox(url) {
-  console.log('[Lightbox] Opening:', url); // Debug
-  lightboxImg.src = url;
-  lightbox.classList.add('show');
-  lightbox.setAttribute('aria-hidden', 'false');
-  scale = 1; translateX = 0; translateY = 0;
-  lightboxImg.style.transform = '';
-  lightboxImg.style.cursor = '';
-}
+  // Track zoom/drag
+  let scale = 1, translateX = 0, translateY = 0;
+  let dragging = false, startX = 0, startY = 0;
+
+  // 👉 NEW: central open helper
+  function openInLightbox(url) {
+    console.log('[Lightbox] Opening:', url);
+    lightboxImg.src = url;
+    lightbox.classList.add('show');
+    lightbox.setAttribute('aria-hidden', 'false');
+    scale = 1; translateX = 0; translateY = 0;
+    lightboxImg.style.transform = '';
+    lightboxImg.style.cursor = '';
+  }
 
   // Bind static handlers only once
   if (!lightbox.dataset.bound) {
@@ -559,63 +563,52 @@ function initializeLightbox() {
 
     closeBtn.addEventListener('click', closeLightbox);
     lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox(); 
-});
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox();
+    });
 
-      // Lightbox arrow navigation
-document.querySelector('.lightbox .pc-prev')?.addEventListener('click', () => {
-  // use your carousel's previous‑image function here
-  prevSlide();
-});
+    // Lightbox arrow navigation
+    document.querySelector('.lightbox .pc-prev')?.addEventListener('click', () => prevSlide?.());
+    document.querySelector('.lightbox .pc-next')?.addEventListener('click', () => nextSlide?.());
 
-document.querySelector('.lightbox .pc-next')?.addEventListener('click', () => {
-  // use your carousel's next‑image function here
-  nextSlide();
-});
+    // Zoom with mouse wheel
+    lightbox.addEventListener('wheel', e => {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 0.15 : -0.15;
+      scale = Math.min(Math.max(0.5, scale + delta), 4);
+      lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    });
 
+    // Drag logic
+    lightboxImg.addEventListener('dragstart', e => e.preventDefault());
+    lightboxImg.addEventListener('mousedown', e => {
+      if (scale > 1) {
+        dragging = true;
+        startX = e.clientX - translateX;
+        startY = e.clientY - translateY;
+        lightboxImg.style.cursor = 'grabbing';
+      }
+    });
+    document.addEventListener('mousemove', e => {
+      if (dragging) {
+        translateX = e.clientX - startX;
+        translateY = e.clientY - startY;
+        lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+      }
+    });
+    document.addEventListener('mouseup', () => {
+      dragging = false;
+      lightboxImg.style.cursor = scale > 1 ? 'grab' : '';
+    });
 
     lightbox.dataset.bound = 'true';
   }
 
-  let scale = 1, translateX = 0, translateY = 0;
-  let dragging = false, startX = 0, startY = 0;
-
-  lightbox.addEventListener('wheel', e => {
-    e.preventDefault();
-    const delta = e.deltaY < 0 ? 0.15 : -0.15;
-    scale = Math.min(Math.max(0.5, scale + delta), 4);
-    lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-  });
-
-  lightboxImg.addEventListener('dragstart', e => e.preventDefault());
-  lightboxImg.addEventListener('mousedown', e => {
-    if (scale > 1) {
-      dragging = true;
-      startX = e.clientX - translateX;
-      startY = e.clientY - translateY;
-      lightboxImg.style.cursor = 'grabbing';
-    }
-  });
-  document.addEventListener('mousemove', e => {
-    if (dragging) {
-      translateX = e.clientX - startX;
-      translateY = e.clientY - startY;
-      lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-    }
-  });
-  document.addEventListener('mouseup', () => {
-    dragging = false;
-    lightboxImg.style.cursor = scale > 1 ? 'grab' : '';
-  });
-
-  // Bind click to all service and carousel images (safe to call multiple times)
+  // 👉 UPDATED: binding using helper + debug
   document.querySelectorAll('.service-image img, #travelCarousel .carousel-img').forEach(img => {
     if (!img.dataset.lbBound) {
       img.style.cursor = 'zoom-in';
-      img.addEventListener('click', () => {
-  openInLightbox(img.src); // now uses our helper
-});
-
+      img.addEventListener('click', () => openInLightbox(img.src));
       img.dataset.lbBound = 'true';
     }
   });
