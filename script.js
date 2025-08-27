@@ -535,10 +535,12 @@ function initializeLightbox() {
     lightbox.id = 'lightbox';
     lightbox.className = 'lightbox';
     lightbox.setAttribute('aria-hidden', 'true');
-    lightbox.innerHTML = `
-      <button class="lightbox-close" aria-label="Close">×</button>
-      <img alt="">
-    `;
+    llightbox.innerHTML = `
+  <button class="lightbox-close" aria-label="Close">×</button>
+  <img alt="">
+  <button class="pc-prev" aria-label="Anterior">‹</button>
+  <button class="pc-next" aria-label="Seguinte">›</button>
+`;
     document.body.appendChild(lightbox);
   }
 
@@ -578,8 +580,12 @@ function initializeLightbox() {
     });
 
     // Lightbox arrow navigation
-    document.querySelector('.lightbox .pc-prev')?.addEventListener('click', () => prevSlide?.());
-    document.querySelector('.lightbox .pc-next')?.addEventListener('click', () => nextSlide?.());
+   lightbox.querySelectorAll('.pc-prev').forEach(btn => {
+  btn.addEventListener('click', () => prevSlide?.());
+});
+lightbox.querySelectorAll('.pc-next').forEach(btn => {
+  btn.addEventListener('click', () => nextSlide?.());
+});
 
     // Zoom with mouse wheel
     lightbox.addEventListener('wheel', e => {
