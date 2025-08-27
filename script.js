@@ -398,15 +398,15 @@ function initializeLightbox() {
 
     // Close logic
     function closeLightbox() {
-    lightbox.classList.remove('show');
-    lightbox.setAttribute('aria-hidden', 'true');
-    lightboxImg.src = '';
-    scale = 1;
-    translateX = 0;
-    translateY = 0;
-    lightboxImg.style.transform = '';
-    lightboxImg.style.cursor = '';
-}
+        lightbox.classList.remove('show');
+        lightbox.setAttribute('aria-hidden', 'true');
+        lightboxImg.src = '';
+        scale = 1;
+        translateX = 0;
+        translateY = 0;
+        lightboxImg.style.transform = '';
+        lightboxImg.style.cursor = '';
+    }
 
     closeBtn.addEventListener('click', closeLightbox);
     lightbox.addEventListener('click', e => {
@@ -424,15 +424,20 @@ function initializeLightbox() {
         lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
     });
 
-    // Arrasto
+    // Prevent default image dragging
     lightboxImg.addEventListener('dragstart', e => e.preventDefault());
+
+    // Drag start
+    lightboxImg.addEventListener('mousedown', (e) => {
         if (scale > 1) {
             dragging = true;
             startX = e.clientX - translateX;
             startY = e.clientY - translateY;
             lightboxImg.style.cursor = 'grabbing';
+        }
     });
 
+    // Drag move
     document.addEventListener('mousemove', (e) => {
         if (dragging) {
             translateX = e.clientX - startX;
@@ -441,12 +446,13 @@ function initializeLightbox() {
         }
     });
 
+    // Drag end
     document.addEventListener('mouseup', () => {
         dragging = false;
         if (lightboxImg) lightboxImg.style.cursor = 'grab';
     });
     
-    // Attach to both services and carousel images
+    // Attach open to both services and carousel images
     document.querySelectorAll('.service-image img, #travelCarousel .carousel-img').forEach(img => {
         img.style.cursor = 'zoom-in';
         img.addEventListener('click', () => {
