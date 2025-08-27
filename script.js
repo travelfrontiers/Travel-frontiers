@@ -539,7 +539,7 @@ function initializeLightbox() {
   let scale = 1, translateX = 0, translateY = 0;
   let dragging = false, startX = 0, startY = 0;
 
-  // 👉 NEW: central open helper
+  // Central open helper
   function openInLightbox(url) {
     console.log('[Lightbox] Opening:', url);
     lightboxImg.src = url;
@@ -562,7 +562,9 @@ function initializeLightbox() {
     }
 
     closeBtn.addEventListener('click', closeLightbox);
-    lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+    lightbox.addEventListener('click', e => {
+      if (e.target === lightbox) closeLightbox();
+    });
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox();
     });
@@ -604,7 +606,7 @@ function initializeLightbox() {
     lightbox.dataset.bound = 'true';
   }
 
-  // 👉 UPDATED: binding using helper + debug
+  // Bind click to all service and carousel images
   document.querySelectorAll('.service-image img, #travelCarousel .carousel-img').forEach(img => {
     if (!img.dataset.lbBound) {
       img.style.cursor = 'zoom-in';
