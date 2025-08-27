@@ -482,23 +482,18 @@ function initializeNavigation() {
 function renderServices() {
   const servicesGrid = document.querySelector('.services-grid');
   if (!servicesGrid) return;
-  
   const services = translations[currentLanguage].services.items;
-  
- servicesGrid.innerHTML = services.map(service => {
+  servicesGrid.innerHTML = services.map(service => {
     let imageHtml;
-    if (
-      service.image.startsWith('img/') &&
-      (service.image.endsWith('.jpeg') || service.image.endsWith('.jpg') || service.image.endsWith('.png'))
-    ) {
+    if (service.image.startsWith('img/') && /\.(jpeg|jpg|png)$/i.test(service.image)) {
       const webpSrc = service.image.replace(/\.(jpeg|jpg|png)$/i, '.webp');
       imageHtml = `
         <picture>
           <source srcset="${webpSrc}" type="image/webp">
-          <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">
+          <img src="${service.image}" alt="${service.title}" loading="lazy">
         </picture>`;
     } else {
-      imageHtml = `<img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service">`;
+      imageHtml = `<img src="${service.image}" alt="${service.title}" loading="lazy">`;
     }
     return `
       <div class="service-card">
@@ -513,17 +508,7 @@ function renderServices() {
       </div>`;
   }).join('');
 
- // Bind new service images to open lightbox
-document.querySelectorAll('.clickable-service').forEach(imgEl => {
-  imgEl.addEventListener('click', () => {
-    const lightboxImg = document.querySelector('#lightbox img');
-    lightboxImg.src = imgEl.src;
-    document.getElementById('lightbox').classList.add('show');
-    document.getElementById('lightbox').setAttribute('aria-hidden', 'false');
-  });
-});
-
-  // Now wire up close/arrow/keyboard logic
+  // Call lightbox binding after replacing HTML
   initializeLightbox();
 }
 
