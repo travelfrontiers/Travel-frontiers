@@ -610,11 +610,28 @@ function createTestimonialDots() {
 }
 
 function updateTestimonials() {
-  const testimonials = translations[currentLanguage].testimonials.items;
-  if (!testimonials || !testimonials[currentTestimonialIndex]) return;
-  const currentTestimonial = testimonials[currentTestimonialIndex];
-  document.getElementById('currentTestimonial').textContent = `"${currentTestimonial.text}"`;
-  document.getElementById('currentAuthor').textContent = currentTestimonial.author;
-  document.getElementById('currentLocation').textContent = currentTestimonial.location;
+  const list = translations[currentLanguage].testimonials.items || [];
+  if (!list.length || !list[currentTestimonialIndex]) return;
 
-  const prevBtn = document.getElementById('
+  const t = list[currentTestimonialIndex];
+
+  const tEl = document.getElementById('currentTestimonial');
+  if (tEl) tEl.textContent = `"${t.text}"`;
+
+  const aEl = document.getElementById('currentAuthor');
+  if (aEl) aEl.textContent = t.author;
+
+  const lEl = document.getElementById('currentLocation');
+  if (lEl) lEl.textContent = t.location;
+
+  // refresh dot active state
+  const dots = document.querySelectorAll('#testimonialDots .dot');
+  dots.forEach((dot, i) => dot.classList.toggle('active', i === currentTestimonialIndex));
+
+  // optional: disable arrows if only one testimonial
+  const prevBtn = document.getElementById('prevTestimonial');
+  const nextBtn = document.getElementById('nextTestimonial');
+  const disableArrows = list.length <= 1;
+  if (prevBtn) prevBtn.disabled = disableArrows;
+  if (nextBtn) nextBtn.disabled = disableArrows;
+}
