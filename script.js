@@ -655,8 +655,6 @@ function initializeCarousel() {
 }
 
     }
-
-    }
     
 // ============================
 // Testimonials
