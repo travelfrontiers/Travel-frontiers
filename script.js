@@ -635,3 +635,15 @@ function updateTestimonials() {
   if (prevBtn) prevBtn.disabled = disableArrows;
   if (nextBtn) nextBtn.disabled = disableArrows;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  // set your starting language if needed
+  currentLanguage = 'pt'; // or whatever default you want
+
+  initializeLanguageSelector();
+  initializeMobileMenu();
+  initializeNavigation();
+  renderServices();
+  initializeTestimonials();
+  initializeLightbox();
+});
