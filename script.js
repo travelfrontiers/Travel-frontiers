@@ -864,6 +864,8 @@ document.addEventListener('DOMContentLoaded', () => {
   start();
 });
 
+let imgs = document.querySelectorAll(".services-grid img");
+
     imgs.forEach(img => {
         const link = document.createElement('a');
         link.href = img.src;
