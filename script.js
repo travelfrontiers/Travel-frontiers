@@ -485,7 +485,7 @@ function renderServices() {
   
   const services = translations[currentLanguage].services.items;
   
-  servicesGrid.innerHTML = services.map(service => {
+ servicesGrid.innerHTML = services.map(service => {
     let imageHtml;
     if (
       service.image.startsWith('img/') &&
@@ -513,7 +513,7 @@ function renderServices() {
       </div>`;
   }).join('');
 
-  // ⬇️ Bind click-to-open-lightbox *after* DOM is populated
+  // ⬇️ Bind click events to open lightbox
   document.querySelectorAll('.clickable-service').forEach(imgEl => {
     imgEl.addEventListener('click', e => {
       const lightboxImg = document.querySelector('#lightbox img');
@@ -522,7 +522,7 @@ function renderServices() {
     });
   });
 
-  // Finally, initialize close/arrow/keyboard logic
+  // Now wire up close/arrow/keyboard logic
   initializeLightbox();
 }
 
@@ -670,6 +670,14 @@ function initializeTestimonials() {
   createTestimonialDots();
   updateTestimonials();
 }
+
+// Auto‑rotate testimonials every 5 seconds
+setInterval(() => {
+  const nextBtn = document.getElementById('nextTestimonial');
+  if (nextBtn && !nextBtn.disabled) {
+    nextBtn.click();
+  }
+}, 5000);
 
 function createTestimonialDots() {
   const dotsContainer = document.getElementById('testimonialDots');
