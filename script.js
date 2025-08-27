@@ -508,6 +508,9 @@ function renderServices() {
       </div>`;
   }).join('');
 
+    console.log('[Services] Render complete, initializing lightbox...');
+  initializeLightbox();
+}
   // Call lightbox binding after replacing HTML
   initializeLightbox();
 }
@@ -532,6 +535,16 @@ function initializeLightbox() {
 
   const lightboxImg = lightbox.querySelector('img');
   const closeBtn = lightbox.querySelector('.lightbox-close');
+
+    function openInLightbox(url) {
+  console.log('[Lightbox] Opening:', url); // Debug
+  lightboxImg.src = url;
+  lightbox.classList.add('show');
+  lightbox.setAttribute('aria-hidden', 'false');
+  scale = 1; translateX = 0; translateY = 0;
+  lightboxImg.style.transform = '';
+  lightboxImg.style.cursor = '';
+}
 
   // Bind static handlers only once
   if (!lightbox.dataset.bound) {
@@ -600,13 +613,9 @@ document.querySelector('.lightbox .pc-next')?.addEventListener('click', () => {
     if (!img.dataset.lbBound) {
       img.style.cursor = 'zoom-in';
       img.addEventListener('click', () => {
-        lightboxImg.src = img.src;
-        lightbox.classList.add('show');
-        lightbox.setAttribute('aria-hidden', 'false');
-        scale = 1; translateX = 0; translateY = 0;
-        lightboxImg.style.transform = '';
-        lightboxImg.style.cursor = '';
-      });
+  openInLightbox(img.src); // now uses our helper
+});
+
       img.dataset.lbBound = 'true';
     }
   });
