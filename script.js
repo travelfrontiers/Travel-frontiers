@@ -658,23 +658,132 @@ const nextBtn = document.querySelector('.carousel-next');
       lightboxImg.style.cursor = scale > 1 ? 'grab' : '';
     });
 
-   // Abrir imagens (uma vez)
+ // Seletor base para itens clicáveis dentro de galerias/carrossel
+const LIGHTBOX_SELECTOR = [
+  '.service-image a',
+  '.service-image img',
+  '[data-lightbox]',
+  '.clickable-service img',
+  '#travelCarousel .carousel-item a',
+  '#travelCarousel .carousel-item img'
+].join(', ');
+
+// Ignorar controlos do carrossel (prev/next) e âncoras de navegação
+function isCarouselControl(el) {
+  return !!el.closest('#travelCarousel .carousel-control-prev, #travelCarousel .carousel-control-next, [data-bs-slide], [data-slide]');
+}
+
+function isImageUrl(url) {
+  return /\.(png|jpe?g|webp|gif|avif|svg)(\?.*)?$/i.test(url);
+}
+
+function extractUrlFrom(el) {
+  const a = el.closest('a');
+  const img = el.tagName === 'IMG' ? el : el.querySelector('img') || a?.querySelector?.('img');
+
+  const candidates = [
+    a?.getAttribute?.('href'),
+    el?.getAttribute?.('href'),
+    el?.getAttribute?.('data-full'),
+    a?.getAttribute?.('data-full'),
+    img?.getAttribute?.('data-full'),
+    img?.src
+  ].filter(Boolean);
+
+  for (const c of candidates) {
+    if (!c) continue;
+    if (c.startsWith('#')) continue;           // Ignora âncoras
+    if (isImageUrl(c) || c.startsWith('blob:')) return c;
+  }
+  return null;
+}
+
+function buildGallery(clickedEl) {
+  // Limita a galeria ao contexto mais próximo (carrossel ou bloco .service-image)
+  const root = clickedEl.closest('#travelCarousel') || clickedEl.closest('.service-image') || document;
+  const elements = Array.from(root.querySelectorAll(LIGHTBOX_SELECTOR));
+
+  const urls = [];
+  const seen = new Set();
+  for (const el of elements) {
+    const u = extractUrlFrom(el);
+    if (u && !seen.has(u)) {
+      seen.add(u);
+      urls.push(u);
+    }
+  }
+
+  const clickedUrl = extractUrlFrom(clickedEl);
+  const index = Math.max(0, urls.indexOf(clickedUrl));
+  return { urls, index };
+}
+
+function openLightboxGallery(urls, startIndex = 0) {
+  let i = startIndex;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'lightbox-overlay';
+
+  const img = document.createElement('img');
+  img.alt = '';
+  overlay.appendChild(img);
+
+  const btnPrev = document.createElement('button');
+  btnPrev.className = 'lightbox-btn prev';
+  btnPrev.textContent = '‹';
+
+  const btnNext = document.createElement('button');
+  btnNext.className = 'lightbox-btn next';
+  btnNext.textContent = '›';
+
+  const btnClose = document.createElement('button');
+  btnClose.className = 'lightbox-close';
+  btnClose.textContent = '✕';
+
+  overlay.appendChild(btnPrev);
+  overlay.appendChild(btnNext);
+  overlay.appendChild(btnClose);
+
+  function show(idx) {
+    i = (idx + urls.length) % urls.length;
+    img.src = urls[i];
+  }
+
+  function close() {
+    document.removeEventListener('keydown', onKey);
+    overlay.remove();
+  }
+
+  function onKey(ev) {
+    if (ev.key === 'Escape') return close();
+    if (ev.key === 'ArrowRight') return show(i + 1);
+    if (ev.key === 'ArrowLeft') return show(i - 1);
+  }
+
+  btnPrev.addEventListener('click', e => { e.stopPropagation(); show(i - 1); });
+  btnNext.addEventListener('click', e => { e.stopPropagation(); show(i + 1); });
+  btnClose.addEventListener('click', e => { e.stopPropagation(); close(); });
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+
+  document.addEventListener('keydown', onKey);
+
+  document.body.appendChild(overlay);
+  show(startIndex);
+}
+
+// Delegação de clique (uma vez)
 document.body.addEventListener('click', function (e) {
-  const clickable = e.target.closest(
-    '.service-image a, .service-image img, #travelCarousel a, [data-lightbox], .clickable-service'
-  );
+  if (isCarouselControl(e.target)) return; // deixa o carrossel funcionar
+
+  const clickable = e.target.closest(LIGHTBOX_SELECTOR);
   if (!clickable) return;
 
   e.preventDefault();
-  
-  // Função para obter o URL da versão grande
-  function getFull(el) {
-    return el?.getAttribute?.('href') ||
-           el?.getAttribute?.('data-full') ||
-           el?.src || '';
-  }
 
-  openInLightbox(getFull(clickable));
+  const { urls, index } = buildGallery(clickable);
+  if (!urls.length) return;
+
+  openLightboxGallery(urls, index);
 });
 
     lightbox.dataset.bound = 'true';
