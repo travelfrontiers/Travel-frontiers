@@ -183,3 +183,25 @@
   background: var(--primary-color-dark, #005fa3);
 }
 </style>
+
+<section id="promocoes" 
+  style="display:grid; gap:24px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+</section>
+
+<script>
+async function carregarPromocoes() {
+  const resp = await fetch('/promo.json');
+  const promocoes = await resp.json();
+  const container = document.getElementById('promocoes');
+
+  promocoes.forEach(promo => {
+    const card = document.createElement('tf-promo-card');
+    for (const [chave, valor] of Object.entries(promo)) {
+      if (valor) card.setAttribute(chave, valor);
+    }
+    container.appendChild(card);
+  });
+}
+
+carregarPromocoes();
+</script>
