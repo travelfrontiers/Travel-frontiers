@@ -1209,6 +1209,18 @@ margin-left: 16px;
   border-radius: 16px;
   z-index: 0;
 }
+.pc-arrow:hover {
+  background: rgba(0,0,0,0.8);
+}
+
+.carousel-prev {
+  left: 10px; /* afasta da borda esquerda */
+}
+
+.carousel-next {
+  right: 10px; /* afasta da borda direita */
+}
+
 .carousel-img.active {
   opacity: 1 !important;
   z-index: 1;
