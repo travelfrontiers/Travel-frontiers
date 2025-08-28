@@ -10,12 +10,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Instala cwebp
-        run: sudo apt-get update && sudo apt-get install -y webp
-
-      - name: Converte PNG/JPG/JPEG -> WebP
+      - name: Instala dependências
         run: |
-          find ./img \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" \) -exec sh -c '[ ! -f "${0%.*}.webp" ] || [ "$0" -nt "${0%.*}.webp" ] && cwebp -q 80 "$0" -o "${0%.*}.webp"' {} \;
+          sudo apt-get update
+          sudo apt-get install -y webp imagemagick
+
+      - name: Converte PNG/JPG/JPEG -> WebP com auto-orient
+        run: |
+          find ./img \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" \) \
+            -exec sh -c '
+              out="${0%.*}.webp"
+              if [ ! -f "$out" ] || [ "$0" -nt "$out" ]; then
+                magick "$0" -auto-orient -quality 80 "$out"
+              fi
+            ' {} \;
 
       - name: Configura autenticação GitHub
         run: |
@@ -23,7 +31,7 @@ jobs:
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
 
-      - name: Faz commit das webp geradas
+      - name: Faz commit das WebP geradas
         run: |
           git add img/*.webp || true
           git commit -m "Geradas imagens WebP via Action" || exit 0
