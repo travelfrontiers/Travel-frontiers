@@ -485,48 +485,54 @@ function initializeNavigation() {
 // ============================
 // Services
 // ============================
-function renderServices() {
-  const servicesGrid = document.querySelector('.services-grid');
-  if (!servicesGrid) return;
+function renderServices(services) {
+  const container = document.querySelector('#services-container'); // ajusta ao teu HTML real
+  container.innerHTML = ''; // limpa antes de renderizar
 
-  const services = translations[currentLanguage].services.items;
-  servicesGrid.innerHTML = services.map(service => {
-    let imageHtml;
+  services.items.forEach(item => {
+    // item wrapper
+    const serviceEl = document.createElement('div');
+    serviceEl.className = 'service-item';
 
-    if (service.image.startsWith('img/') && /\.(jpeg|jpg|png)$/i.test(service.image)) {
-      const webpSrc = service.image.replace(/\.(jpeg|jpg|png)$/i, '.webp');
-      imageHtml = `
-        <a href="${webpSrc}" data-lightbox="services" data-title="${service.title}">
-          <picture>
-            <source srcset="${webpSrc}" type="image/webp">
-            <img src="${service.image}" alt="${service.title}" loading="lazy"
-                 class="clickable-service" data-full="${webpSrc}">
-          </picture>
-        </a>`;
-    } else {
-      imageHtml = `
-        <a href="${service.image}" data-lightbox="services" data-title="${service.title}">
-          <img src="${service.image}" alt="${service.title}" loading="lazy"
-               class="clickable-service" data-full="${service.image}">
-        </a>`;
-    }
+    // imagem + link lightbox
+    const imageWrapper = document.createElement('div');
+    imageWrapper.className = 'service-image';
 
-    return `
-      <div class="service-card">
-        <div class="service-image">
-          ${imageHtml}
-          <div class="service-overlay"></div>
-          <h3 class="service-title">${service.title}</h3>
-        </div>
-        <div class="service-content">
-          <p class="service-description">${service.description}</p>
-        </div>
-      </div>`;
-  }).join('');
+    const link = document.createElement('a');
+    link.href = item.image;
+    link.dataset.lightbox = 'services';
+    link.title = item.title;
 
-  console.log('[Services] Render complete, initializing lightbox...');
-  initializeLightbox();
+    const img = document.createElement('img');
+    img.src = item.image;
+    img.alt = item.title;
+
+    link.appendChild(img);
+    imageWrapper.appendChild(link);
+
+    // conteúdo textual
+    const content = document.createElement('div');
+    content.className = 'service-content';
+
+    const titleEl = document.createElement('h3');
+    titleEl.textContent = item.title;
+
+    const descEl = document.createElement('p');
+    descEl.textContent = item.description;
+
+    content.appendChild(titleEl);
+    content.appendChild(descEl);
+
+    // junta tudo
+    serviceEl.appendChild(imageWrapper);
+    serviceEl.appendChild(content);
+    container.appendChild(serviceEl);
+  });
 }
+
+// Chamada da função com o objeto já existente
+renderServices(services);
+
 
 // ============================
 // Lightbox with zoom + drag
