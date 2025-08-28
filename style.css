@@ -430,12 +430,19 @@ body {
     margin: 0 auto;
 }
 
-/* Services Grid */
+/* CRITICAL FIX: Ensure services section is always visible */
+.services {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
 .services-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 24px;
-    margin-bottom: 64px;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .service-card {
@@ -1197,13 +1204,13 @@ margin-left: 16px;
   height: 100%;
   object-fit: contain; /* << este é o comando que interessa! */
   object-position: center;
-  opacity: 0;
+  opacity: 0 !important;
   transition: opacity 0.8s ease;
   border-radius: 16px;
   z-index: 0;
 }
 .carousel-img.active {
-  opacity: 1;
+  opacity: 1 !important;
   z-index: 1;
 }
 
