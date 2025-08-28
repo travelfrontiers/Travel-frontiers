@@ -1,0 +1,21 @@
+[
+  {
+    "destination": "Marrocos",
+    "subtitle": "Escapadinha de 4 dias, sem complicações",
+    "origin": "Voos diretos Lisboa",
+    "dates": "20 a 23 Setembro",
+    "includes": "Transferes privados | Seguro | Pequeno-almoço",
+    "hotel": "Ibn Batouta ★★★",
+    "price": "290",
+    "currency": "€",
+    "price-note": "Valor por pessoa",
+    "provider": "Valor baseado em 2 adultos. Sujeito a confirmação. Os preços podem alterar até ao momento da reserva.",
+    "rnvat": "RNAVT - 3301",
+    "badge-text": "LAST CALL",
+    "image-src": "https://exemplo.com/marrocos.jpg",
+    "image-alt": "Pôr-do-sol em Marraquexe com minarete e palmeiras",
+    "logo-src": "/assets/brand/travel-frontiers-logo-gold.svg",
+    "format": "banner",
+    "theme": "dark"
+  }
+]
