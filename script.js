@@ -378,7 +378,7 @@ const translations = {
 };
 
 // ============================
-// Global variables
+// Globals
 // ============================
 let currentLanguage = 'pt';
 let currentTestimonialIndex = 0;
@@ -389,15 +389,17 @@ let currentTestimonialIndex = 0;
 function initializeLanguageSelector() {
   const langButton = document.getElementById('currentLang');
   const langDropdown = document.getElementById('langDropdown');
+
   if (langButton) {
-    langButton.addEventListener('click', function() {
-      if (langDropdown) {
-        langDropdown.classList.toggle('show');
-      }
+    langButton.addEventListener('click', () => {
+      if (langDropdown) langDropdown.classList.toggle('show');
     });
   }
-  document.addEventListener('click', function(event) {
-    if (langButton && langDropdown && !langButton.contains(event.target) && !langDropdown.contains(event.target)) {
+
+  document.addEventListener('click', (event) => {
+    if (langButton && langDropdown &&
+        !langButton.contains(event.target) &&
+        !langDropdown.contains(event.target)) {
       langDropdown.classList.remove('show');
     }
   });
@@ -410,17 +412,19 @@ function changeLanguage(lang) {
   if (langCode) langCode.textContent = lang.toUpperCase();
   if (langDropdown) langDropdown.classList.remove('show');
   document.documentElement.lang = lang;
+
   updateContent();
   renderServices();
   updateTestimonials();
   createTestimonialDots();
-    
-  setTimeout(() => { initializeLightbox(); }, 100);
+
+  // Idempotente: não duplica handlers nem markup
+  setTimeout(() => { initializeLightbox(); }, 50);
 }
 
 function updateContent() {
   const elements = document.querySelectorAll('[data-translate]');
-  elements.forEach(element => {
+  elements.forEach((element) => {
     const key = element.getAttribute('data-translate');
     const translation = getTranslation(key);
     if (translation) element.textContent = translation;
@@ -442,14 +446,16 @@ function getTranslation(key) {
 function initializeMobileMenu() {
   const mobileMenuBtn = document.getElementById('mobileMenuBtn');
   const mobileMenu = document.getElementById('mobileMenu');
+
   if (mobileMenuBtn && mobileMenu) {
-    mobileMenuBtn.addEventListener('click', function() {
+    mobileMenuBtn.addEventListener('click', () => {
       mobileMenu.classList.toggle('show');
       mobileMenuBtn.classList.toggle('active');
     });
+
     const mobileLinks = mobileMenu.querySelectorAll('a');
     mobileLinks.forEach(link => {
-      link.addEventListener('click', function() {
+      link.addEventListener('click', () => {
         mobileMenu.classList.remove('show');
         mobileMenuBtn.classList.remove('active');
       });
@@ -463,7 +469,7 @@ function initializeMobileMenu() {
 function initializeNavigation() {
   const navLinks = document.querySelectorAll('a[href^="#"]');
   navLinks.forEach(link => {
-    link.addEventListener('click', function(e) {
+    link.addEventListener('click', function (e) {
       e.preventDefault();
       const targetId = this.getAttribute('href').substring(1);
       const targetSection = document.getElementById(targetId);
@@ -484,117 +490,153 @@ function renderServices() {
   if (!servicesGrid) return;
 
   const services = translations[currentLanguage].services.items;
-
   servicesGrid.innerHTML = services.map(service => {
     let imageHtml;
 
-    // Verifica se é uma imagem local com extensão jpg/jpeg/png
     if (service.image.startsWith('img/') && /\.(jpeg|jpg|png)$/i.test(service.image)) {
       const webpSrc = service.image.replace(/\.(jpeg|jpg|png)$/i, '.webp');
       imageHtml = `
-<a href="${webpSrc}" data-lightbox="services" data-title="${service.title}">
-  <picture>
-    <source srcset="${webpSrc}" type="image/webp">
-    <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service" data-full="${webpSrc}">
-  </picture>
-</a>`;
+        <a href="${webpSrc}" data-lightbox="services" data-title="${service.title}">
+          <picture>
+            <source srcset="${webpSrc}" type="image/webp">
+            <img src="${service.image}" alt="${service.title}" loading="lazy"
+                 class="clickable-service" data-full="${webpSrc}">
+          </picture>
+        </a>`;
     } else {
-      // Caso de URL externo ou formato não convertido para webp
       imageHtml = `
-<a href="${service.image}" data-lightbox="services" data-title="${service.title}">
-  <img src="${service.image}" alt="${service.title}" loading="lazy" class="clickable-service" data-full="${service.image}">
-</a>`;
+        <a href="${service.image}" data-lightbox="services" data-title="${service.title}">
+          <img src="${service.image}" alt="${service.title}" loading="lazy"
+               class="clickable-service" data-full="${service.image}">
+        </a>`;
     }
 
     return `
-<div class="service-card">
-  <div class="service-image">
-    ${imageHtml}
-    <div class="service-overlay"></div>
-    <h3 class="service-title">${service.title}</h3>
-  </div>
-  <div class="service-content">
-    <p class="service-description">${service.description}</p>
-  </div>
-</div>`;
+      <div class="service-card">
+        <div class="service-image">
+          ${imageHtml}
+          <div class="service-overlay"></div>
+          <h3 class="service-title">${service.title}</h3>
+        </div>
+        <div class="service-content">
+          <p class="service-description">${service.description}</p>
+        </div>
+      </div>`;
   }).join('');
 
   console.log('[Services] Render complete, initializing lightbox...');
-  // Garante que o lightbox é inicializado após o HTML estar no DOM
   initializeLightbox();
 }
 
 // ============================
-// Lightbox with Zoom + Drag
+// Lightbox with zoom + drag
 // ============================
 function initializeLightbox() {
-  // cria ou reutiliza
+  // Cria ou normaliza o lightbox
   let lightbox = document.getElementById('lightbox');
   if (!lightbox) {
     lightbox = document.createElement('div');
     lightbox.id = 'lightbox';
     lightbox.className = 'lightbox';
     lightbox.setAttribute('aria-hidden', 'true');
-    lightbox.innerHTML = `
-      <button class="lightbox-close" aria-label="Fechar">×</button>
-      <img alt="">
-      <button class="pc-prev" aria-label="Anterior">‹</button>
-      <button class="pc-next" aria-label="Seguinte">›</button>
-    `;
     document.body.appendChild(lightbox);
-  } else {
-    // remove duplicados
-    const prevs = [...lightbox.querySelectorAll('.pc-prev')];
-    prevs.slice(1).forEach(n => n.remove());
-    const nexts = [...lightbox.querySelectorAll('.pc-next')];
-    nexts.slice(1).forEach(n => n.remove());
   }
+
+  // Canonical markup (garante botões únicos)
+  lightbox.innerHTML = `
+    <button class="lightbox-close" aria-label="Fechar">×</button>
+    <img alt="">
+    <button class="pc-prev" aria-label="Anterior">‹</button>
+    <button class="pc-next" aria-label="Seguinte">›</button>
+  `;
 
   const lightboxImg = lightbox.querySelector('img');
   const closeBtn = lightbox.querySelector('.lightbox-close');
+  const prevBtn = lightbox.querySelector('.pc-prev');
+  const nextBtn = lightbox.querySelector('.pc-next');
+
+  // Estado
   let scale = 1, translateX = 0, translateY = 0;
   let dragging = false, startX = 0, startY = 0;
 
-  function openInLightbox(url) {
+  // Galeria corrente
+  let gallery = [];
+  let galleryIndex = -1;
+
+  const getFull = (el) =>
+    el?.getAttribute?.('data-full') || el?.getAttribute?.('href') || el?.src || '';
+
+  function openInLightbox(targetEl) {
+    const url = getFull(targetEl);
+    if (!url) return;
+
+    // Define a galeria como todos os elementos clicáveis atuais
+    gallery = Array.from(document.querySelectorAll('.service-image img, #travelCarousel .carousel-img, [data-lightbox], .clickable-service'));
+    galleryIndex = Math.max(0, gallery.findIndex(el => getFull(el) === url));
+
     lightboxImg.src = url;
     lightbox.classList.add('show');
     lightbox.setAttribute('aria-hidden', 'false');
+
+    // reset zoom/drag
     scale = 1; translateX = 0; translateY = 0;
     lightboxImg.style.transform = '';
     lightboxImg.style.cursor = '';
   }
 
-  if (!lightbox.dataset.bound) {
-    function closeLightbox() {
-      lightbox.classList.remove('show');
-      lightbox.setAttribute('aria-hidden', 'true');
-      lightboxImg.src = '';
+  function closeLightbox() {
+    lightbox.classList.remove('show');
+    lightbox.setAttribute('aria-hidden', 'true');
+    lightboxImg.src = '';
+    lightboxImg.style.transform = '';
+    lightboxImg.style.cursor = '';
+    scale = 1; translateX = 0; translateY = 0;
+  }
+
+  function showOffset(delta) {
+    if (!gallery.length) return;
+    galleryIndex = (galleryIndex + delta + gallery.length) % gallery.length;
+    const nextEl = gallery[galleryIndex];
+    const url = getFull(nextEl);
+    if (url) {
+      lightboxImg.src = url;
+      // reset zoom ao mudar
+      scale = 1; translateX = 0; translateY = 0;
       lightboxImg.style.transform = '';
       lightboxImg.style.cursor = '';
-      scale = 1; translateX = 0; translateY = 0;
     }
+  }
 
-    closeBtn.addEventListener('click', closeLightbox);
-    lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
-    document.addEventListener('keydown', e => {
+  // Evita bind duplicado
+  if (!lightbox.dataset.bound) {
+    // Fechar
+    if (closeBtn) closeBtn.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) closeLightbox();
+    });
+    document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox();
+      if (e.key === 'ArrowLeft' && lightbox.classList.contains('show')) showOffset(-1);
+      if (e.key === 'ArrowRight' && lightbox.classList.contains('show')) showOffset(1);
     });
 
-    // navegação
-    lightbox.querySelector('.pc-prev').addEventListener('click', () => prevSlide?.());
-    lightbox.querySelector('.pc-next').addEventListener('click', () => nextSlide?.());
+    // Navegação
+    if (prevBtn) prevBtn.addEventListener('click', () => showOffset(-1));
+    if (nextBtn) nextBtn.addEventListener('click', () => showOffset(1));
 
-    // zoom
-    lightbox.addEventListener('wheel', e => {
+    // Zoom
+    lightbox.addEventListener('wheel', (e) => {
+      if (!lightbox.classList.contains('show')) return;
       e.preventDefault();
       const delta = e.deltaY < 0 ? 0.15 : -0.15;
       scale = Math.min(Math.max(0.5, scale + delta), 4);
       lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-    });
+      lightboxImg.style.cursor = scale > 1 ? 'grab' : '';
+    }, { passive: false });
 
-    // drag
+    // Drag
     lightboxImg.addEventListener('dragstart', e => e.preventDefault());
-    lightboxImg.addEventListener('mousedown', e => {
+    lightboxImg.addEventListener('mousedown', (e) => {
       if (scale > 1) {
         dragging = true;
         startX = e.clientX - translateX;
@@ -602,7 +644,7 @@ function initializeLightbox() {
         lightboxImg.style.cursor = 'grabbing';
       }
     });
-    document.addEventListener('mousemove', e => {
+    document.addEventListener('mousemove', (e) => {
       if (dragging) {
         translateX = e.clientX - startX;
         translateY = e.clientY - startY;
@@ -614,20 +656,21 @@ function initializeLightbox() {
       lightboxImg.style.cursor = scale > 1 ? 'grab' : '';
     });
 
-    // abrir imagens
+    // Abrir imagens (uma vez)
     document.body.addEventListener('click', function (e) {
-      const target = e.target.closest('.service-image img, #travelCarousel .carousel-img, [data-lightbox], .clickable-service');
-      if (!target) return;
+      const clickable = e.target.closest('.service-image img, #travelCarousel .carousel-img, [data-lightbox], .clickable-service');
+      if (!clickable) return;
       e.preventDefault();
-      const fullSrc = target.getAttribute('data-full') || target.getAttribute('href') || target.src;
-      if (fullSrc) openInLightbox(fullSrc);
+      openInLightbox(clickable);
     });
 
     lightbox.dataset.bound = 'true';
   }
 }
 
-// carousel separado e global
+// ============================
+// Carousel (global)
+// ============================
 function initializeCarousel() {
   const carousel = document.getElementById('travelCarousel');
   if (!carousel) return;
@@ -650,42 +693,43 @@ function initializeCarousel() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  initializeLightbox();
-  initializeCarousel();
-});
-    
 // ============================
 // Testimonials
 // ============================
 function initializeTestimonials() {
   const prevBtn = document.getElementById('prevTestimonial');
   const nextBtn = document.getElementById('nextTestimonial');
+
   if (prevBtn) {
     prevBtn.addEventListener('click', () => {
+      const list = translations[currentLanguage].testimonials.items;
       currentTestimonialIndex = currentTestimonialIndex === 0
-        ? translations[currentLanguage].testimonials.items.length - 1
+        ? list.length - 1
         : currentTestimonialIndex - 1;
       updateTestimonials();
     });
   }
+
   if (nextBtn) {
     nextBtn.addEventListener('click', () => {
-      currentTestimonialIndex = (currentTestimonialIndex + 1) % translations[currentLanguage].testimonials.items.length;
+      const list = translations[currentLanguage].testimonials.items;
+      currentTestimonialIndex = (currentTestimonialIndex + 1) % list.length;
       updateTestimonials();
     });
   }
+
   createTestimonialDots();
   updateTestimonials();
-}
 
-// Auto‑rotate testimonials every 5 seconds
-setInterval(() => {
-  const nextBtn = document.getElementById('nextTestimonial');
-  if (nextBtn && !nextBtn.disabled) {
-    nextBtn.click();
+  // Auto-rotate (garante apenas um intervalo)
+  if (!document.body.dataset.testimonialsInterval) {
+    const id = setInterval(() => {
+      const btn = document.getElementById('nextTestimonial');
+      if (btn && !btn.disabled) btn.click();
+    }, 5000);
+    document.body.dataset.testimonialsInterval = String(id);
   }
-}, 5000);
+}
 
 function createTestimonialDots() {
   const dotsContainer = document.getElementById('testimonialDots');
@@ -701,21 +745,16 @@ function updateTestimonials() {
   if (!list.length || !list[currentTestimonialIndex]) return;
 
   const t = list[currentTestimonialIndex];
-
   const tEl = document.getElementById('currentTestimonial');
   if (tEl) tEl.textContent = `"${t.text}"`;
-
   const aEl = document.getElementById('currentAuthor');
   if (aEl) aEl.textContent = t.author;
-
   const lEl = document.getElementById('currentLocation');
   if (lEl) lEl.textContent = t.location;
 
-  // refresh dot active state
   const dots = document.querySelectorAll('#testimonialDots .dot');
   dots.forEach((dot, i) => dot.classList.toggle('active', i === currentTestimonialIndex));
 
-  // optional: disable arrows if only one testimonial
   const prevBtn = document.getElementById('prevTestimonial');
   const nextBtn = document.getElementById('nextTestimonial');
   const disableArrows = list.length <= 1;
@@ -730,9 +769,11 @@ window.goToTestimonial = function (index) {
   updateTestimonials();
 };
 
+// ============================
+// Boot
+// ============================
 document.addEventListener('DOMContentLoaded', () => {
-  // set your starting language if needed
-  currentLanguage = 'pt'; // or whatever default you want
+  currentLanguage = 'pt';
 
   initializeLanguageSelector();
   initializeMobileMenu();
@@ -741,4 +782,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeTestimonials();
   initializeLightbox();
   initializeCarousel();
+
+  console.log('✅ Page scripts initialised');
 });
