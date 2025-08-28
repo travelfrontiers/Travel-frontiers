@@ -3,36 +3,90 @@ name: Converter imagens para WebP
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   convert_webp:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Instala dependências
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Instalar dependências
         run: |
           sudo apt-get update
-          sudo apt-get install -y webp imagemagick
+          sudo apt-get install -y imagemagick webp
 
-      - name: Converte PNG/JPG/JPEG -> WebP com auto-orient
+      - name: Verificar suporte a WebP no ImageMagick (debug)
         run: |
-          find ./img \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" \) \
-            -exec sh -c '
-              out="${0%.*}.webp"
-              if [ ! -f "$out" ] || [ "$0" -nt "$out" ]; then
-                magick "$0" -auto-orient -quality 80 "$out"
+          if command -v magick >/dev/null 2>&1; then
+            magick -version
+            magick -list format | grep -i webp || true
+          else
+            convert -version
+            convert -list format | grep -i webp || true
+          fi
+
+      - name: Converter PNG/JPG/JPEG -> WebP com auto-orient (com fallback)
+        shell: bash
+        run: |
+          set -euo pipefail
+          converted=0
+
+          # Função para converter um ficheiro respeitando auto-orient e garantindo WebP mesmo sem delegate
+          convert_to_webp() {
+            local in="$1"
+            local out="${in%.*}.webp"
+
+            # Só converte se não existir ou se o original for mais recente
+            if [[ ! -f "$out" || "$in" -nt "$out" ]]; then
+              if command -v magick >/dev/null 2>&1; then
+                # Tenta via ImageMagick (IM7)
+                if magick -list format | grep -qi 'WEBP'; then
+                  magick "$in" -auto-orient -strip -quality 80 "$out"
+                else
+                  # Fallback via cwebp se IM não tiver delegate WEBP
+                  tmp="$(mktemp --suffix=.jpg)"
+                  magick "$in" -auto-orient -strip -quality 95 "$tmp"
+                  cwebp -q 80 "$tmp" -o "$out"
+                  rm -f "$tmp"
+                fi
+              else
+                # IM6 (convert)
+                if convert -list format | grep -qi 'WEBP'; then
+                  convert "$in" -auto-orient -strip -quality 80 "$out"
+                else
+                  # Fallback via cwebp
+                  tmp="$(mktemp --suffix=.jpg)"
+                  convert "$in" -auto-orient -strip -quality 95 "$tmp"
+                  cwebp -q 80 "$tmp" -o "$out"
+                  rm -f "$tmp"
+                fi
               fi
-            ' {} \;
+              echo "Convertido: $in -> $out"
+              converted=$((converted+1))
+            fi
+          }
 
-      - name: Configura autenticação GitHub
-        run: |
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          # Percorre todos os ficheiros no diretório ./img com extensões desejadas (case-insensitive)
+          while IFS= read -r -d '' f; do
+            convert_to_webp "$f"
+          done < <(find ./img -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \) -print0)
 
-      - name: Faz commit das WebP geradas
+          echo "TOTAL_CONVERTED=$converted" >> "$GITHUB_ENV"
+
+      - name: Commit e push das WebP geradas
+        if: env.TOTAL_CONVERTED != '0'
         run: |
-          git add img/*.webp || true
-          git commit -m "Geradas imagens WebP via Action" || exit 0
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git add img
+          git commit -m "Geradas WebP com auto-orient (${TOTAL_CONVERTED} ficheiros)"
           git push
