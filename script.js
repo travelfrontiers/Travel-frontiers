@@ -632,6 +632,7 @@ lightbox.querySelectorAll('.pc-next').forEach(btn => {
     openInLightbox(fullSrc);
   }
 });
+}
 
 function initializeCarousel() {
   const carousel = document.getElementById('travelCarousel');
