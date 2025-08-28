@@ -414,7 +414,7 @@ function changeLanguage(lang) {
   document.documentElement.lang = lang;
 
   updateContent();
-  renderServices();
+  renderServices(translations[currentLanguage].services);
   updateTestimonials();
   createTestimonialDots();
 
@@ -487,39 +487,25 @@ function initializeNavigation() {
 // ============================
 function renderServices(services) {
   const container = document.querySelector('#services .services-grid');
-  if (!container) return;
-  container.innerHTML = '';
-
-  services.items.forEach(item => {
-    const serviceEl = document.createElement('div');
-    serviceEl.className = 'service-item';
-
-    const imageWrapper = document.createElement('div');
-    imageWrapper.className = 'service-image';
-
-    const link = document.createElement('a');
-    link.href = item.image;
-    link.dataset.lightbox = 'services';
-    link.title = item.title;
-
-    const img = document.createElement('img');
-    img.src = item.image;
-    img.alt = item.title;
-
-    link.appendChild(img);
-    imageWrapper.appendChild(link);
-
-    const content = document.createElement('div');
-    content.className = 'service-content';
-    content.innerHTML = `<h3>${item.title}</h3><p>${item.description}</p>`;
-
-    serviceEl.appendChild(imageWrapper);
-    serviceEl.appendChild(content);
-    container.appendChild(serviceEl);
-  });
+  if (!container || !services?.items) return;
+  container.innerHTML = services.items.map(service => {
+    return `
+      <div class="service-card">
+        <div class="service-image">
+          <a href="${service.image}" data-lightbox="services" data-title="${service.title}">
+            <img src="${service.image}" alt="${service.title}" loading="lazy">
+          </a>
+          <div class="service-overlay"></div>
+          <h3 class="service-title">${service.title}</h3>
+        </div>
+        <div class="service-content">
+          <p class="service-description">${service.description}</p>
+        </div>
+      </div>
+    `;
+  }).join('');
+  initializeLightbox();
 }
-
-renderServices(services);
 
 // ============================
 // Lightbox with zoom + drag
@@ -925,7 +911,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeLanguageSelector();
   initializeMobileMenu();
   initializeNavigation();
-  renderServices();
+  renderServices(translations[currentLanguage].services);
   initializeTestimonials();
   initializeLightbox();
   initializeCarousel();
