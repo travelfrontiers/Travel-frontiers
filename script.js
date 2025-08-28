@@ -564,7 +564,9 @@ const nextBtn = document.querySelector('.carousel-next');
   let galleryIndex = -1;
 
   const getFull = (el) =>
-    el?.getAttribute?.('data-full') || el?.getAttribute?.('href') || el?.src || '';
+    el?.getAttribute?.('href') ||
+    el?.getAttribute?.('data-full') ||
+    el?.src || '';
 
   function openInLightbox(targetEl) {
     const url = getFull(targetEl);
@@ -658,7 +660,7 @@ const nextBtn = document.querySelector('.carousel-next');
 
     // Abrir imagens (uma vez)
     document.body.addEventListener('click', function (e) {
-      const clickable = e.target.closest('.service-image img, #travelCarousel .carousel-img, [data-lightbox], .clickable-service');
+     const clickable = e.target.closest('.service-image img, #travelCarousel a, [data-lightbox], .clickable-service');
       if (!clickable) return;
       e.preventDefault();
       openInLightbox(clickable);
