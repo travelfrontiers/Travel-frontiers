@@ -492,8 +492,19 @@ body {
 .service-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.2), transparent);
-  pointer-events: none; /* 🔹 Permite que o clique “passe” para a imagem/link */
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.7),
+    rgba(0, 0, 0, 0.2),
+    transparent
+  );
+  pointer-events: none; /* 🔹 Deixa o clique passar para o <a>/<img> */
+}
+
+.service-image a {
+  display: block;
+  height: 100%;
+  cursor: zoom-in;
 }
 
 .service-title {
