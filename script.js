@@ -486,19 +486,14 @@ function initializeNavigation() {
 // Services
 // ============================
 function renderServices(services) {
-  // Seleciona apenas a grelha da secção Serviços
   const container = document.querySelector('#services .services-grid');
-  if (!container) return; // se não existir, sai da função
-
-  // Limpa só esta grelha
+  if (!container) return;
   container.innerHTML = '';
 
   services.items.forEach(item => {
-    // Card do serviço
     const serviceEl = document.createElement('div');
     serviceEl.className = 'service-item';
 
-    // Imagem com link para lightbox
     const imageWrapper = document.createElement('div');
     imageWrapper.className = 'service-image';
 
@@ -514,24 +509,16 @@ function renderServices(services) {
     link.appendChild(img);
     imageWrapper.appendChild(link);
 
-    // Texto do serviço
     const content = document.createElement('div');
     content.className = 'service-content';
-    content.innerHTML = `
-      <h3>${item.title}</h3>
-      <p>${item.description}</p>
-    `;
+    content.innerHTML = `<h3>${item.title}</h3><p>${item.description}</p>`;
 
-    // Monta o card
     serviceEl.appendChild(imageWrapper);
     serviceEl.appendChild(content);
-
-    // Adiciona à grelha
     container.appendChild(serviceEl);
   });
 }
 
-// Executa a função passando o teu objeto `services`
 renderServices(services);
 
 // ============================
