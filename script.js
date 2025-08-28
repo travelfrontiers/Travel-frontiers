@@ -663,7 +663,7 @@ const LIGHTBOX_SELECTOR = [
   '.service-image a',
   '.service-image img',
   '[data-lightbox]',
-  '.clickable-service img',
+  '.clickable-service',
   '#travelCarousel .carousel-item a',
   '#travelCarousel .carousel-item img'
 ].join(', ');
