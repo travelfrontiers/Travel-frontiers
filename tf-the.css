@@ -1,0 +1,108 @@
+/* ==========================
+   Travel Frontiers Theme CSS
+   ========================== */
+
+:host {
+  /* 🎨 Paleta principal */
+  --tf-accent: #d4af37; /* dourado do logótipo */
+  --tf-text: #ffffff;
+  --tf-overlay: rgba(0, 0, 0, 0.45);
+  --tf-bg: #000000;
+  --tf-chip-bg: var(--tf-accent);
+  --tf-chip-text: #1a1a1a;
+
+  /* ✍️ Tipografia */
+  --tf-font: "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --tf-font-heading: "Playfair Display", serif;
+
+  /* 📏 Espaçamento & Bordas */
+  --tf-radius: 14px;
+  --tf-gap: 18px;
+
+  /* 🌟 Sombra */
+  --tf-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+/* Fundo escuro para dar contraste às imagens */
+.card {
+  background-color: var(--tf-bg);
+  color: var(--tf-text);
+  border-radius: var(--tf-radius);
+  box-shadow: var(--tf-shadow);
+  font-family: var(--tf-font);
+}
+
+/* Balão "LAST CALL" */
+.badge {
+  background: var(--tf-chip-bg);
+  color: var(--tf-chip-text);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  padding: 8px 12px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+/* Títulos e subtítulos */
+.title {
+  font-family: var(--tf-font-heading);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.subtitle {
+  font-family: var(--tf-font);
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+/* Metadados e detalhes da viagem */
+.meta,
+.hotel {
+  font-family: var(--tf-font);
+  opacity: 0.92;
+}
+
+/* Preço */
+.price {
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.price small {
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+/* Notas legais / RNAVT */
+.notes {
+  font-size: 0.75em;
+  opacity: 0.85;
+}
+
+/* CTA (botão) */
+.cta {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--tf-text);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.cta:hover {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+/* Responsividade */
+@media (max-width: 560px) {
+  .badge {
+    font-size: 11px;
+    padding: 7px 10px;
+  }
+}
