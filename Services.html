@@ -1,3 +1,4 @@
+<!-- ===== Secção de Serviços ===== -->
 <section id="services" class="services">
   <div class="container">
     <div class="section-header">
@@ -8,6 +9,7 @@
     </div>
 
     <div class="services-grid">
+      <!-- Card 1 -->
       <div class="service-card">
         <div class="service-image">
           <a href="img/planeamento-personalizado.jpg" data-lightbox="services" data-title="Planos de Viagem Personalizados">
@@ -18,9 +20,11 @@
         </div>
         <div class="service-content">
           <p>Itinerários completos ajustados ao seu ritmo, interesses e orçamento — voos, alojamento, transportes e atividades.</p>
+          <a href="#">Saber Mais</a>
         </div>
       </div>
 
+      <!-- Card 2 -->
       <div class="service-card">
         <div class="service-image">
           <a href="img/roteiros-tematicos.jpg" data-lightbox="services" data-title="Roteiros Temáticos">
@@ -31,9 +35,11 @@
         </div>
         <div class="service-content">
           <p>Experiências centradas nos seus interesses — gastronomia, vinhos, cultura, natureza — em qualquer parte do mundo.</p>
+          <a href="#">Saber Mais</a>
         </div>
       </div>
 
+      <!-- Card 3 -->
       <div class="service-card">
         <div class="service-image">
           <a href="img/consultoria-viagem.jpg" data-lightbox="services" data-title="Consultoria de Viagem">
@@ -44,9 +50,11 @@
         </div>
         <div class="service-content">
           <p>Sessões online para escolher destinos, melhores datas e dicas práticas que poupam tempo e dinheiro.</p>
+          <a href="#">Saber Mais</a>
         </div>
       </div>
 
+      <!-- Card 4 -->
       <div class="service-card">
         <div class="service-image">
           <a href="img/grupos-eventos.jpg" data-lightbox="services" data-title="Grupos & Eventos Especiais">
@@ -57,8 +65,121 @@
         </div>
         <div class="service-content">
           <p>Organização de viagens em grupo, celebrações e momentos únicos — escapadinhas ou expedições completas.</p>
+          <a href="#">Saber Mais</a>
         </div>
       </div>
     </div>
   </div>
 </section>
+
+<!-- ===== CSS específico para a secção ===== -->
+<style>
+.services {
+  padding: 60px 0;
+  background: var(--bg-light, #fff);
+}
+
+.services .section-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.services .section-header h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary-color, #333);
+  margin-bottom: 10px;
+}
+
+.services .section-header p {
+  font-size: 1rem;
+  color: var(--text-muted, #666);
+  max-width: 700px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 30px;
+}
+
+.service-card {
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--card-shadow, 0 4px 15px rgba(0,0,0,0.08));
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.service-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--card-shadow-hover, 0 6px 20px rgba(0,0,0,0.12));
+}
+
+.service-image {
+  position: relative;
+  overflow: hidden;
+}
+
+.service-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: transform 0.4s ease;
+}
+
+.service-card:hover .service-image img {
+  transform: scale(1.05);
+}
+
+.service-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.35);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.service-card:hover .service-overlay {
+  opacity: 1;
+}
+
+.service-title {
+  position: absolute;
+  bottom: 15px;
+  left: 20px;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 600;
+  z-index: 2;
+}
+
+.service-content {
+  padding: 20px;
+}
+
+.service-content p {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-color, #444);
+}
+
+.service-content a {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 14px;
+  background: var(--primary-color, #0077cc);
+  color: #fff;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background 0.3s ease;
+}
+
+.service-content a:hover {
+  background: var(--primary-color-dark, #005fa3);
+}
+</style>
