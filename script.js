@@ -552,8 +552,8 @@ function initializeLightbox() {
 
   const lightboxImg = lightbox.querySelector('img');
   const closeBtn = lightbox.querySelector('.lightbox-close');
-  const prevBtn = lightbox.querySelector('.pc-prev');
-  const nextBtn = lightbox.querySelector('.pc-next');
+ const prevBtn = document.querySelector('.carousel-prev');
+const nextBtn = document.querySelector('.carousel-next');
 
   // Estado
   let scale = 1, translateX = 0, translateY = 0;
