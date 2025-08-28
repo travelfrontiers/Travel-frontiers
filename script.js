@@ -528,7 +528,7 @@ function renderServices() {
 // Lightbox with Zoom + Drag
 // ============================
 function initializeLightbox() {
-  // Ensure a lightbox exists
+  // cria ou reutiliza
   let lightbox = document.getElementById('lightbox');
   if (!lightbox) {
     lightbox = document.createElement('div');
@@ -536,24 +536,26 @@ function initializeLightbox() {
     lightbox.className = 'lightbox';
     lightbox.setAttribute('aria-hidden', 'true');
     lightbox.innerHTML = `
-  <button class="lightbox-close" aria-label="Close">×</button>
-  <img alt="">
-  <button class="pc-prev" aria-label="Anterior">‹</button>
-  <button class="pc-next" aria-label="Seguinte">›</button>
-`;
+      <button class="lightbox-close" aria-label="Fechar">×</button>
+      <img alt="">
+      <button class="pc-prev" aria-label="Anterior">‹</button>
+      <button class="pc-next" aria-label="Seguinte">›</button>
+    `;
     document.body.appendChild(lightbox);
+  } else {
+    // remove duplicados
+    const prevs = [...lightbox.querySelectorAll('.pc-prev')];
+    prevs.slice(1).forEach(n => n.remove());
+    const nexts = [...lightbox.querySelectorAll('.pc-next')];
+    nexts.slice(1).forEach(n => n.remove());
   }
 
   const lightboxImg = lightbox.querySelector('img');
   const closeBtn = lightbox.querySelector('.lightbox-close');
-
-  // Track zoom/drag
   let scale = 1, translateX = 0, translateY = 0;
   let dragging = false, startX = 0, startY = 0;
 
-  // 👉 NEW: central open helper
   function openInLightbox(url) {
-    console.log('[Lightbox] Opening:', url);
     lightboxImg.src = url;
     lightbox.classList.add('show');
     lightbox.setAttribute('aria-hidden', 'false');
@@ -562,7 +564,6 @@ function initializeLightbox() {
     lightboxImg.style.cursor = '';
   }
 
-  // Bind static handlers only once
   if (!lightbox.dataset.bound) {
     function closeLightbox() {
       lightbox.classList.remove('show');
@@ -579,15 +580,11 @@ function initializeLightbox() {
       if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox();
     });
 
-    // Lightbox arrow navigation
-   lightbox.querySelectorAll('.pc-prev').forEach(btn => {
-  btn.addEventListener('click', () => prevSlide?.());
-});
-lightbox.querySelectorAll('.pc-next').forEach(btn => {
-  btn.addEventListener('click', () => nextSlide?.());
-});
+    // navegação
+    lightbox.querySelector('.pc-prev').addEventListener('click', () => prevSlide?.());
+    lightbox.querySelector('.pc-next').addEventListener('click', () => nextSlide?.());
 
-    // Zoom with mouse wheel
+    // zoom
     lightbox.addEventListener('wheel', e => {
       e.preventDefault();
       const delta = e.deltaY < 0 ? 0.15 : -0.15;
@@ -595,7 +592,7 @@ lightbox.querySelectorAll('.pc-next').forEach(btn => {
       lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
     });
 
-    // Drag logic
+    // drag
     lightboxImg.addEventListener('dragstart', e => e.preventDefault());
     lightboxImg.addEventListener('mousedown', e => {
       if (scale > 1) {
@@ -617,26 +614,24 @@ lightbox.querySelectorAll('.pc-next').forEach(btn => {
       lightboxImg.style.cursor = scale > 1 ? 'grab' : '';
     });
 
+    // abrir imagens
+    document.body.addEventListener('click', function (e) {
+      const target = e.target.closest('.service-image img, #travelCarousel .carousel-img, [data-lightbox], .clickable-service');
+      if (!target) return;
+      e.preventDefault();
+      const fullSrc = target.getAttribute('data-full') || target.getAttribute('href') || target.src;
+      if (fullSrc) openInLightbox(fullSrc);
+    });
+
     lightbox.dataset.bound = 'true';
   }
-
- document.body.addEventListener('click', function (e) {
-  const target = e.target.closest('.service-image img, #travelCarousel .carousel-img, [data-lightbox], .clickable-service');
-  if (!target) return;
-
-  e.preventDefault();
-
-  // Determina o URL da imagem grande
-  const fullSrc = target.getAttribute('data-full') || target.getAttribute('href') || target.src;
-  if (fullSrc) {
-    openInLightbox(fullSrc);
-  }
-});
 }
 
+// carousel separado e global
 function initializeCarousel() {
   const carousel = document.getElementById('travelCarousel');
   if (!carousel) return;
+
   const slides = Array.from(carousel.querySelectorAll('.carousel-img'));
   if (slides.length <= 1) return;
 
@@ -651,12 +646,14 @@ function initializeCarousel() {
     setInterval(() => {
       idx = (idx + 1) % slides.length;
       show(idx);
-   }, 4000); // change every 4s
-} // fecha o if
+    }, 4000);
+  }
+}
 
-} // fecha a função (por exemplo, initializeCarousel)
-
-} // fecha a função initializeLightbox
+document.addEventListener('DOMContentLoaded', () => {
+  initializeLightbox();
+  initializeCarousel();
+});
     
 // ============================
 // Testimonials
