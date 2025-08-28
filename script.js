@@ -658,13 +658,24 @@ const nextBtn = document.querySelector('.carousel-next');
       lightboxImg.style.cursor = scale > 1 ? 'grab' : '';
     });
 
-    // Abrir imagens (uma vez)
-    document.body.addEventListener('click', function (e) {
-     const clickable = e.target.closest('.service-image img, #travelCarousel a, [data-lightbox], .clickable-service');
-      if (!clickable) return;
-      e.preventDefault();
-      openInLightbox(clickable);
-    });
+   // Abrir imagens (uma vez)
+document.body.addEventListener('click', function (e) {
+  const clickable = e.target.closest(
+    '.service-image a, .service-image img, #travelCarousel a, [data-lightbox], .clickable-service'
+  );
+  if (!clickable) return;
+
+  e.preventDefault();
+  
+  // Função para obter o URL da versão grande
+  function getFull(el) {
+    return el?.getAttribute?.('href') ||
+           el?.getAttribute?.('data-full') ||
+           el?.src || '';
+  }
+
+  openInLightbox(getFull(clickable));
+});
 
     lightbox.dataset.bound = 'true';
   }
