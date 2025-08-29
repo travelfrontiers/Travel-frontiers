@@ -18,55 +18,35 @@
   <script src="tf-promo-card.js"></script>
 
   <!-- Script para buscar e mapear promoções -->
-  <script>
-  async function carregarPromocoes() {
-    const container = document.getElementById('promocoes');
-    container.innerHTML = '';
+ <script>
+async function carregarPromocoes() {
+  const container = document.getElementById('promocoes');
+  container.innerHTML = '';
+  try {
+    const resp = await fetch('/promo.json');
+    if (!resp.ok) throw new Error(`Erro HTTP: ${resp.status} ${resp.statusText}`);
 
-    try {
-      const resp = await fetch('/promo.json');
-      if (!resp.ok) {
-        throw new Error(`Erro HTTP: ${resp.status} ${resp.statusText}`);
-      }
-
-      let promocoes;
-      try {
-        promocoes = await resp.json();
-      } catch (e) {
-        throw new Error('O ficheiro promo.json não é JSON válido. Verifica vírgulas, chaves e colchetes.');
-      }
-
-      if (!Array.isArray(promocoes)) {
-        throw new Error('O ficheiro promo.json deve conter um array de objetos.');
-      }
-
-      if (promocoes.length === 0) {
-        container.innerHTML = '<p>Não há promoções para mostrar.</p>';
-        return;
-      }
-
-      // Mapeamento correto: nomes de atributos que o componente espera
-      promocoes.forEach(promo => {
-        const card = document.createElement('tf-promo-card');
-        card.setAttribute('image', promo['image-src'] || '');
-        card.setAttribute('title', promo['destination'] || '');
-        card.setAttribute('subtitle', promo['subtitle'] || promo['origin'] || '');
-        card.setAttribute('price', (promo['price'] || '') + (promo['currency'] || ''));
-        card.setAttribute('link', promo['link'] || '#');
-        if (promo['badge']) {
-          card.setAttribute('badge-text', promo['badge']);
-        }
-        container.appendChild(card);
-      });
-
-    } catch (erro) {
-      console.error(erro);
-      container.innerHTML = `<p style="color:red">⚠ Erro ao carregar promoções: ${erro.message}</p>`;
+    const promocoes = await resp.json();
+    if (!Array.isArray(promocoes)) throw new Error('O ficheiro promo.json deve conter um array de objetos.');
+    if (promocoes.length === 0) {
+      container.innerHTML = '<p>Não há promoções para mostrar.</p>';
+      return;
     }
-  }
 
-  carregarPromocoes();
-  </script>
+    promocoes.forEach(promo => {
+      const card = document.createElement('tf-promo-card');
+      // garantir link opcional
+      if (!promo.link) promo.link = '#';
+      card.data = promo; // <- chave para renderizar
+      container.appendChild(card);
+    });
+  } catch (erro) {
+    console.error(erro);
+    container.innerHTML = `<p style="color:red">⚠ Erro ao carregar promoções: ${erro.message}</p>`;
+  }
+}
+carregarPromocoes();
+</script>
 
 </body>
 </html>
