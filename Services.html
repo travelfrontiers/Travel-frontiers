@@ -51,5 +51,29 @@
       .catch(err => console.error('Erro ao carregar promoções:', err));
   </script>
 
+  <!-- Carregar o web component antes de o usarmos -->
+<script src="tf-promo-card.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  fetch('promo.json')
+    .then(r => {
+      if (!r.ok) throw new Error(`Erro HTTP ${r.status}`);
+      return r.json();
+    })
+    .then(promos => {
+      const container = document.getElementById('promocoes');
+      if (!container) throw new Error('Elemento #promocoes não encontrado');
+
+      promos.forEach(p => {
+        const card = document.createElement('tf-promo-card');
+        card.data = p; // já no formato certo
+        container.appendChild(card);
+      });
+    })
+    .catch(err => console.error('Falha ao carregar promoções:', err));
+});
+</script>
+
 </body>
 </html>
