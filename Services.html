@@ -3,14 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Promoções</title>
+  <title>Teste Promo Card</title>
 
   <link rel="stylesheet" href="tf-the.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" />
 </head>
-<body>
-  <section id="promocoes"></section>
-  <script src="tf-promo-card.js" type="module"></script>
+<body style="background:#222; margin:0; padding:20px;">
+
+  <section id="promocoes">
+    <tf-promo-card
+      destination="Marrocos"
+      subtitle="Explore as paisagens deslumbrantes e a rica cultura do Marrocos"
+      origin="Lisboa"
+      dates="Setembro 2025"
+      includes="Voo + Hotel + Passeios"
+      hotel="Hotel Atlas"
+      price="290"
+      currency="€"
+      image-src="marrocos.jpg"
+      logo-src="logo.png"
+    ></tf-promo-card>
+  </section>
+
+  <script src="tf-promo-card.js"></script>
 </body>
 </html>
