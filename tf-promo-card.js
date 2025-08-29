@@ -1,6 +1,14 @@
 class TfPromoCard extends HTMLElement {
+  constructor() {
+    super();
+  }
+
   connectedCallback() {
-    this.render();
+    try {
+      this.render();
+    } catch (err) {
+      console.error('[tf-promo-card] Erro ao renderizar:', err);
+    }
   }
 
   render() {
@@ -24,13 +32,11 @@ class TfPromoCard extends HTMLElement {
           color: #fff;
           overflow: hidden;
         }
-
         img.bg {
           width: 100%;
           height: auto;
           display: block;
         }
-
         .overlay {
           position: absolute;
           left: 0;
@@ -44,7 +50,6 @@ class TfPromoCard extends HTMLElement {
             rgba(0,0,0,0) 100%
           );
         }
-
         .title {
           font-size: 2.2rem;
           font-weight: 900;
@@ -52,17 +57,14 @@ class TfPromoCard extends HTMLElement {
           text-transform: uppercase;
           line-height: 1.1;
         }
-
         .subtitle {
           font-size: 1rem;
           margin: 0 0 4px;
         }
-
         .meta, .includes, .hotel {
           font-size: 0.9rem;
           margin: 0 0 3px;
         }
-
         .price {
           display: inline-block;
           margin-top: 8px;
@@ -73,7 +75,6 @@ class TfPromoCard extends HTMLElement {
           padding: 4px 8px;
           border-radius: 6px;
         }
-
         .logo {
           position: absolute;
           bottom: 8px;
@@ -98,4 +99,7 @@ class TfPromoCard extends HTMLElement {
   }
 }
 
-customElements.define('tf-promo-card', TfPromoCard);
+// Proteção contra definição duplicada
+if (!customElements.get('tf-promo-card')) {
+  customElements.define('tf-promo-card', TfPromoCard);
+}
