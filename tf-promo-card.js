@@ -5,30 +5,47 @@ class TfPromoCard extends HTMLElement {
   }
 
   async connectedCallback() {
-    // Lê o CSS do tema
-    const cssUrl = '/tf-the.css'; // ajusta o caminho correto
+    // Caminho para o CSS e JSON
+    const cssUrl = '/caminho/para/tf-the.css'; // ajusta conforme estrutura
+    const dataUrl = '/caminho/para/promo.json'; // ajusta conforme estrutura
+
+    // Lê CSS do tema
     let themeCss = '';
     try {
-      const resp = await fetch(cssUrl);
-      if (resp.ok) themeCss = await resp.text();
+      const cssResp = await fetch(cssUrl);
+      if (cssResp.ok) themeCss = await cssResp.text();
     } catch (e) {
-      console.error('Não foi possível carregar o CSS do tema:', e);
+      console.error('Erro ao carregar CSS do tema:', e);
     }
 
-    // Renderiza o conteúdo
+    // Lê dados do promo.json
+    let promoData = [];
+    try {
+      const dataResp = await fetch(dataUrl);
+      if (dataResp.ok) promoData = await dataResp.json();
+    } catch (e) {
+      console.error('Erro ao carregar promo.json:', e);
+    }
+
+    // Renderiza cartões
     this.shadowRoot.innerHTML = `
       <style>
         ${themeCss}
 
         :host {
-          display: block;
-          font-family: var(--tf-font-family);
-          color: var(--tf-text-color);
+          display: flex;
+          flex-wrap: wrap;
+          gap: var(--tf-gap);
+        }
+
+        .card {
           background: #fff;
           border-radius: 8px;
           overflow: hidden;
           box-shadow: var(--tf-shadow);
           max-width: 350px;
+          position: relative;
+          font-family: var(--tf-font-family);
         }
 
         .image img {
@@ -45,6 +62,7 @@ class TfPromoCard extends HTMLElement {
           font-family: var(--tf-font-family-display);
           font-size: 1.4rem;
           margin: 0 0 0.3em;
+          color: var(--tf-text-color);
         }
 
         .subtitle {
@@ -69,23 +87,20 @@ class TfPromoCard extends HTMLElement {
           font-size: 0.8rem;
           border-radius: 4px;
         }
-
-        .card {
-          position: relative;
-        }
       </style>
-
-      <div class="card">
-        <div class="image">
-          <img src="${this.getAttribute('image') || ''}" alt="${this.getAttribute('title') || ''}">
+      ${promoData.map(item => `
+        <div class="card">
+          <div class="image">
+            <img src="${item.image}" alt="${item.title}">
+          </div>
+          ${item.badge ? `<div class="badge">${item.badge}</div>` : ''}
+          <div class="content">
+            <h3 class="title">${item.title}</h3>
+            <p class="subtitle">${item.subtitle}</p>
+            <div class="price">${item.price}</div>
+          </div>
         </div>
-        ${this.getAttribute('badge-text') ? `<div class="badge">${this.getAttribute('badge-text')}</div>` : ''}
-        <div class="content">
-          <h3 class="title">${this.getAttribute('title') || ''}</h3>
-          <p class="subtitle">${this.getAttribute('subtitle') || ''}</p>
-          <div class="price">${this.getAttribute('price') || ''}</div>
-        </div>
-      </div>
+      `).join('')}
     `;
   }
 }
