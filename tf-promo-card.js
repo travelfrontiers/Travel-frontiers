@@ -4,51 +4,31 @@ class TfPromoCard extends HTMLElement {
     this.attachShadow({ mode: 'open' });
   }
 
-  async connectedCallback() {
-    const cssUrl = '/tf-the.css';   // garante que este caminho abre no browser
-    const dataUrl = '/promo.json';  // garante que este caminho abre no browser
+  set data(item) {
+    this.render(item);
+  }
 
-    // 1. Carregar CSS do tema
-    let themeCss = '';
-    try {
-      const cssResp = await fetch(cssUrl);
-      if (cssResp.ok) themeCss = await cssResp.text();
-    } catch (e) {
-      console.error('Erro ao carregar CSS do tema:', e);
-    }
-
-    // 2. Carregar dados do JSON
-    let promoData = [];
-    try {
-      const dataResp = await fetch(dataUrl);
-      if (dataResp.ok) promoData = await dataResp.json();
-    } catch (e) {
-      console.error('Erro ao carregar promo.json:', e);
-    }
-
-    // 3. Renderizar cartões
+  render(item) {
     this.shadowRoot.innerHTML = `
       <style>
-        ${themeCss}
-
         :host {
-          display: flex;
-          flex-wrap: wrap;
-          gap: var(--tf-gap);
+          --tf-color-primary: #d4af37; /* dourado */
+          --tf-color-primary-rgb: 212, 175, 55;
+          --tf-gap: 1rem;
+          --tf-text-color-white: #fff;
+          display: block;
+          font-family: sans-serif;
         }
 
         .card {
-          background: #fff;
           border-radius: 8px;
           overflow: hidden;
-          box-shadow: var(--tf-shadow);
-          max-width: 350px;
-          position: relative;
-          font-family: var(--tf-font-family-display);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .image {
           position: relative;
+          line-height: 0;
         }
 
         .image img {
@@ -61,79 +41,71 @@ class TfPromoCard extends HTMLElement {
           position: absolute;
           top: 10px;
           left: 10px;
-          background: var(--tf-color-primary);
+          background-color: var(--tf-color-primary);
           color: var(--tf-text-color-white);
-          padding: 4px 8px;
-          font-size: 0.8rem;
+          padding: 0.25rem 0.5rem;
           border-radius: 4px;
-        }
-
-        .content {
-          padding: var(--tf-gap);
-        }
-
-        .title {
-          font-family: var(--tf-font-family-display);
-          font-size: 1.4rem;
           font-weight: bold;
-          margin: 0 0 0.3em;
-          text-transform: uppercase;
-          color: var(--tf-text-color);
-        }
-
-        .subtitle {
-          color: var(--tf-text-color-gray);
-          font-size: 1rem;
-          margin: 0 0 0.8em;
-        }
-
-        .meta {
           font-size: 0.85rem;
-          color: var(--tf-text-color-gray);
-          margin: 0.2em 0;
         }
 
-        .includes, .hotel, .provider, .rnvat {
-          font-size: 0.8rem;
-          color: var(--tf-text-color-gray);
-          margin: 0.2em 0;
+        .overlay {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          padding: var(--tf-gap);
+          color: var(--tf-text-color-white);
+          background: linear-gradient(to top, rgba(0,0,0,0.6), transparent 60%);
+          width: 100%;
         }
 
-        .price {
-          font-size: 1.6rem;
+        .overlay .title {
+          font-size: 1.25rem;
+          margin: 0 0 0.25rem;
           font-weight: bold;
-          color: var(--tf-color-primary);
-          margin-top: 0.5em;
         }
 
-        .price-note {
-          font-size: 0.75rem;
-          display: block;
-          color: var(--tf-text-color-gray);
+        .overlay .subtitle,
+        .overlay .meta,
+        .overlay .includes,
+        .overlay .hotel,
+        .overlay .price-note {
+          margin: 0.1rem 0;
+          font-size: 0.9rem;
+        }
+
+        .overlay .price {
+          font-size: 1.2rem;
+          font-weight: bold;
+          margin-top: 0.25rem;
+          color: var(--tf-color-primary);
+        }
+
+        .logo {
+          position: absolute;
+          bottom: 10px;
+          right: 10px;
+          max-width: 80px;
+          height: auto;
         }
       </style>
 
-      ${promoData.map(item => `
-        <div class="card ${item.theme || ''}">
-          <div class="image">
-            <img src="${item['image-src']}" alt="${item['image-alt'] || ''}">
-            ${item['badge-text'] ? `<div class="badge">${item['badge-text']}</div>` : ''}
+      <div class="card">
+        <div class="image">
+          <img src="${item['image-src']}" alt="${item['image-alt'] || ''}">
+          ${item['badge-text'] ? `<div class="badge">${item['badge-text']}</div>` : ''}
+          <div class="overlay">
+            ${item.destination ? `<h3 class="title">${item.destination}</h3>` : ''}
+            ${item.subtitle ? `<p class="subtitle">${item.subtitle}</p>` : ''}
+            ${(item.origin || item.dates) ? `<p class="meta">${[item.origin, item.dates].filter(Boolean).join(' | ')}</p>` : ''}
+            ${item.includes ? `<p class="includes">${item.includes}</p>` : ''}
+            ${item.hotel ? `<p class="hotel">${item.hotel}</p>` : ''}
+            ${item.price ? `<div class="price">${item.price} ${item.currency || ''}</div>` : ''}
+            ${item['price-note'] ? `<p class="price-note">${item['price-note']}</p>` : ''}
           </div>
-          <div class="content">
-            <h3 class="title">${item.destination}</h3>
-            <p class="subtitle">${item.subtitle}</p>
-            <p class="meta">${item.origin} | ${item.dates}</p>
-            <p class="includes">${item.includes}</p>
-            <p class="hotel">${item.hotel}</p>
-            <div class="price">
-              ${item.price} ${item.currency}
-              ${item['price-note'] ? `<span class="price-note">${item['price-note']}</span>` : ''}
-            </div>
-            <p class="provider">${item.provider}</p>
-            <p class="rnvat">${item.rnvat}</p>
-          </div>
+          ${item['logo-src'] ? `<img class="logo" src="${item['logo-src']}" alt="Logo">` : ''}
         </div>
-      `).join('')}
+      </div>
     `;
   }
 }
