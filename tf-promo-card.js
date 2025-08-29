@@ -108,4 +108,4 @@ async function carregarPromocoes(url) {
 }
 
 // Chama a função com o caminho para o teu JSON
-carregarPromocoes('promocoes.json');
+carregarPromocoes('promo.json');
