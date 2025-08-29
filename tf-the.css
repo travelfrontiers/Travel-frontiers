@@ -17,14 +17,17 @@ tf-promo-card.square { --tf-card-aspect: 1/1; }
 tf-promo-card.story  { --tf-card-aspect: 9/16; --tf-overlay-strength: 0.55; }
 
 /* Layout do cartão */
-tf-promo-card .card {
-  position: relative;
-  display: block;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  background: #000;
-  text-decoration: none;
+tf-promo-card .overlay {
+  position: absolute;
+  inset: 0; /* cobre toda a área da imagem */
+  padding: 14px;
+  background: none;
+  color: var(--tf-text-color);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* começa no topo, não no fundo */
+  gap: 6px;
 }
 
 /* Área da imagem */
