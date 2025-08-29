@@ -6,8 +6,8 @@ class TfPromoCard extends HTMLElement {
 
   async connectedCallback() {
     // Caminho para o CSS e JSON
-    const cssUrl = '/caminho/para/tf-the.css'; // ajusta conforme estrutura
-    const dataUrl = '/caminho/para/promo.json'; // ajusta conforme estrutura
+    const cssUrl = 'tf-the.css'; // ajusta conforme estrutura
+    const dataUrl = 'promo.json'; // ajusta conforme estrutura
 
     // Lê CSS do tema
     let themeCss = '';
