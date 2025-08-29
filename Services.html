@@ -5,58 +5,51 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Promoções</title>
 
-  <!-- Tema global e fontes -->
   <link rel="stylesheet" href="/tf-the.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;600&family=Playfair+Display:wght@700&display=swap">
 </head>
 <body>
 
   <h1>Promoções</h1>
+  <section id="promocoes"></section>
 
-  <section id="promocoes">
-
-    <!-- Cartão formato banner (16:9) -->
-    <tf-promo-card class="banner">
-      <a class="card" href="#">
-        <div class="image">
-          <img src="imagens/marrocos.jpg" alt="Marrocos - Escapadinha Exclusiva">
-          <span class="badge">Last Call</span>
-        </div>
-        <div class="overlay">
-          <h2 class="title">Marrocos</h2>
-          <p class="subtitle">Descubra Marrocos numa escapadinha exclusiva de 4 dias</p>
-          <p class="meta">20 a 23 Setembro — Voos diretos Lisboa</p>
-          <p class="includes">Transfers privados, seguro incluído</p>
-          <p class="hotel">Ibn Batouta</p>
-          <div class="price">290€*</div>
-          <img class="logo" src="imagens/logo-travel-frontiers.png" alt="Travel Frontiers">
-        </div>
-      </a>
-    </tf-promo-card>
-
-    <!-- Cartão formato story (9:16) -->
-    <tf-promo-card class="story">
-      <a class="card" href="#">
-        <div class="image">
-          <img src="imagens/marrocos.jpg" alt="Marrocos - Escapadinha Exclusiva">
-          <span class="badge">Last Call</span>
-        </div>
-        <div class="overlay">
-          <h2 class="title">Marrocos</h2>
-          <p class="subtitle">Descubra Marrocos numa escapadinha exclusiva de 4 dias</p>
-          <p class="meta">20 a 23 Setembro — Voos diretos Lisboa</p>
-          <p class="includes">Transfers privados, seguro incluído</p>
-          <p class="hotel">Ibn Batouta</p>
-          <div class="price">290€*</div>
-          <img class="logo" src="imagens/logo-travel-frontiers.png" alt="Travel Frontiers">
-        </div>
-      </a>
-    </tf-promo-card>
-
-  </section>
-
-  <!-- Carrega o Web Component no fim -->
+  <!-- Web Component -->
   <script src="tf-promo-card.js"></script>
+
+  <!-- Script de carregamento dinâmico -->
+  <script>
+    fetch('promo.json')
+      .then(res => res.json())
+      .then(promocoes => {
+        const container = document.getElementById('promocoes');
+
+        promocoes.forEach(promo => {
+          const card = document.createElement('tf-promo-card');
+          card.className = promo.formato;
+
+          card.innerHTML = `
+            <a class="card" href="${promo.link}">
+              <div class="image">
+                <img src="${promo.imagem}" alt="${promo.titulo} - ${promo.subtitulo}">
+                ${promo.badge ? `<span class="badge">${promo.badge}</span>` : ''}
+              </div>
+              <div class="overlay">
+                <h2 class="title">${promo.titulo}</h2>
+                <p class="subtitle">${promo.subtitulo}</p>
+                <p class="meta">${promo.meta}</p>
+                <p class="includes">${promo.inclui}</p>
+                <p class="hotel">${promo.hotel}</p>
+                <div class="price">${promo.preco}</div>
+                <img class="logo" src="${promo.logo}" alt="Travel Frontiers">
+              </div>
+            </a>
+          `;
+
+          container.appendChild(card);
+        });
+      })
+      .catch(err => console.error('Erro ao carregar promoções:', err));
+  </script>
 
 </body>
 </html>
