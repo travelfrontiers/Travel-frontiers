@@ -1,6 +1,6 @@
 :root {
   --tf-font-family-display: 'Montserrat', system-ui, sans-serif;
-  --page-bg: #ffffff;
+  --page-bg: #fff;
 }
 
 html, body {
@@ -10,14 +10,9 @@ html, body {
   background: var(--page-bg);
 }
 
-h1 {
-  margin: 16px;
-  font-weight: 900;
-}
-
 #promocoes {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
-  padding: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  padding: 20px;
 }
