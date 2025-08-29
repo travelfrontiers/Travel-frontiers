@@ -5,9 +5,9 @@ class TfPromoCard extends HTMLElement {
   }
 
   async connectedCallback() {
-    // Caminho para o CSS e JSON
-    const cssUrl = '/tf-the.css'; // ajusta conforme estrutura
-    const dataUrl = '/promo.json'; // ajusta conforme estrutura
+    // Caminhos — ajusta conforme a tua estrutura
+    const cssUrl = '/tf-the.css';
+    const dataUrl = '/promo.json';
 
     // Lê CSS do tema
     let themeCss = '';
@@ -27,7 +27,7 @@ class TfPromoCard extends HTMLElement {
       console.error('Erro ao carregar promo.json:', e);
     }
 
-    // Renderiza cartões
+    // Renderiza os cartões com classes e variáveis do tema
     this.shadowRoot.innerHTML = `
       <style>
         ${themeCss}
@@ -45,7 +45,7 @@ class TfPromoCard extends HTMLElement {
           box-shadow: var(--tf-shadow);
           max-width: 350px;
           position: relative;
-          font-family: var(--tf-font-family);
+          font-family: var(--tf-font-family, var(--tf-font));
         }
 
         .image img {
@@ -62,54 +62,82 @@ class TfPromoCard extends HTMLElement {
           font-family: var(--tf-font-family-display);
           font-size: 1.4rem;
           margin: 0 0 0.3em;
-          color: var(--tf-text-color);
+          color: var(--tf-text-color, var(--tf-text));
         }
 
         .subtitle {
           color: var(--tf-text-color-gray);
           font-size: 0.9rem;
-          margin: 0 0 1em;
+          margin: 0 0 0.5em;
+        }
+
+        .meta, .includes, .hotel, .notes, .rnvat {
+          font-size: 0.8rem;
+          color: var(--tf-text-color-gray);
+          margin: 0.2em 0;
         }
 
         .price {
           font-size: 1.2rem;
           font-weight: bold;
-          color: var(--tf-color-primary);
+          color: var(--tf-color-primary, var(--tf-accent));
+          margin-top: 0.5em;
+        }
+
+        .price-note {
+          font-size: 0.75rem;
+          font-weight: normal;
+          display: block;
+          color: var(--tf-text-color-gray);
         }
 
         .badge {
           position: absolute;
           top: 10px;
           left: 10px;
-          background: var(--tf-color-primary);
-          color: var(--tf-text-color-white);
+          background: var(--tf-color-primary, var(--tf-accent));
+          color: var(--tf-text-color-white, #fff);
           padding: 4px 8px;
           font-size: 0.8rem;
           border-radius: 4px;
         }
+
+        .cta {
+          display: inline-block;
+          margin-top: 1em;
+          background: var(--tf-color-primary, var(--tf-accent));
+          color: var(--tf-text-color-white, #fff);
+          padding: 0.5em 1em;
+          border: none;
+          border-radius: 4px;
+          font-size: 0.9rem;
+          text-decoration: none;
+          cursor: pointer;
+        }
       </style>
-     ${promoData.map(item => `
-  <div class="card">
-    <div class="image">
-      <img src="${item['image-src']}" alt="${item['image-alt']}">
-    </div>
-    ${item['badge-text'] ? `<div class="badge">${item['badge-text']}</div>` : ''}
-    <div class="content">
-      <h3 class="title">${item.destination}</h3>
-      <p class="subtitle">${item.subtitle}</p>
-      <div class="price">
-        ${item.price} ${item.currency}
-        <span class="price-note">${item['price-note'] || ''}</span>
-      </div>
-      <p class="origin">${item.origin}</p>
-      <p class="dates">${item.dates}</p>
-      <p class="includes">${item.includes}</p>
-      <p class="hotel">${item.hotel}</p>
-      <p class="provider">${item.provider}</p>
-      <p class="rnvat">${item.rnvat}</p>
-    </div>
-  </div>
-`).join('')}
+
+      ${promoData.map(item => `
+        <div class="card ${item.theme || ''}">
+          <div class="image">
+            <img src="${item['image-src']}" alt="${item['image-alt'] || ''}">
+          </div>
+          ${item['badge-text'] ? `<div class="badge">${item['badge-text']}</div>` : ''}
+          <div class="content">
+            <h3 class="title">${item.destination}</h3>
+            <p class="subtitle">${item.subtitle}</p>
+            <p class="meta">${item.origin} — ${item.dates}</p>
+            <p class="includes">${item.includes}</p>
+            <p class="hotel">${item.hotel}</p>
+            <div class="price">
+              ${item.price} ${item.currency}
+              ${item['price-note'] ? `<span class="price-note">${item['price-note']}</span>` : ''}
+            </div>
+            <p class="notes">${item.provider}</p>
+            <p class="rnvat">${item.rnvat}</p>
+            ${item.link ? `<a href="${item.link}" class="cta">Ver Mais</a>` : ''}
+          </div>
+        </div>
+      `).join('')}
     `;
   }
 }
