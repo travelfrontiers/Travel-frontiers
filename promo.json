@@ -1,21 +1,28 @@
 [
   {
-    "destination": "Marrocos",
-    "subtitle": "Escapadinha de 4 dias, sem complicações",
-    "origin": "Voos diretos Lisboa",
-    "dates": "20 a 23 Setembro",
-    "includes": "Transferes privados | Seguro | Pequeno-almoço",
-    "hotel": "Ibn Batouta ★★★",
-    "price": "290",
-    "currency": "€",
-    "price-note": "Valor por pessoa",
-    "provider": "Valor baseado em 2 adultos. Sujeito a confirmação. Os preços podem alterar até ao momento da reserva.",
-    "rnvat": "RNAVT - 3301",
-    "badge-text": "LAST CALL",
-    "image-src": "https://www.travelfrontiers.pt/img/Marrocos.webp",
-    "image-alt": "Pôr-do-sol em Marraquexe com minarete e palmeiras",
-    "logo-src": "img/logo-new-nobgTF.webp",
-    "format": "banner",
-    "theme": "dark"
+    "formato": "banner",
+    "imagem": "img/Marrocos.webp",
+    "badge": "Last Call",
+    "titulo": "Marrocos",
+    "subtitulo": "Descubra Marrocos numa escapadinha exclusiva de 4 dias",
+    "meta": "20 a 23 Setembro — Voos diretos Lisboa",
+    "inclui": "Transfers privados, seguro incluído",
+    "hotel": "Ibn Batouta",
+    "preco": "290€*",
+    "logo": "img/logo-new-nobgTF.webp",
+    "link": "#"
+  },
+  {
+    "formato": "story",
+    "imagem": "/img/Marrocos.webp",
+    "badge": "Last Call",
+    "titulo": "Marrocos",
+    "subtitulo": "Descubra Marrocos numa escapadinha exclusiva de 4 dias",
+    "meta": "20 a 23 Setembro — Voos diretos Lisboa",
+    "inclui": "Transfers privados, seguro incluído",
+    "hotel": "Ibn Batouta",
+    "preco": "290€*",
+    "logo": "img/logo-new-nobgTF.webp",
+    "link": "#"
   }
 ]
