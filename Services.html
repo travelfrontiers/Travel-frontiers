@@ -1,32 +1,20 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Promoções</title>
 
-  <link rel="stylesheet" href="/tf-the.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;600&family=Playfair+Display:wght@700&display=swap">
+  <!-- CSS global apenas para layout/grelha e tipografia base -->
+  <link rel="stylesheet" href="tf-the.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" />
 </head>
 <body>
   <h1>Promoções</h1>
- <section id="promocoes"></section>
+  <section id="promocoes"></section>
 
-<script src="tf-promo-card.js" type="module"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  fetch('promo.json')
-    .then(r => r.json())
-    .then(promos => {
-      const container = document.getElementById('promocoes');
-      promos.forEach(p => {
-        const card = document.createElement('tf-promo-card');
-        card.data = p; // usa sempre a API do componente
-        container.appendChild(card);
-      });
-    })
-    .catch(err => console.error('Falha ao carregar promoções:', err));
-});
-</script>
+  <!-- Um único JS que faz tudo: fetch + web component -->
+  <script src="tf-promo-card.js" type="module"></script>
 </body>
 </html>
