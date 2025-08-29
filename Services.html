@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Promoções</title>
 
-  <!-- Tema e fontes -->
-  <link rel="stylesheet" href="tf-the.css">
+  <!-- Tema global e fontes (opcional para o resto da página) -->
+  <link rel="stylesheet" href="/caminho/para/tf-the.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;600&family=Playfair+Display:wght@700&display=swap">
 </head>
 <body>
@@ -14,18 +14,17 @@
   <h1>Promoções</h1>
   <section id="promocoes"></section>
 
-  <!-- Carregar o componente primeiro -->
-  <script src="/tf-promo-card.js"></script>
+  <!-- Carrega o Web Component -->
+  <script src="/caminho/para/tf-promo-card.js"></script>
 
-  <!-- Script para ir buscar e mapear os dados -->
+  <!-- Script para buscar e mapear promoções -->
   <script>
   async function carregarPromocoes() {
     const container = document.getElementById('promocoes');
     container.innerHTML = '';
 
     try {
-      const resp = await fetch('/promo.json');
-
+      const resp = await fetch('/caminho/para/promo.json');
       if (!resp.ok) {
         throw new Error(`Erro HTTP: ${resp.status} ${resp.statusText}`);
       }
@@ -46,18 +45,17 @@
         return;
       }
 
-      // Mapeamento dos campos do JSON para os atributos esperados
+      // Mapeamento correto: nomes de atributos que o componente espera
       promocoes.forEach(promo => {
         const card = document.createElement('tf-promo-card');
-
-        card.setAttribute('imagem', promo['image-src'] || '');
-        card.setAttribute('titulo', promo['destination'] || '');
-        card.setAttribute('descricao', promo['subtitle'] || promo['origin'] || '');
-        card.setAttribute('preco', (promo['price'] || '') + (promo['currency'] || ''));
+        card.setAttribute('image', promo['image-src'] || '');
+        card.setAttribute('title', promo['destination'] || '');
+        card.setAttribute('subtitle', promo['subtitle'] || promo['origin'] || '');
+        card.setAttribute('price', (promo['price'] || '') + (promo['currency'] || ''));
         card.setAttribute('link', promo['link'] || '#');
-        // Se no futuro tiveres desconto:
-        // card.setAttribute('desconto', promo['desconto'] || '');
-
+        if (promo['badge']) {
+          card.setAttribute('badge-text', promo['badge']);
+        }
         container.appendChild(card);
       });
 
