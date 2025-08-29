@@ -1,106 +1,93 @@
-// tf-promo-card.js
-class TFPPromoCard extends HTMLElement {
+class TfPromoCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
   }
 
-  static get observedAttributes() {
-    return ['imagem', 'titulo', 'descricao', 'link', 'preco', 'desconto'];
-  }
+  async connectedCallback() {
+    // Lê o CSS do tema
+    const cssUrl = '/tf-the.css'; // ajusta o caminho correto
+    let themeCss = '';
+    try {
+      const resp = await fetch(cssUrl);
+      if (resp.ok) themeCss = await resp.text();
+    } catch (e) {
+      console.error('Não foi possível carregar o CSS do tema:', e);
+    }
 
-  attributeChangedCallback(name, oldValue, newValue) {
-    this.render();
-  }
-
-  connectedCallback() {
-    this.render();
-  }
-
-  render() {
-    const imagem = this.getAttribute('imagem') || '';
-    const titulo = this.getAttribute('titulo') || '';
-    const descricao = this.getAttribute('descricao') || '';
-    const link = this.getAttribute('link') || '#';
-    const preco = this.getAttribute('preco') || '';
-    const desconto = this.getAttribute('desconto') || '';
-
+    // Renderiza o conteúdo
     this.shadowRoot.innerHTML = `
       <style>
+        ${themeCss}
+
         :host {
           display: block;
+          font-family: var(--tf-font-family);
+          color: var(--tf-text-color);
+          background: #fff;
           border-radius: 8px;
           overflow: hidden;
-          box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-          background: #fff;
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
-          font-family: 'Lato', sans-serif;
+          box-shadow: var(--tf-shadow);
+          max-width: 350px;
         }
-        :host(:hover) {
-          transform: translateY(-5px);
-          box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-        }
-        .image {
-          position: relative;
-          overflow: hidden;
-        }
+
         .image img {
           display: block;
           width: 100%;
           height: auto;
         }
+
         .content {
-          padding: 16px;
+          padding: var(--tf-gap);
         }
-        h3 {
-          font-size: 1.1rem;
-          margin: 0 0 8px;
-          font-family: 'Playfair Display', serif;
-          color: var(--primary-color, #0077cc);
+
+        .title {
+          font-family: var(--tf-font-family-display);
+          font-size: 1.4rem;
+          margin: 0 0 0.3em;
         }
-        p {
-          font-size: 0.95rem;
-          line-height: 1.4;
-          color: #444;
-          margin: 0 0 12px;
+
+        .subtitle {
+          color: var(--tf-text-color-gray);
+          font-size: 0.9rem;
+          margin: 0 0 1em;
         }
+
         .price {
-          font-weight: 600;
-          color: #222;
+          font-size: 1.2rem;
+          font-weight: bold;
+          color: var(--tf-color-primary);
         }
-        .discount {
-          font-size: 0.9rem;
-          color: #d32f2f;
-          margin-left: 8px;
-        }
-        a.button {
-          display: inline-block;
-          padding: 8px 14px;
-          background: var(--primary-color, #0077cc);
-          color: #fff;
+
+        .badge {
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          background: var(--tf-color-primary);
+          color: var(--tf-text-color-white);
+          padding: 4px 8px;
+          font-size: 0.8rem;
           border-radius: 4px;
-          text-decoration: none;
-          font-size: 0.9rem;
         }
-        a.button:hover {
-          background: var(--primary-color-dark, #005fa3);
+
+        .card {
+          position: relative;
         }
       </style>
 
-      <div class="image">
-        <img src="${imagem}" alt="${titulo}">
-      </div>
-      <div class="content">
-        <h3>${titulo}</h3>
-        <p>${descricao}</p>
-        ${preco ? `<span class="price">${preco}</span>` : ''}
-        ${desconto ? `<span class="discount">-${desconto}</span>` : ''}
-        <div>
-          <a href="${link}" class="button">Ver Mais</a>
+      <div class="card">
+        <div class="image">
+          <img src="${this.getAttribute('image') || ''}" alt="${this.getAttribute('title') || ''}">
+        </div>
+        ${this.getAttribute('badge-text') ? `<div class="badge">${this.getAttribute('badge-text')}</div>` : ''}
+        <div class="content">
+          <h3 class="title">${this.getAttribute('title') || ''}</h3>
+          <p class="subtitle">${this.getAttribute('subtitle') || ''}</p>
+          <div class="price">${this.getAttribute('price') || ''}</div>
         </div>
       </div>
     `;
   }
 }
 
-customElements.define('tf-promo-card', TFPPromoCard);
+customElements.define('tf-promo-card', TfPromoCard);
