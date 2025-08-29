@@ -88,19 +88,28 @@ class TfPromoCard extends HTMLElement {
           border-radius: 4px;
         }
       </style>
-      ${promoData.map(item => `
-        <div class="card">
-          <div class="image">
-            <img src="${item.image}" alt="${item.title}">
-          </div>
-          ${item.badge ? `<div class="badge">${item.badge}</div>` : ''}
-          <div class="content">
-            <h3 class="title">${item.title}</h3>
-            <p class="subtitle">${item.subtitle}</p>
-            <div class="price">${item.price}</div>
-          </div>
-        </div>
-      `).join('')}
+     ${promoData.map(item => `
+  <div class="card">
+    <div class="image">
+      <img src="${item['image-src']}" alt="${item['image-alt']}">
+    </div>
+    ${item['badge-text'] ? `<div class="badge">${item['badge-text']}</div>` : ''}
+    <div class="content">
+      <h3 class="title">${item.destination}</h3>
+      <p class="subtitle">${item.subtitle}</p>
+      <div class="price">
+        ${item.price} ${item.currency}
+        <span class="price-note">${item['price-note'] || ''}</span>
+      </div>
+      <p class="origin">${item.origin}</p>
+      <p class="dates">${item.dates}</p>
+      <p class="includes">${item.includes}</p>
+      <p class="hotel">${item.hotel}</p>
+      <p class="provider">${item.provider}</p>
+      <p class="rnvat">${item.rnvat}</p>
+    </div>
+  </div>
+`).join('')}
     `;
   }
 }
