@@ -5,8 +5,8 @@ tf-promo-card {
   --tf-font-family-display: 'Montserrat', system-ui, sans-serif;
   --tf-text-color: #000;       /* texto principal a preto */
   --tf-text-color-white: #fff;
-  --tf-overlay-strength: 0.72; /* ajuste de contraste */
-  --tf-card-aspect: 16/9; /* formato banner */
+  --tf-overlay-strength: 0.72;
+  --tf-card-aspect: 16/9;
   font-family: var(--tf-font-family-display);
   color: var(--tf-text-color);
   display: block;
@@ -17,17 +17,14 @@ tf-promo-card.square { --tf-card-aspect: 1/1; }
 tf-promo-card.story  { --tf-card-aspect: 9/16; --tf-overlay-strength: 0.55; }
 
 /* Layout do cartão */
-tf-promo-card .overlay {
-  position: absolute;
-  inset: 0; /* cobre toda a área da imagem */
-  padding: 14px;
-  background: none;
-  color: var(--tf-text-color);
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start; /* começa no topo, não no fundo */
-  gap: 6px;
+tf-promo-card .card {
+  position: relative;
+  display: block;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  background: #000;
+  text-decoration: none;
 }
 
 /* Área da imagem */
@@ -60,16 +57,19 @@ tf-promo-card .badge {
   z-index: 2;
 }
 
-/* Overlay de texto — texto sobre imagem com caixas claras */
+/* Overlay cobre toda a imagem */
 tf-promo-card .overlay {
   position: absolute;
-  inset: auto 0 0 0;
-  padding: 14px;
-  background: none; /* sem gradiente escuro */
-  color: var(--tf-text-color);
+  inset: 0;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 8px;
   z-index: 2;
 }
 
+/* Blocos de texto com fundo claro */
 tf-promo-card .title,
 tf-promo-card .subtitle,
 tf-promo-card .meta,
@@ -77,57 +77,36 @@ tf-promo-card .includes,
 tf-promo-card .hotel,
 tf-promo-card .price-note,
 tf-promo-card .price {
-  background-color: rgba(255, 255, 255, 0.85); /* caixa clara translúcida */
+  background-color: rgba(255, 255, 255, 0.85);
   display: inline-block;
   padding: 4px 8px;
-  margin-bottom: 4px;
+  border-radius: 4px;
+  color: #000;
 }
 
 /* Tipografia */
 tf-promo-card .title {
-  margin: 0 0 4px;
-  font-size: 1.2rem;
-  font-weight: 800;
+  font-size: 1.6rem;
+  font-weight: 900;
   text-transform: uppercase;
 }
 tf-promo-card .subtitle {
-  margin: 0 0 6px;
   font-size: 0.95rem;
-  opacity: 0.95;
 }
 tf-promo-card .meta {
-  margin: 0 0 4px;
   font-size: 0.85rem;
-  opacity: 0.9;
 }
 tf-promo-card .includes,
 tf-promo-card .hotel,
 tf-promo-card .provider,
 tf-promo-card .rnvat,
 tf-promo-card .price-note {
-  margin: 2px 0;
   font-size: 0.82rem;
-  opacity: 0.9;
 }
-
-/* Destaque do preço */
 tf-promo-card .price {
-  margin-top: 6px;
   font-size: 1.5rem;
   font-weight: 800;
-  color: #000;
-  background: #f5f0e6; /* bege claro */
-  border-radius: 4px;
-}
-
-/* Limitar texto a 2 linhas onde necessário */
-tf-promo-card .subtitle,
-tf-promo-card .includes {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  background: #f5f0e6;
 }
 
 /* Logo */
@@ -138,11 +117,12 @@ tf-promo-card .logo {
   max-width: 84px;
   height: auto;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
+  z-index: 3;
 }
 
-/* Ajuste responsivo */
+/* Responsivo */
 @media (min-width: 768px) {
-  tf-promo-card .title { font-size: 1.25rem; }
+  tf-promo-card .title { font-size: 1.8rem; }
   tf-promo-card .price { font-size: 1.6rem; }
 }
 
