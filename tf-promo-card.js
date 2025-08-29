@@ -5,11 +5,10 @@ class TfPromoCard extends HTMLElement {
   }
 
   async connectedCallback() {
-    // Caminhos — ajusta conforme a tua estrutura
-    const cssUrl = '/tf-the.css';
-    const dataUrl = '/promo.json';
+    const cssUrl = '/tf-the.css';   // garante que este caminho abre no browser
+    const dataUrl = '/promo.json';  // garante que este caminho abre no browser
 
-    // Lê CSS do tema
+    // 1. Carregar CSS do tema
     let themeCss = '';
     try {
       const cssResp = await fetch(cssUrl);
@@ -18,7 +17,7 @@ class TfPromoCard extends HTMLElement {
       console.error('Erro ao carregar CSS do tema:', e);
     }
 
-    // Lê dados do promo.json
+    // 2. Carregar dados do JSON
     let promoData = [];
     try {
       const dataResp = await fetch(dataUrl);
@@ -27,7 +26,7 @@ class TfPromoCard extends HTMLElement {
       console.error('Erro ao carregar promo.json:', e);
     }
 
-    // Renderiza os cartões com classes e variáveis do tema
+    // 3. Renderizar cartões
     this.shadowRoot.innerHTML = `
       <style>
         ${themeCss}
@@ -45,13 +44,28 @@ class TfPromoCard extends HTMLElement {
           box-shadow: var(--tf-shadow);
           max-width: 350px;
           position: relative;
-          font-family: var(--tf-font-family, var(--tf-font));
+          font-family: var(--tf-font-family-display);
+        }
+
+        .image {
+          position: relative;
         }
 
         .image img {
           display: block;
           width: 100%;
           height: auto;
+        }
+
+        .badge {
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          background: var(--tf-color-primary);
+          color: var(--tf-text-color-white);
+          padding: 4px 8px;
+          font-size: 0.8rem;
+          border-radius: 4px;
         }
 
         .content {
@@ -61,58 +75,41 @@ class TfPromoCard extends HTMLElement {
         .title {
           font-family: var(--tf-font-family-display);
           font-size: 1.4rem;
+          font-weight: bold;
           margin: 0 0 0.3em;
-          color: var(--tf-text-color, var(--tf-text));
+          text-transform: uppercase;
+          color: var(--tf-text-color);
         }
 
         .subtitle {
           color: var(--tf-text-color-gray);
-          font-size: 0.9rem;
-          margin: 0 0 0.5em;
+          font-size: 1rem;
+          margin: 0 0 0.8em;
         }
 
-        .meta, .includes, .hotel, .notes, .rnvat {
+        .meta {
+          font-size: 0.85rem;
+          color: var(--tf-text-color-gray);
+          margin: 0.2em 0;
+        }
+
+        .includes, .hotel, .provider, .rnvat {
           font-size: 0.8rem;
           color: var(--tf-text-color-gray);
           margin: 0.2em 0;
         }
 
         .price {
-          font-size: 1.2rem;
+          font-size: 1.6rem;
           font-weight: bold;
-          color: var(--tf-color-primary, var(--tf-accent));
+          color: var(--tf-color-primary);
           margin-top: 0.5em;
         }
 
         .price-note {
           font-size: 0.75rem;
-          font-weight: normal;
           display: block;
           color: var(--tf-text-color-gray);
-        }
-
-        .badge {
-          position: absolute;
-          top: 10px;
-          left: 10px;
-          background: var(--tf-color-primary, var(--tf-accent));
-          color: var(--tf-text-color-white, #fff);
-          padding: 4px 8px;
-          font-size: 0.8rem;
-          border-radius: 4px;
-        }
-
-        .cta {
-          display: inline-block;
-          margin-top: 1em;
-          background: var(--tf-color-primary, var(--tf-accent));
-          color: var(--tf-text-color-white, #fff);
-          padding: 0.5em 1em;
-          border: none;
-          border-radius: 4px;
-          font-size: 0.9rem;
-          text-decoration: none;
-          cursor: pointer;
         }
       </style>
 
@@ -120,21 +117,20 @@ class TfPromoCard extends HTMLElement {
         <div class="card ${item.theme || ''}">
           <div class="image">
             <img src="${item['image-src']}" alt="${item['image-alt'] || ''}">
+            ${item['badge-text'] ? `<div class="badge">${item['badge-text']}</div>` : ''}
           </div>
-          ${item['badge-text'] ? `<div class="badge">${item['badge-text']}</div>` : ''}
           <div class="content">
             <h3 class="title">${item.destination}</h3>
             <p class="subtitle">${item.subtitle}</p>
-            <p class="meta">${item.origin} — ${item.dates}</p>
+            <p class="meta">${item.origin} | ${item.dates}</p>
             <p class="includes">${item.includes}</p>
             <p class="hotel">${item.hotel}</p>
             <div class="price">
               ${item.price} ${item.currency}
               ${item['price-note'] ? `<span class="price-note">${item['price-note']}</span>` : ''}
             </div>
-            <p class="notes">${item.provider}</p>
+            <p class="provider">${item.provider}</p>
             <p class="rnvat">${item.rnvat}</p>
-            ${item.link ? `<a href="${item.link}" class="cta">Ver Mais</a>` : ''}
           </div>
         </div>
       `).join('')}
