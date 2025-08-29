@@ -1,108 +1,89 @@
-/* ==========================
-   Travel Frontiers Theme CSS
-   ========================== */
-
-:host {
-  /* 🎨 Paleta principal */
-  --tf-accent: #d4af37; /* dourado do logótipo */
-  --tf-text: #ffffff;
-  --tf-overlay: rgba(0, 0, 0, 0.45);
-  --tf-bg: #000000;
-  --tf-chip-bg: var(--tf-accent);
-  --tf-chip-text: #1a1a1a;
-
-  /* ✍️ Tipografia */
-  --tf-font: "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --tf-font-heading: "Playfair Display", serif;
-
-  /* 📏 Espaçamento & Bordas */
-  --tf-radius: 14px;
-  --tf-gap: 18px;
-
-  /* 🌟 Sombra */
-  --tf-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+:root {
+  --tf-color-primary: #e63946;
+  --tf-text-color: #222;
+  --tf-text-color-gray: #666;
+  --tf-text-color-white: #fff;
+  --tf-gap: 16px;
+  --tf-font-family-display: 'Montserrat', sans-serif;
+  --tf-shadow: 0 4px 8px rgba(0,0,0,0.08);
 }
 
-/* Fundo escuro para dar contraste às imagens */
+/* Card */
 .card {
-  background-color: var(--tf-bg);
-  color: var(--tf-text);
-  border-radius: var(--tf-radius);
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
   box-shadow: var(--tf-shadow);
-  font-family: var(--tf-font);
+  max-width: 350px;
+  font-family: var(--tf-font-family-display);
+  display: flex;
+  flex-direction: column;
 }
 
-/* Balão "LAST CALL" */
-.badge {
-  background: var(--tf-chip-bg);
-  color: var(--tf-chip-text);
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  padding: 8px 12px;
-  border-radius: 999px;
-  text-transform: uppercase;
+/* Imagem */
+.card .image {
+  position: relative;
+  line-height: 0;
+}
+.card .image img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.card .badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: var(--tf-color-primary);
+  color: var(--tf-text-color-white);
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
 }
 
-/* Títulos e subtítulos */
-.title {
-  font-family: var(--tf-font-heading);
+/* Conteúdo */
+.card .content {
+  padding: var(--tf-gap);
+}
+.card .title {
+  font-size: 1.4rem;
   font-weight: 800;
-  letter-spacing: 0.01em;
+  margin: 0;
+  text-transform: uppercase;
+  color: var(--tf-text-color);
+  line-height: 1.2;
 }
-
-.subtitle {
-  font-family: var(--tf-font);
-  font-weight: 400;
-  opacity: 0.9;
+.card .subtitle {
+  font-size: 1rem;
+  color: var(--tf-text-color-gray);
+  margin: 4px 0 12px;
 }
-
-/* Metadados e detalhes da viagem */
-.meta,
-.hotel {
-  font-family: var(--tf-font);
-  opacity: 0.92;
+.card .meta {
+  font-size: 0.85rem;
+  color: var(--tf-text-color-gray);
+  margin-bottom: 8px;
+}
+.card .includes,
+.card .hotel,
+.card .provider,
+.card .rnvat {
+  font-size: 0.8rem;
+  color: var(--tf-text-color-gray);
+  margin: 2px 0;
 }
 
 /* Preço */
-.price {
+.card .price {
+  font-size: 1.8rem;
   font-weight: 800;
-  letter-spacing: 0.01em;
+  color: var(--tf-color-primary);
+  margin-top: 12px;
 }
-
-.price small {
-  font-weight: 600;
-  opacity: 0.9;
-}
-
-/* Notas legais / RNAVT */
-.notes {
-  font-size: 0.75em;
-  opacity: 0.85;
-}
-
-/* CTA (botão) */
-.cta {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: var(--tf-text);
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  backdrop-filter: blur(6px);
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.cta:hover {
-  background: rgba(0, 0, 0, 0.45);
-}
-
-/* Responsividade */
-@media (max-width: 560px) {
-  .badge {
-    font-size: 11px;
-    padding: 7px 10px;
-  }
+.card .price-note {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--tf-text-color-gray);
+  margin-top: 2px;
 }
