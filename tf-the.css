@@ -1,11 +1,8 @@
 :root {
   --tf-color-primary: #e63946;
-  --tf-text-color: #222;
-  --tf-text-color-gray: #666;
   --tf-text-color-white: #fff;
   --tf-gap: 16px;
   --tf-font-family-display: 'Montserrat', sans-serif;
-  --tf-shadow: 0 4px 8px rgba(0,0,0,0.08);
 }
 
 /* Card */
