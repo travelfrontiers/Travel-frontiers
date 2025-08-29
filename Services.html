@@ -6,7 +6,7 @@
   <title>Promoções</title>
 
   <!-- Tema global e fontes (opcional para o resto da página) -->
-  <link rel="stylesheet" href="/caminho/para/tf-the.css">
+  <link rel="stylesheet" href="tf-the.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;600&family=Playfair+Display:wght@700&display=swap">
 </head>
 <body>
@@ -15,7 +15,7 @@
   <section id="promocoes"></section>
 
   <!-- Carrega o Web Component -->
-  <script src="/caminho/para/tf-promo-card.js"></script>
+  <script src="tf-promo-card.js"></script>
 
   <!-- Script para buscar e mapear promoções -->
   <script>
@@ -24,7 +24,7 @@
     container.innerHTML = '';
 
     try {
-      const resp = await fetch('/caminho/para/promo.json');
+      const resp = await fetch('/promo.json');
       if (!resp.ok) {
         throw new Error(`Erro HTTP: ${resp.status} ${resp.statusText}`);
       }
