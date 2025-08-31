@@ -6,173 +6,133 @@ class TfPromoCard extends HTMLElement {
   }
 
   set data(value) {
-    this._data = value || {};
+    this._data = value;
     this.render();
-  }
-
-  get data() {
-    return this._data;
   }
 
   render() {
     if (!this._data) return;
 
-    const formatClass = `format-${this._data.format || 'banner'}`;
-    this.className = '';
-    this.classList.add(formatClass);
-
-    const meta = [this._data.origin, this._data.dates].filter(Boolean).join(' | ');
+    const meta = [
+      this._data.origin,
+      this._data.startdate && this._data.enddate
+        ? `${this._data.startdate} - ${this._data.enddate}`
+        : ''
+    ].filter(Boolean).join(' | ');
 
     this.shadowRoot.innerHTML = `
       <style>
         :host {
           display: block;
           position: relative;
-          font-family: var(--tf-font-family-display, sans-serif);
+          font-family: Arial, sans-serif;
           color: #fff;
-          border-radius: 10px;
           overflow: hidden;
+          border-radius: 8px;
         }
-
-        a {
-          display: block;
+        .card {
           position: relative;
-          color: inherit;
-          text-decoration: none;
-          height: 100%;
-        }
-
-        img.bg {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+        }
+        img {
+          width: 100%;
+          height: auto;
           display: block;
         }
-
-        /* Story vertical */
-        :host(.format-story) {
-          max-width: 320px;
-          aspect-ratio: 9 / 16;
-        }
-
-        /* Banner horizontal */
-        :host(.format-banner) img.bg {
-          height: 260px;
-        }
-
-        .badge {
-          position: absolute;
-          top: 12px;
-          left: 12px;
-          background: crimson;
-          padding: 4px 10px;
-          font-size: 0.8rem;
-          font-weight: 800;
-          border-radius: 4px;
-          z-index: 2;
-        }
-
         .overlay {
           position: absolute;
           inset: 0;
           display: flex;
           flex-direction: column;
-          justify-content: flex-end;
+          justify-content: space-between;
           padding: 16px;
-          background: linear-gradient(to top, rgba(0,0,0,0.75) 30%, rgba(0,0,0,0) 100%);
+          background: linear-gradient(
+            to top,
+            rgba(0,0,0,0.75) 20%,
+            rgba(0,0,0,0) 60%,
+            rgba(0,0,0,0.75) 100%
+          );
         }
-
+        .top {
+          display: flex;
+          justify-content: flex-start;
+        }
+        .badge {
+          background: var(--tf-color-primary, #ffcc00);
+          color: #000;
+          padding: 4px 8px;
+          font-size: 0.85rem;
+          font-weight: bold;
+          border-radius: 4px;
+        }
+        .bottom {
+          display: flex;
+          flex-direction: column;
+        }
         .title {
-          margin: 0 0 6px;
-          font-size: 1.8rem;
+          font-size: 2rem;
           font-weight: 900;
           text-transform: uppercase;
-          line-height: 1.1;
-        }
-
-        .subtitle {
           margin: 0 0 6px;
+        }
+        .subtitle {
           font-size: 1rem;
-          font-weight: 500;
+          margin: 0 0 6px;
         }
-
         .meta, .includes {
-          margin: 0 0 4px;
           font-size: 0.9rem;
-          opacity: 0.95;
+          margin: 0 0 4px;
         }
-
         .highlight {
           display: flex;
           align-items: center;
           justify-content: space-between;
           margin-top: 8px;
         }
-
-        .hotel {
-          font-size: 1rem;
-          font-weight: 600;
-        }
-
         .price {
-          font-size: 1.2rem;
+          font-size: 1.3rem;
           font-weight: 900;
           background: var(--tf-color-primary, #ffcc00);
           color: #000;
           padding: 4px 8px;
           border-radius: 6px;
         }
-
+        .hotel {
+          font-size: 1rem;
+          font-weight: bold;
+        }
         .logo {
           position: absolute;
-          bottom: 12px;
-          right: 12px;
-          max-height: 60px;
-          width: auto;
-          filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+          bottom: 16px;
+          right: 16px;
+          max-width: 60px;
+          max-height: 40px;
+          object-fit: contain;
+          filter: drop-shadow(0 0 4px rgba(0,0,0,0.5));
         }
       </style>
-
-      <a href="${this._data.link || '#'}">
-        ${this._data['badge-text'] ? `<span class="badge">${this._data['badge-text']}</span>` : ''}
-
-        ${this._data['image-src'] ? `<img class="bg" src="${this._data['image-src']}" alt="${this._data['image-alt'] || ''}">` : ''}
-
+      <div class="card">
+        ${this._data.image ? `<img src="${this._data.image}" alt="${this._data.destination || ''}">` : ''}
         <div class="overlay">
-          ${this._data.destination ? `<h3 class="title">${this._data.destination}</h3>` : ''}
-          ${this._data.subtitle ? `<p class="subtitle">${this._data.subtitle}</p>` : ''}
-          ${meta ? `<p class="meta">${meta}</p>` : ''}
-          ${this._data.includes ? `<p class="includes">${this._data.includes}</p>` : ''}
-
-          <div class="highlight">
-            ${this._data.hotel ? `<span class="hotel">${this._data.hotel}</span>` : ''}
-            ${this._data.price ? `<span class="price">${this._data.price}</span>` : ''}
+          <div class="top">
+            ${this._data['badge-text'] ? `<span class="badge">${this._data['badge-text']}</span>` : ''}
+          </div>
+          <div class="bottom">
+            ${this._data.destination ? `<h3 class="title">${this._data.destination}</h3>` : ''}
+            ${this._data.subtitle ? `<p class="subtitle">${this._data.subtitle}</p>` : ''}
+            ${meta ? `<p class="meta">${meta}</p>` : ''}
+            ${this._data.includes ? `<p class="includes">${this._data.includes}</p>` : ''}
+            <div class="highlight">
+              ${this._data.price ? `<span class="price">${this._data.price}</span>` : ''}
+              ${this._data.hotel ? `<span class="hotel">${this._data.hotel}</span>` : ''}
+            </div>
           </div>
         </div>
-
-        ${this._data['logo-src'] ? `<img class="logo" src="${this._data['logo-src']}" alt="Logo">` : ''}
-      </a>
+        ${this._data.logo ? `<img class="logo" src="${this._data.logo}" alt="logo">` : ''}
+      </div>
     `;
   }
 }
 
 customElements.define('tf-promo-card', TfPromoCard);
-
-async function carregarPromocoes(url) {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const promos = await res.json();
-    const container = document.querySelector('#promocoes');
-
-    promos.forEach(promo => {
-      const card = document.createElement('tf-promo-card');
-      card.data = promo;
-      container.appendChild(card);
-    });
-  } catch (err) {
-    console.error('Erro ao carregar promoções:', err);
-  }
-}
-
-carregarPromocoes('promo.json');
