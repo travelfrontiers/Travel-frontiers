@@ -1,5 +1,3 @@
-// tf-promo-card.js
-
 class TfPromoCard extends HTMLElement {
   constructor() {
     super();
@@ -10,43 +8,82 @@ class TfPromoCard extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         .card {
-          border: 1px solid #ccc;
-          padding: 1rem;
+          width: 300px;
           border-radius: 8px;
-          max-width: 300px;
+          overflow: hidden;
+          font-family: Arial, sans-serif;
           background: #fff;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         }
-        img {
-          max-width: 100%;
-          border-radius: 4px;
+        .image-wrapper {
+          position: relative;
+        }
+        .image-wrapper img {
           display: block;
+          width: 100%;
+          height: auto;
         }
         .badge {
+          position: absolute;
+          top: 10px;
+          left: 10px;
           background: red;
           color: white;
-          padding: 0.2rem 0.5rem;
+          padding: 0.3rem 0.6rem;
           font-size: 0.8rem;
+          font-weight: bold;
           border-radius: 4px;
-          display: inline-block;
-          margin-bottom: 0.5rem;
+        }
+        .overlay {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          padding: 1rem;
+          background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+          color: white;
+        }
+        .overlay h3 {
+          margin: 0;
+          font-size: 1.5rem;
+          text-transform: uppercase;
+        }
+        .overlay p {
+          margin: 0.3rem 0 0;
+          font-size: 0.9rem;
+        }
+        .details {
+          padding: 1rem;
+          font-size: 0.85rem;
+          line-height: 1.4;
         }
         .price {
+          font-size: 1.4rem;
           font-weight: bold;
-          font-size: 1.2rem;
+          margin-top: 0.5rem;
+        }
+        .logo {
+          display: block;
+          max-width: 100px;
           margin-top: 0.5rem;
         }
       </style>
       <div class="card">
-        <span class="badge">${promo["badge-text"] || ""}</span>
-        <img src="${promo["image-src"]}" alt="${promo["image-alt"] || ""}">
-        <h3>${promo.destination || ""}</h3>
-        <p>${promo.subtitle || ""}</p>
-        <p>${promo.dates || ""}</p>
-        <p>${promo.includes || ""}</p>
-        <p>Hotel: ${promo.hotel || ""}</p>
-        <div class="price">${promo.price || ""} ${promo.currency || ""}</div>
-        ${promo["logo-src"] ? `<img src="${promo["logo-src"]}" alt="logo" style="max-width:80px;margin-top:0.5rem;">` : ""}
-        ${promo.link ? `<p><a href="${promo.link}">Saber mais</a></p>` : ""}
+        <div class="image-wrapper">
+          <img src="${promo['image-src']}" alt="${promo['image-alt']}">
+          <span class="badge">${promo['badge-text']}</span>
+          <div class="overlay">
+            <h3>${promo.destination}</h3>
+            <p>${promo.subtitle}</p>
+          </div>
+        </div>
+        <div class="details">
+          <div>${promo.dates}</div>
+          <div>${promo.includes}</div>
+          <div>Hotel: ${promo.hotel}</div>
+          <div class="price">${promo.price} ${promo.currency}</div>
+          ${promo['logo-src'] ? `<img class="logo" src="${promo['logo-src']}" alt="logo">` : ""}
+        </div>
       </div>
     `;
   }
@@ -58,13 +95,7 @@ async function carregarPromocoes() {
   try {
     const resposta = await fetch('promo.json');
     const promocoes = await resposta.json();
-
     const container = document.getElementById('promo-container');
-    if (!container) {
-      console.error('Elemento #promo-container não encontrado no HTML.');
-      return;
-    }
-
     promocoes.forEach(promo => {
       const card = document.createElement('tf-promo-card');
       card.data = promo;
