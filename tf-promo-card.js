@@ -93,7 +93,7 @@ customElements.define('tf-promo-card', TfPromoCard);
 
 async function carregarPromocoes() {
   try {
-    const resposta = await fetch('promo.json');
+    const resposta = await fetch('./promo.json'); // caminho relativo
     if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
     const promocoes = await resposta.json();
     const container = document.getElementById('promo-container');
