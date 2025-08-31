@@ -1,25 +1,28 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-  <meta charset="UTF-8">
-  <title>Promoções</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="tf-promo-card.js" defer></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      padding: 2rem;
-    }
-    #promo-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.5rem;
-    }
-  </style>
-</head>
-<body>
-  <h1>As nossas promoções</h1>
-  <div id="promo-container"></div>
-</body>
-</html>
+<div id="promo-container" class="promo-grid"></div>
+
+<script>
+fetch('promo.json')
+  .then(res => res.json())
+  .then(data => {
+    const container = document.getElementById('promo-container');
+
+    data.forEach(promo => {
+      if (promo.format === 'banner') {
+        container.innerHTML += `
+          <div class="promo-card" style="background-image: url('${promo['image-src']}')">
+            <div class="badge">${promo['badge-text']}</div>
+            <div class="overlay">
+              <h2 class="destination">${promo.destination}</h2>
+              <p class="subtitle">${promo.subtitle}</p>
+              <p class="dates">${promo.dates}</p>
+              <p class="includes">${promo.includes}</p>
+              <p class="hotel">${promo.hotel}</p>
+              <div class="price">${promo.price}</div>
+              <img class="logo" src="${promo['logo-src']}" alt="Logo">
+            </div>
+          </div>
+        `;
+      }
+    });
+  });
+</script>
