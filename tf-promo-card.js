@@ -127,7 +127,7 @@ class TfPromoCard extends HTMLElement {
           position: absolute;
           bottom: 12px;
           right: 12px;
-          max-height: 40px;
+          max-height: 60px;
           width: auto;
           filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
         }
