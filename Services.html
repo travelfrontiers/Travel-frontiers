@@ -1,5 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Promoções</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- O defer garante que o JS só corre depois do HTML estar carregado -->
+  <script src="tf-promo-card.js" defer></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background: #f5f5f5;
+    }
+    #promo-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+  </style>
+</head>
 <body>
+  <h1>As nossas promoções</h1>
+
+  <!-- Aqui é onde os cartões vão ser inseridos -->
   <div id="promo-container"></div>
-<script src="tf-promo-card.js" defer></script>
 
 </body>
+</html>
