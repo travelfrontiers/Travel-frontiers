@@ -8,7 +8,7 @@ class TfPromoCard extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         .card {
-          width: 300px;
+          width: 320px;
           border-radius: 8px;
           overflow: hidden;
           font-family: Arial, sans-serif;
@@ -45,7 +45,7 @@ class TfPromoCard extends HTMLElement {
         }
         .overlay h3 {
           margin: 0;
-          font-size: 1.5rem;
+          font-size: 1.6rem;
           text-transform: uppercase;
         }
         .overlay p {
@@ -80,8 +80,8 @@ class TfPromoCard extends HTMLElement {
         <div class="details">
           <div>${promo.dates}</div>
           <div>${promo.includes}</div>
-          <div>Hotel: ${promo.hotel}</div>
-          <div class="price">${promo.price} ${promo.currency}</div>
+          <div>${promo.hotel}</div>
+          <div class="price">${promo.price} ${promo.currency || ""}</div>
           ${promo['logo-src'] ? `<img class="logo" src="${promo['logo-src']}" alt="logo">` : ""}
         </div>
       </div>
@@ -94,6 +94,7 @@ customElements.define('tf-promo-card', TfPromoCard);
 async function carregarPromocoes() {
   try {
     const resposta = await fetch('promo.json');
+    if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
     const promocoes = await resposta.json();
     const container = document.getElementById('promo-container');
     promocoes.forEach(promo => {
