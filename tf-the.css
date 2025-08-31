@@ -1,18 +1,78 @@
-:root {
-  --tf-font-family-display: 'Montserrat', system-ui, sans-serif;
-  --page-bg: #ffffff;
+/* ===== Estilo base do cartão ===== */
+tf-promo-card {
+  display: block;
+  font-family: sans-serif;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  background: #fff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-html, body {
+tf-promo-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+}
+
+tf-promo-card .promo-card {
+  display: flex;
+  flex-direction: column;
+}
+
+tf-promo-card img.bg {
+  width: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ===== Formato Banner (horizontal) ===== */
+tf-promo-card.format-banner img.bg {
+  height: 260px;
+}
+
+tf-promo-card.format-banner {
+  max-width: 100%;
+}
+
+/* ===== Formato Story (vertical) ===== */
+tf-promo-card.format-story {
+  max-width: 320px; /* largura típica de story */
+}
+
+tf-promo-card.format-story img.bg {
+  aspect-ratio: 9 / 16;
+  height: auto;
+}
+
+/* ===== Conteúdo ===== */
+tf-promo-card .content {
+  padding: 1rem;
+}
+
+tf-promo-card .content h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+}
+
+tf-promo-card .content p {
   margin: 0;
-  padding: 0;
-  font-family: var(--tf-font-family-display);
-  background: var(--page-bg);
+  font-size: 0.95rem;
+  color: #555;
 }
 
-#promocoes {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
-  padding: 20px;
+/* ===== Responsividade ===== */
+@media (max-width: 768px) {
+  tf-promo-card.format-banner img.bg {
+    height: 200px;
+  }
+
+  tf-promo-card.format-story {
+    max-width: 45%; /* para caberem dois lado a lado no mobile */
+  }
+}
+
+@media (max-width: 480px) {
+  tf-promo-card.format-story {
+    max-width: 100%; /* ocupa a largura toda no mobile pequeno */
+  }
 }
