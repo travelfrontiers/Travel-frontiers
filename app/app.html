@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Promoções - Controles de Transparência</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>Gerador de Promoções</h1>
+            <p>Crie promoções de viagem com controles avançados de transparência</p>
+        </header>
+
+        <main class="app-main">
+            <div class="editor-section">
+                <h2>Criar Nova Promoção</h2>
+                
+                <!-- Image Upload Section -->
+                <div class="image-uploads">
+                    <div class="upload-group">
+                        <label for="background_image" class="form-label">Imagem de Fundo</label>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="background_image" class="file-input" accept="image/*">
+                            <label for="background_image" class="file-upload-label">
+                                <span class="upload-icon">📷</span>
+                                <span class="upload-text">Escolher imagem de fundo</span>
+                            </label>
+                        </div>
+                        <div class="upload-preview" id="background-preview"></div>
+                    </div>
+
+                    <div class="upload-group">
+                        <label for="logo_image" class="form-label">Logo da Empresa</label>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="logo_image" class="file-input" accept="image/*">
+                            <label for="logo_image" class="file-upload-label">
+                                <span class="upload-icon">🏢</span>
+                                <span class="upload-text">Escolher logo</span>
+                            </label>
+                        </div>
+                        <div class="upload-preview" id="logo-preview"></div>
+                        
+                        <div class="form-group logo-size-control">
+                            <label for="logo_size" class="form-label">Tamanho do Logo</label>
+                            <div class="slider-container">
+                                <input type="range" id="logo_size" class="form-control-slider" min="20" max="80" value="32">
+                                <span class="slider-value" id="logo-size-value">32px</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="promotion-form" class="promotion-form">
+                    <div class="form-group">
+                        <label for="promotional_tag" class="form-label">Etiqueta Promocional</label>
+                        <input type="text" id="promotional_tag" class="form-control" placeholder="ex: LAST CALL, OFERTA ESPECIAL" value="LAST CALL">
+                        <div class="color-control">
+                            <label for="promotional_tag_color" class="form-label">Cor do Texto</label>
+                            <input type="color" id="promotional_tag_color" class="form-control-color" value="#FFFFFF">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="destination" class="form-label">Destino</label>
+                        <input type="text" id="destination" class="form-control" placeholder="ex: MARROCOS, PARIS, MADRID" value="MARROCOS">
+                        <div class="color-control">
+                            <label for="destination_color" class="form-label">Cor do Texto</label>
+                            <input type="color" id="destination_color" class="form-control-color" value="#2C3E50">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description" class="form-label">Descrição da Viagem</label>
+                        <textarea id="description" class="form-control" rows="3" placeholder="Descreva a experiência da viagem">Descubra Marrocos numa escapadinha exclusiva de 4 dias, com voos diretos e todos os detalhes tratados para si.</textarea>
+                        <div class="color-control">
+                            <label for="description_color" class="form-label">Cor do Texto</label>
+                            <input type="color" id="description_color" class="form-control-color" value="#34495E">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="flight_info" class="form-label">Informações de Voo</label>
+                        <input type="text" id="flight_info" class="form-control" placeholder="ex: VOOS DIRETOS LISBOA | 20 A 23 SETEMBRO" value="VOOS DIRETOS LISBOA | 20 A 23 SETEMBRO">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="services" class="form-label">Serviços Incluídos</label>
+                        <input type="text" id="services" class="form-control" placeholder="ex: TRANSFERES PRIVADOS | SEGURO" value="TRANSFERES PRIVADOS | SEGURO">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location" class="form-label">Hotel/Localização</label>
+                        <input type="text" id="location" class="form-control" placeholder="ex: Ibn Batouta, Nome do Hotel" value="Ibn Batouta">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="price" class="form-label">Preço</label>
+                        <input type="text" id="price" class="form-control" placeholder="ex: 290€, 450€" value="290€">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="price_note" class="form-label">Nota do Preço (opcional)</label>
+                        <input type="text" id="price_note" class="form-control" placeholder="ex: * (nota opcional)" value="*">
+                        <div class="color-control">
+                            <label for="info_box_color" class="form-label">Cor do Texto da Caixa de Informação</label>
+                            <input type="color" id="info_box_color" class="form-control-color" value="#2C3E50">
+                        </div>
+                    </div>
+
+                    <!-- Transparency Controls Section -->
+                    <div class="transparency-controls">
+                        <h3>Controles de Transparência</h3>
+                        
+                        <div class="form-group">
+                            <label for="promo_tag_alpha" class="form-label">Transparência da Etiqueta Promocional</label>
+                            <div class="slider-container">
+                                <input type="range" id="promo_tag_alpha" class="form-control-slider" min="0" max="100" value="100">
+                                <span class="slider-value" id="promo-tag-alpha-value">100%</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="destination_alpha" class="form-label">Transparência do Título do Destino</label>
+                            <div class="slider-container">
+                                <input type="range" id="destination_alpha" class="form-control-slider" min="0" max="100" value="100">
+                                <span class="slider-value" id="destination-alpha-value">100%</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description_alpha" class="form-label">Transparência da Descrição</label>
+                            <div class="slider-container">
+                                <input type="range" id="description_alpha" class="form-control-slider" min="0" max="100" value="100">
+                                <span class="slider-value" id="description-alpha-value">100%</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="info_box_alpha" class="form-label">Transparência da Caixa de Informação</label>
+                            <div class="slider-container">
+                                <input type="range" id="info_box_alpha" class="form-control-slider" min="0" max="100" value="85">
+                                <span class="slider-value" id="info-box-alpha-value">85%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" id="reset-btn" class="btn btn--secondary">Limpar Formulário</button>
+                        <button type="button" id="export-btn" class="btn btn--primary">Exportar Promoção</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="preview-section">
+                <h2>Pré-visualização</h2>
+                <div class="promotion-banner" id="promotion-preview">
+                    <!-- Promotional tag bubble -->
+                    <div class="banner-tag" id="banner-tag">
+                        <span id="preview-tag">LAST CALL</span>
+                    </div>
+
+                    <!-- Main content area -->
+                    <div class="banner-content">
+                        <div class="destination-section">
+                            <h1 class="destination-title" id="preview-destination">MARROCOS</h1>
+                            <p class="destination-description" id="preview-description">
+                                Descubra Marrocos numa escapadinha exclusiva de 4 dias, com voos diretos e todos os detalhes tratados para si.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Info box with trip details and pricing -->
+                    <div class="info-box" id="info-box">
+                        <div class="trip-details">
+                            <div class="detail-line" id="preview-flight">VOOS DIRETOS LISBOA | 20 A 23 SETEMBRO</div>
+                            <div class="detail-line" id="preview-services">TRANSFERES PRIVADOS | SEGURO</div>
+                            <div class="hotel-name" id="preview-location">Ibn Batouta</div>
+                        </div>
+                        <div class="pricing-section">
+                            <div class="price" id="preview-price">290€</div>
+                            <div class="price-note" id="preview-note">*</div>
+                        </div>
+                    </div>
+
+                    <!-- Logo only (no text branding) -->
+                    <div class="banner-footer">
+                        <div class="company-branding">
+                            <img id="company-logo-img" class="company-logo-image" style="display: none;" alt="Logo">
+                            <div id="company-logo-placeholder" class="company-logo-placeholder">LOGO</div>
+                        </div>
+                    </div>
+
+                    <!-- Background overlay for better text readability -->
+                    <div class="background-overlay"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
