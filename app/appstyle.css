@@ -1062,7 +1062,7 @@ select.form-control {
 
 /* Promotion Banner Styles - Morocco Design with Transparency */
 .promotion-banner {
-  background: linear-gradient(135deg, #8B4513 0%, #D2691E 50%, #DEB887 100%);
+  background: linear-gradient(135deg, #8B4513 0%, #D2691E 50%, #CA9524 100%);
   background-size: cover;
   background-position: center;
   border-radius: var(--radius-lg);
