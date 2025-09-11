@@ -3,81 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador Completo de Promoções</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <title>Promo Travel Frontiers Instagram</title>
     <link rel="stylesheet" href="appstyle.css">
+    <!-- Fonte recomendada -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Roboto:wght@400;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-container">
-        <main class="app-main">
-            <div class="editor-section">
-                <form id="promotion-form" class="promotion-form">
-                    <!-- Secção Imagens -->
-                    <div class="form-section">
-                        <label>Imagem de Fundo <input type="file" id="background_image" accept="image/*"></label>
-                        <div id="background-preview" class="image-preview"></div>
-                        <label>Logo da Empresa <input type="file" id="logo_image" accept="image/*"></label>
-                        <div id="logo-preview" class="image-preview"></div>
-                        <label>Tamanho Logo <input type="range" id="logo_size" min="50" max="200" value="120"><span id="logo_size-value">120px</span></label>
-                    </div>
-                    <!-- Texto Promo -->
-                    <div class="form-section">
-                        <label>Etiqueta Promo <input type="text" id="promotional_tag" value="LAST CALL"></label>
-                        <input type="range" id="promo_tag_size" min="1" max="3" step="0.1" value="1.4"><span id="promo_tag_size-value">1.4rem</span>
-                        <input type="color" id="promo_tag_color" value="#ffffff"><span>Cor</span>
-                        <input type="range" id="promo_tag_transparency" min="0" max="100" value="100"><span id="promo_tag_transparency-value">100%</span>
-                    </div>
-                    <div class="form-section">
-                        <label>Título Destino <input type="text" id="destination" value="MARROCOS"></label>
-                        <input type="range" id="destination_size" min="2" max="8" step="0.2" value="5"><span id="destination_size-value">5rem</span>
-                        <input type="color" id="destination_color" value="#2c3e50"><span>Cor</span>
-                        <input type="range" id="destination_transparency" min="0" max="100" value="100"><span id="destination_transparency-value">100%</span>
-                    </div>
-                    <div class="form-section">
-                        <label>Descrição <textarea id="description" rows="3">Descubra Marrocos numa escapadinha exclusiva de 4 dias, com voos diretos e todos os detalhes tratados para si.</textarea></label>
-                        <input type="range" id="description_size" min="1" max="2.5" step="0.1" value="1.2"><span id="description_size-value">1.2rem</span>
-                        <input type="color" id="description_color" value="#34495e"><span>Cor</span>
-                        <input type="range" id="description_bg_transparency" min="0" max="100" value="60"><span id="description_bg_transparency-value">60%</span>
-                    </div>
-                    <div class="form-section">
-                        <label>Voos <input type="text" id="flight_info" value="VOOS DIRETOS LISBOA | 20 A 23 SETEMBRO"></label>
-                        <input type="range" id="flight_services_size" min="1" max="2" step="0.1" value="1.1"><span id="flight_services_size-value">1.1rem</span>
-                    </div>
-                    <div class="form-section">
-                        <label>Serviços <input type="text" id="services" value="TRANSFERES PRIVADOS | SEGURO"></label>
-                    </div>
-                    <div class="form-section">
-                        <label>Hotel <input type="text" id="hotel_name" value="Ibn Batouta"></label>
-                        <input type="range" id="hotel_size" min="1.5" max="4" step="0.1" value="2.5"><span id="hotel_size-value">2.5rem</span>
-                    </div>
-                    <div class="form-section">
-                        <label>Preço <input type="text" id="price" value="290€"></label>
-                        <input type="range" id="price_size" min="3" max="6" step="0.2" value="5"><span id="price_size-value">5rem</span>
-                        <label><input type="text" id="price_note" value="*"></label>
-                    </div>
-                </form>
-            </div>
-            <!-- Preview -->
-            <div class="preview-section">
-                <div class="preview-container">
-                    <div id="promotion-preview" class="promotion-canvas">
-                        <div id="promo-tag-element" class="promo-tag-element"></div>
-                        <div id="destination-element" class="destination-element"></div>
-                        <div id="description-box">
-                            <span id="description-text" class="description-text"></span>
-                        </div>
-                        <div id="info-box-element">
-                            <span id="flight-info" class="flight-info"></span>
-                            <span id="services-info" class="services-info"></span>
-                            <span id="hotel-info" class="hotel-info"></span>
-                            <span class="price-info"><span id="preview-price"></span><span id="preview-note"></span></span>
-                        </div>
-                        <img id="company-logo" class="company-logo" style="display:block">
+    <main class="main-layout">
+        <section class="editor">
+            <form id="promotion-form">
+                <label>
+                    Imagem de fundo Instagram
+                    <input type="file" id="background_image" accept="image/*">
+                </label>
+                <div id="background-preview" class="image-preview"></div>
+                <label>
+                    Logo
+                    <input type="file" id="logo_image" accept="image/*">
+                </label>
+                <div id="logo-preview" class="image-preview"></div>
+                <label>
+                    Tamanho do logo
+                    <input type="range" id="logo_size" min="80" max="220" value="120">
+                    <span id="logo_size-value">120px</span>
+                </label>
+                <hr>
+                <label>
+                    Etiqueta promocional
+                    <input type="text" id="promotional_tag" value="LAST CALL">
+                    <input type="color" id="promo_tag_color" value="#FFFFFF">
+                    <input type="range" id="promo_tag_size" min="1.1" max="2.5" step="0.1" value="1.3">
+                    <span id="promo_tag_size-value">1.3rem</span>
+                </label>
+                <hr>
+                <label>
+                    Destino
+                    <input type="text" id="destination" value="MARROCOS">
+                    <input type="color" id="destination_color" value="#2c3e50">
+                    <input type="range" id="destination_size" min="2" max="7" step="0.1" value="5">
+                    <span id="destination_size-value">5rem</span>
+                </label>
+                <hr>
+                <label>
+                    Descrição
+                    <textarea id="description">Descubra Marrocos numa escapadinha exclusiva de 4 dias, com voos diretos e todos os detalhes tratados para si.</textarea>
+                    <input type="color" id="description_color" value="#191B28">
+                    <input type="range" id="description_size" min="1" max="2.5" step="0.1" value="1.3">
+                    <span id="description_size-value">1.3rem</span>
+                </label>
+                <hr>
+                <label>
+                    <strong>Caixa Detalhes</strong><br>
+                    Transparência caixa
+                    <input type="range" id="details_box_transparency" min="0" max="100" value="85">
+                    <span id="details_box_transparency-value">85%</span>
+                </label>
+                <hr>
+                <label>
+                    Voos/Datas <input type="text" id="flight_info" value="VOOS DIRETOS LISBOA | 20 A 23 SETEMBRO">
+                </label>
+                <label>
+                    Serviços <input type="text" id="services" value="TRANSFERES PRIVADOS | SEGURO">
+                </label>
+                <label>
+                    Hotel <input type="text" id="hotel_name" value="Ibn Batouta">
+                </label>
+                <label>
+                    Preço <input type="text" id="price" value="290€">
+                    Nota: <input type="text" id="price_note" value="*">
+                </label>
+            </form>
+        </section>
+        <section class="preview">
+            <div id="promotion-preview" class="promotion-canvas">
+                <div id="promo-tag-element" class="promo-tag-element"></div>
+                <div id="destination-element" class="destination-element"></div>
+                <div id="description-element" class="description-element"></div>
+                <div id="details-box" class="details-box">
+                    <span id="flight-info" class="flight-info"></span>
+                    <span id="services-info" class="services-info"></span>
+                    <span id="hotel-info" class="hotel-info"></span>
+                    <div class="price-line">
+                        <span id="preview-price"></span>
+                        <span id="preview-note"></span>
                     </div>
                 </div>
+                <img id="company-logo" class="company-logo" style="display:block;">
             </div>
-        </main>
-    </div>
+        </section>
+    </main>
     <script src="app.js"></script>
 </body>
 </html>
