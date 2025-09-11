@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-    // Função segura para atualização e proteção contra erro de elementos inexistentes
+
     function safeSet(id, val, suffix) {
         const el = document.getElementById(id);
         if (el) el.textContent = val + (suffix||"");
@@ -9,21 +9,18 @@ document.addEventListener("DOMContentLoaded", function () {
         if (el) el.style.display = show ? "" : "none";
     }
 
-    // Sliders de tamanho
+    // Tamanhos de fonte sliders
     [
-        ["promo_tag_size","--promo-tag-font-size",'rem'],
-        ["destination_size","--destination-font-size",'rem'],
-        ["description_size","--description-font-size",'rem'],
-        ["flight_services_size","--flight-services-font-size",'rem'],
-        ["hotel_size","--hotel-font-size",'rem'],
-        ["price_size","--price-font-size",'rem']
-    ].forEach(arr => {
-        const inp = document.getElementById(arr[0]);
-        safeSet(arr[0]+"-value", inp.value, arr[2]);
-        document.documentElement.style.setProperty(arr[1], inp.value + arr[2]);
-        inp.addEventListener("input", function() {
-            safeSet(arr[0]+"-value", inp.value, arr[2]);
-            document.documentElement.style.setProperty(arr[1], inp.value + arr[2]);
+        ["promo_tag_size","--promo-tag-font-size","rem"],
+        ["destination_size","--destination-font-size","rem"],
+        ["description_size","--description-font-size","rem"]
+    ].forEach(([inputId, cssVar, unit])=>{
+        const inp=document.getElementById(inputId);
+        safeSet(inputId+"-value",inp.value,unit);
+        document.documentElement.style.setProperty(cssVar,inp.value+unit);
+        inp.addEventListener("input",function(){
+            safeSet(inputId+"-value",inp.value,unit);
+            document.documentElement.style.setProperty(cssVar,inp.value+unit);
         });
     });
 
@@ -32,77 +29,74 @@ document.addEventListener("DOMContentLoaded", function () {
         ["promo_tag_color","--promo-tag-text-color"],
         ["destination_color","--destination-text-color"],
         ["description_color","--description-text-color"]
-    ].forEach(arr => {
-        const inp = document.getElementById(arr[0]);
-        document.documentElement.style.setProperty(arr[1], inp.value);
-        inp.addEventListener("input", function() {
-            document.documentElement.style.setProperty(arr[1], inp.value);
+    ].forEach(([inputId,cssVar])=>{
+        const inp=document.getElementById(inputId);
+        document.documentElement.style.setProperty(cssVar, inp.value);
+        inp.addEventListener("input",function(){
+            document.documentElement.style.setProperty(cssVar,inp.value);
         });
     });
 
-    // Transparências
-    [
-        ["promo_tag_transparency",'--promo-tag-alpha','promo-tag-element'],
-        ["destination_transparency",'--destination-alpha','destination-element'],
-        ["description_bg_transparency",'--description-bg-alpha','description-box']
-    ].forEach(arr=>{
-        const inp=document.getElementById(arr[0]);
-        safeSet(arr[0]+"-value", inp.value, "%");
-        document.documentElement.style.setProperty(arr[1], inp.value/100);
-        safeDisplay(arr[2], inp.value!="0");
-        inp.addEventListener("input", function() {
-            safeSet(arr[0]+"-value", inp.value, "%");
-            document.documentElement.style.setProperty(arr[1], inp.value/100);
-            safeDisplay(arr[2], inp.value!="0");
-        });
-    });
-
-    // Logo tamanho
+    // Tamanho logo
     const logoInput = document.getElementById("logo_size");
-    safeSet("logo_size-value", logoInput.value, "px");
-    logoInput.addEventListener("input", function() {
-        safeSet("logo_size-value", logoInput.value, "px");
-        document.getElementById("company-logo").style.width = logoInput.value+"px";
+    safeSet("logo_size-value",logoInput.value,"px");
+    logoInput.addEventListener("input",function(){
+        safeSet("logo_size-value",logoInput.value,"px");
+        document.getElementById("company-logo").style.width = logoInput.value + "px";
     });
 
-    // Background upload
-    document.getElementById("background_image").addEventListener("change", function(e){
-        if(e.target.files&&e.target.files[0]){
-            const reader=new FileReader();
-            reader.onload=function(ev){
-                document.getElementById("promotion-preview").style.backgroundImage=`url(${ev.target.result})`;
-                document.getElementById("background-preview").style.backgroundImage=`url(${ev.target.result})`;
-            }; reader.readAsDataURL(e.target.files[0]);
-        }
+    // Transparência caixa detalhes (info)
+    const detailsBoxTransparency = document.getElementById("details_box_transparency");
+    safeSet("details_box_transparency-value",detailsBoxTransparency.value,"%");
+    document.documentElement.style.setProperty("--details-box-bg-alpha", detailsBoxTransparency.value/100);
+    detailsBoxTransparency.addEventListener("input",function(){
+        safeSet("details_box_transparency-value",detailsBoxTransparency.value,"%");
+        document.documentElement.style.setProperty("--details-box-bg-alpha", detailsBoxTransparency.value/100);
+        // Oculta caixa se transparência zero
+        safeDisplay("details-box", detailsBoxTransparency.value != "0");
     });
-    // Logo upload
-    document.getElementById("logo_image").addEventListener("change", function(e){
-        if(e.target.files&&e.target.files[0]){
+
+    // Upload imagem fundo
+    document.getElementById("background_image").addEventListener("change",function(e){
+        if(e.target.files && e.target.files[0]){
             const reader=new FileReader();
             reader.onload=function(ev){
-                document.getElementById("company-logo").src=ev.target.result;
-                document.getElementById("logo-preview").style.backgroundImage=`url(${ev.target.result})`;
-            }; reader.readAsDataURL(e.target.files[0]);
+                document.getElementById("promotion-preview").style.backgroundImage = `url(${ev.target.result})`;
+                document.getElementById("background-preview").style.backgroundImage = `url(${ev.target.result})`;
+            };
+            reader.readAsDataURL(e.target.files[0]);
         }
     });
 
-    // Mapping de campos para preview
+    // Upload logo
+    document.getElementById("logo_image").addEventListener("change",function(e){
+        if(e.target.files && e.target.files[0]){
+            const reader=new FileReader();
+            reader.onload=function(ev){
+                document.getElementById("company-logo").src = ev.target.result;
+                document.getElementById("logo-preview").style.backgroundImage = `url(${ev.target.result})`;
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+
+    // Mapping campos para preview
     const mapping = {
-        "promotional_tag":"promo-tag-element",
-        "destination":"destination-element",
-        "description":"description-text",
-        "flight_info":"flight-info",
-        "services":"services-info",
-        "hotel_name":"hotel-info",
-        "price":"preview-price",
-        "price_note":"preview-note"
+        "promotional_tag": "promo-tag-element",
+        "destination": "destination-element",
+        "description": "description-element",
+        "flight_info": "flight-info",
+        "services": "services-info",
+        "hotel_name": "hotel-info",
+        "price": "preview-price",
+        "price_note": "preview-note"
     };
-    Object.entries(mapping).forEach(([input, preview]) => {
-        const inp = document.getElementById(input);
-        const prev = document.getElementById(preview);
-        if(inp && prev) {
+    Object.entries(mapping).forEach(([inputId, previewId])=>{
+        const inp=document.getElementById(inputId);
+        const prev=document.getElementById(previewId);
+        if(inp && prev){
             prev.innerHTML = inp.value;
-            inp.addEventListener("input", function(){ prev.innerHTML = inp.value; });
+            inp.addEventListener("input",function(){ prev.innerHTML = inp.value; });
         }
     });
 });
