@@ -1,99 +1,201 @@
-document.addEventListener("DOMContentLoaded", function () {
-
-function safeSet(id, val, suffix){ const el=document.getElementById(id); if(el) el.textContent=val+(suffix||""); }
-function safeDisplay(id, show){ const el=document.getElementById(id); if(el) el.style.display= show? "":"none"; }
-
-// Sliders de tamanhos (mantidos)
-[["promo_tag_size","--promo-tag-font-size","rem"],
-["destination_size","--destination-font-size","rem"],
-["description_size","--description-font-size","rem"]
-].forEach(([inputId,cssVar,unit])=>{
-const inp=document.getElementById(inputId);
-if(!inp) return;
-safeSet(inputId+"-value",inp.value,unit);
-document.documentElement.style.setProperty(cssVar,inp.value+unit);
-inp.addEventListener("input",()=>{ safeSet(inputId+"-value",inp.value,unit); document.documentElement.style.setProperty(cssVar,inp.value+unit); });
-});
-
-// Cores (mantidos)
-[["promo_tag_color","--promo-tag-text-color"],
-["destination_color","--destination-text-color"],
-["description_color","--description-text-color"]
-].forEach(([inputId,cssVar])=>{
-const inp=document.getElementById(inputId);
-if(!inp) return;
-document.documentElement.style.setProperty(cssVar, inp.value);
-inp.addEventListener("input",()=> document.documentElement.style.setProperty(cssVar, inp.value));
-});
-
-// Logo
-const logoSize=document.getElementById("logo_size");
-if(logoSize){
-safeSet("logo_size-value",logoSize.value,"px");
-logoSize.addEventListener("input",()=>{
-safeSet("logo_size-value",logoSize.value,"px");
-const img=document.getElementById("company-logo");
-if(img) img.style.width=logoSize.value+"px";
-});
-}
-
-// NOVO: transparência da caixa da descrição
-const descBg = document.getElementById("description_bg_transparency");
-if(descBg){
-const apply = ()=> {
-safeSet("description_bg_transparency-value", descBg.value, "%");
-document.documentElement.style.setProperty("--description-bg-alpha", descBg.value/100);
-safeDisplay("description-box", descBg.value !== "0");
-};
-apply();
-descBg.addEventListener("input", apply);
-}
-
-// Uploads
-const bgInput=document.getElementById("background_image");
-if(bgInput){
-bgInput.addEventListener("change",e=>{
-if(e.target.files && e.target.files){
-const r=new FileReader();
-r.onload=ev=>{
-document.getElementById("promotion-preview").style.backgroundImage=url(${ev.target.result});
-document.getElementById("background-preview").style.backgroundImage=url(${ev.target.result});
-};
-r.readAsDataURL(e.target.files);
-}
-});
-}
-const logoInput=document.getElementById("logo_image");
-if(logoInput){
-logoInput.addEventListener("change",e=>{
-if(e.target.files && e.target.files){
-const r=new FileReader();
-r.onload=ev=>{
-document.getElementById("company-logo").src=ev.target.result;
-document.getElementById("logo-preview").style.backgroundImage=url(${ev.target.result});
-};
-r.readAsDataURL(e.target.files);
-}
-});
-}
-
-// Mapping de texto -> preview (mantido)
-const mapping={
-promotional_tag:"promo-tag-element",
-destination:"destination-element",
-description:"description-element",
-flight_info:"flight-info",
-services:"services-info",
-hotel_name:"hotel-info",
-price:"preview-price",
-price_note:"preview-note"
-};
-Object.entries(mapping).forEach(([inputId,previewId])=>{
-const inp=document.getElementById(inputId);
-const prev=document.getElementById(previewId);
-if(inp && prev){
-prev.innerHTML=inp.value;
-inp.addEventListener("input",()=> prev.innerHTML=inp.value);
-}
-});
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Elementos
+    const canvas = document.getElementById('canvas');
+    const promoElement = document.getElementById('promo_element');
+    const destinationElement = document.getElementById('destination_element');
+    const descriptionElement = document.getElementById('description_element');
+    const infoElement = document.getElementById('info_element');
+    const logoElement = document.getElementById('logo_element');
+    
+    // Textos
+    const promoText = document.getElementById('promo_text');
+    const destinationText = document.getElementById('destination_text');
+    const descriptionText = document.getElementById('description_text');
+    const flightText = document.getElementById('flight_text');
+    const servicesText = document.getElementById('services_text');
+    const hotelText = document.getElementById('hotel_text');
+    const priceText = document.getElementById('price_text');
+    const noteText = document.getElementById('note_text');
+    
+    // Função para atualizar valores em tempo real
+    function updateValue(elementId, value, suffix = '') {
+        const element = document.getElementById(elementId);
+        if (element) element.textContent = value + suffix;
+    }
+    
+    // Função para atualizar preview de imagem
+    function updateImagePreview(input, previewId, targetElement) {
+        input.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imageUrl = e.target.result;
+                    
+                    // Atualizar preview thumb
+                    const preview = document.getElementById(previewId);
+                    if (preview) {
+                        preview.style.backgroundImage = `url(${imageUrl})`;
+                    }
+                    
+                    // Atualizar elemento no canvas
+                    if (targetElement === 'background') {
+                        canvas.style.backgroundImage = `url(${imageUrl})`;
+                    } else if (targetElement === 'logo') {
+                        logoElement.src = imageUrl;
+                        logoElement.style.display = 'block';
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Setup uploads
+    const bgInput = document.getElementById('background_image');
+    const logoInput = document.getElementById('logo_image');
+    
+    if (bgInput) updateImagePreview(bgInput, 'bg-preview', 'background');
+    if (logoInput) updateImagePreview(logoInput, 'logo-preview', 'logo');
+    
+    // Controle de tamanho do logo
+    const logoSize = document.getElementById('logo_size');
+    if (logoSize) {
+        logoSize.addEventListener('input', function() {
+            updateValue('logo_size_value', this.value, 'px');
+            logoElement.style.width = this.value + 'px';
+        });
+    }
+    
+    // Controles de texto
+    const textControls = [
+        { input: 'promo_tag', output: promoText },
+        { input: 'destination', output: destinationText },
+        { input: 'description', output: descriptionText },
+        { input: 'flight_info', output: flightText },
+        { input: 'services_info', output: servicesText },
+        { input: 'hotel_name', output: hotelText },
+        { input: 'price', output: priceText },
+        { input: 'price_note', output: noteText }
+    ];
+    
+    textControls.forEach(control => {
+        const input = document.getElementById(control.input);
+        if (input && control.output) {
+            // Inicial
+            control.output.textContent = input.value;
+            // Em tempo real
+            input.addEventListener('input', function() {
+                control.output.textContent = this.value;
+            });
+        }
+    });
+    
+    // Controles de cor
+    const colorControls = [
+        { input: 'promo_tag_color', target: promoElement, property: 'color' },
+        { input: 'destination_color', target: destinationText, property: 'color' },
+        { input: 'description_color', target: descriptionText, property: 'color' }
+    ];
+    
+    colorControls.forEach(control => {
+        const input = document.getElementById(control.input);
+        if (input && control.target) {
+            input.addEventListener('input', function() {
+                control.target.style[control.property] = this.value;
+            });
+            // Aplicar cor inicial
+            control.target.style[control.property] = input.value;
+        }
+    });
+    
+    // Controles de tamanho
+    const sizeControls = [
+        { input: 'promo_tag_size', target: promoText, valueElement: 'promo_tag_size_value', unit: 'rem' },
+        { input: 'destination_size', target: destinationText, valueElement: 'destination_size_value', unit: 'rem' },
+        { input: 'description_size', target: descriptionText, valueElement: 'description_size_value', unit: 'rem' }
+    ];
+    
+    sizeControls.forEach(control => {
+        const input = document.getElementById(control.input);
+        if (input && control.target) {
+            input.addEventListener('input', function() {
+                updateValue(control.valueElement, this.value, control.unit);
+                control.target.style.fontSize = this.value + control.unit;
+            });
+            // Aplicar tamanho inicial
+            updateValue(control.valueElement, input.value, control.unit);
+            control.target.style.fontSize = input.value + control.unit;
+        }
+    });
+    
+    // Controles de transparência
+    const alphaControls = [
+        { input: 'promo_tag_alpha', target: promoElement, valueElement: 'promo_tag_alpha_value' },
+        { input: 'description_bg_alpha', target: descriptionElement, valueElement: 'description_bg_alpha_value' },
+        { input: 'info_box_alpha', target: infoElement, valueElement: 'info_box_alpha_value' }
+    ];
+    
+    alphaControls.forEach(control => {
+        const input = document.getElementById(control.input);
+        if (input && control.target) {
+            input.addEventListener('input', function() {
+                const alpha = this.value / 100;
+                updateValue(control.valueElement, this.value, '%');
+                
+                if (this.value == 0) {
+                    control.target.style.display = 'none';
+                } else {
+                    control.target.style.display = 'block';
+                    control.target.style.opacity = alpha;
+                }
+            });
+            // Aplicar transparência inicial
+            const alpha = input.value / 100;
+            updateValue(control.valueElement, input.value, '%');
+            control.target.style.opacity = alpha;
+        }
+    });
+    
+    // Função de Export
+    const exportBtn = document.getElementById('export_btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function() {
+            exportBtn.textContent = '⏳ Gerando imagem...';
+            exportBtn.disabled = true;
+            
+            // Temporariamente remover o scale para captura em tamanho real
+            const originalTransform = canvas.style.transform;
+            canvas.style.transform = 'scale(1)';
+            canvas.style.transformOrigin = 'top left';
+            
+            html2canvas(canvas, {
+                width: 1080,
+                height: 1350,
+                scale: 1,
+                useCORS: true,
+                backgroundColor: null
+            }).then(function(canvas2) {
+                // Restaurar transform original
+                document.getElementById('canvas').style.transform = originalTransform;
+                
+                // Download da imagem
+                const link = document.createElement('a');
+                link.download = 'instagram-post-travel-frontiers.png';
+                link.href = canvas2.toDataURL();
+                link.click();
+                
+                // Restaurar botão
+                exportBtn.textContent = '💾 Exportar Imagem (1080×1350)';
+                exportBtn.disabled = false;
+            }).catch(function(error) {
+                console.error('Erro ao exportar:', error);
+                exportBtn.textContent = '❌ Erro - Tentar novamente';
+                exportBtn.disabled = false;
+            });
+        });
+    }
+    
+    console.log('✅ Gerador Instagram Travel Frontiers carregado com sucesso!');
 });
