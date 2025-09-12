@@ -1,167 +1,105 @@
-:root {
-    --canvas-width: 1080px;
-    --canvas-height: 1350px;
+:root{
+/* Canvas Instagram vertical */
+--canvas-width:1080px;
+--canvas-height:1350px;
 
-    --promo-tag-font-size: 1.3rem;
-    --promo-tag-bg: #CA9524;
-    --promo-tag-text-color: #fff;
+/* Preview scale (apenas visual) /
+--preview-scale:0.62; / menor para caber no ecrã por defeito */
 
-    --destination-font-size: 5rem;
-    --destination-text-color: #2c3e50;
+/* Tipos e cores (mantidos) */
+--promo-tag-font-size:1.3rem;
+--promo-tag-bg:#CA9524;
+--promo-tag-text-color:#fff;
 
-    --description-font-size: 1.3rem;
-    --description-text-color: #191B28;
+--destination-font-size:5rem;
+--destination-text-color:#2c3e50;
 
-    --details-box-bg-alpha: 0.85;
-}
+--description-font-size:1.3rem;
+--description-text-color:#191B28;
 
-body {
-    background: #EEE7D5;
-    font-family: 'Montserrat', Arial, sans-serif;
-    margin: 0;
-}
+/* NOVO: transparência da caixa da descrição */
+--description-bg-alpha:0.6;
 
-.main-layout {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 32px;
-    padding: 24px;
+/* Caixa detalhes */
+--details-box-bg-alpha:0.85;
 }
 
-.editor {
-    width: 340px;
-    min-width: 260px;
-    padding: 14px;
-    background: #fff;
-    border-radius: 15px;
-    box-shadow: 0 5px 18px 0 rgba(30,30,40,0.09);
-    font-size:1rem;
+body{background:#EEE7D5;font-family:'Montserrat',Arial,sans-serif;margin:0}
+
+.main-layout{display:flex;flex-wrap:wrap;gap:24px;justify-content:center;padding:18px}
+.editor{width:340px;min-width:260px;background:#fff;border-radius:14px;box-shadow:0 5px 18px rgba(30,30,40,.09);padding:14px}
+.preview{flex:1 1 700px;min-width:400px}
+
+/* VIEWPORT para reduzir visualmente o preview sem mexer na resolução */
+.preview-viewport{
+width:calc(var(--canvas-width)*var(--preview-scale));
+height:calc(var(--canvas-height)*var(--preview-scale));
+overflow:auto;
+margin:0 auto;
+border-radius:24px;
+}
+.promotion-canvas{
+position:relative;
+width:var(--canvas-width);
+height:var(--canvas-height);
+transform:scale(var(--preview-scale));
+transform-origin:top left;
+background-size:cover;background-position:center;
+border-radius:24px;box-shadow:0 12px 36px rgba(30,30,30,.14);overflow:hidden
 }
 
-.preview {
-    flex: 1 1 700px;
-    min-width:400px;
+/* Etiqueta promo */
+.promo-tag-element{
+position:absolute;top:50px;left:50px;min-width:180px;height:64px;
+background:var(--promo-tag-bg);color:var(--promo-tag-text-color);
+font-size:var(--promo-tag-font-size);font-weight:700;letter-spacing:2px;
+border-radius:15px 15px 35px 15px;display:flex;align-items:center;justify-content:center;padding:0 34px;z-index:20
+}
+.promo-tag-element:after{content:"";position:absolute;bottom:-18px;left:49px;width:0;height:0;border-left:22px solid transparent;border-right:22px solid transparent;border-top:24px solid var(--promo-tag-bg)}
+
+/* Título */
+.destination-element{
+position:absolute;top:140px;left:45px;color:var(--destination-text-color);
+font-size:var(--destination-font-size);font-weight:800;letter-spacing:.03em;line-height:1;text-shadow:1px 2px 18px rgba(0,0,0,.14);z-index:15
 }
 
-.promotion-canvas {
-    position:relative;
-    width:var(--canvas-width);
-    height:var(--canvas-height);
-    background-size:cover;
-    background-position:center;
-    border-radius:30px;
-    overflow:hidden;
-    box-shadow:0 12px 36px 0 rgba(30,30,30,0.14);
-    margin:0 auto;
+/* NOVO: Caixa da descrição com fundo transparente */
+.description-box{
+position:absolute;top:300px;left:45px;max-width:680px;
+background:rgba(255,255,255,var(--description-bg-alpha));
+backdrop-filter:blur(6px);
+border-radius:12px;box-shadow:0 6px 28px rgba(30,30,40,.10);
+padding:24px 28px;z-index:14
+}
+.description-element{
+color:var(--description-text-color);font-size:var(--description-font-size);
+font-weight:500;letter-spacing:.02em;line-height:1.38;text-shadow:0 2px 8px rgba(0,0,0,.07)
 }
 
-.promo-tag-element {
-    position:absolute;
-    top:50px; left:50px;
-    min-width:180px;
-    height:64px;
-    background: var(--promo-tag-bg);
-    color: var(--promo-tag-text-color);
-    font-size: var(--promo-tag-font-size);
-    font-weight: 700;
-    border-radius:15px 15px 35px 15px;
-    letter-spacing: 2px;
-    display:flex;align-items:center;justify-content:center;
-    padding:0 34px;
-    z-index:20;
+/* Caixa de detalhes (datas/hotel/preço) */
+.details-box{
+position:absolute;left:50px;right:50px;bottom:90px;
+background:rgba(255,255,255,var(--details-box-bg-alpha));
+border-radius:30px;backdrop-filter:blur(10px);
+box-shadow:0 12px 44px rgba(40,30,12,.15);
+padding:42px 45px 32px;z-index:30;display:flex;flex-direction:column
 }
-.promo-tag-element:after {
-    content:"";
-    position:absolute;bottom:-18px;left:49px;
-    width:0;height:0;
-    border-left:22px solid transparent;
-    border-right:22px solid transparent;
-    border-top:24px solid var(--promo-tag-bg);
-}
-.destination-element {
-    position:absolute;top:140px;left:45px;
-    color: var(--destination-text-color);
-    font-size: var(--destination-font-size);
-    font-weight: 800;
-    letter-spacing:0.03em;
-    line-height:1.0;
-    z-index:15;
-    text-shadow: 1px 2px 18px rgba(0,0,0,0.14);
-}
-.description-element {
-    position:absolute;top:300px;left:45px;max-width:650px;
-    color: var(--description-text-color);
-    font-size: var(--description-font-size);
-    font-weight:500;
-    letter-spacing:0.02em;
-    line-height:1.38;
-    z-index:12;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.07);
-}
+.flight-info,.services-info{font-size:1.3rem;font-weight:600;letter-spacing:.04em;margin-bottom:10px;color:#10192f}
+.hotel-info{font-size:2rem;font-weight:700;margin:10px 0 14px;color:#191b28}
+.price-line{display:flex;align-items:baseline;gap:10px;margin-top:8px}
+#preview-price{font-size:3rem;font-weight:900;color:#10192f;letter-spacing:.03em;text-shadow:0 1px 8px rgba(50,60,60,.11)}
+#preview-note{font-size:1.12rem;opacity:.78;font-style:italic;font-weight:400;margin-left:8px}
 
-.details-box {
-    position:absolute;
-    left:50px;right:50px;bottom:90px;
-    background: rgba(255,255,255,var(--details-box-bg-alpha));
-    border-radius:30px;
-    box-shadow:0 12px 44px 0 rgba(40,30,12,0.15);
-    padding:42px 45px 32px 45px;
-    z-index:30;
-    display:flex;
-    flex-direction:column;
-    font-family:'Montserrat', Arial, sans-serif;
-    backdrop-filter: blur(10px);
-}
-.flight-info,.services-info {
-    font-size:1.3rem;
-    font-weight:600;
-    letter-spacing:0.04em;
-    margin-bottom:10px;
-    color:#10192f;
-}
-.hotel-info {
-    font-size:2rem;
-    font-weight:700;
-    margin-bottom:14px;
-    margin-top:10px;
-    color:#191b28;
-}
-.price-line {
-    display:flex;align-items:baseline;gap:10px;margin-top:8px;
-}
-#preview-price {
-    font-size:3rem;
-    font-weight:900;
-    color:#10192f;
-    letter-spacing:0.03em;
-    text-shadow: 0 1px 8px rgba(50,60,60,0.11);
-}
-#preview-note {
-    font-size:1.12rem; opacity:0.78;
-    font-style:italic;
-    font-weight:400;
-    margin-left:8px;
-}
+.company-logo{position:absolute;right:60px;bottom:30px;width:120px;max-width:21vw;height:auto;object-fit:contain;z-index:100;background:none}
 
-.company-logo {
-    position:absolute;
-    right:60px;bottom:30px;
-    width:120px;max-width:21vw;
-    height:auto;object-fit:contain;
-    z-index:100;
-    background:none;
+.image-preview{width:54px;height:54px;border-radius:8px;background:#ccc;margin:8px;background-size:cover;background-position:center}
+
+@media (max-width:1200px){
+:root{--preview-scale:.54}
 }
-
-.image-preview {width:54px;height:54px;border-radius:8px;background:#cccccc;margin:8px;background-size:cover;background-position:center;}
-
-@media (max-width:1200px) {
-    .promotion-canvas { width:95vw; height:112vw; min-height:700px;}
-    .editor{width:96vw;}
+@media (max-width:900px){
+:root{--preview-scale:.46}
 }
-
-@media (max-width:800px) {
-    .main-layout {flex-direction:column;}
-    .editor{width:97vw;}
-    .promotion-canvas { width:96vw; height:120vw; min-height:680px;}
+@media (max-width:700px){
+:root{--preview-scale:.40}
 }
