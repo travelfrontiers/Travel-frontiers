@@ -153,7 +153,7 @@ body {
     transform: scale(var(--preview-scale));
     transform-origin: top left;
     position: relative;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #ffd700 0%, #ca9524 100%);
     background-size: cover;
     background-position: center;
     overflow: hidden;
