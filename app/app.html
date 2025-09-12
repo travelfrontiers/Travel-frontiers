@@ -6,12 +6,28 @@
     <title>Gerador Instagram - Travel Frontiers</title>
     <link rel="stylesheet" href="appstyle.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Roboto:wght@400;600;700;800;900&family=Open+Sans:wght@400;600;700;800;900&family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="app-container">
         <div class="controls-panel">
             <h2>🎨 Criador de Promoções Instagram</h2>
+            
+            <!-- NOVO: Controlo Global de Fonte -->
+            <div class="control-group">
+                <h3>✏️ Tipografia Global</h3>
+                <label>
+                    Família de Fonte:
+                    <select id="font_family">
+                        <option value="'Montserrat', sans-serif" selected>Montserrat (Padrão)</option>
+                        <option value="'Roboto', sans-serif">Roboto</option>
+                        <option value="'Open Sans', sans-serif">Open Sans</option>
+                        <option value="'Poppins', sans-serif">Poppins</option>
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="'Helvetica Neue', Helvetica, sans-serif">Helvetica</option>
+                    </select>
+                </label>
+            </div>
             
             <!-- Upload Imagens -->
             <div class="control-group">
@@ -100,23 +116,40 @@
         <div class="preview-panel">
             <h3>👁️ Preview Instagram Post</h3>
             <div class="preview-wrapper">
+                <!-- Canvas para Export (escondido) -->
+                <div id="export-canvas" class="export-canvas">
+                    <div id="export-promo" class="promo-tag">
+                        <span id="export-promo-text"></span>
+                    </div>
+                    <div id="export-destination" class="destination">
+                        <span id="export-destination-text"></span>
+                    </div>
+                    <div id="export-description" class="description-box">
+                        <span id="export-description-text"></span>
+                    </div>
+                    <div id="export-info" class="info-box">
+                        <div id="export-flight-text"></div>
+                        <div id="export-services-text"></div>
+                        <div id="export-hotel-text"></div>
+                        <div class="price-section">
+                            <span id="export-price-text"></span>
+                            <span id="export-note-text"></span>
+                        </div>
+                    </div>
+                    <img id="export-logo" class="logo" style="display: none;">
+                </div>
+                
+                <!-- Canvas Visual (preview) -->
                 <div id="canvas" class="canvas">
-                    <!-- Etiqueta Promo -->
                     <div id="promo_element" class="promo-tag">
                         <span id="promo_text"></span>
                     </div>
-                    
-                    <!-- Destino -->
                     <div id="destination_element" class="destination">
                         <span id="destination_text"></span>
                     </div>
-                    
-                    <!-- Descrição -->
                     <div id="description_element" class="description-box">
                         <span id="description_text"></span>
                     </div>
-                    
-                    <!-- Info Box -->
                     <div id="info_element" class="info-box">
                         <div id="flight_text"></div>
                         <div id="services_text"></div>
@@ -126,8 +159,6 @@
                             <span id="note_text"></span>
                         </div>
                     </div>
-                    
-                    <!-- Logo -->
                     <img id="logo_element" class="logo" style="display: none;">
                 </div>
             </div>
