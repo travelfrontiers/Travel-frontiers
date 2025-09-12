@@ -10,7 +10,7 @@
 body {
     font-family: 'Montserrat', Arial, sans-serif;
     margin: 0;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background: linear-gradient(135deg, #f5f7fa 0%, #0d1116 100%);
     color: #333;
 }
 
@@ -23,7 +23,7 @@ body {
 
 /* ALTERADO: Largura da secção esquerda aumentada para 450px */
 .controls-panel {
-    width: 450px;
+    width: 600px;
     background: white;
     border-radius: 15px;
     padding: 25px;
