@@ -672,5 +672,64 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('✅ Page scripts initialised');
 });
 </script> -->
+	<!-- Banner de Cookies RGPD -->
+<div id="cookieBanner" class="cookie-banner" style="display: none;">
+    <div class="cookie-content">
+        <div class="cookie-text">
+            <h3>🍪 Utilizamos cookies</h3>
+            <p>Este website utiliza cookies para melhorar a sua experiência de navegação, analisar o tráfego e personalizar conteúdo. Pode gerir as suas preferências abaixo.</p>
+        </div>
+        <div class="cookie-buttons">
+            <button id="cookieAcceptAll" class="cookie-btn cookie-accept">Aceitar Todos</button>
+            <button id="cookieRejectAll" class="cookie-btn cookie-reject">Rejeitar Todos</button>
+            <button id="cookieSettings" class="cookie-btn cookie-settings">Configurar</button>
+            <a href="/politica-cookies.html" class="cookie-link" target="_blank">Política de Cookies</a>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Configurações -->
+<div id="cookieModal" class="cookie-modal" style="display: none;">
+    <div class="cookie-modal-content">
+        <div class="cookie-modal-header">
+            <h3>Configurações de Cookies</h3>
+            <span class="cookie-close" id="cookieModalClose">&times;</span>
+        </div>
+        <div class="cookie-modal-body">
+            <div class="cookie-category">
+                <h4>Cookies Essenciais</h4>
+                <p>Necessários para o funcionamento básico do website.</p>
+                <label class="cookie-switch">
+                    <input type="checkbox" id="essential" checked disabled>
+                    <span class="cookie-slider"></span>
+                </label>
+            </div>
+            <div class="cookie-category">
+                <h4>Cookies de Análise</h4>
+                <p>Ajudam-nos a compreender como utiliza o nosso website.</p>
+                <label class="cookie-switch">
+                    <input type="checkbox" id="analytics">
+                    <span class="cookie-slider"></span>
+                </label>
+            </div>
+            <div class="cookie-category">
+                <h4>Cookies de Marketing</h4>
+                <p>Utilizados para personalizar anúncios e medir eficácia.</p>
+                <label class="cookie-switch">
+                    <input type="checkbox" id="marketing">
+                    <span class="cookie-slider"></span>
+                </label>
+            </div>
+        </div>
+        <div class="cookie-modal-footer">
+            <button id="cookieSaveSettings" class="cookie-btn cookie-save">Guardar Configurações</button>
+        </div>
+    </div>
+</div>
+
+<!-- Botão flutuante para rever configurações -->
+<div id="cookieSettings-float" class="cookie-settings-float" style="display: none;">
+    <button id="reviewCookies" title="Configurações de Cookies">🍪</button>
+</div>
 </body>
 </html>
