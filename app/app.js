@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const priceText = document.getElementById('price_text');
     const noteText = document.getElementById('note_text');
 
-    // Global font control
+    // Controlo Global de Fonte
     const globalFontSelect = document.getElementById('global_font_family');
     if (globalFontSelect) {
         globalFontSelect.addEventListener('change', function() {
@@ -27,13 +27,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Update value helper
+    // Função para atualizar valores em tempo real
     function updateValue(elementId, value, suffix = '') {
         const element = document.getElementById(elementId);
         if (element) element.textContent = value + suffix;
     }
 
-    // Image preview and upload
+    // Função para atualizar preview de imagem/logo
     function updateImagePreview(input, previewId, targetElement) {
         input.addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -56,13 +56,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Setup uploads
+    // Setups das imagens
     const bgInput = document.getElementById('background_image');
     const logoInput = document.getElementById('logo_image');
     if (bgInput) updateImagePreview(bgInput, 'bg-preview', 'background');
     if (logoInput) updateImagePreview(logoInput, 'logo-preview', 'logo');
 
-    // Controle de tamanho do logo
+    // Tamanho do logo
     const logoSize = document.getElementById('logo_size');
     if (logoSize && logoElement) {
         logoSize.addEventListener('input', function() {
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Controles de texto
+    // Controlo dos textos
     const textControls = [
         { input: 'promo_tag', output: promoText },
         { input: 'destination', output: destinationText },
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Controles de cor
+    // Controlo de cores de texto
     const colorControls = [
         { input: 'promo_tag_color', target: promoElement, property: 'color' },
         { input: 'destination_color', target: destinationText, property: 'color' },
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Controles de tamanho
+    // Controlo de tamanhos de texto
     const sizeControls = [
         { input: 'promo_tag_size', target: promoText, valueElement: 'promo_tag_size_value', unit: 'rem' },
         { input: 'destination_size', target: destinationText, valueElement: 'destination_size_value', unit: 'rem' },
@@ -133,11 +133,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Controles de transparência
+    // ---------- CONTROLO DE TRANSPARÊNCIA CORRIGIDO PARA EXPORTAÇÃO ----------
+    // Esta função aplica apenas background rgba, nunca opacity!
+    function setBackgroundAlpha(element, color, alpha) {
+        if (!element) return;
+        let r = 255, g = 255, b = 255;
+        if (color.startsWith('#') && color.length === 7) {
+            r = parseInt(color.substring(1, 3), 16);
+            g = parseInt(color.substring(3, 5), 16);
+            b = parseInt(color.substring(5, 7), 16);
+        }
+        element.style.background = `rgba(${r},${g},${b},${alpha})`;
+    }
+
     const alphaControls = [
-        { input: 'promo_tag_alpha', target: promoElement, valueElement: 'promo_tag_alpha_value' },
-        { input: 'description_bg_alpha', target: descriptionElement, valueElement: 'description_bg_alpha_value' },
-        { input: 'info_box_alpha', target: infoElement, valueElement: 'info_box_alpha_value' }
+        { input: 'promo_tag_alpha', target: promoElement, valueElement: 'promo_tag_alpha_value', color: '#fffbe8' },
+        { input: 'description_bg_alpha', target: descriptionElement, valueElement: 'description_bg_alpha_value', color: '#fffbe8' },
+        { input: 'info_box_alpha', target: infoElement, valueElement: 'info_box_alpha_value', color: '#fffbe8' }
     ];
 
     alphaControls.forEach(control => {
@@ -150,18 +162,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     control.target.style.display = 'none';
                 } else {
                     control.target.style.display = 'block';
-                    control.target.style.opacity = alpha;
+                    setBackgroundAlpha(control.target, control.color, alpha);
                 }
             });
-            if (input.value) {
+            if (input.value !== undefined) {
                 const alpha = input.value / 100;
                 updateValue(control.valueElement, input.value, '%');
-                control.target.style.opacity = alpha;
+                setBackgroundAlpha(control.target, control.color, alpha);
             }
         }
     });
 
-    // Exportação de imagem (Canvas)
+    // ---------- EXPORTAÇÃO ----------
     const exportBtn = document.getElementById('export_btn');
     if (exportBtn && canvas) {
         exportBtn.addEventListener('click', function() {
