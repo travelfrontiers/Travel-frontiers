@@ -21,8 +21,9 @@ body {
     min-height: 100vh;
 }
 
+/* ALTERADO: Largura da secção esquerda aumentada para 450px */
 .controls-panel {
-    width: 350px;
+    width: 450px;
     background: white;
     border-radius: 15px;
     padding: 25px;
@@ -57,7 +58,7 @@ body {
     font-weight: 500;
 }
 
-.control-group input, .control-group textarea {
+.control-group input, .control-group textarea, .control-group select {
     width: 100%;
     padding: 8px 12px;
     border: 1px solid #ddd;
