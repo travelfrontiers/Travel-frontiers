@@ -1,6 +1,6 @@
 // Caminhos manuais para as imagens webp (coloca os teus nomes reais!)
 const promoImages = [
-  'img/promotions/instagram-post-travel-frontiers%20(7).webp',
+  'img/promotions/malta.webp',
   'img/promotions/promo2.webp',
   'img/promotions/promo3.webp'
 ];
