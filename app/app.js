@@ -285,33 +285,45 @@ if (exportBtn && canvas) {
     });
 }
 
- // -------- INICIALIZAÇÃO DO PREVIEW --------
+// -------- INICIALIZAÇÃO DO PREVIEW --------
 function initializePreview() {
     // Textos
-    promoText.textContent = 'LAST CALL';
-    destinationText.textContent = 'MARROCOS';
-    descriptionText.textContent = 'Descubra Marrocos numa escapadinha exclusiva de 4 dias, com voos diretos e todos os detalhes tratados para si.';
-    flightText.textContent = 'VOOS DIRETOS LISBOA | 20 A 23 SETEMBRO';
-    servicesText.textContent = 'TRANSFERES PRIVADOS | SEGURO';
-    hotelText.textContent = 'Ibn Batouta';
-    priceText.textContent = '290€';
-    noteText.textContent = '*';
+    if (promoText) promoText.textContent = 'LAST CALL';
+    if (destinationText) destinationText.textContent = 'MARROCOS';
+    if (descriptionText) descriptionText.textContent = 'Descubra Marrocos numa escapadinha exclusiva de 4 dias, com voos diretos e todos os detalhes tratados para si.';
+    if (flightText) flightText.textContent = 'VOOS DIRETOS LISBOA | 20 A 23 SETEMBRO';
+    if (servicesText) servicesText.textContent = 'TRANSFERES PRIVADOS | SEGURO';
+    if (hotelText) hotelText.textContent = 'Ibn Batouta';
+    if (priceText) priceText.textContent = '290€';
+    if (noteText) noteText.textContent = '*';
     
     // Cores
-    promoElement.style.color = '#ffffff';
-    destinationText.style.color = '#2c3e50';
-    descriptionText.style.color = '#2c3e50';
+    if (promoElement) promoElement.style.color = '#ffffff';
+    if (destinationText) destinationText.style.color = '#2c3e50';
+    if (descriptionText) descriptionText.style.color = '#2c3e50';
     
     // Tamanhos
-    promoText.style.fontSize = '1.2rem';
-    destinationText.style.fontSize = '4.2rem';
-    descriptionText.style.fontSize = '1.1rem';
+    if (promoText) promoText.style.fontSize = '1.2rem';
+    if (destinationText) destinationText.style.fontSize = '4.2rem';
+    if (descriptionText) descriptionText.style.fontSize = '1.1rem';
     
-    // Fundos (transparências) - COM AS CORES CORRETAS
-    setBackgroundAlpha(promoElement, '#CA9524', 1); // Dourado
-    setBackgroundAlpha(descriptionElement, '#fffbe8', 0.65); // Creme
-    setBackgroundAlpha(infoElement, '#fffbe8', 0.9); // Creme
+    // CRUCIAL: Fundos das caixas (isso estava a faltar!)
+    if (promoElement) {
+        promoElement.style.background = '#CA9524';
+        promoElement.style.display = 'block';
+    }
+    if (descriptionElement) {
+        descriptionElement.style.background = 'rgba(255,251,232,0.65)';
+        descriptionElement.style.display = 'block';
+    }
+    if (infoElement) {
+        infoElement.style.background = 'rgba(255,251,232,0.9)';
+        infoElement.style.display = 'block';
+    }
+    
+    console.log('✅ Preview inicializado com sucesso!');
 }
+
 
     console.log('✅ Gerador Instagram carregado!');
 });
