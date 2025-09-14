@@ -1,21 +1,24 @@
-// Import dinâmico de webp via glob (Vite) ou lista manual
-const promoImages = import.meta.glob('/img/promotions/*.{webp}', { eager: true, as: 'url' });
+// Caminhos manuais para as imagens webp (coloca os teus nomes reais!)
+const promoImages = [
+  'img/promotions/instagram-post-travel-frontiers (7).webp',
+  'img/promotions/promo2.webp',
+  'img/promotions/promo3.webp'
+];
 
-// Captions fixas (poderá extrair de JSON externo ou translations)
+// Legendas associadas (opcional, remove se não quiseres)
 const captions = [
-  'Oferta de Verão: 20% de desconto',
+  'Oferta de Verão: 20% desconto',
   'Pacote Família: 2 crianças grátis',
-  // … adicione conforme ficheiros
+  'Escapadinha especial: 3 noites pelo preço de 2'
 ];
 
 function renderPromotions() {
   const grid = document.querySelector('.promotions-grid');
-  const urls = Object.values(promoImages);
-  grid.innerHTML = urls.map((url, i) => `
+  grid.innerHTML = promoImages.map((url, i) => `
     <div class="promo-card">
       <picture>
         <source srcset="${url}" type="image/webp">
-        <img src="${url.replace('.webp','.jpg')}" alt="">
+        <img src="${url.replace('.webp', '.jpg')}" alt="">
       </picture>
       <p>${captions[i] || ''}</p>
     </div>
