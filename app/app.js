@@ -147,10 +147,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const alphaControls = [
-        { input: 'promo_tag_alpha', target: promoElement, valueElement: 'promo_tag_alpha_value', color: '#fffbe8' },
-        { input: 'description_bg_alpha', target: descriptionElement, valueElement: 'description_bg_alpha_value', color: '#fffbe8' },
-        { input: 'info_box_alpha', target: infoElement, valueElement: 'info_box_alpha_value', color: '#fffbe8' }
-    ];
+  { input: 'promo_tag_alpha', target: promoElement, valueElement: 'promo_tag_alpha_value', color: '#CA9524' }, // <- Dourado!
+  { input: 'description_bg_alpha', target: descriptionElement, valueElement: 'description_bg_alpha_value', color: '#fffbe8' },
+  { input: 'info_box_alpha', target: infoElement, valueElement: 'info_box_alpha_value', color: '#fffbe8' }
+];
 
     alphaControls.forEach(control => {
         const input = document.getElementById(control.input);
