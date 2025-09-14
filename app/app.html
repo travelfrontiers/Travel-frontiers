@@ -9,151 +9,149 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Roboto:wght@400;600;700;800;900&family=Open+Sans:wght@400;600;700;800;900&family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-container">
-        <div class="controls-panel">
-            <h2>🎨 Criador de Promoções Instagram</h2>
-            
-            <!-- NOVO: Controlo de Fonte Global -->
-            <div class="control-group">
-                <h3>✏️ Tipografia</h3>
-                <label>
-                    Fonte para todo o texto:
-                    <select id="global_font_family">
-                        <option value="'Montserrat', sans-serif" selected>Montserrat</option>
-                        <option value="'Roboto', sans-serif">Roboto</option>
-                        <option value="'Open Sans', sans-serif">Open Sans</option>
-                        <option value="'Poppins', sans-serif">Poppins</option>
-                        <option value="Arial, sans-serif">Arial</option>
-                        <option value="'Helvetica Neue', sans-serif">Helvetica</option>
-                    </select>
-                </label>
-            </div>
-            
-            <!-- Upload Imagens -->
-            <div class="control-group">
-                <h3>📷 Imagens</h3>
-                <label class="file-label">
-                    🖼️ Imagem de Fundo
-                    <input type="file" id="background_image" accept="image/*" class="file-input">
-                </label>
-                <div id="bg-preview" class="preview-thumb"></div>
-                
-                <label class="file-label">
-                    🏢 Logo da Empresa
-                    <input type="file" id="logo_image" accept="image/*" class="file-input">
-                </label>
-                <div id="logo-preview" class="preview-thumb"></div>
-                
-                <label>📐 Tamanho Logo:
-                    <input type="range" id="logo_size" min="60" max="180" value="100">
-                    <span id="logo_size_value">100px</span>
-                </label>
-            </div>
-
-            <!-- Etiqueta Promo -->
-            <div class="control-group">
-                <h3>🏷️ Etiqueta Promocional</h3>
-                <input type="text" id="promo_tag" value="LAST CALL" placeholder="LAST CALL">
-                <label>Cor: <input type="color" id="promo_tag_color" value="#ffffff"></label>
-                <label>Tamanho: 
-                    <input type="range" id="promo_tag_size" min="0.8" max="2" step="0.1" value="1.2">
-                    <span id="promo_tag_size_value">1.2rem</span>
-                </label>
-                <label>Transparência: 
-                    <input type="range" id="promo_tag_alpha" min="0" max="100" value="100">
-                    <span id="promo_tag_alpha_value">100%</span>
-                </label>
-            </div>
-
-            <!-- Destino -->
-            <div class="control-group">
-                <h3>🌍 Destino</h3>
-                <input type="text" id="destination" value="MARROCOS" placeholder="MARROCOS">
-                <label>Cor: <input type="color" id="destination_color" value="#2c3e50"></label>
-                <label>Tamanho: 
-                    <input type="range" id="destination_size" min="2" max="6" step="0.2" value="4.2">
-                    <span id="destination_size_value">4.2rem</span>
-                </label>
-            </div>
-
-            <!-- Descrição -->
-            <div class="control-group">
-                <h3>📝 Descrição</h3>
-                <textarea id="description" rows="3">Descubra Marrocos numa escapadinha exclusiva de 4 dias, com voos diretos e todos os detalhes tratados para si.</textarea>
-                <label>Cor: <input type="color" id="description_color" value="#2c3e50"></label>
-                <label>Tamanho: 
-                    <input type="range" id="description_size" min="0.9" max="1.8" step="0.1" value="1.1">
-                    <span id="description_size_value">1.1rem</span>
-                </label>
-                <label>Transparência Caixa: 
-                    <input type="range" id="description_bg_alpha" min="0" max="100" value="65">
-                    <span id="description_bg_alpha_value">65%</span>
-                </label>
-            </div>
-
-            <!-- Info Box -->
-            <div class="control-group">
-                <h3>ℹ️ Informações</h3>
-                <input type="text" id="flight_info" value="VOOS DIRETOS LISBOA | 20 A 23 SETEMBRO">
-                <input type="text" id="services_info" value="TRANSFERES PRIVADOS | SEGURO">
-                <input type="text" id="hotel_name" value="Ibn Batouta">
-                <input type="text" id="price" value="290€">
-                <input type="text" id="price_note" value="*" placeholder="*">
-                
-                <label>Transparência Info Box: 
-                    <input type="range" id="info_box_alpha" min="0" max="100" value="90">
-                    <span id="info_box_alpha_value">90%</span>
-                </label>
-            </div>
-
-            <!-- Export -->
-<div class="control-group">
-    <button id="save_template_btn" class="export-btn" style="background: linear-gradient(45deg, #28a745, #34ce57); margin-bottom: 10px;">💾 Guardar Template</button>
-    <button id="load_template_btn" class="export-btn" style="background: linear-gradient(45deg, #17a2b8, #1cbacf); margin-bottom: 10px;">📂 Carregar Template</button>
-    <button id="export_btn" class="export-btn">💾 Exportar Imagem (1080×1350)</button>
-</div>
-
+<div class="app-container">
+    <div class="controls-panel">
+        <h2>🎨 Criador de Promoções Instagram</h2>
         
+        <!-- Tipografia -->
+        <div class="control-group">
+            <h3>✏️ Tipografia</h3>
+            <label>
+                Fonte para todo o texto:
+                <select id="global_font_family">
+                    <option value="'Montserrat', sans-serif" selected>Montserrat</option>
+                    <option value="'Roboto', sans-serif">Roboto</option>
+                    <option value="'Open Sans', sans-serif">Open Sans</option>
+                    <option value="'Poppins', sans-serif">Poppins</option>
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="'Helvetica Neue', sans-serif">Helvetica</option>
+                </select>
+            </label>
+        </div>
 
-        <!-- Preview -->
-        <div class="preview-panel">
-            <h3>👁️ Preview Instagram Post</h3>
-            <div class="preview-wrapper">
-                <div id="canvas" class="canvas">
-                    <!-- Etiqueta Promo -->
-                    <div id="promo_element" class="promo-tag">
-                        <span id="promo_text"></span>
-                    </div>
-                    
-                    <!-- Destino -->
-                    <div id="destination_element" class="destination">
-                        <span id="destination_text"></span>
-                    </div>
-                    
-                    <!-- Descrição -->
-                    <div id="description_element" class="description-box">
-                        <span id="description_text"></span>
-                    </div>
-                    
-                    <!-- Info Box -->
-                    <div id="info_element" class="info-box">
-                        <div id="flight_text"></div>
-                        <div id="services_text"></div>
-                        <div id="hotel_text"></div>
-                        <div class="price-section">
-                            <span id="price_text"></span>
-                            <span id="note_text"></span>
-                        </div>
-                    </div>
-                    
-                    <!-- Logo -->
-                    <img id="logo_element" class="logo" style="display: none;">
-                </div>
-            </div>
+        <!-- Upload Imagens -->
+        <div class="control-group">
+            <h3>📷 Imagens</h3>
+            <label class="file-label">
+                🖼️ Imagem de Fundo
+                <input type="file" id="background_image" accept="image/*" class="file-input">
+            </label>
+            <div id="bg-preview" class="preview-thumb"></div>
+            
+            <label class="file-label">
+                🏢 Logo da Empresa
+                <input type="file" id="logo_image" accept="image/*" class="file-input">
+            </label>
+            <div id="logo-preview" class="preview-thumb"></div>
+            
+            <label>📐 Tamanho Logo:
+                <input type="range" id="logo_size" min="60" max="180" value="100">
+                <span id="logo_size_value">100px</span>
+            </label>
+        </div>
+
+        <!-- Etiqueta Promo -->
+        <div class="control-group">
+            <h3>🏷️ Etiqueta Promocional</h3>
+            <input type="text" id="promo_tag" value="LAST CALL" placeholder="LAST CALL">
+            <label>Cor: <input type="color" id="promo_tag_color" value="#ffffff"></label>
+            <label>Tamanho:
+                <input type="range" id="promo_tag_size" min="0.8" max="2" step="0.1" value="1.2">
+                <span id="promo_tag_size_value">1.2rem</span>
+            </label>
+            <label>Transparência:
+                <input type="range" id="promo_tag_alpha" min="0" max="100" value="100">
+                <span id="promo_tag_alpha_value">100%</span>
+            </label>
+        </div>
+
+        <!-- Destino -->
+        <div class="control-group">
+            <h3>🌍 Destino</h3>
+            <input type="text" id="destination" value="MARROCOS" placeholder="MARROCOS">
+            <label>Cor: <input type="color" id="destination_color" value="#2c3e50"></label>
+            <label>Tamanho:
+                <input type="range" id="destination_size" min="2" max="6" step="0.2" value="4.2">
+                <span id="destination_size_value">4.2rem</span>
+            </label>
+        </div>
+
+        <!-- Descrição -->
+        <div class="control-group">
+            <h3>📝 Descrição</h3>
+            <textarea id="description" rows="3">Descubra Marrocos numa escapadinha exclusiva de 4 dias, com voos diretos e todos os detalhes tratados para si.</textarea>
+            <label>Cor: <input type="color" id="description_color" value="#2c3e50"></label>
+            <label>Tamanho:
+                <input type="range" id="description_size" min="0.9" max="1.8" step="0.1" value="1.1">
+                <span id="description_size_value">1.1rem</span>
+            </label>
+            <label>Transparência Caixa:
+                <input type="range" id="description_bg_alpha" min="0" max="100" value="65">
+                <span id="description_bg_alpha_value">65%</span>
+            </label>
+        </div>
+
+        <!-- Info Box -->
+        <div class="control-group">
+            <h3>ℹ️ Informações</h3>
+            <input type="text" id="flight_info" value="VOOS DIRETOS LISBOA | 20 A 23 SETEMBRO">
+            <input type="text" id="services_info" value="TRANSFERES PRIVADOS | SEGURO">
+            <input type="text" id="hotel_name" value="Ibn Batouta">
+            <input type="text" id="price" value="290€">
+            <input type="text" id="price_note" value="*" placeholder="*">
+            <label>Transparência Info Box:
+                <input type="range" id="info_box_alpha" min="0" max="100" value="90">
+                <span id="info_box_alpha_value">90%</span>
+            </label>
+        </div>
+
+        <!-- Export -->
+        <div class="control-group">
+            <button id="save_template_btn" class="export-btn" style="background: linear-gradient(45deg, #28a745, #34ce57); margin-bottom: 10px;">💾 Guardar Template</button>
+            <button id="load_template_btn" class="export-btn" style="background: linear-gradient(45deg, #17a2b8, #1cbacf); margin-bottom: 10px;">📂 Carregar Template</button>
+            <button id="export_btn" class="export-btn">💾 Exportar Imagem (1080×1350)</button>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="app.js"></script>
+    <!-- PREVIEW MOVIDO PARA FORA DOS CONTROLOS! -->
+    <div class="preview-panel">
+        <h3>👁️ Preview Instagram Post</h3>
+        <div class="preview-wrapper">
+            <div id="canvas" class="canvas">
+                <!-- Etiqueta Promo -->
+                <div id="promo_element" class="promo-tag">
+                    <span id="promo_text"></span>
+                </div>
+                
+                <!-- Destino -->
+                <div id="destination_element" class="destination">
+                    <span id="destination_text"></span>
+                </div>
+                
+                <!-- Descrição -->
+                <div id="description_element" class="description-box">
+                    <span id="description_text"></span>
+                </div>
+                
+                <!-- Info Box -->
+                <div id="info_element" class="info-box">
+                    <div id="flight_text"></div>
+                    <div id="services_text"></div>
+                    <div id="hotel_text"></div>
+                    <div class="price-section">
+                        <span id="price_text"></span>
+                        <span id="note_text"></span>
+                    </div>
+                </div>
+                
+                <!-- Logo -->
+                <img id="logo_element" class="logo" style="display: none;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
