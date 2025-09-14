@@ -1,7 +1,7 @@
 :root {
-  --canvas-width: 800px;
-  --canvas-height: 1344px;
-  --preview-scale: 0.75;
+  --canvas-width: 1080px;
+  --canvas-height: 1350px;
+  --preview-scale: 0.4;
   --golden: #CA9524;
 }
 
