@@ -285,51 +285,33 @@ if (exportBtn && canvas) {
     });
 }
 
-    // -------- INICIALIZAÇÃO DO PREVIEW --------
+ // -------- INICIALIZAÇÃO DO PREVIEW --------
 function initializePreview() {
-    // Inicializar todos os textos com valores por defeito
-    if (promoText) promoText.textContent = document.getElementById('promo_tag')?.value || 'LAST CALL';
-    if (destinationText) destinationText.textContent = document.getElementById('destination')?.value || 'MARROCOS';
-    if (descriptionText) descriptionText.textContent = document.getElementById('description')?.value || 'Descubra Marrocos numa escapadinha exclusiva de 4 dias, com voos diretos e todos os detalhes tratados para si.';
-    if (flightText) flightText.textContent = document.getElementById('flight_info')?.value || 'VOOS DIRETOS LISBOA | 20 A 23 SETEMBRO';
-    if (servicesText) servicesText.textContent = document.getElementById('services_info')?.value || 'TRANSFERES PRIVADOS | SEGURO';
-    if (hotelText) hotelText.textContent = document.getElementById('hotel_name')?.value || 'Ibn Batouta';
-    if (priceText) priceText.textContent = document.getElementById('price')?.value || '290€';
-    if (noteText) noteText.textContent = document.getElementById('price_note')?.value || '*';
-
-    // Aplicar cores iniciais
-    if (promoElement) promoElement.style.color = '#ffffff';
-    if (destinationText) destinationText.style.color = '#2c3e50';
-    if (descriptionText) descriptionText.style.color = '#2c3e50';
-
-    // Aplicar tamanhos iniciais
-    if (promoText) promoText.style.fontSize = '1.2rem';
-    if (destinationText) destinationText.style.fontSize = '4.2rem';
-    if (descriptionText) descriptionText.style.fontSize = '1.1rem';
-
-    // Aplicar transparências iniciais (com a cor dourada correta)
-    if (promoElement) {
-        setBackgroundAlpha(promoElement, '#CA9524', 1); // Dourado sólido
-        updateValue('promo_tag_alpha_value', '100', '%');
-    }
-    if (descriptionElement) {
-        setBackgroundAlpha(descriptionElement, '#fffbe8', 0.65);
-        updateValue('description_bg_alpha_value', '65', '%');
-    }
-    if (infoElement) {
-        setBackgroundAlpha(infoElement, '#fffbe8', 0.9);
-        updateValue('info_box_alpha_value', '90', '%');
-    }
-
-    // Atualizar todos os value displays
-    updateValue('promo_tag_size_value', '1.2', 'rem');
-    updateValue('destination_size_value', '4.2', 'rem');
-    updateValue('description_size_value', '1.1', 'rem');
-    updateValue('logo_size_value', '100', 'px');
+    // Textos
+    promoText.textContent = 'LAST CALL';
+    destinationText.textContent = 'MARROCOS';
+    descriptionText.textContent = 'Descubra Marrocos numa escapadinha exclusiva de 4 dias, com voos diretos e todos os detalhes tratados para si.';
+    flightText.textContent = 'VOOS DIRETOS LISBOA | 20 A 23 SETEMBRO';
+    servicesText.textContent = 'TRANSFERES PRIVADOS | SEGURO';
+    hotelText.textContent = 'Ibn Batouta';
+    priceText.textContent = '290€';
+    noteText.textContent = '*';
+    
+    // Cores
+    promoElement.style.color = '#ffffff';
+    destinationText.style.color = '#2c3e50';
+    descriptionText.style.color = '#2c3e50';
+    
+    // Tamanhos
+    promoText.style.fontSize = '1.2rem';
+    destinationText.style.fontSize = '4.2rem';
+    descriptionText.style.fontSize = '1.1rem';
+    
+    // Fundos (transparências) - COM AS CORES CORRETAS
+    setBackgroundAlpha(promoElement, '#CA9524', 1); // Dourado
+    setBackgroundAlpha(descriptionElement, '#fffbe8', 0.65); // Creme
+    setBackgroundAlpha(infoElement, '#fffbe8', 0.9); // Creme
 }
-
-// Chamar a inicialização
-initializePreview();
 
     console.log('✅ Gerador Instagram carregado!');
 });
