@@ -1,7 +1,7 @@
 :root {
     --canvas-width: 800px;
     --canvas-height: 1344px;
-    --preview-scale: 0.65;
+    --preview-scale: 0.75;
     --golden: #CA9524;
 }
 
@@ -16,27 +16,32 @@ body {
 
 .app-container {
     display: flex;
-    gap: 30px;
+    gap: 20px;
     padding: 20px;
     min-height: 100vh;
+    align-items: flex-start;
 }
 
 .controls-panel {
-    width: 550px;
+    width: 480px;
     background: white;
     border-radius: 15px;
-    padding: 25px;
+    padding: 20px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     height: fit-content;
     max-height: 90vh;
     overflow-y: auto;
+    flex-shrink: 0;
 }
 
 .controls-panel h2 {
     margin-top: 0;
     color: var(--golden);
-    text-align: center;
+    text-align: left;
     font-size: 1.4rem;
+    padding-left: 20px;
+  position: sticky; 
+  top: 20px;
 }
 
 .control-group {
@@ -317,18 +322,19 @@ body {
 }
 
 
-/* Responsivo */
+/* Responsivo melhorado */
+@media (max-width: 1600px) {
+  :root { --preview-scale: 0.65; }
+}
+
 @media (max-width: 1400px) {
   :root { --preview-scale: 0.55; }
+  .controls-panel { width: 450px; }
 }
 
 @media (max-width: 1200px) {
   :root { --preview-scale: 0.45; }
   .app-container { flex-direction: column; }
   .controls-panel { width: 100%; max-height: none; }
-}
-
-@media (max-width: 768px) {
-  :root { --preview-scale: 0.35; }
-  .controls-panel { padding: 15px; }
+  .preview-panel { position: static; padding-left: 0; text-align: center; }
 }
