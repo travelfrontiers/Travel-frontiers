@@ -320,6 +320,8 @@ function initializePreview() {
         infoElement.style.background = 'rgba(255,251,232,0.9)';
         infoElement.style.display = 'block';
     }
+
+    initializePreview();
     
     console.log('✅ Preview inicializado com sucesso!');
 }
