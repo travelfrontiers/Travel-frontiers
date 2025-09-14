@@ -173,39 +173,118 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // ---------- EXPORTAÇÃO ----------
-    const exportBtn = document.getElementById('export_btn');
-    if (exportBtn && canvas) {
-        exportBtn.addEventListener('click', function() {
-            exportBtn.textContent = '⏳ Gerando imagem...';
-            exportBtn.disabled = true;
-            const originalTransform = canvas.style.transform;
-            canvas.style.transform = 'scale(1)';
-            setTimeout(() => {
-                html2canvas(canvas, {
-                    width: 1080,
-                    height: 1350,
-                    scale: 1,
-                    useCORS: true,
-                    backgroundColor: null,
-                    allowTaint: true
-                }).then(function(capturedCanvas) {
-                    canvas.style.transform = originalTransform;
-                    const link = document.createElement('a');
-                    link.download = 'instagram-post-travel-frontiers.png';
-                    link.href = capturedCanvas.toDataURL('image/png', 1.0);
-                    link.click();
-                    exportBtn.textContent = '💾 Exportar Imagem (1080×1350)';
-                    exportBtn.disabled = false;
-                }).catch(function(error) {
-                    console.error('Erro ao exportar:', error);
-                    canvas.style.transform = originalTransform;
-                    exportBtn.textContent = '❌ Erro - Tentar novamente';
-                    exportBtn.disabled = false;
-                });
-            }, 100);
-        });
+    // -------- SISTEMA DE TEMPLATES --------
+function saveTemplate() {
+    const template = {
+        promo_tag: document.getElementById('promo_tag')?.value || '',
+        promo_tag_color: document.getElementById('promo_tag_color')?.value || '#ffffff',
+        promo_tag_size: document.getElementById('promo_tag_size')?.value || '1.2',
+        promo_tag_alpha: document.getElementById('promo_tag_alpha')?.value || '100',
+        destination: document.getElementById('destination')?.value || '',
+        destination_color: document.getElementById('destination_color')?.value || '#2c3e50',
+        destination_size: document.getElementById('destination_size')?.value || '4.2',
+        description: document.getElementById('description')?.value || '',
+        description_color: document.getElementById('description_color')?.value || '#2c3e50',
+        description_size: document.getElementById('description_size')?.value || '1.1',
+        description_bg_alpha: document.getElementById('description_bg_alpha')?.value || '65',
+        flight_info: document.getElementById('flight_info')?.value || '',
+        services_info: document.getElementById('services_info')?.value || '',
+        hotel_name: document.getElementById('hotel_name')?.value || '',
+        price: document.getElementById('price')?.value || '',
+        price_note: document.getElementById('price_note')?.value || '',
+        info_box_alpha: document.getElementById('info_box_alpha')?.value || '90',
+        global_font_family: document.getElementById('global_font_family')?.value || "'Montserrat', sans-serif",
+        logo_size: document.getElementById('logo_size')?.value || '100'
+    };
+    
+    localStorage.setItem('travel_frontiers_template', JSON.stringify(template));
+    alert('✅ Template guardado com sucesso!');
+}
+
+function loadTemplate() {
+    const saved = localStorage.getItem('travel_frontiers_template');
+    if (!saved) {
+        alert('❌ Não há template guardado!');
+        return;
     }
+    
+    const template = JSON.parse(saved);
+    
+    Object.keys(template).forEach(key => {
+        const element = document.getElementById(key);
+        if (element) {
+            element.value = template[key];
+            
+            // Disparar evento change para atualizar preview
+            element.dispatchEvent(new Event('input'));
+            element.dispatchEvent(new Event('change'));
+        }
+    });
+    
+    alert('✅ Template carregado com sucesso!');
+}
+
+const saveTemplateBtn = document.getElementById('save_template_btn');
+const loadTemplateBtn = document.getElementById('load_template_btn');
+
+if (saveTemplateBtn) saveTemplateBtn.addEventListener('click', saveTemplate);
+if (loadTemplateBtn) loadTemplateBtn.addEventListener('click', loadTemplate);
+
+
+   // -------- EXPORTAÇÃO --------
+const exportBtn = document.getElementById('export_btn');
+if (exportBtn && canvas) {
+    exportBtn.addEventListener('click', function() {
+        exportBtn.textContent = '⏳ Gerando imagem...';
+        exportBtn.disabled = true;
+
+        const originalTransform = canvas.style.transform;
+        canvas.style.transform = 'scale(1)';
+
+        // NOVO: Remover sombras temporariamente para exportação limpa
+        const elementsWithShadows = canvas.querySelectorAll('.description-box, .info-box, .promo-tag');
+        const originalShadows = [];
+        
+        elementsWithShadows.forEach((el, index) => {
+            originalShadows[index] = el.style.boxShadow;
+            el.style.boxShadow = 'none';
+        });
+
+        setTimeout(() => {
+            html2canvas(canvas, {
+                width: 1080,
+                height: 1350,
+                scale: 1,
+                useCORS: true,
+                backgroundColor: null,
+                allowTaint: true
+            }).then(function(capturedCanvas) {
+                // Restaurar tudo ao estado original
+                canvas.style.transform = originalTransform;
+                elementsWithShadows.forEach((el, index) => {
+                    el.style.boxShadow = originalShadows[index];
+                });
+
+                const link = document.createElement('a');
+                link.download = 'instagram-post-travel-frontiers.png';
+                link.href = capturedCanvas.toDataURL('image/png', 1.0);
+                link.click();
+
+                exportBtn.textContent = '💾 Exportar Imagem (1080×1350)';
+                exportBtn.disabled = false;
+            }).catch(function(error) {
+                console.error('Erro ao exportar:', error);
+                canvas.style.transform = originalTransform;
+                elementsWithShadows.forEach((el, index) => {
+                    el.style.boxShadow = originalShadows[index];
+                });
+                exportBtn.textContent = '❌ Erro - Tentar novamente';
+                exportBtn.disabled = false;
+            });
+        }, 100);
+    });
+}
+
 
     console.log('✅ Gerador Instagram carregado!');
 });
