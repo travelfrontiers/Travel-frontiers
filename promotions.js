@@ -18,7 +18,7 @@ function renderPromotions() {
     <div class="promo-card">
       <picture>
         <source srcset="${url}" type="image/webp">
-        <img src="${url.replace('.webp', '.jpg')}" alt="">
+        <img src="${url.replace('.webp')}" alt="">
       </picture>
       <p>${captions[i] || ''}</p>
     </div>
