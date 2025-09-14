@@ -1,9 +1,6 @@
-/* Importa variáveis ou reset se necessário */
-/* Exemplo: @import "../css/style.css"; */
-
 .promotions {
   padding: 64px 0;
-  background: #fafafa;
+  background: #f9fafb;
 }
 .promotions h1 {
   font-size: 2.5rem;
@@ -21,20 +18,22 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s, box-shadow 0.3s;
+  text-align: center;
 }
 .promo-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
 }
 .promo-card picture,
 .promo-card img {
   width: 100%;
+  aspect-ratio: 16/9;
   display: block;
+  object-fit: cover;
 }
 .promo-card p {
   padding: 16px;
-  font-size: 1rem;
+  font-size: 1.05rem;
   color: #374151;
-  text-align: center;
 }
