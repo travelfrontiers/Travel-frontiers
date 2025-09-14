@@ -440,6 +440,97 @@ function getTranslation(key) {
   return value;
 }
 
+// --- Import dinâmico de imagens (Vite) ---
+const promoImages = import.meta.glob('/img/promotions/*.{jpg,png,webp}', { eager: true, as: 'url' });
+
+// --- Traduções ---
+const translations = {
+  pt: {
+    promotions: {
+      title: 'Promoções',
+      items: [
+        { caption: 'Oferta de Verão: 20% desconto' },
+        { caption: 'Pacote Família: 2 crianças grátis' }
+      ]
+    },
+    /* ... restante traduções ... */
+  },
+  en: {
+    promotions: {
+      title: 'Promotions',
+      items: [
+        { caption: 'Summer Deal: 20% off' },
+        { caption: 'Family Pack: 2 kids free' }
+      ]
+    },
+    /* ... */
+  },
+  fr: {
+    promotions: {
+      title: 'Promotions',
+      items: [
+        { caption: 'Offre Été : 20 % de réduction' },
+        { caption: 'Pack Famille : 2 enfants gratuits' }
+      ]
+    },
+    /* ... */
+  }
+};
+
+// --- Função de tradução genérica ---
+function getTranslation(key) {
+  let value = translations[currentLanguage];
+  for (const k of key.split('.')) {
+    value = value?.[k];
+  }
+  return value || '';
+}
+
+// --- Renderizar Promoções ---
+function renderPromotions() {
+  const grid = document.querySelector('#promotions .promotions-grid');
+  grid.innerHTML = promoImages
+    .map((url, i) => {
+      const caption = getTranslation(`promotions.items[${i}].caption`);
+      return `
+      <div class="promo-card">
+        <img src="${url}" alt="">
+        <p>${caption}</p>
+      </div>`;
+    })
+    .join('');
+}
+
+// --- Atualizar conteúdo traduzido ---
+function updateContent() {
+  document.querySelectorAll('[data-translate]').forEach(el => {
+    el.textContent = getTranslation(el.getAttribute('data-translate'));
+  });
+}
+
+// --- Inicialização ao mudar idioma ---
+function changeLanguage(lang) {
+  currentLanguage = lang;
+  document.documentElement.lang = lang;
+  updateContent();
+  renderServices(translations[lang].services);
+  renderPromotions();
+  renderTestimonials();
+}
+
+// --- Boot ---
+let currentLanguage = 'pt';
+document.addEventListener('DOMContentLoaded', () => {
+  initializeLanguageSelector();
+  initializeMobileMenu();
+  initializeNavigation();
+  renderServices(translations.pt.services);
+  renderPromotions();
+  initializeTestimonials();
+  initializeLightbox();
+  initializeCarousel();
+});
+
 // ============================
 // Mobile menu
 // ============================
