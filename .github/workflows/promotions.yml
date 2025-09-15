@@ -1,0 +1,29 @@
+name: Atualizar Promoções
+
+on:
+  push:
+    paths:
+      - 'img/promotions/**'
+
+jobs:
+  build-promotions:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+      with:
+        persist-credentials: true
+
+    - name: Gerar promotions.json
+      run: |
+        # Cria array JSON com todos os ficheiros webp na pasta
+        ls img/promotions/*.webp | xargs -n1 basename | jq -R -s 'split("\n")[:-1]' > promotions.json
+
+    - name: Commit promotions.json
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add promotions.json
+        git commit -m "🔄 Atualiza promotions.json" || echo "Sem alterações"
+        git push
