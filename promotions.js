@@ -4,11 +4,11 @@ const promotionsData = [
         id: 1,
         image: 'img/promotions/malta.webp',
         fallback: 'img/promotions/malta.png', 
-        badge: '20% OFF',
-        title: 'Malta em Dezembro',
+        //badge: '20% OFF',
+        title: 'Malta em Dezembro para duas pessoas',
         description: 'Sol suave, história milenar e paisagens que aquecem o inverno. Transfers incluídos!',
         price: { original: '€599', discount: '€479' },
-        cta: 'Ver Oferta',
+        cta: 'Reservar já',
         featured: true
     },
     {
