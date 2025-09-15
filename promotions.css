@@ -1,39 +1,457 @@
-.promotions {
-  padding: 64px 0;
-  background: #f9fafb;
+/* ===== PROMOÇÕES - DESIGN IMPACTANTE ===== */
+
+/* Hero Section */
+.promo-hero {
+    position: relative;
+    height: 70vh;
+    min-height: 500px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
 }
-.promotions h1 {
-  font-size: 2.5rem;
-  text-align: center;
-  margin-bottom: 32px;
-  color: #111;
+
+.promo-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('https://images.unsplash.com/photo-1488646953014-85cb44e25828?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80') center/cover;
+    opacity: 0.3;
+    z-index: 1;
 }
-.promotions-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 24px;
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg, rgba(249, 115, 22, 0.8), rgba(251, 191, 36, 0.6));
+    z-index: 2;
 }
+
+.hero-content {
+    position: relative;
+    z-index: 3;
+    text-align: center;
+    color: white;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.hero-content h1 {
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    animation: pulse 2s infinite;
+}
+
+.hero-content p {
+    font-size: clamp(1.2rem, 3vw, 1.5rem);
+    margin-bottom: 2rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.hero-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.95);
+    color: #f97316;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    animation: bounce 3s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-10px); }
+    60% { transform: translateY(-5px); }
+}
+
+/* Section Intro */
+.promotions-showcase {
+    padding: 80px 0;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.section-intro {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.section-intro h2 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    color: #111827;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.section-intro h2::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, #f97316, #fbbf24);
+    border-radius: 2px;
+}
+
+.section-intro p {
+    font-size: 1.25rem;
+    color: #6b7280;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* Carousel Principal */
+.promo-carousel-wrapper {
+    margin-bottom: 60px;
+    position: relative;
+}
+
+.promo-carousel {
+    width: 100%;
+    height: 600px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+}
+
+.promo-slide {
+    position: relative;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: flex-end;
+    color: white;
+    overflow: hidden;
+}
+
+.promo-slide::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        0deg,
+        rgba(0,0,0,0.8) 0%,
+        rgba(0,0,0,0.3) 50%,
+        rgba(0,0,0,0.1) 100%
+    );
+    z-index: 1;
+}
+
+.slide-content {
+    position: relative;
+    z-index: 2;
+    padding: 40px;
+    width: 100%;
+    max-width: 500px;
+}
+
+.slide-badge {
+    display: inline-block;
+    background: rgba(249, 115, 22, 0.9);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    backdrop-filter: blur(10px);
+}
+
+.slide-content h3 {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-weight: 700;
+    margin-bottom: 12px;
+    line-height: 1.2;
+}
+
+.slide-content p {
+    font-size: 1.1rem;
+    margin-bottom: 24px;
+    opacity: 0.95;
+    line-height: 1.6;
+}
+
+.slide-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #f97316, #fbbf24);
+    color: white;
+    padding: 14px 28px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);
+}
+
+.slide-cta:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(249, 115, 22, 0.6);
+    color: white;
+}
+
+/* Navigation Customizada */
+.promo-nav-prev,
+.promo-nav-next {
+    width: 60px !important;
+    height: 60px !important;
+    margin-top: -30px !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-radius: 50% !important;
+    color: #f97316 !important;
+    font-weight: bold !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+    transition: all 0.3s ease !important;
+}
+
+.promo-nav-prev:hover,
+.promo-nav-next:hover {
+    background: #f97316 !important;
+    color: white !important;
+    transform: scale(1.1) !important;
+}
+
+.promo-nav-prev span,
+.promo-nav-next span {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.promo-nav-prev {
+    left: 20px !important;
+}
+
+.promo-nav-next {
+    right: 20px !important;
+}
+
+/* Pagination Customizada */
+.promo-pagination {
+    bottom: 30px !important;
+}
+
+.promo-pagination .swiper-pagination-bullet {
+    width: 12px !important;
+    height: 12px !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+    opacity: 1 !important;
+    margin: 0 6px !important;
+    transition: all 0.3s ease !important;
+}
+
+.promo-pagination .swiper-pagination-bullet-active {
+    background: #f97316 !important;
+    transform: scale(1.3) !important;
+}
+
+/* Grid Adicional */
+.promo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-bottom: 60px;
+}
+
 .promo-card {
-  background: #fff;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  transition: transform 0.3s, box-shadow 0.3s;
-  text-align: center;
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
 }
+
 .promo-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+    transform: translateY(-8px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
 }
-.promo-card picture,
-.promo-card img {
-  width: 100%;
-  aspect-ratio: 16/9;
-  display: block;
-  object-fit: cover;
+
+.promo-card-image {
+    position: relative;
+    height: 250px;
+    background-size: cover;
+    background-position: center;
 }
+
+.promo-card-image::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(251, 191, 36, 0.1));
+}
+
+.card-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(239, 68, 68, 0.95);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+}
+
+.promo-card-content {
+    padding: 24px;
+}
+
+.promo-card h4 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 8px;
+}
+
 .promo-card p {
-  padding: 16px;
-  font-size: 1.05rem;
-  color: #374151;
+    color: #6b7280;
+    margin-bottom: 16px;
+    line-height: 1.6;
+}
+
+.card-price {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.price-original {
+    text-decoration: line-through;
+    color: #9ca3af;
+    font-size: 0.9rem;
+}
+
+.price-discount {
+    color: #f97316;
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+/* CTA Final */
+.promo-cta-section {
+    text-align: center;
+}
+
+.cta-card-promo {
+    background: linear-gradient(135deg, #1f2937, #374151);
+    color: white;
+    padding: 60px 40px;
+    border-radius: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.cta-card-promo::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(249, 115, 22, 0.1) 0%, transparent 70%);
+    animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.cta-card-promo h3 {
+    font-size: 2rem;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+}
+
+.cta-card-promo p {
+    font-size: 1.1rem;
+    margin-bottom: 32px;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+}
+
+.cta-button-promo {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, #f97316, #fbbf24);
+    color: white;
+    border: none;
+    padding: 16px 32px;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(249, 115, 22, 0.4);
+}
+
+.cta-button-promo:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(249, 115, 22, 0.6);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .promo-hero {
+        height: 60vh;
+        min-height: 400px;
+    }
+    
+    .promo-carousel {
+        height: 450px;
+    }
+    
+    .slide-content {
+        padding: 30px 20px;
+    }
+    
+    .promo-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .promo-nav-prev,
+    .promo-nav-next {
+        width: 50px !important;
+        height: 50px !important;
+        margin-top: -25px !important;
+    }
+    
+    .promo-nav-prev {
+        left: 10px !important;
+    }
+    
+    .promo-nav-next {
+        right: 10px !important;
+    }
+    
+    .cta-card-promo {
+        padding: 40px 20px;
+        margin: 0 20px;
+    }
 }
