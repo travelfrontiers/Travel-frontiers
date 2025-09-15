@@ -274,6 +274,42 @@ font-weight: 700;
 font-size: 1.2rem;
 }
 
+/* Lightbox */
+.lightbox {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.8);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.lightbox-content {
+  max-width: 90%;
+  max-height: 80%;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+.lightbox-caption {
+  margin-top: 12px;
+  color: #fff;
+  font-size: 1.1rem;
+  text-align: center;
+}
+.lightbox-close {
+  position: absolute;
+  top: 20px; right: 30px;
+  color: #fff;
+  font-size: 2.5rem;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+.lightbox-close:hover {
+  color: #f97316;
+}
+
 /* ---- CTA Final ---- */
 .promo-cta-section {
 text-align: center;
