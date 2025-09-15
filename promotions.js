@@ -2,7 +2,7 @@
 const promotionsData = [
     {
         id: 1,
-        image: 'img/promotions/malta-promo.webp',
+        image: 'img/promotions/malta.webp',
         fallback: 'img/promotions/malta-promo.jpg',
         badge: '20% OFF',
         title: 'Malta em Dezembro',
