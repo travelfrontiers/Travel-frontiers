@@ -55,7 +55,6 @@ swiperWrapper.innerHTML = featuredPromotions.map(promo => `
   <div class="swiper-slide">
     <div class="promo-slide">
       <div class="slide-image" style="background-image: url('${promo.image}');">
-        <div class="slide-badge">${promo.badge}</div>
       </div>
       <div class="slide-content">
         <h3>${promo.title}</h3>
