@@ -184,14 +184,14 @@ box-shadow: 0 6px 20px rgba(249,115,22,0.4);
 transform: translateY(-2px);
 box-shadow: 0 8px 30px rgba(249,115,22,0.6);
 }
-/ Nav Swiper /
+
 .promo-nav-prev, .promo-nav-next {
 top: calc(50% - 30px) !important;
 }
 .promo-nav-prev span, .promo-nav-next span {
 font-size: 24px;
 }
-/ Pagination Swiper */
+
 .promo-pagination {
 bottom: 30px !important;
 }
