@@ -144,6 +144,32 @@ function handlePromoClick(promoId) {
     }
 }
 
+// Função para abrir lightbox
+function openLightbox(src, caption) {
+  const lb = document.getElementById('promoLightbox');
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightboxCaption').textContent = caption || '';
+  lb.style.display = 'flex';
+}
+// Fechar lightbox
+document.getElementById('lightboxClose').onclick = () => {
+  document.getElementById('promoLightbox').style.display = 'none';
+};
+// Fechar ao clicar fora da imagem
+document.getElementById('promoLightbox').onclick = (e) => {
+  if (e.target.id === 'promoLightbox') {
+    e.currentTarget.style.display = 'none';
+  }
+};
+
+// No renderCarousel, altera a slide-image para:
+`<div class="slide-image" style="background-image:url('${p.image}');"
+     onclick="openLightbox('${p.image}','${p.destination} – ${p.dates}');"></div>`
+
+// No renderGrid, altera a promo-card-image para:
+`<div class="promo-card-image" style="background-image:url('${p.image}');"
+      onclick="openLightbox('${p.image}','${p.destination} – ${p.dates}');"></div>`
+
 // Função para abrir formulário de orçamento (compatibilidade com homepage)
 function openQuoteForm() {
     // Se existir o widget Tars, abrir
