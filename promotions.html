@@ -1,52 +1,133 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
- <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Promoções | Travel Frontiers</title>
-  <!-- CSS GLOBAL -->
-  <link rel="stylesheet" href="style.css">
-  <!-- CSS específico promoções -->
-  <link rel="stylesheet" href="promotions.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Promoções Exclusivas | Travel Frontiers</title>
+    <meta name="description" content="Descubra as nossas promoções exclusivas de viagem com descontos até 40%. Ofertas limitadas para destinos incríveis.">
+    
+    <!-- CSS Global -->
+    <link rel="stylesheet" href="style.css">
+    <!-- CSS Específico Promoções -->
+    <link rel="stylesheet" href="promotions.css">
+    <!-- Swiper CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <!-- Header idêntico ao da homepage -->
-  <header class="header">
-    <div class="container nav-wrapper">
-      <div class="logo">
-        <picture>
-          <source srcset="img/logo-new-TF2.webp" type="image/webp">
-          <img src="img/logo-new-TF2.png" alt="Travel Frontiers Logo" class="logo-image">
-        </picture>
-        <span class="logo-text">Travel Frontiers</span>
-      </div>
-      <nav class="nav-desktop">
-        <a href="index.html">Início</a>
-        <a href="about.html">Sobre</a>
-        <a href="services.html">Serviços</a>
-        <a href="testimonials.html">Testemunhos</a>
-        <a href="contact.html">Contacto</a>
-        <a href="promotions.html" class="active">Promoções</a>
-      </nav>
-    </div>
-  </header>
+    <!-- Header igual ao da homepage -->
+    <header class="header">
+        <div class="container">
+            <div class="nav-wrapper">
+                <div class="logo">
+                    <picture>
+                        <source srcset="img/logo-new-TF2.webp" type="image/webp">
+                        <img src="img/logo-new-TF2.png" alt="Travel Frontiers Logo" class="logo-image">
+                    </picture>
+                    <span class="logo-text">Travel Frontiers</span>
+                </div>
+                <nav class="nav-desktop">
+                    <a href="index.html">Início</a>
+                    <a href="index.html#about">Sobre</a>
+                    <a href="index.html#services">Serviços</a>
+                    <a href="index.html#testimonials">Testemunhos</a>
+                    <a href="index.html#contact">Contacto</a>
+                    <a href="promotions.html" class="active">Promoções</a>
+                </nav>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+        </div>
+    </header>
 
-  <main>
-    <section id="promotions" class="promotions">
-      <div class="container">
-        <h1>Promoções</h1>
-        <div class="promotions-grid"></div>
-      </div>
-    </section>
-  </main>
+    <main>
+        <!-- Hero Section -->
+        <section class="promo-hero">
+            <div class="hero-overlay"></div>
+            <div class="container">
+                <div class="hero-content">
+                    <h1>🔥 Ofertas Exclusivas</h1>
+                    <p>Descontos até <strong>40%</strong> nos melhores destinos</p>
+                    <div class="hero-badge">
+                        <span>⏰ Ofertas por Tempo Limitado</span>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-  <!-- Footer idêntico -->
-  <footer class="footer">
-    <div class="container footer-content">
-      <!-- conteúdo do footer -->
-    </div>
-  </footer>
+        <!-- Galeria Principal de Promoções -->
+        <section class="promotions-showcase">
+            <div class="container">
+                <div class="section-intro">
+                    <h2>Aventuras Imperdíveis</h2>
+                    <p>Cada viagem é uma história para contar. Aproveite estas oportunidades únicas!</p>
+                </div>
 
-  <script type="module" src="promotions.js"></script>
+                <!-- Swiper Carousel -->
+                <div class="promo-carousel-wrapper">
+                    <div class="swiper promo-carousel">
+                        <div class="swiper-wrapper" id="promoSlides">
+                            <!-- Slides serão gerados dinamicamente via JS -->
+                        </div>
+                        
+                        <!-- Navigation -->
+                        <div class="swiper-button-prev promo-nav-prev">
+                            <span>‹</span>
+                        </div>
+                        <div class="swiper-button-next promo-nav-next">
+                            <span>›</span>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <div class="swiper-pagination promo-pagination"></div>
+                    </div>
+                </div>
+
+                <!-- Cards Grid Adicional -->
+                <div class="promo-grid" id="promoGrid">
+                    <!-- Cards adicionais serão gerados via JS -->
+                </div>
+
+                <!-- CTA Final -->
+                <div class="promo-cta-section">
+                    <div class="cta-card-promo">
+                        <h3>💎 Não encontra o que procura?</h3>
+                        <p>Criamos a viagem perfeita para si com descontos personalizados!</p>
+                        <button class="cta-button-promo" onclick="openQuoteForm()">
+                            <span>✈️</span>
+                            Pedir Orçamento Personalizado
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer igual ao da homepage -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-company">
+                    <div class="footer-logo">
+                        <picture>
+                            <source srcset="img/logo-newTF.webp" type="image/webp">
+                            <img src="img/logo-newTF.png" alt="Travel Frontiers" class="footer-logo-image">
+                        </picture>
+                    </div>
+                    <p>15 anos explorando o mundo, agora ajudando outros a criar aventuras inesquecíveis.</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 Travel Frontiers. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="promotions.js"></script>
 </body>
 </html>
