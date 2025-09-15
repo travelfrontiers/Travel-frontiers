@@ -51,21 +51,21 @@ function generateCarouselSlides() {
     const swiperWrapper = document.getElementById('promoSlides');
     const featuredPromotions = promotionsData.filter(promo => promo.featured);
     
-    swiperWrapper.innerHTML = featuredPromotions.map(promo => `
-        <div class="swiper-slide">
-            <div class="promo-slide" style="background-image: url('${promo.image}'), url('${promo.fallback}')">
-                <div class="slide-content">
-                    <div class="slide-badge">${promo.badge}</div>
-                    <h3>${promo.title}</h3>
-                    <p>${promo.description}</p>
-                    <a href="#" class="slide-cta" onclick="handlePromoClick(${promo.id})">
-                        <span>✨</span>
-                        ${promo.cta}
-                    </a>
-                </div>
-            </div>
-        </div>
-    `).join('');
+    // Dentro de generateCarouselSlides():
+swiperWrapper.innerHTML = featuredPromotions.map(promo => `
+  <div class="swiper-slide">
+    <div class="promo-slide">
+      <div class="slide-image" style="background-image: url('${promo.image}');">
+        <div class="slide-badge">${promo.badge}</div>
+      </div>
+      <div class="slide-content">
+        <h3>${promo.title}</h3>
+        <p>${promo.description}</p>
+        <a href="#" class="slide-cta" onclick="handlePromoClick(${promo.id})">${promo.cta}</a>
+      </div>
+    </div>
+  </div>
+`).join('');
 }
 
 // Função para gerar cards da grid
