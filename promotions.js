@@ -51,7 +51,6 @@ function generateCarouselSlides() {
     const swiperWrapper = document.getElementById('promoSlides');
     const featuredPromotions = promotionsData.filter(promo => promo.featured);
     
-    // Dentro de generateCarouselSlides():
 swiperWrapper.innerHTML = featuredPromotions.map(promo => `
   <div class="swiper-slide">
     <div class="promo-slide">
