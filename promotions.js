@@ -154,4 +154,20 @@ function openQuoteForm() {
     }
 }
 
-//
+// Animação slide-up
+const style = document.createElement('style');
+style.textContent = `
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.slide-content { animation: slideUp 0.8s ease forwards; }
+`;
+document.head.appendChild(style);
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', () => {
+    generateCarouselSlides();
+    generatePromoGrid();
+    initializeSwiper();
+});
