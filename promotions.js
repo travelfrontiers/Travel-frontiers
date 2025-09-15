@@ -3,7 +3,6 @@ const promotionsData = [
     {
         id: 1,
         image: 'img/promotions/malta.webp',
-        fallback: 'img/promotions/malta-promo.jpg',
         badge: '20% OFF',
         title: 'Malta em Dezembro',
         description: 'Sol suave, história milenar e paisagens que aquecem o inverno. Transfers incluídos!',
