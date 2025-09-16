@@ -42,7 +42,6 @@
             </div>
         </div>
     </header>
-
     <main>
         <!-- Hero Section -->
         <section class="promo-hero">
@@ -57,7 +56,7 @@
                 </div>
             </div>
         </section>
-
+        
         <!-- Galeria Principal de Promoções -->
         <section class="promotions-showcase">
             <div class="container">
@@ -65,7 +64,7 @@
                     <h2>Aventuras Imperdíveis</h2>
                     <p>Cada viagem é uma história para contar. Aproveite estas oportunidades únicas!</p>
                 </div>
-
+                
                 <!-- Swiper Carousel -->
                 <div class="promo-carousel-wrapper">
                     <div class="swiper promo-carousel">
@@ -85,12 +84,12 @@
                         <div class="swiper-pagination promo-pagination"></div>
                     </div>
                 </div>
-
+                
                 <!-- Cards Grid Adicional -->
                 <div class="promo-grid" id="promoGrid">
                     <!-- Cards adicionais serão gerados via JS -->
                 </div>
-
+                
                 <!-- CTA Final -->
                 <div class="promo-cta-section">
                     <div class="cta-card-promo">
@@ -105,6 +104,172 @@
             </div>
         </section>
     </main>
+    
+    <!-- Footer igual aos outros -->
+    <footer class="footer">
+        <!-- ... teu footer existente ... -->
+    </footer>
+    
+    <!-- ✅ LIGHTBOX HTML -->
+    <div id="lightboxOverlay" class="lightbox-overlay" onclick="closeLightbox()">
+        <div class="lightbox-content" onclick="event.stopPropagation()">
+            <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+            <img id="lightboxImage" src="" alt="Promoção">
+            <div id="lightboxCaption" class="lightbox-caption"></div>
+        </div>
+    </div>
+    
+    <!-- ✅ SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script>
+        // ======== DADOS DAS PROMOÇÕES ========
+        const promotionsData = [
+            {
+                id: 1,
+                image: 'img/promotions/malta.webp',
+                title: 'Malta em Dezembro',
+                dates: '2–8 Dezembro',
+                price: '€479',
+                featured: true
+            },
+            {
+                id: 2,
+                image: 'img/promotions/bali-promo.webp',
+                title: 'Escapadinha Bali',
+                dates: '10–17 Janeiro',
+                price: '€909',
+                featured: true
+            },
+            {
+                id: 3,
+                image: 'img/promotions/family-promo.webp',
+                title: 'Pacote Família',
+                dates: 'Abril 2026',
+                price: '€599',
+                featured: false
+            },
+            {
+                id: 4,
+                image: 'img/promotions/weekend-promo.webp',
+                title: 'Weekend Especial',
+                dates: 'Próxima semana',
+                price: '€249',
+                featured: false
+            }
+        ];
+
+        // ======== LIGHTBOX FUNCTIONS ========
+        function openLightbox(src, caption) {
+            console.log('Opening lightbox with:', src, caption);
+            document.getElementById('lightboxImage').src = src;
+            document.getElementById('lightboxCaption').textContent = caption || '';
+            document.getElementById('lightboxOverlay').style.display = 'flex';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightboxOverlay').style.display = 'none';
+        }
+
+        // ======== CAROUSEL GENERATION ========
+        function generateCarouselSlides() {
+            const swiperWrapper = document.getElementById('promoSlides');
+            const featured = promotionsData.filter(p => p.featured);
+            
+            swiperWrapper.innerHTML = featured.map(p => `
+                <div class="swiper-slide">
+                    <div class="promo-slide">
+                        <div class="slide-image" 
+                             style="background-image:url('${p.image}');cursor:pointer"
+                             onclick="openLightbox('${p.image}', '${p.title} — ${p.dates}')">
+                        </div>
+                        <div class="slide-content">
+                            <h3>${p.title}</h3>
+                            <p>${p.dates}</p>
+                            <p class="price-discount">${p.price}</p>
+                            <a href="#" class="slide-cta" onclick="handlePromoClick(${p.id}); return false;">
+                                Ver Oferta
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ======== GRID GENERATION ========
+        function generatePromoGrid() {
+            const grid = document.getElementById('promoGrid');
+            const others = promotionsData.filter(p => !p.featured);
+            
+            grid.innerHTML = others.map(p => `
+                <div class="promo-card">
+                    <div class="promo-card-image" 
+                         style="background-image:url('${p.image}');cursor:pointer"
+                         onclick="openLightbox('${p.image}', '${p.title} — ${p.dates}')">
+                    </div>
+                    <div class="promo-card-content">
+                        <h4>${p.title}</h4>
+                        <p>${p.dates}</p>
+                        <div class="card-price">
+                            <span class="price-discount">${p.price}</span>
+                        </div>
+                        <button class="slide-cta" onclick="handlePromoClick(${p.id})">
+                            Ver Oferta
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ======== SWIPER INIT ========
+        function initializeSwiper() {
+            new Swiper('.promo-carousel', {
+                slidesPerView: 1,
+                loop: true,
+                autoplay: { delay: 4000, disableOnInteraction: false },
+                preventClicks: false,
+                preventClicksPropagation: false,
+                navigation: {
+                    prevEl: '.promo-nav-prev',
+                    nextEl: '.promo-nav-next'
+                },
+                pagination: {
+                    el: '.promo-pagination',
+                    clickable: true
+                }
+            });
+        }
+
+        // ======== PROMO BUTTON ========
+        function handlePromoClick(id) {
+            console.log('Promo clicked:', id);
+            openQuoteForm();
+        }
+
+        // ======== QUOTE FORM ========
+        function openQuoteForm() {
+            if (window.tarsSettings && window.tarsSettings.convid) {
+                window.parent.postMessage({ type: 'tars-widget-open' }, '*');
+            } else {
+                window.open('https://wa.me/351918376604?text=Olá%20Tiago,%20gostaria%20de%20saber%20mais%20sobre%20a%20promoção.', '_blank');
+            }
+        }
+
+        // ======== KEYBOARD SUPPORT ========
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeLightbox();
+            }
+        });
+
+        // ======== INIT ALL ========
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing promotions...');
+            generateCarouselSlides();
+            generatePromoGrid();
+            initializeSwiper();
+            console.log('Promotions initialized successfully!');
+        });
+    </script>
 
        <!-- Footer -->
     <footer class="footer">
