@@ -13,12 +13,12 @@ const promotionsData = [
     },
     {
         id: 2,
-        image: 'img/promotions/bali-promo.webp',
+        image: 'img/promotions/cruise.webp',
         fallback: 'img/promotions/bali-promo.jpg',
-        title: 'Escapadinha Bali',
-        dates: '10–17 Janeiro',
-        description: 'Paraíso tropical com cultura fascinante. 7 noites em resort 5 estrelas.',
-        price: { original: '€1299', discount: '€909' },
+        title: 'Cruzeiro Mediterrâneo 2026',
+        dates: '11-18 Abril',
+        description: 'Cruzeiro Tudo Incluído!',
+        price: { original: '€1699', discount: '€1569' },
         cta: 'Reservar já',
         featured: true
     },
