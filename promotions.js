@@ -103,6 +103,9 @@ function initializeSwiper() {
         slidesPerView: 1,
         loop: true,
         autoplay: { delay: 4000, disableOnInteraction: false },
+        // ✅ SOLUÇÃO: Permitir cliques nos slides
+        preventClicks: false,
+        preventClicksPropagation: false,
         navigation: {
             prevEl: '.promo-nav-prev',
             nextEl: '.promo-nav-next'
