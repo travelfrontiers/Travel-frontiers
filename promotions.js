@@ -1,4 +1,4 @@
-// Dados das promoções
+// ======== Dados das promoções ========
 const promotionsData = [
     {
         id: 1,
@@ -46,7 +46,7 @@ const promotionsData = [
     }
 ];
 
-// Gera slides do carousel
+// ====== Carousel ======
 function generateCarouselSlides() {
     const swiperWrapper = document.getElementById('promoSlides');
     const featured = promotionsData.filter(p => p.featured);
@@ -55,8 +55,8 @@ function generateCarouselSlides() {
             <div class="promo-slide">
                 <div
                     class="slide-image"
-                    style="background-image:url('${p.image}');"
-                    onclick="openLightbox('${p.image}', '${p.title} — ${p.dates}')"
+                    style="background-image:url('${p.image}');cursor:pointer"
+                    onclick="openLightbox('${p.image}','${p.title.replace(/'/g, "\\'")} — ${p.dates.replace(/'/g, "\\'") }')"
                 ></div>
                 <div class="slide-content">
                     <h3>${p.title}</h3>
@@ -71,7 +71,7 @@ function generateCarouselSlides() {
     `).join('');
 }
 
-// Gera cards da grid
+// ====== Grid ======
 function generatePromoGrid() {
     const grid = document.getElementById('promoGrid');
     const others = promotionsData.filter(p => !p.featured);
@@ -79,8 +79,8 @@ function generatePromoGrid() {
         <div class="promo-card">
             <div
                 class="promo-card-image"
-                style="background-image:url('${p.image}');"
-                onclick="openLightbox('${p.image}', '${p.title} — ${p.dates}')"
+                style="background-image:url('${p.image}');cursor:pointer"
+                onclick="openLightbox('${p.image}','${p.title.replace(/'/g, "\\'")} — ${p.dates.replace(/'/g, "\\'") }')"
             ></div>
             <div class="promo-card-content">
                 <h4>${p.title}</h4>
@@ -97,7 +97,7 @@ function generatePromoGrid() {
     `).join('');
 }
 
-// Inicializa Swiper
+// ====== Swiper ======
 function initializeSwiper() {
     new Swiper('.promo-carousel', {
         slidesPerView: 1,
@@ -114,16 +114,15 @@ function initializeSwiper() {
     });
 }
 
-// Ao clicar na promoção
+// ====== Promo Button ======
 function handlePromoClick(id) {
     const promo = promotionsData.find(p => p.id === id);
     if (promo) {
-        console.log('Promoção clicada:', promo.title);
         openQuoteForm();
     }
 }
 
-// Lightbox
+// ====== LIGHTBOX ======
 function openLightbox(src, caption) {
     const lb = document.getElementById('promoLightbox');
     document.getElementById('lightboxImg').src = src;
@@ -134,15 +133,16 @@ function closeLightbox() {
     document.getElementById('promoLightbox').style.display = 'none';
 }
 
-// Eventos lightbox
+// ====== Lightbox events ======
 document.addEventListener('DOMContentLoaded', () => {
+    // Lightbox close
     document.getElementById('lightboxClose').onclick = closeLightbox;
     document.getElementById('promoLightbox').onclick = e => {
         if (e.target.id === 'promoLightbox') closeLightbox();
     };
 });
 
-// Função de orçamento
+// ====== Orçamento ======
 function openQuoteForm() {
     if (window.tarsSettings && window.tarsSettings.convid) {
         window.parent.postMessage({ type: 'tars-widget-open' }, '*');
@@ -154,7 +154,7 @@ function openQuoteForm() {
     }
 }
 
-// Animação slide-up
+// ====== Animação slide-up ======
 const style = document.createElement('style');
 style.textContent = `
 @keyframes slideUp {
@@ -165,7 +165,7 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Inicialização
+// ====== Inicialização ======
 document.addEventListener('DOMContentLoaded', () => {
     generateCarouselSlides();
     generatePromoGrid();
