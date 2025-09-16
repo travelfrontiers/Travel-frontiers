@@ -142,6 +142,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 });
 
+window.openLightbox = openLightbox;
+window.closeLightbox = closeLightbox;
+window.handlePromoClick = handlePromoClick;
+window.openQuoteForm = openQuoteForm;
+
 // ====== Orçamento ======
 function openQuoteForm() {
     if (window.tarsSettings && window.tarsSettings.convid) {
