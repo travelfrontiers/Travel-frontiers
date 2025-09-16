@@ -56,7 +56,7 @@ function generateCarouselSlides() {
                 <div
                     class="slide-image"
                     style="background-image:url('${p.image}');cursor:pointer"
-                    onclick="openLightbox('${p.image}','${p.title.replace(/'/g, "\\'")} — ${p.dates.replace(/'/g, "\\'") }')"
+                    onclick="openLightbox('${p.image}', ${JSON.stringify(p.title + ' — ' + p.dates)})"
                 ></div>
                 <div class="slide-content">
                     <h3>${p.title}</h3>
@@ -80,7 +80,7 @@ function generatePromoGrid() {
             <div
                 class="promo-card-image"
                 style="background-image:url('${p.image}');cursor:pointer"
-                onclick="openLightbox('${p.image}','${p.title.replace(/'/g, "\\'")} — ${p.dates.replace(/'/g, "\\'") }')"
+                onclick="openLightbox('${p.image}', ${JSON.stringify(p.title + ' — ' + p.dates)})"
             ></div>
             <div class="promo-card-content">
                 <h4>${p.title}</h4>
@@ -133,19 +133,19 @@ function closeLightbox() {
     document.getElementById('promoLightbox').style.display = 'none';
 }
 
+// Tornar funções globais para o onclick dinâmico funcionar:
+window.openLightbox = openLightbox;
+window.closeLightbox = closeLightbox;
+window.handlePromoClick = handlePromoClick;
+window.openQuoteForm = openQuoteForm;
+
 // ====== Lightbox events ======
 document.addEventListener('DOMContentLoaded', () => {
-    // Lightbox close
     document.getElementById('lightboxClose').onclick = closeLightbox;
     document.getElementById('promoLightbox').onclick = e => {
         if (e.target.id === 'promoLightbox') closeLightbox();
     };
 });
-
-window.openLightbox = openLightbox;
-window.closeLightbox = closeLightbox;
-window.handlePromoClick = handlePromoClick;
-window.openQuoteForm = openQuoteForm;
 
 // ====== Orçamento ======
 function openQuoteForm() {
