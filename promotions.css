@@ -414,3 +414,23 @@ width: 90vw;
 height: 70vh;
 }
 }
+@media (max-width: 768px) {
+  .nav-desktop { display: none; }
+  .mobile-menu-btn { display: flex; }
+  .nav-mobile {
+    display: none;
+    position: absolute;
+    top: 60px;
+    left: 0;
+    width: 100%;
+    background: white;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.09);
+    z-index: 999;
+  }
+  .nav-mobile.show { display: flex; }
+}
+/* Desktop */
+.nav-mobile { display: none; }
+.mobile-menu-btn { display: none; }
+
