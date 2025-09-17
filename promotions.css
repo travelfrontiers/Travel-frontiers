@@ -430,7 +430,4 @@ height: 70vh;
   }
   .nav-mobile.show { display: flex; }
 }
-/* Desktop */
-.nav-mobile { display: none; }
-.mobile-menu-btn { display: none; }
 
