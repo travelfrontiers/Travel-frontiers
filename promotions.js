@@ -162,6 +162,24 @@ function openQuoteForm() {
     }
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  if (mobileMenuBtn && mobileMenu) {
+    mobileMenuBtn.addEventListener('click', function() {
+      mobileMenu.classList.toggle('show');
+      mobileMenuBtn.classList.toggle('active');
+    });
+    // Fecha o menu ao clicar em qualquer link
+    mobileMenu.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', function() {
+        mobileMenu.classList.remove('show');
+        mobileMenuBtn.classList.remove('active');
+      });
+    });
+  }
+});
+
 // ====== Animação slide-up ======
 const style = document.createElement('style');
 style.textContent = `
