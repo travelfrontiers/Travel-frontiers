@@ -550,6 +550,104 @@ body {
     box-shadow: 0 12px 35px rgba(249,115,22,0.6);
 }
 
+/* ======== MENU MOBILE - CSS BASE (ADICIONAR) ======== */
+.mobile-menu-btn {
+    display: none;  /* Escondido por defeito */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    position: relative;
+    z-index: 1001;
+}
+
+.mobile-menu-btn span {
+    width: 25px;
+    height: 3px;
+    background: var(--text-color);
+    margin: 3px 0;
+    transition: all 0.3s ease;
+    display: block;
+    border-radius: 2px;
+}
+
+/* Posicionamento do nav-mobile */
+.nav-mobile {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background: white;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    z-index: 1000;
+    border-top: 1px solid #eee;
+}
+
+.nav-mobile a {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: block;
+}
+
+.nav-mobile a:hover,
+.nav-mobile a.active {
+    background: var(--bg-light);
+    color: var(--primary-color);
+}
+
+.nav-mobile a:last-child {
+    border-bottom: none;
+}
+
+/* ======== MEDIA QUERIES CORRIGIDAS ======== */
+@media (max-width: 768px) {
+    .nav-desktop {
+        display: none !important;
+    }
+    
+    .mobile-menu-btn {
+        display: flex !important;  /* Agora vai aparecer! */
+    }
+    
+    .nav-mobile.show {
+        display: flex !important;
+    }
+    
+    /* Animação hamburger → X */
+    .mobile-menu-btn.active span:nth-child(1) {
+        transform: rotate(45deg) translate(6px, 6px);
+    }
+    
+    .mobile-menu-btn.active span:nth-child(2) {
+        opacity: 0;
+    }
+    
+    .mobile-menu-btn.active span:nth-child(3) {
+        transform: rotate(-45deg) translate(6px, -6px);
+    }
+}
+
+/* ======== GARANTIR POSICIONAMENTO DO HEADER ======== */
+.header {
+    position: relative; /* Importante para o position: absolute do menu mobile */
+}
+
+.nav-wrapper {
+    position: relative;
+}
+
 /* ======== MEDIA QUERIES (CORRIGIDAS) ======== */
 @media (max-width: 768px) {
     /* NAVEGAÇÃO MOBILE */
