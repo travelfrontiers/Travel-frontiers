@@ -197,85 +197,55 @@ function openWhatsApp() {
     window.open(`https://wa.me/351918376604?text=${message}`, '_blank');
 }
 
-// ======== MENU MOBILE (CORRIGIDO) ========
-function initMobileMenu() {
+// ======== MENU MOBILE SIMPLES E FUNCIONAL ========
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando menu mobile...');
+    
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileMenu = document.getElementById('mobileMenu');
     
-    console.log('Inicializando menu mobile...');
-    console.log('Button encontrado:', !!mobileMenuBtn);
-    console.log('Menu encontrado:', !!mobileMenu);
+    // Debug: verificar se os elementos existem
+    console.log('Button:', !!mobileMenuBtn);
+    console.log('Menu:', !!mobileMenu);
     
-    if (!mobileMenuBtn || !mobileMenu) {
-        console.error('Elementos do menu mobile não encontrados');
-        return;
-    }
-    
-    // Remove event listeners existentes para evitar duplicação
-    mobileMenuBtn.replaceWith(mobileMenuBtn.cloneNode(true));
-    const newMobileMenuBtn = document.getElementById('mobileMenuBtn');
-    
-    // Adiciona o event listener ao botão
-    newMobileMenuBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        console.log('Menu button clicked');
-        
-        // Toggle das classes
-        mobileMenu.classList.toggle('show');
-        newMobileMenuBtn.classList.toggle('active');
-        
-        // Adiciona animação ao botão (hamburger → X)
-        const spans = newMobileMenuBtn.querySelectorAll('span');
-        spans.forEach((span, index) => {
-            if (newMobileMenuBtn.classList.contains('active')) {
-                if (index === 0) span.style.transform = 'rotate(45deg) translate(5px, 5px)';
-                if (index === 1) span.style.opacity = '0';
-                if (index === 2) span.style.transform = 'rotate(-45deg) translate(7px, -6px)';
-            } else {
-                span.style.transform = 'none';
-                span.style.opacity = '1';
-            }
+    if (mobileMenuBtn && mobileMenu) {
+        // Adicionar event listener ao botão
+        mobileMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('👆 Menu button clicked!');
+            
+            // Toggle das classes
+            mobileMenu.classList.toggle('show');
+            mobileMenuBtn.classList.toggle('active');
+            
+            console.log('Menu está:', mobileMenu.classList.contains('show') ? 'ABERTO' : 'FECHADO');
         });
         
-        console.log('Menu agora está:', mobileMenu.classList.contains('show') ? 'aberto' : 'fechado');
-    });
-    
-    // Fecha o menu ao clicar nos links
-    mobileMenu.querySelectorAll('a').forEach(link => {
-        link.addEventListener('click', function() {
-            console.log('Link clicked, fechando menu');
-            mobileMenu.classList.remove('show');
-            newMobileMenuBtn.classList.remove('active');
-            
-            // Reset da animação do botão
-            const spans = newMobileMenuBtn.querySelectorAll('span');
-            spans.forEach(span => {
-                span.style.transform = 'none';
-                span.style.opacity = '1';
+        // Fechar menu ao clicar nos links
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function() {
+                console.log('🔗 Link clicked, fechando menu');
+                mobileMenu.classList.remove('show');
+                mobileMenuBtn.classList.remove('active');
             });
         });
-    });
-    
-    // Fecha o menu ao clicar fora dele
-    document.addEventListener('click', function(e) {
-        if (!mobileMenu.contains(e.target) && !newMobileMenuBtn.contains(e.target)) {
-            if (mobileMenu.classList.contains('show')) {
-                console.log('Clicked outside, fechando menu');
-                mobileMenu.classList.remove('show');
-                newMobileMenuBtn.classList.remove('active');
-                
-                // Reset da animação do botão
-                const spans = newMobileMenuBtn.querySelectorAll('span');
-                spans.forEach(span => {
-                    span.style.transform = 'none';
-                    span.style.opacity = '1';
-                });
+        
+        // Fechar menu ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!mobileMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+                if (mobileMenu.classList.contains('show')) {
+                    console.log('🖱️ Clicked outside, fechando menu');
+                    mobileMenu.classList.remove('show');
+                    mobileMenuBtn.classList.remove('active');
+                }
             }
-        }
-    });
-}
+        });
+        
+        console.log('✅ Menu mobile inicializado com sucesso!');
+    } else {
+        console.error('❌ Elementos do menu mobile não encontrados!');
+    }
+});
 
 // ======== EVENT LISTENERS GLOBAIS ========
 function initEventListeners() {
