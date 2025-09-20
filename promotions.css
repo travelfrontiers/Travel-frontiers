@@ -21,7 +21,7 @@ body {
     background: white;
 }
 
-/* ======== HEADER E NAVEGAÇÃO (CORRIGIDO) ======== */
+/* ======== HEADER E NAVEGAÇÃO ======== */
 .header {
     background: white;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -35,6 +35,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 12px 20px;
+    position: relative;
 }
 
 .logo {
@@ -72,22 +73,30 @@ body {
     color: var(--primary-color);
 }
 
-/* ======== HAMBURGUER VISÍVEL ======== */
+/* ======== MENU MOBILE (CORRIGIDO) ======== */
 .mobile-menu-btn {
-  /* Cores de fundo do botão para o teste; depois retiras o background se quiseres só os spans */
-  background: var(--primary-color);
-  border-radius: 4px;
-  padding: 6px;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 35px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    position: relative;
+    z-index: 1001;
 }
 
 .mobile-menu-btn span {
-  display: block;               /* Garante que são caixas visíveis */
-  width: 24px;                  /* Largura do bastão */
-  height: 3px;                  /* Espessura do bastão */
-  background: white;            /* Cor contrastante para aparecer */
-  margin: 4px 0;                /* Espaço entre bastões */
-  border-radius: 2px;           /* Arredondado opcional */
-  transition: transform 0.3s ease, opacity 0.3s ease;
+    display: block;
+    width: 25px;
+    height: 3px;
+    background: var(--text-color);
+    margin: 3px 0;
+    transition: all 0.3s ease;
+    border-radius: 2px;
 }
 
 .nav-mobile {
@@ -111,6 +120,7 @@ body {
     color: var(--text-color);
     font-weight: 500;
     transition: all 0.3s ease;
+    display: block;
 }
 
 .nav-mobile a:hover,
@@ -415,7 +425,7 @@ body {
     font-size: 1.2rem;
 }
 
-/* ======== LIGHTBOX STYLES (CORRIGIDO) ======== */
+/* ======== LIGHTBOX STYLES ======== */
 .lightbox-overlay {
     display: none;
     position: fixed;
@@ -458,11 +468,6 @@ body {
     cursor: pointer;
     z-index: 10001;
     transition: color 0.3s ease;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .lightbox-close:hover {
@@ -543,105 +548,14 @@ body {
     box-shadow: 0 12px 35px rgba(249,115,22,0.6);
 }
 
-/* ======== MENU MOBILE - CSS BASE (ADICIONAR) ======== */
-.mobile-menu-btn {
-    display: none;  /* Escondido por defeito */
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    width: 40px;
-    height: 40px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 8px;
-    position: relative;
-    z-index: 1001;
+/* ======== CONTAINER GLOBAL ======== */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
 }
 
-.mobile-menu-btn span {
-    width: 25px;
-    height: 3px;
-    background: var(--text-color);
-    margin: 3px 0;
-    transition: all 0.3s ease;
-    display: block;
-    border-radius: 2px;
-}
-
-/* Posicionamento do nav-mobile */
-.nav-mobile {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    width: 100%;
-    background: white;
-    flex-direction: column;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    z-index: 1000;
-    border-top: 1px solid #eee;
-}
-
-.nav-mobile a {
-    padding: 16px 20px;
-    border-bottom: 1px solid #f0f0f0;
-    text-decoration: none;
-    color: var(--text-color);
-    font-weight: 500;
-    transition: all 0.3s ease;
-    display: block;
-}
-
-.nav-mobile a:hover,
-.nav-mobile a.active {
-    background: var(--bg-light);
-    color: var(--primary-color);
-}
-
-.nav-mobile a:last-child {
-    border-bottom: none;
-}
-
-/* ======== MEDIA QUERIES CORRIGIDAS ======== */
-@media (max-width: 768px) {
-    .nav-desktop {
-        display: none !important;
-    }
-    
-    .mobile-menu-btn {
-        display: flex !important;  /* Agora vai aparecer! */
-    }
-    
-    .nav-mobile.show {
-        display: flex !important;
-    }
-    
-    /* Animação hamburger → X */
-    .mobile-menu-btn.active span:nth-child(1) {
-        transform: rotate(45deg) translate(6px, 6px);
-    }
-    
-    .mobile-menu-btn.active span:nth-child(2) {
-        opacity: 0;
-    }
-    
-    .mobile-menu-btn.active span:nth-child(3) {
-        transform: rotate(-45deg) translate(6px, -6px);
-    }
-}
-
-/* ======== GARANTIR POSICIONAMENTO DO HEADER ======== */
-.header {
-    position: relative; /* Importante para o position: absolute do menu mobile */
-}
-
-.nav-wrapper {
-    position: relative;
-}
-
-/* ======== MEDIA QUERIES (CORRIGIDAS) ======== */
+/* ======== MEDIA QUERIES ======== */
 @media (max-width: 768px) {
     /* NAVEGAÇÃO MOBILE */
     .nav-desktop {
@@ -658,7 +572,7 @@ body {
     
     /* Animação do hamburger → X */
     .mobile-menu-btn.active span:nth-child(1) {
-        transform: rotate(45deg) translate(5px, 5px);
+        transform: rotate(45deg) translate(6px, 6px);
     }
     
     .mobile-menu-btn.active span:nth-child(2) {
@@ -666,7 +580,7 @@ body {
     }
     
     .mobile-menu-btn.active span:nth-child(3) {
-        transform: rotate(-45deg) translate(7px, -6px);
+        transform: rotate(-45deg) translate(6px, -6px);
     }
     
     /* CARROSSEL MOBILE */
@@ -734,13 +648,6 @@ body {
     }
 }
 
-/* ======== CONTAINER GLOBAL ======== */
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
-
 /* ======== ANIMAÇÕES ADICIONAIS ======== */
 @keyframes slideUp {
     from { 
@@ -755,26 +662,4 @@ body {
 
 .slide-content { 
     animation: slideUp 0.8s ease forwards; 
-}
-
-/* ======== FIXES ESPECÍFICOS ======== */
-.nav-mobile {
-    /* Garante que o menu mobile está sempre acima de outros elementos */
-    position: absolute !important;
-    z-index: 1000 !important;
-}
-
-.mobile-menu-btn span {
-    /* Suaviza as transições do botão hamburger */
-    transition: all 0.3s ease !important;
-}
-
-/* Remove conflitos com outros estilos */
-.mobile-menu-btn:focus {
-    outline: none;
-}
-
-.nav-mobile a:focus {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
 }
