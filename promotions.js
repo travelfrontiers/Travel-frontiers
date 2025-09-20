@@ -44,9 +44,8 @@ const promotionsData = [
 
 // ======== FUNÇÕES GLOBAIS LIGHTBOX ========
 function openLightbox(src, caption) {
-    console.log('Opening lightbox with:', src, caption);
-    const lightboxOverlay = document.getElementById('lightboxOverlay') || document.getElementById('promoLightbox');
-    const lightboxImage = document.getElementById('lightboxImage') || document.getElementById('lightboxImg');
+    const lightboxOverlay = document.getElementById('lightboxOverlay');
+    const lightboxImage = document.getElementById('lightboxImage');
     const lightboxCaption = document.getElementById('lightboxCaption');
     
     if (lightboxOverlay && lightboxImage) {
@@ -55,15 +54,15 @@ function openLightbox(src, caption) {
             lightboxCaption.textContent = caption || '';
         }
         lightboxOverlay.style.display = 'flex';
-        document.body.style.overflow = 'hidden'; // Previne scroll
+        document.body.style.overflow = 'hidden';
     }
 }
 
 function closeLightbox() {
-    const lightboxOverlay = document.getElementById('lightboxOverlay') || document.getElementById('promoLightbox');
+    const lightboxOverlay = document.getElementById('lightboxOverlay');
     if (lightboxOverlay) {
         lightboxOverlay.style.display = 'none';
-        document.body.style.overflow = 'auto'; // Restaura scroll
+        document.body.style.overflow = 'auto';
     }
 }
 
@@ -158,11 +157,6 @@ function initializeSwiper() {
         pagination: {
             el: '.promo-pagination',
             clickable: true
-        },
-        on: {
-            init: function() {
-                console.log('Swiper inicializado com sucesso');
-            }
         }
     });
     
@@ -171,7 +165,6 @@ function initializeSwiper() {
 
 // ======== GESTÃO DE PROMOÇÕES ========
 function handlePromoClick(id) {
-    console.log('Promo clicked:', id);
     const promo = promotionsData.find(p => p.id === id);
     if (promo) {
         openQuoteForm();
@@ -179,12 +172,10 @@ function handlePromoClick(id) {
 }
 
 function openQuoteForm() {
-    // Tenta usar o widget Tars primeiro
     if (window.tarsSettings && window.tarsSettings.convid) {
         try {
             window.parent.postMessage({ type: 'tars-widget-open' }, '*');
         } catch(e) {
-            console.log('Widget Tars não disponível, usando WhatsApp');
             openWhatsApp();
         }
     } else {
@@ -197,55 +188,54 @@ function openWhatsApp() {
     window.open(`https://wa.me/351918376604?text=${message}`, '_blank');
 }
 
-// ======== MENU MOBILE SIMPLES E FUNCIONAL ========
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Inicializando menu mobile...');
-    
+// ======== MENU MOBILE (FUNCIONAL) ========
+function initMobileMenu() {
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileMenu = document.getElementById('mobileMenu');
     
-    // Debug: verificar se os elementos existem
-    console.log('Button:', !!mobileMenuBtn);
-    console.log('Menu:', !!mobileMenu);
+    console.log('Inicializando menu mobile...');
+    console.log('Button encontrado:', !!mobileMenuBtn);
+    console.log('Menu encontrado:', !!mobileMenu);
     
-    if (mobileMenuBtn && mobileMenu) {
-        // Adicionar event listener ao botão
-        mobileMenuBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('👆 Menu button clicked!');
-            
-            // Toggle das classes
-            mobileMenu.classList.toggle('show');
-            mobileMenuBtn.classList.toggle('active');
-            
-            console.log('Menu está:', mobileMenu.classList.contains('show') ? 'ABERTO' : 'FECHADO');
-        });
+    if (!mobileMenuBtn || !mobileMenu) {
+        console.error('Elementos do menu mobile não encontrados');
+        return;
+    }
+    
+    // Adiciona o event listener ao botão
+    mobileMenuBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         
-        // Fechar menu ao clicar nos links
-        mobileMenu.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', function() {
-                console.log('🔗 Link clicked, fechando menu');
+        console.log('Menu button clicked');
+        
+        // Toggle das classes
+        mobileMenu.classList.toggle('show');
+        mobileMenuBtn.classList.toggle('active');
+        
+        console.log('Menu agora está:', mobileMenu.classList.contains('show') ? 'aberto' : 'fechado');
+    });
+    
+    // Fecha o menu ao clicar nos links
+    mobileMenu.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', function() {
+            console.log('Link clicked, fechando menu');
+            mobileMenu.classList.remove('show');
+            mobileMenuBtn.classList.remove('active');
+        });
+    });
+    
+    // Fecha o menu ao clicar fora dele
+    document.addEventListener('click', function(e) {
+        if (!mobileMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+            if (mobileMenu.classList.contains('show')) {
+                console.log('Clicked outside, fechando menu');
                 mobileMenu.classList.remove('show');
                 mobileMenuBtn.classList.remove('active');
-            });
-        });
-        
-        // Fechar menu ao clicar fora
-        document.addEventListener('click', function(e) {
-            if (!mobileMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
-                if (mobileMenu.classList.contains('show')) {
-                    console.log('🖱️ Clicked outside, fechando menu');
-                    mobileMenu.classList.remove('show');
-                    mobileMenuBtn.classList.remove('active');
-                }
             }
-        });
-        
-        console.log('✅ Menu mobile inicializado com sucesso!');
-    } else {
-        console.error('❌ Elementos do menu mobile não encontrados!');
-    }
-});
+        }
+    });
+}
 
 // ======== EVENT LISTENERS GLOBAIS ========
 function initEventListeners() {
@@ -257,7 +247,7 @@ function initEventListeners() {
     });
     
     // Click no overlay do lightbox para fechar
-    const lightboxOverlay = document.getElementById('lightboxOverlay') || document.getElementById('promoLightbox');
+    const lightboxOverlay = document.getElementById('lightboxOverlay');
     if (lightboxOverlay) {
         lightboxOverlay.addEventListener('click', function(e) {
             if (e.target === this) {
@@ -291,29 +281,13 @@ document.addEventListener('DOMContentLoaded', function() {
         generateCarouselSlides();
         generatePromoGrid();
         
-        // 3. Inicializar Swiper (com timeout para garantir que o DOM está pronto)
+        // 3. Inicializar Swiper
         setTimeout(() => {
             initializeSwiper();
         }, 100);
         
         // 4. Inicializar event listeners
         initEventListeners();
-        
-        // 5. Animação de entrada suave
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideUp {
-                from { opacity: 0; transform: translateY(30px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-            .slide-content { 
-                animation: slideUp 0.8s ease forwards; 
-            }
-            .mobile-menu-btn span {
-                transition: all 0.3s ease;
-            }
-        `;
-        document.head.appendChild(style);
         
         console.log('Página inicializada com sucesso!');
         
@@ -323,7 +297,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ======== WIDGET TARS ========
-// Inicialização do widget Tars (se disponível)
 (function(){
     var js, fs, d=document, id="tars-widget-script", 
         b="https://tars-file-upload.s3.amazonaws.com/bulb/";
@@ -337,5 +310,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 })();
 
-// Configuração do widget Tars
 window.tarsSettings = {"convid":"oORlVw"};
