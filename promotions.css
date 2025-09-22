@@ -56,11 +56,7 @@ body {
 }
 
 .logo a {
-    text-decoration: none;   /* Retira sublinhado */
-    color: inherit;          /* Usa a cor herdada (var(--text-color)) */
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    display: contents;
 }
 
 .logo a:visited,
