@@ -74,7 +74,7 @@ body {
 }
 
 /* ======== MENU MOBILE (CORRIGIDO) ======== */
-/* ======== HAMBURGUER VISÍVEL ======== */
+
 .mobile-menu-btn {
     display: none;
     flex-direction: column;
@@ -85,7 +85,6 @@ body {
     cursor: pointer;
     gap: 4px;
 }
-
 .mobile-menu-btn span {
     width: 100%;
     height: 2px;
@@ -95,36 +94,16 @@ body {
 
 .nav-mobile {
     display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    width: 100%;
-    background: white;
     flex-direction: column;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    z-index: 1000;
-    border-top: 1px solid #eee;
+    gap: 16px;
+    padding: 20px 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
-
 .nav-mobile a {
-    padding: 15px 20px;
-    border-bottom: 1px solid #f0f0f0;
     text-decoration: none;
-    color: var(--text-color);
+    color: #374151;
     font-weight: 500;
-    transition: all 0.3s ease;
-    display: block;
-}
-
-.nav-mobile a:hover,
-.nav-mobile a.active {
-    background: var(--bg-light);
-    color: var(--primary-color);
-}
-
-.nav-mobile a:last-child {
-    border-bottom: none;
+    padding: 8px 0;
 }
 
 /* ======== HERO SECTION ======== */
@@ -552,7 +531,13 @@ body {
 /* ======== MEDIA QUERIES ======== */
 @media (max-width: 768px) {
     .nav-desktop {
-        display: none !important;
+        display: none;
+    }
+    .mobile-menu-btn {
+        display: flex;
+    }
+    .nav-mobile.show {
+        display: flex;
     }
 }
     
