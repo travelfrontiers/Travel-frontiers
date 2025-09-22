@@ -188,53 +188,27 @@ function openWhatsApp() {
     window.open(`https://wa.me/351918376604?text=${message}`, '_blank');
 }
 
-// ======== MENU MOBILE (FUNCIONAL) ========
-function initMobileMenu() {
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
-    
-    console.log('Inicializando menu mobile...');
-    console.log('Button encontrado:', !!mobileMenuBtn);
-    console.log('Menu encontrado:', !!mobileMenu);
-    
-    if (!mobileMenuBtn || !mobileMenu) {
-        console.error('Elementos do menu mobile não encontrados');
-        return;
-    }
-    
-    // Adiciona o event listener ao botão
-    mobileMenuBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        console.log('Menu button clicked');
-        
-        // Toggle das classes
-        mobileMenu.classList.toggle('show');
-        mobileMenuBtn.classList.toggle('active');
-        
-        console.log('Menu agora está:', mobileMenu.classList.contains('show') ? 'aberto' : 'fechado');
+// ============================
+// Mobile menu
+// ============================
+function initializeMobileMenu() {
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+
+  if (mobileMenuBtn && mobileMenu) {
+    mobileMenuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('show');
+      mobileMenuBtn.classList.toggle('active');
     });
-    
-    // Fecha o menu ao clicar nos links
-    mobileMenu.querySelectorAll('a').forEach(link => {
-        link.addEventListener('click', function() {
-            console.log('Link clicked, fechando menu');
-            mobileMenu.classList.remove('show');
-            mobileMenuBtn.classList.remove('active');
-        });
+
+    const mobileLinks = mobileMenu.querySelectorAll('a');
+    mobileLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        mobileMenu.classList.remove('show');
+        mobileMenuBtn.classList.remove('active');
+      });
     });
-    
-    // Fecha o menu ao clicar fora dele
-    document.addEventListener('click', function(e) {
-        if (!mobileMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
-            if (mobileMenu.classList.contains('show')) {
-                console.log('Clicked outside, fechando menu');
-                mobileMenu.classList.remove('show');
-                mobileMenuBtn.classList.remove('active');
-            }
-        }
-    });
+  }
 }
 
 // ======== EVENT LISTENERS GLOBAIS ========
