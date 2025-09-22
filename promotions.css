@@ -554,14 +554,6 @@ body {
     .nav-desktop {
         display: none !important;
     }
-    
-    .mobile-menu-btn {
-        display: flex !important; /* Agora vai aparecer! */
-    }
-    
-    .nav-mobile.show {
-        display: flex !important;
-    }
 }
     
     /* CARROSSEL MOBILE */
