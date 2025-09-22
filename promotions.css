@@ -93,12 +93,25 @@ body {
 }
 
 .nav-mobile {
-    display: none;
-    flex-direction: column;
-    gap: 16px;
-    padding: 20px 0;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  background: white;
+  position: fixed;
+  left: 0;
+  top: 64px;  /* ajusta conforme altura do header */
+  width: 100vw;
+  min-height: calc(100vh - 64px);
+  z-index: 2000;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.04);
+
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
+.nav-mobile.show {
+  display: flex;
+}
+
 .nav-mobile a {
     text-decoration: none;
     color: #374151;
