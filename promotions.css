@@ -268,21 +268,40 @@ body {
 .price-info { margin:8px 0 14px 0; font-size:1.09em;}
 .price-original { text-decoration: line-through; color:#9ca3af; margin-right:12px;}
 .price-discount { color:var(--primary-color);}
-.slide-cta {
-    background: linear-gradient(135deg,var(--primary-color),var(--secondary-color));
+.slide-cta,
+.promo-btn { /* Aplica ambos */
+    background: linear-gradient(90deg, #f97316 0%, #fbbf24 100%);
     color: #fff;
-    padding: 12px 0;
+    font-weight: 700;
+    font-size: 1.15em;
     border: none;
-    border-radius: 22px;
-    font-size: 1em;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition-base);
+    padding: 15px 0;
+    border-radius: 18px;
     width: 100%;
-    margin-top: 9px;
-    box-shadow: 0 2px 7px rgba(248,112,60,0.1);
+    margin-top: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.14);
+    transition: background 0.2s, box-shadow 0.18s, transform 0.18s;
+    text-decoration: none;
+    outline: none;
+    letter-spacing: 0.02em;
+    display: inline-block;
+    text-align: center;
 }
-.slide-cta:hover { background: var(--primary-color); }
+.slide-cta:hover,
+.promo-btn:hover {
+    background: linear-gradient(90deg, #f97316 18%, #fc9805 100%);
+    box-shadow: 0 8px 32px rgba(244, 144, 0, 0.16);
+    transform: translateY(-2px) scale(1.03);
+    color: #fff;
+    text-decoration: none;
+}
+
+/* Garante que NUNCA fica sublinhado se for <a> com .slide-cta ou .promo-btn */
+.slide-cta, .slide-cta:visited, .slide-cta:active,
+.promo-btn, .promo-btn:visited, .promo-btn:active {
+    text-decoration: none !important;
+}
 
 /* ======= NAVEGAÇÃO CARROSSEL ======= */
 .promo-nav-prev, .promo-nav-next {
