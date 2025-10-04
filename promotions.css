@@ -524,6 +524,33 @@ body {
     .section-intro h2 { font-size:1.38rem;}
 }
 
+@media (max-width: 700px) {
+  .promo-card-content, .slide-content {
+    padding: 9px 7px 15px 7px; /* Menos padding nas laterais */
+  }
+  .slide-cta, .promo-btn {
+    width: 98%;
+    min-width: 0;
+    margin-left: 1%;
+    margin-right: 1%;
+    font-size: 1.08em;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 480px) {
+  .slide-cta, .promo-btn {
+    width: 96%;
+    margin-left: 2%;
+    margin-right: 2%;
+    font-size: 1em;
+    box-sizing: border-box;
+  }
+  .promo-card-content, .slide-content {
+    padding: 8px 3px 12px 3px;
+  }
+}
+
 /* ======= ANIMAÇÕES RESTANTES ======= */
 @keyframes slideUp {
     from {opacity:0; transform:translateY(32px);}
