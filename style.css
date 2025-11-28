@@ -1561,6 +1561,78 @@ margin-left: 16px;
     padding: 0;
     box-sizing: border-box;
 }
+/* ================================================= */
+/* NOVO: Botão Flutuante de Promoções (FAB) */
+/* ================================================= */
+.promotions-fab {
+    position: fixed;
+    bottom: 90px; /* Posição acima do botão de cookies flutuante */
+    right: 20px;
+    /* Usa o gradiente da marca em vez do vermelho */
+    background: var(--gradient-primary); 
+    color: white;
+    padding: 10px 18px;
+    border-radius: 50px; /* Formato de pílula */
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 700;
+    /* Sombra ajustada para tons de laranja */
+    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.4); 
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 1000;
+    transition: var(--transition-base);
+    transform: scale(1);
+    animation: pulse-fab 2s infinite ease-out; /* Adiciona a animação de pulsação */
+    cursor: pointer;
+}
+
+.promotions-fab:hover {
+    /* Hover consistente com os outros botões */
+    background: var(--primary-hover);
+    transform: scale(1.05);
+    animation: none; /* Para a pulsação ao interagir */
+}
+
+.promotions-fab .fab-icon {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+/* Animação de Pulsação para chamar a atenção (Laranja) */
+@keyframes pulse-fab {
+    0% {
+        /* Sombra laranja */
+        box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7);
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.03);
+    }
+    70% {
+        /* Sombra laranja transparente */
+        box-shadow: 0 0 0 15px rgba(249, 115, 22, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(249, 115, 22, 0);
+        transform: scale(1);
+    }
+}
+
+/* Ajuste para Mobile */
+@media (max-width: 768px) {
+    .promotions-fab {
+        bottom: 70px; /* Posição ajustada para não colidir com a barra de cookies */
+        right: 15px;
+        font-size: 0.9rem;
+        padding: 8px 14px;
+        gap: 6px;
+    }
+    .promotions-fab .fab-icon {
+        font-size: 1.2rem;
+    }
+}
 
 /* Optimize images */
 img {
