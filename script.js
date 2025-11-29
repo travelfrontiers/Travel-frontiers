@@ -6,7 +6,7 @@ const translations = {
             about: 'Sobre',
             services: 'Serviços',
             testimonials: 'Testemunhos',
-            contact: 'Contacto'
+            contact: 'Contacto',
             promotions: 'Promoções'
         },
         hero: {
@@ -136,7 +136,7 @@ const translations = {
             about: 'About',
             services: 'Services',
             testimonials: 'Testimonials',
-            contact: 'Contact'
+            contact: 'Contact',
             promotions: 'Promotions'
         },
         hero: {
@@ -266,7 +266,7 @@ const translations = {
             about: 'À propos',
             services: 'Services',
             testimonials: 'Témoignages',
-            contact: 'Contact'
+            contact: 'Contact',
             promotions: 'Promotions'
         },
         hero: {
