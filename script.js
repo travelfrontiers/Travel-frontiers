@@ -7,6 +7,7 @@ const translations = {
             services: 'Serviços',
             testimonials: 'Testemunhos',
             contact: 'Contacto'
+            promotions: 'Promoções'
         },
         hero: {
             title: 'Explore as Fronteiras do Mundo',
@@ -136,6 +137,7 @@ const translations = {
             services: 'Services',
             testimonials: 'Testimonials',
             contact: 'Contact'
+            promotions: 'Promotions'
         },
         hero: {
             title: 'Explore the World\'s Frontiers',
@@ -265,6 +267,7 @@ const translations = {
             services: 'Services',
             testimonials: 'Témoignages',
             contact: 'Contact'
+            promotions: 'Promotions'
         },
         hero: {
             title: 'Explorez les Frontières du Monde',
