@@ -1895,6 +1895,58 @@ body {
     justify-content: center;
 }
 
+/* ============================
+   FLOATING PROMOTIONS BUTTON
+   ============================ */
+
+#promotions-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f97316, #fbbf24);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.4);
+    transition: all 0.3s ease;
+    z-index: 999;
+    padding: 0;
+    gap: 4px;
+    text-decoration: none;
+}
+
+#promotions-fab:hover {
+    background: linear-gradient(135deg, #ea580c, #f59e0b);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(249, 115, 22, 0.5);
+    color: white;
+    text-decoration: none;
+}
+
+#promotions-fab:active {
+    transform: translateY(-1px);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 480px) {
+    #promotions-fab {
+        bottom: 16px;
+        right: 16px;
+        width: 48px;
+        height: 48px;
+        font-size: 10px;
+    }
+}
+
 /* Stats Card */
 .stats-card {
     background: rgba(255, 255, 255, 0.1);
