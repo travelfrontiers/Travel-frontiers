@@ -557,7 +557,7 @@ body {
     line-height: 1.5;
 }
 
-    /* ============================
+/* ============================
    PROMOTIONS BUTTON - HERO SECTION
    ============================ */
 
@@ -566,8 +566,8 @@ body {
     right: 80px;
     top: 50%;
     transform: translateY(-50%);
-    width: 260px;
-    padding: 16px 32px;
+    width: auto;
+    padding: 16px 28px;
     background: linear-gradient(135deg, #f97316, #fbbf24);
     color: white;
     border: none;
@@ -575,23 +575,24 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
-    font-size: 18px;
+    flex-direction: row;              /* ← MUDADO PARA ROW (horizontal) */
+    font-size: 16px;
     font-weight: 700;
     box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4);
     transition: all 0.3s ease;
     z-index: 50;
     border-radius: 50px;
     text-decoration: none;
-    gap: 8px;
+    gap: 12px;                        /* ← AUMENTADO (espaço entre ícone e texto) */
 }
 
-#promotions-fab span:first-child {
-    font-size: 32px;
+#promotions-fab .promo-icon {
+    font-size: 28px;
     line-height: 1;
+    flex-shrink: 0;
 }
 
-#promotions-fab span:last-child {
+#promotions-fab .promo-text {
     font-size: 16px;
     font-weight: 700;
     text-transform: uppercase;
@@ -614,17 +615,17 @@ body {
 @media (max-width: 1024px) {
     #promotions-fab {
         right: 50px;
-        width: 240px;
-        padding: 14px 28px;
-        font-size: 16px;
-    }
-    
-    #promotions-fab span:first-child {
-        font-size: 28px;
-    }
-    
-    #promotions-fab span:last-child {
+        padding: 14px 24px;
         font-size: 14px;
+        gap: 10px;
+    }
+    
+    #promotions-fab .promo-icon {
+        font-size: 24px;
+    }
+    
+    #promotions-fab .promo-text {
+        font-size: 13px;
     }
 }
 
@@ -638,20 +639,20 @@ body {
         bottom: 80px;
         transform: translateY(0);
         width: auto;
-        padding: 14px 28px;
-        font-size: 16px;
+        padding: 14px 24px;
+        font-size: 14px;
     }
     
     #promotions-fab:hover {
         transform: translateY(-2px);
     }
     
-    #promotions-fab span:first-child {
-        font-size: 26px;
+    #promotions-fab .promo-icon {
+        font-size: 22px;
     }
     
-    #promotions-fab span:last-child {
-        font-size: 13px;
+    #promotions-fab .promo-text {
+        font-size: 12px;
     }
 }
 
@@ -662,16 +663,17 @@ body {
         left: 12px;
         bottom: 70px;
         width: auto;
-        padding: 12px 24px;
-        font-size: 14px;
-    }
-    
-    #promotions-fab span:first-child {
-        font-size: 24px;
-    }
-    
-    #promotions-fab span:last-child {
+        padding: 12px 20px;
         font-size: 12px;
+        gap: 8px;
+    }
+    
+    #promotions-fab .promo-icon {
+        font-size: 20px;
+    }
+    
+    #promotions-fab .promo-text {
+        font-size: 11px;
     }
 }
         
