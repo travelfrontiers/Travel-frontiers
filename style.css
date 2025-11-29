@@ -557,6 +557,124 @@ body {
     line-height: 1.5;
 }
 
+    /* ============================
+   PROMOTIONS BUTTON - HERO SECTION
+   ============================ */
+
+#promotions-fab {
+    position: absolute;
+    right: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 260px;
+    padding: 16px 32px;
+    background: linear-gradient(135deg, #f97316, #fbbf24);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    font-size: 18px;
+    font-weight: 700;
+    box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4);
+    transition: all 0.3s ease;
+    z-index: 50;
+    border-radius: 50px;
+    text-decoration: none;
+    gap: 8px;
+}
+
+#promotions-fab span:first-child {
+    font-size: 32px;
+    line-height: 1;
+}
+
+#promotions-fab span:last-child {
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: center;
+    line-height: 1.2;
+}
+
+#promotions-fab:hover {
+    background: linear-gradient(135deg, #ea580c, #f59e0b);
+    box-shadow: 0 15px 45px rgba(249, 115, 22, 0.6);
+    transform: translateY(-50%) translateX(-8px);
+}
+
+#promotions-fab:active {
+    transform: translateY(-50%) scale(0.98);
+}
+
+/* Tablet - Ajusta posição */
+@media (max-width: 1024px) {
+    #promotions-fab {
+        right: 50px;
+        width: 240px;
+        padding: 14px 28px;
+        font-size: 16px;
+    }
+    
+    #promotions-fab span:first-child {
+        font-size: 28px;
+    }
+    
+    #promotions-fab span:last-child {
+        font-size: 14px;
+    }
+}
+
+/* Mobile - Move para baixo fora do hero */
+@media (max-width: 768px) {
+    #promotions-fab {
+        position: fixed;
+        right: 16px;
+        left: 16px;
+        top: auto;
+        bottom: 80px;
+        transform: translateY(0);
+        width: auto;
+        padding: 14px 28px;
+        font-size: 16px;
+    }
+    
+    #promotions-fab:hover {
+        transform: translateY(-2px);
+    }
+    
+    #promotions-fab span:first-child {
+        font-size: 26px;
+    }
+    
+    #promotions-fab span:last-child {
+        font-size: 13px;
+    }
+}
+
+/* Extra small */
+@media (max-width: 480px) {
+    #promotions-fab {
+        right: 12px;
+        left: 12px;
+        bottom: 70px;
+        width: auto;
+        padding: 12px 24px;
+        font-size: 14px;
+    }
+    
+    #promotions-fab span:first-child {
+        font-size: 24px;
+    }
+    
+    #promotions-fab span:last-child {
+        font-size: 12px;
+    }
+}
+        
 /* Services CTA */
 .services-cta {
     text-align: center;
@@ -1053,118 +1171,6 @@ body {
 }
     .footer-links {
         justify-content: center;
-    }
-}
-
-/* ============================
-   FLOATING PROMOTIONS BALLOON
-   ============================ */
-
-/* Animação de pulsação */
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7),
-                    0 0 0 0 rgba(251, 191, 36, 0.5);
-    }
-    50% {
-        box-shadow: 0 0 0 20px rgba(249, 115, 22, 0),
-                    0 0 0 30px rgba(251, 191, 36, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(249, 115, 22, 0),
-                    0 0 0 0 rgba(251, 191, 36, 0);
-    }
-}
-
-/* Animação de bounce no hover */
-@keyframes bounce {
-    0%, 100% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.1);
-    }
-}
-
-#promotions-fab {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #f97316, #fbbf24);
-    color: white;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    font-size: 40px;
-    font-weight: 700;
-    box-shadow: 0 10px 40px rgba(249, 115, 22, 0.6);
-    transition: all 0.3s ease;
-    z-index: 999;
-    padding: 0;
-    gap: 8px;
-    text-decoration: none;
-    animation: pulse 2s infinite;
-}
-
-#promotions-fab span:first-child {
-    font-size: 48px;
-}
-
-#promotions-fab span:last-child {
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 1px;
-}
-
-#promotions-fab:hover {
-    background: linear-gradient(135deg, #ea580c, #f59e0b);
-    box-shadow: 0 15px 50px rgba(249, 115, 22, 0.8);
-    animation: bounce 0.5s ease-in-out;
-    color: white;
-    text-decoration: none;
-}
-
-#promotions-fab:active {
-    transform: translate(-50%, -50%) scale(0.95);
-}
-
-/* Mobile responsiveness */
-@media (max-width: 768px) {
-    #promotions-fab {
-        width: 100px;
-        height: 100px;
-        font-size: 32px;
-    }
-    
-    #promotions-fab span:first-child {
-        font-size: 40px;
-    }
-    
-    #promotions-fab span:last-child {
-        font-size: 12px;
-    }
-}
-
-@media (max-width: 480px) {
-    #promotions-fab {
-        width: 90px;
-        height: 90px;
-        font-size: 28px;
-    }
-    
-    #promotions-fab span:first-child {
-        font-size: 36px;
-    }
-    
-    #promotions-fab span:last-child {
-        font-size: 10px;
     }
 }
 
