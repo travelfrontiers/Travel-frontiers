@@ -1561,76 +1561,115 @@ margin-left: 16px;
     padding: 0;
     box-sizing: border-box;
 }
-/* ================================================= */
-/* NOVO: Botão Flutuante de Promoções (FAB) */
-/* ================================================= */
-.promotions-fab {
-    position: fixed;
-    bottom: 90px; /* Posição acima do botão de cookies flutuante */
-    right: 20px;
-    /* Usa o gradiente da marca em vez do vermelho */
-    background: var(--gradient-primary); 
-    color: white;
-    padding: 10px 18px;
-    border-radius: 50px; /* Formato de pílula */
-    text-decoration: none;
-    font-size: 1.1rem;
-    font-weight: 700;
-    /* Sombra ajustada para tons de laranja */
-    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.4); 
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    z-index: 1000;
-    transition: var(--transition-base);
-    transform: scale(1);
-    animation: pulse-fab 2s infinite ease-out; /* Adiciona a animação de pulsação */
-    cursor: pointer;
-}
+/* ============================
+   FLOATING PROMOTIONS BALLOON
+   ============================ */
 
-.promotions-fab:hover {
-    /* Hover consistente com os outros botões */
-    background: var(--primary-hover);
-    transform: scale(1.05);
-    animation: none; /* Para a pulsação ao interagir */
-}
-
-.promotions-fab .fab-icon {
-    font-size: 1.4rem;
-    line-height: 1;
-}
-
-/* Animação de Pulsação para chamar a atenção (Laranja) */
-@keyframes pulse-fab {
+/* Animação de pulsação */
+@keyframes pulse {
     0% {
-        /* Sombra laranja */
-        box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7);
+        box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7),
+                    0 0 0 0 rgba(251, 191, 36, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 0 20px rgba(249, 115, 22, 0),
+                    0 0 0 30px rgba(251, 191, 36, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(249, 115, 22, 0),
+                    0 0 0 0 rgba(251, 191, 36, 0);
+    }
+}
+
+/* Animação de bounce no hover */
+@keyframes bounce {
+    0%, 100% {
         transform: scale(1);
     }
     50% {
-        transform: scale(1.03);
-    }
-    70% {
-        /* Sombra laranja transparente */
-        box-shadow: 0 0 0 15px rgba(249, 115, 22, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(249, 115, 22, 0);
-        transform: scale(1);
+        transform: scale(1.1);
     }
 }
 
-/* Ajuste para Mobile */
+#promotions-fab {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f97316, #fbbf24);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    font-size: 40px;
+    font-weight: 700;
+    box-shadow: 0 10px 40px rgba(249, 115, 22, 0.6);
+    transition: all 0.3s ease;
+    z-index: 999;
+    padding: 0;
+    gap: 8px;
+    text-decoration: none;
+    animation: pulse 2s infinite;
+}
+
+#promotions-fab span:first-child {
+    font-size: 48px;
+}
+
+#promotions-fab span:last-child {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+#promotions-fab:hover {
+    background: linear-gradient(135deg, #ea580c, #f59e0b);
+    box-shadow: 0 15px 50px rgba(249, 115, 22, 0.8);
+    animation: bounce 0.5s ease-in-out;
+    color: white;
+    text-decoration: none;
+}
+
+#promotions-fab:active {
+    transform: translate(-50%, -50%) scale(0.95);
+}
+
+/* Mobile responsiveness */
 @media (max-width: 768px) {
-    .promotions-fab {
-        bottom: 70px; /* Posição ajustada para não colidir com a barra de cookies */
-        right: 15px;
-        font-size: 0.9rem;
-        padding: 8px 14px;
-        gap: 6px;
+    #promotions-fab {
+        width: 100px;
+        height: 100px;
+        font-size: 32px;
     }
-    .promotions-fab .fab-icon {
-        font-size: 1.2rem;
+    
+    #promotions-fab span:first-child {
+        font-size: 40px;
+    }
+    
+    #promotions-fab span:last-child {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    #promotions-fab {
+        width: 90px;
+        height: 90px;
+        font-size: 28px;
+    }
+    
+    #promotions-fab span:first-child {
+        font-size: 36px;
+    }
+    
+    #promotions-fab span:last-child {
+        font-size: 10px;
     }
 }
 
