@@ -562,12 +562,13 @@ body {
    ============================ */
 
 #promotions-fab {
-    position: absolute;
-    right: 80px;
-    top: 50%;
-    transform: translateY(-50%);
+    position: fixed;                    /* ← MUDADO DE absolute PARA fixed */
+    right: 20px;                        /* ← REDUZIDO DE 80px */
+    bottom: 100px;                      /* ← NOVO: 100px do fundo */
+    top: auto;                          /* ← NOVO: remove top */
+    transform: translateY(0);           /* ← SIMPLIFICADO */
     width: auto;
-    padding: 16px 28px;
+    padding: 14px 24px;
     background: linear-gradient(135deg, #f97316, #fbbf24);
     color: white;
     border: none;
@@ -575,25 +576,25 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-direction: row;              /* ← MUDADO PARA ROW (horizontal) */
-    font-size: 16px;
+    flex-direction: row;
+    font-size: 14px;
     font-weight: 700;
     box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4);
     transition: all 0.3s ease;
     z-index: 50;
     border-radius: 50px;
     text-decoration: none;
-    gap: 12px;                        /* ← AUMENTADO (espaço entre ícone e texto) */
+    gap: 12px;
 }
 
 #promotions-fab .promo-icon {
-    font-size: 28px;
+    font-size: 24px;
     line-height: 1;
     flex-shrink: 0;
 }
 
 #promotions-fab .promo-text {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -604,68 +605,20 @@ body {
 #promotions-fab:hover {
     background: linear-gradient(135deg, #ea580c, #f59e0b);
     box-shadow: 0 15px 45px rgba(249, 115, 22, 0.6);
-    transform: translateY(-50%) translateX(-8px);
+    transform: translateY(-4px);        /* ← HOVER SIMPLES - sobe um pouco */
 }
 
 #promotions-fab:active {
-    transform: translateY(-50%) scale(0.98);
+    transform: scale(0.98);             /* ← SIMPLES - sem translateY */
 }
 
-/* Tablet - Ajusta posição */
+/* Tablet */
 @media (max-width: 1024px) {
     #promotions-fab {
-        right: 50px;
-        padding: 14px 24px;
-        font-size: 14px;
-        gap: 10px;
-    }
-    
-    #promotions-fab .promo-icon {
-        font-size: 24px;
-    }
-    
-    #promotions-fab .promo-text {
-        font-size: 13px;
-    }
-}
-
-/* Mobile - Move para baixo fora do hero */
-@media (max-width: 768px) {
-    #promotions-fab {
-        position: fixed;
         right: 16px;
-        left: 16px;
-        top: auto;
-        bottom: 80px;
-        transform: translateY(0);
-        width: auto;
-        padding: 14px 24px;
-        font-size: 14px;
-    }
-    
-    #promotions-fab:hover {
-        transform: translateY(-2px);
-    }
-    
-    #promotions-fab .promo-icon {
-        font-size: 22px;
-    }
-    
-    #promotions-fab .promo-text {
-        font-size: 12px;
-    }
-}
-
-/* Extra small */
-@media (max-width: 480px) {
-    #promotions-fab {
-        right: 12px;
-        left: 12px;
-        bottom: 70px;
-        width: auto;
+        bottom: 90px;
         padding: 12px 20px;
-        font-size: 12px;
-        gap: 8px;
+        font-size: 13px;
     }
     
     #promotions-fab .promo-icon {
@@ -673,7 +626,52 @@ body {
     }
     
     #promotions-fab .promo-text {
+        font-size: 12px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    #promotions-fab {
+        right: 12px;
+        left: 12px;
+        bottom: 80px;
+        width: auto;
+        padding: 12px 18px;
+        font-size: 12px;
+    }
+    
+    #promotions-fab:hover {
+        transform: translateY(-2px);
+    }
+    
+    #promotions-fab .promo-icon {
+        font-size: 18px;
+    }
+    
+    #promotions-fab .promo-text {
         font-size: 11px;
+    }
+}
+
+/* Extra small */
+@media (max-width: 480px) {
+    #promotions-fab {
+        right: 10px;
+        left: 10px;
+        bottom: 70px;
+        width: auto;
+        padding: 10px 16px;
+        font-size: 11px;
+        gap: 8px;
+    }
+    
+    #promotions-fab .promo-icon {
+        font-size: 16px;
+    }
+    
+    #promotions-fab .promo-text {
+        font-size: 10px;
     }
 }
         
