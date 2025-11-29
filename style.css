@@ -558,15 +558,16 @@ body {
 }
 
 /* ============================
-   PROMOTIONS BUTTON - HERO SECTION
+   PROMOTIONS BUTTON - ALWAYS FIXED & RIGHT
    ============================ */
 
 #promotions-fab {
-    position: fixed;                    /* ← MUDADO DE absolute PARA fixed */
-    right: 20px;                        /* ← REDUZIDO DE 80px */
-    bottom: 100px;                      /* ← NOVO: 100px do fundo */
-    top: auto;                          /* ← NOVO: remove top */
-    transform: translateY(0);           /* ← SIMPLIFICADO */
+    position: fixed !important;         /* ← FORCE COM !important */
+    right: 12px !important;             /* ← SEMPRE À DIREITA */
+    left: auto !important;              /* ← REMOVE left */
+    bottom: 100px !important;           /* ← 100px do fundo */
+    top: auto !important;               /* ← REMOVE top */
+    transform: translateY(0) !important;
     width: auto;
     padding: 14px 24px;
     background: linear-gradient(135deg, #f97316, #fbbf24);
@@ -581,7 +582,7 @@ body {
     font-weight: 700;
     box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4);
     transition: all 0.3s ease;
-    z-index: 50;
+    z-index: 500 !important;            /* ← AUMENTADO para garantir que fica acima */
     border-radius: 50px;
     text-decoration: none;
     gap: 12px;
@@ -605,18 +606,18 @@ body {
 #promotions-fab:hover {
     background: linear-gradient(135deg, #ea580c, #f59e0b);
     box-shadow: 0 15px 45px rgba(249, 115, 22, 0.6);
-    transform: translateY(-4px);        /* ← HOVER SIMPLES - sobe um pouco */
+    transform: translateY(-4px) !important;
 }
 
 #promotions-fab:active {
-    transform: scale(0.98);             /* ← SIMPLES - sem translateY */
+    transform: scale(0.98) !important;
 }
 
 /* Tablet */
 @media (max-width: 1024px) {
     #promotions-fab {
-        right: 16px;
-        bottom: 90px;
+        right: 10px !important;
+        bottom: 90px !important;
         padding: 12px 20px;
         font-size: 13px;
     }
@@ -633,16 +634,16 @@ body {
 /* Mobile */
 @media (max-width: 768px) {
     #promotions-fab {
-        right: 12px;
-        left: 12px;
-        bottom: 80px;
+        right: 10px !important;         /* ← MANTÉM À DIREITA */
+        left: auto !important;          /* ← REMOVE left */
+        bottom: 80px !important;
         width: auto;
         padding: 12px 18px;
         font-size: 12px;
     }
     
     #promotions-fab:hover {
-        transform: translateY(-2px);
+        transform: translateY(-2px) !important;
     }
     
     #promotions-fab .promo-icon {
@@ -657,9 +658,9 @@ body {
 /* Extra small */
 @media (max-width: 480px) {
     #promotions-fab {
-        right: 10px;
-        left: 10px;
-        bottom: 70px;
+        right: 8px !important;          /* ← EXTREMO DIREITO */
+        left: auto !important;          /* ← REMOVE left */
+        bottom: 70px !important;
         width: auto;
         padding: 10px 16px;
         font-size: 11px;
