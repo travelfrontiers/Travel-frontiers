@@ -116,12 +116,11 @@ const translations = {
                 location: 'Localização'
             }
         },
-        promotions: {
-            cta: 'OFERTAS ESPECIAIS',
-            title: 'Ver Ofertas Especiais'
-                      }
+     promotions: {
+      cta: 'OFERTAS ESPECIAIS',
+      title: 'Ver Ofertas Especiais'
     },
-        footer: {
+    footer: {
             description: 'Descubra novos horizontes com a Travel Frontiers. Há 15 anos a explorar o mundo e agora a ajudar outros a criar as suas próprias aventuras inesquecíveis!',
             quickLinks: 'Links Rápidos',
             contact: 'Contacto',
@@ -376,6 +375,10 @@ const translations = {
                 location: 'Localisation'
             }
         },
+        promotions: {
+      cta: 'OFFRES SPÉCIALES',
+      title: 'Voir les Offres Spéciales'
+    },
         footer: {
             description: 'Découvrez de nouveaux horizons avec Travel Frontiers. 15 ans à explorer le monde et maintenant aidant les autres à créer leurs propres aventures inoubliables.',
             quickLinks: 'Liens Rapides',
