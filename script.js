@@ -927,7 +927,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeTestimonials();
   initializeLightbox();
   initializeCarousel();
-  initializePromotionsButton();
 
   console.log('✅ Page scripts initialised');
 });
