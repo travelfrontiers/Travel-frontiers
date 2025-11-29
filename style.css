@@ -558,16 +558,16 @@ body {
 }
 
 /* ============================
-   PROMOTIONS BUTTON - ALWAYS FIXED & RIGHT
+   PROMOTIONS BUTTON - ALWAYS FIXED & RIGHT - MIDDLE SCREEN
    ============================ */
 
 #promotions-fab {
-    position: fixed !important;         /* ← FORCE COM !important */
-    right: 12px !important;             /* ← SEMPRE À DIREITA */
-    left: auto !important;              /* ← REMOVE left */
-    bottom: 100px !important;           /* ← 100px do fundo */
-    top: auto !important;               /* ← REMOVE top */
-    transform: translateY(0) !important;
+    position: fixed !important;
+    right: 12px !important;
+    left: auto !important;
+    top: 50% !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
     width: auto;
     padding: 14px 24px;
     background: linear-gradient(135deg, #f97316, #fbbf24);
@@ -582,7 +582,7 @@ body {
     font-weight: 700;
     box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4);
     transition: all 0.3s ease;
-    z-index: 500 !important;            /* ← AUMENTADO para garantir que fica acima */
+    z-index: 500 !important;
     border-radius: 50px;
     text-decoration: none;
     gap: 12px;
@@ -606,18 +606,20 @@ body {
 #promotions-fab:hover {
     background: linear-gradient(135deg, #ea580c, #f59e0b);
     box-shadow: 0 15px 45px rgba(249, 115, 22, 0.6);
-    transform: translateY(-4px) !important;
+    transform: translateY(-50%) scale(1.05) !important;
 }
 
 #promotions-fab:active {
-    transform: scale(0.98) !important;
+    transform: translateY(-50%) scale(0.98) !important;
 }
 
 /* Tablet */
 @media (max-width: 1024px) {
     #promotions-fab {
         right: 10px !important;
-        bottom: 90px !important;
+        top: 50% !important;
+        bottom: auto !important;
+        transform: translateY(-50%) !important;
         padding: 12px 20px;
         font-size: 13px;
     }
@@ -634,16 +636,18 @@ body {
 /* Mobile */
 @media (max-width: 768px) {
     #promotions-fab {
-        right: 10px !important;         /* ← MANTÉM À DIREITA */
-        left: auto !important;          /* ← REMOVE left */
-        bottom: 80px !important;
+        right: 10px !important;
+        left: auto !important;
+        top: 50% !important;
+        bottom: auto !important;
+        transform: translateY(-50%) !important;
         width: auto;
         padding: 12px 18px;
         font-size: 12px;
     }
     
     #promotions-fab:hover {
-        transform: translateY(-2px) !important;
+        transform: translateY(-50%) scale(1.05) !important;
     }
     
     #promotions-fab .promo-icon {
@@ -658,9 +662,11 @@ body {
 /* Extra small */
 @media (max-width: 480px) {
     #promotions-fab {
-        right: 8px !important;          /* ← EXTREMO DIREITO */
-        left: auto !important;          /* ← REMOVE left */
-        bottom: 70px !important;
+        right: 8px !important;
+        left: auto !important;
+        top: 50% !important;
+        bottom: auto !important;
+        transform: translateY(-50%) !important;
         width: auto;
         padding: 10px 16px;
         font-size: 11px;
