@@ -393,39 +393,6 @@ const translations = {
 let currentLanguage = 'pt';
 let currentTestimonialIndex = 0;
 
-function initializePromotionsButton() {
-    // O ID do botão no seu HTML é 'promotionsBtn'
-    const button = document.getElementById('promotionsBtn');
-    // O ID da secção de destino é 'promocoes'
-    const targetId = 'promocoes'; 
-
-    if (button) {
-        button.addEventListener('click', (event) => {
-            event.preventDefault();
-            const promotionsSection = document.getElementById(targetId);
-            
-            if (promotionsSection) {
-                // Rola suavemente até à secção
-                promotionsSection.scrollIntoView({ behavior: 'smooth' });
-                console.log(`Botão Promoções clicado! A rolar para a secção #${targetId}.`);
-            } else {
-                console.error(`ERRO: Secção #${targetId} não encontrada no HTML. Certifique-se de que tem <section id="${targetId}">.`);
-                
-                // Feedback visual temporário
-                const originalTextKey = translations[currentLanguage].nav.promotions;
-                // O FAB tem um ícone <i> e um <span> com o texto, o texto é tipicamente o 4º nó
-                const textNode = button.childNodes[3]; 
-                
-                if(textNode) textNode.textContent = 'Erro! Secção não encontrada.';
-
-                setTimeout(() => {
-                    if(textNode) textNode.textContent = originalTextKey; 
-                }, 2000);
-            }
-        });
-    }
-}
-
 // ============================
 // Language functionality
 // ============================
