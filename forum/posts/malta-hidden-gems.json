@@ -1,0 +1,25 @@
+{
+  "id": "malta-hidden-gems",
+  "title": "Malta's Hidden Gems - Off the Beaten Path",
+  "destination": "Malta",
+  "category": "Destinos",
+  "author": "Tiago Ferreira",
+  "date": "2025-12-20",
+  "readTime": "7 min read",
+  "thumbnail": "/Travel-frontiers/img/malta-beach.jpg",
+  "excerpt": "Explore Malta beyond the main tourist spots. Secret beaches, hidden villages, and authentic local experiences.",
+  "content": "<h2>Secret Beaches</h2><p><strong>Ghallis Beach:</strong> A secluded sandy beach near Mellieha with crystal-clear waters.</p><p><strong>Fomm ir-Riħ:</strong> The highest sea cliffs in Malta with stunning views.</p><h2>Hidden Villages</h2><p><strong>Mtaħleb:</strong> A small coastal village perfect for sunset watching and authentic Maltese hospitality.</p>",
+  "likes": 8,
+  "affiliateLink": {
+    "text": "Book activities in Malta on Viator",
+    "url": "https://www.viator.com/partner/XXXXX",
+    "type": "viator"
+  },
+  "cta": {
+    "text": "Want help planning your Malta adventure including hidden gems?",
+    "button": "Get in touch",
+    "link": "https://www.travelfrontiers.pt/#contact"
+  },
+  "relatedPosts": ["malta-best-restaurants"],
+  "tags": ["beaches", "destinations", "hidden-gems", "malta"]
+}
