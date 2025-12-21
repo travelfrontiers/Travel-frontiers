@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Forum - Destinos, Restaurantes e Dicas de Viagem</title>
+    <meta name="description" content="Explore o fórum de viagens com dicas de destinos, recomendações de restaurantes e experiências autênticas compartilhadas por viajantes.">
+    <link rel="stylesheet" href="/Travel-frontiers/style.css">
+    <link rel="stylesheet" href="/Travel-frontiers/forum/style.css">
+</head>
+<body>
+    <!-- Navigation (reuse from main site) -->
+    <header class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-logo">
+                <a href="/Travel-frontiers/">Travel Frontiers</a>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/Travel-frontiers/" class="nav-link">Início</a></li>
+                <li><a href="/Travel-frontiers/#services" class="nav-link">Serviços</a></li>
+                <li><a href="/Travel-frontiers/forum/" class="nav-link active">Fórum</a></li>
+                <li><a href="/Travel-frontiers/#contact" class="nav-link">Contacto</a></li>
+            </ul>
+        </div>
+    </header>
+
+    <!-- Forum Main Section -->
+    <main class="forum-container">
+        <section class="forum-hero">
+            <h1>Travel Frontiers Forum</h1>
+            <p>Descubra destinos, restaurantes e dicas de viagem compartilhadas pela comunidade</p>
+        </section>
+
+        <!-- Filter/Category Section -->
+        <section class="forum-filters">
+            <div class="filter-wrapper">
+                <input type="text" id="searchInput" placeholder="Pesquisar posts..." class="search-box">
+                <div class="category-filters">
+                    <button class="filter-btn active" data-filter="all">Todos</button>
+                    <button class="filter-btn" data-filter="destinos">Destinos</button>
+                    <button class="filter-btn" data-filter="restaurants">Restaurantes</button>
+                    <button class="filter-btn" data-filter="dicas">Dicas de Viagem</button>
+                    <button class="filter-btn" data-filter="atividades">Atividades</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Posts Grid -->
+        <section class="forum-posts">
+            <div id="postsContainer" class="posts-grid">
+                <!-- Posts loaded by JavaScript -->
+                <div class="loading">Carregando posts...</div>
+            </div>
+        </section>
+
+        <!-- No Results Message -->
+        <section id="noResults" class="no-results hidden">
+            <p>Nenhum post encontrado. Tente outra pesquisa!</p>
+        </section>
+    </main>
+
+    <!-- Footer (reuse from main site) -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 Travel Frontiers. All rights reserved.</p>
+            <a href="/Travel-frontiers/">Voltar ao site</a>
+        </div>
+    </footer>
+
+    <script src="/Travel-frontiers/forum/script.js"></script>
+</body>
+</html>
