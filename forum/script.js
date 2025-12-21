@@ -1,4 +1,7 @@
-// Forum Data Management
+// ============================================
+// FORUM DATA MANAGEMENT CLASS
+// ============================================
+
 class ForumManager {
     constructor() {
         this.posts = [];
@@ -85,10 +88,16 @@ class ForumManager {
     }
 }
 
-// Initialize Forum Manager
+// ============================================
+// INITIALIZE FORUM MANAGER
+// ============================================
+
 const forum = new ForumManager();
 
-// DOM Elements
+// ============================================
+// DOM ELEMENTS
+// ============================================
+
 const postsContainer = document.getElementById('postsContainer');
 const postContent = document.getElementById('postContent');
 const postLoading = document.getElementById('postLoading');
@@ -99,10 +108,16 @@ const noResults = document.getElementById('noResults');
 const searchInput = document.getElementById('searchInput');
 const filterBtns = document.querySelectorAll('.filter-btn');
 
-// Check current page
+// ============================================
+// DETECT CURRENT PAGE
+// ============================================
+
 const currentPage = window.location.pathname.includes('/forum/post.html') ? 'post' : 'forum';
 
-// Page: Forum Listing
+// ============================================
+// PAGE: FORUM LISTING (index.html)
+// ============================================
+
 if (currentPage === 'forum' && postsContainer) {
     let filteredPosts = [];
 
@@ -113,6 +128,7 @@ if (currentPage === 'forum' && postsContainer) {
         filteredPosts = [...forum.posts];
     }
 
+    // Display posts in grid
     function displayPosts(posts) {
         if (posts.length === 0) {
             postsContainer.innerHTML = '';
@@ -168,7 +184,6 @@ if (currentPage === 'forum' && postsContainer) {
 
     // Open individual post
     window.openPost = function(postId) {
-        // Save post ID to sessionStorage and redirect
         sessionStorage.setItem('selectedPostId', postId);
         window.location.href = `/Travel-frontiers/forum/post.html?id=${postId}`;
     };
@@ -177,8 +192,12 @@ if (currentPage === 'forum' && postsContainer) {
     document.addEventListener('DOMContentLoaded', initForumPage);
 }
 
-// Page: Individual Post
+// ============================================
+// PAGE: INDIVIDUAL POST (post.html)
+// ============================================
+
 if (currentPage === 'post' && postContent) {
+    
     async function initPostPage() {
         // Get post ID from URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -208,7 +227,7 @@ if (currentPage === 'post' && postContent) {
         postContent.classList.remove('hidden');
         commentsSection.classList.remove('hidden');
 
-        // Header
+        // Set header information
         document.getElementById('postTitle').textContent = post.title;
         document.getElementById('postAuthor').textContent = `by ${post.author}`;
         document.getElementById('postDate').textContent = new Date(post.date).toLocaleDateString('pt-PT');
@@ -217,22 +236,22 @@ if (currentPage === 'post' && postContent) {
         document.getElementById('postImage').src = post.thumbnail || '/Travel-frontiers/img/default.jpg';
         document.getElementById('postImage').alt = post.title;
 
-        // Body
+        // Set body content
         document.getElementById('postBody').innerHTML = post.content;
 
-        // Affiliate link
+        // Show affiliate link if available
         if (post.affiliateLink) {
             document.getElementById('affiliateLink').href = post.affiliateLink.url;
             document.getElementById('affiliateText').textContent = post.affiliateLink.text;
             document.getElementById('affiliateSection').classList.remove('hidden');
         }
 
-        // CTA
+        // Set CTA button
         document.getElementById('ctaTitle').textContent = post.cta.text;
         document.getElementById('ctaButton').href = post.cta.link;
         document.getElementById('ctaButton').textContent = post.cta.button;
 
-        // Like button
+        // Setup like button
         const likeBtn = document.getElementById('likeBtn');
         document.getElementById('likeCount').textContent = post.likes;
         
@@ -246,15 +265,16 @@ if (currentPage === 'post' && postContent) {
             likeBtn.classList.add('liked');
         });
 
-        // Related posts
+        // Display related posts
         if (post.relatedPosts && post.relatedPosts.length > 0) {
             displayRelatedPosts(post.relatedPosts);
         }
     }
 
     function displayRelatedPosts(relatedIds) {
-        // Stub: Load related posts
+        // Show related posts section
         document.getElementById('relatedSection').classList.remove('hidden');
+        // Can be expanded to load actual related posts
     }
 
     function displayComments(postId) {
@@ -286,7 +306,7 @@ if (currentPage === 'post' && postContent) {
             const email = document.getElementById('commenterEmail').value;
             const text = document.getElementById('commenterText').value;
 
-            // Send to Formspree (replace FORM_ID with your Formspree ID)
+            // Prepare form data for Formspree
             const formData = new FormData();
             formData.append('name', name);
             formData.append('email', email);
@@ -294,8 +314,9 @@ if (currentPage === 'post' && postContent) {
             formData.append('postId', postId);
 
             try {
-                // Replace YOUR_FORM_ID with your actual Formspree form ID
-                const response = await fetch('https://formspree.io/f/YOUR_FORM_ID', {
+                // IMPORTANT: Replace YOUR_FORM_ID with your actual Formspree form ID
+                // Get form ID from https://formspree.io
+                const response = await fetch('https://formspree.io/f/mwveqvbl', {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -316,5 +337,10 @@ if (currentPage === 'post' && postContent) {
         });
     }
 
+    // Initialize on page load
     document.addEventListener('DOMContentLoaded', initPostPage);
 }
+
+// ============================================
+// END OF FORUM SCRIPT
+// ============================================
