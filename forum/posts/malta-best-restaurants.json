@@ -1,0 +1,25 @@
+{
+  "id": "malta-best-restaurants",
+  "title": "Malta's Best Restaurants - A Local's Guide",
+  "destination": "Malta",
+  "category": "Restaurants",
+  "author": "Tiago Ferreira",
+  "date": "2025-12-21",
+  "readTime": "5 min read",
+  "thumbnail": "/Travel-frontiers/img/malta-restaurant.jpg",
+  "excerpt": "Discover the best dining experiences in Malta, from hidden gems to award-winning restaurants.",
+  "content": "<h2>Introduction</h2><p>Malta's food scene is vibrant and diverse, blending Mediterranean flavors with international influences. After 15+ years of travel, here are my top restaurant picks.</p><h2>Fine Dining</h2><p><strong>Noni:</strong> Located in Valletta, this Michelin-starred restaurant offers exceptional Mediterranean cuisine with a creative twist.</p><p><strong>De Mondion:</strong> Overlooking the Three Cities, this restaurant provides fine dining with stunning views.</p><h2>Local Favorites</h2><p><strong>Tal-Petut:</strong> Authentic Maltese cuisine in a cozy setting. Try the rabbit stew (coniglio)!</p><p><strong>Plumerella:</strong> Traditional Maltese fish dishes with fresh daily catches.</p>",
+  "likes": 12,
+  "affiliateLink": {
+    "text": "Book your Malta tour on Viator",
+    "url": "https://www.viator.com/partner/XXXXX",
+    "type": "viator"
+  },
+  "cta": {
+    "text": "Want a personalized Malta itinerary with restaurant reservations?",
+    "button": "Contact me for a custom plan",
+    "link": "https://www.travelfrontiers.pt/#contact"
+  },
+  "relatedPosts": ["malta-hidden-gems"],
+  "tags": ["restaurants", "dining", "food", "local-tips", "malta"]
+}
