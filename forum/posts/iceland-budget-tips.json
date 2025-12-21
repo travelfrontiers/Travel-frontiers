@@ -1,0 +1,20 @@
+{
+  "id": "iceland-budget-tips",
+  "title": "Iceland on a Budget - Money-Saving Tips",
+  "destination": "Iceland",
+  "category": "Dicas",
+  "author": "Tiago Ferreira",
+  "date": "2025-12-17",
+  "readTime": "6 min read",
+  "thumbnail": "/Travel-frontiers/img/iceland-budget.jpg",
+  "excerpt": "Iceland doesn't have to be expensive. Learn how to travel like a local and save money.",
+  "content": "<h2>Accommodation</h2><p><strong>Stay outside Reykjavik:</strong> Hotel prices drop significantly outside the capital.</p><h2>Food</h2><p><strong>Buy groceries:</strong> Supermarkets like Bónus and Netto offer great deals.</p><h2>Transportation</h2><p><strong>Rent a car with others:</strong> Split rental and fuel costs with travel companions.</p>",
+  "likes": 10,
+  "cta": {
+    "text": "Let me help you plan an affordable Iceland trip with insider tips.",
+    "button": "Plan with me",
+    "link": "https://www.travelfrontiers.pt/#contact"
+  },
+  "relatedPosts": ["iceland-hiking-guide"],
+  "tags": ["budget-travel", "tips", "iceland", "money-saving"]
+}
