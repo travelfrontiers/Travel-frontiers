@@ -1,0 +1,508 @@
+/* Forum Main Styles */
+.forum-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    min-height: calc(100vh - 200px);
+}
+
+.forum-hero {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.forum-hero h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.forum-hero p {
+    font-size: 1.1rem;
+    color: #666;
+}
+
+/* Filters */
+.forum-filters {
+    margin-bottom: 50px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.category-filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+    background: #208A96;
+    color: white;
+    border-color: #208A96;
+}
+
+/* Posts Grid */
+.posts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 30px;
+    margin-bottom: 50px;
+}
+
+.post-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+
+.post-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.post-card-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.post-card-content {
+    padding: 20px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.post-card-badge {
+    display: inline-block;
+    background: #E8F4F5;
+    color: #208A96;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    width: fit-content;
+}
+
+.post-card-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #333;
+    line-height: 1.4;
+}
+
+.post-card-excerpt {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 15px;
+    flex-grow: 1;
+}
+
+.post-card-meta {
+    font-size: 0.8rem;
+    color: #999;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.post-card-likes {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Individual Post Page */
+.post-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.post-article {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.post-header {
+    margin-bottom: 40px;
+}
+
+.post-header h1 {
+    font-size: 2.2rem;
+    margin-bottom: 20px;
+    color: #333;
+    line-height: 1.2;
+}
+
+.post-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.meta-author::before {
+    content: "✍️ ";
+}
+
+.meta-date::before {
+    content: "📅 ";
+}
+
+.meta-readtime::before {
+    content: "⏱️ ";
+}
+
+.meta-destination::before {
+    content: "📍 ";
+}
+
+.post-thumbnail {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+/* Post Body */
+.post-body {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #333;
+}
+
+.post-text {
+    margin-bottom: 40px;
+}
+
+.post-text h2 {
+    font-size: 1.6rem;
+    margin: 30px 0 15px 0;
+    color: #333;
+}
+
+.post-text h3 {
+    font-size: 1.3rem;
+    margin: 20px 0 10px 0;
+    color: #444;
+}
+
+.post-text p {
+    margin-bottom: 15px;
+}
+
+.post-text ul,
+.post-text ol {
+    margin-bottom: 15px;
+    padding-left: 20px;
+}
+
+.post-text li {
+    margin-bottom: 8px;
+}
+
+/* Affiliate Section */
+.affiliate-section {
+    background: #F0F9FA;
+    border-left: 4px solid #208A96;
+    padding: 20px;
+    margin: 30px 0;
+    border-radius: 8px;
+}
+
+.affiliate-box {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.affiliate-button {
+    display: inline-block;
+    background: #208A96;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.3s;
+    flex-grow: 1;
+}
+
+.affiliate-button:hover {
+    background: #1a6f77;
+}
+
+/* CTA Section */
+.post-cta {
+    background: linear-gradient(135deg, #208A96 0%, #1a6f77 100%);
+    color: white;
+    padding: 40px 30px;
+    border-radius: 12px;
+    margin: 40px 0;
+    text-align: center;
+}
+
+.cta-box h3 {
+    color: white;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+}
+
+.btn-primary {
+    background: white;
+    color: #208A96;
+    padding: 12px 30px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-block;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Related Posts */
+.related-posts {
+    margin-top: 50px;
+    padding-top: 30px;
+    border-top: 1px solid #eee;
+}
+
+.related-posts h3 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.related-item {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.3s;
+}
+
+.related-item:hover {
+    background: #f0f9fa;
+    color: #208A96;
+}
+
+/* Post Footer */
+.post-footer {
+    padding: 20px 0;
+    border-top: 1px solid #eee;
+    margin-top: 30px;
+}
+
+.like-button {
+    background: none;
+    border: 2px solid #ddd;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s;
+    color: #666;
+}
+
+.like-button:hover,
+.like-button.liked {
+    border-color: #ff6b6b;
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.05);
+}
+
+.like-icon {
+    margin-right: 5px;
+}
+
+/* Comments Section */
+.comments-section {
+    margin-top: 60px;
+    padding-top: 40px;
+    border-top: 2px solid #eee;
+}
+
+.comments-section h2 {
+    margin-bottom: 30px;
+    color: #333;
+}
+
+.comments-list {
+    margin-bottom: 40px;
+}
+
+.comment {
+    background: #f9f9f9;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    border-left: 3px solid #208A96;
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+}
+
+.comment-author {
+    font-weight: 600;
+    color: #333;
+}
+
+.comment-date {
+    color: #999;
+}
+
+.comment-text {
+    color: #666;
+    line-height: 1.6;
+}
+
+/* Comment Form */
+.comment-form {
+    background: #f9f9f9;
+    padding: 30px;
+    border-radius: 12px;
+}
+
+.comment-form h3 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.form-group textarea {
+    resize: vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #208A96;
+    box-shadow: 0 0 0 3px rgba(32, 138, 150, 0.1);
+}
+
+.form-note {
+    font-size: 0.85rem;
+    color: #999;
+    margin-top: 15px;
+}
+
+/* Loading State */
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+/* Hidden State */
+.hidden {
+    display: none;
+}
+
+/* No Results */
+.no-results {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 1.1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .forum-container {
+        padding: 20px 10px;
+    }
+
+    .forum-hero h1 {
+        font-size: 1.8rem;
+    }
+
+    .posts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .post-header h1 {
+        font-size: 1.6rem;
+    }
+
+    .post-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .post-cta {
+        padding: 20px 15px;
+    }
+
+    .comment-form {
+        padding: 20px;
+    }
+}
