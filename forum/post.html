@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post - Travel Frontiers Forum</title>
+    <link rel="stylesheet" href="/Travel-frontiers/style.css">
+    <link rel="stylesheet" href="/Travel-frontiers/forum/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <header class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-logo">
+                <a href="/Travel-frontiers/">Travel Frontiers</a>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/Travel-frontiers/" class="nav-link">Início</a></li>
+                <li><a href="/Travel-frontiers/#services" class="nav-link">Serviços</a></li>
+                <li><a href="/Travel-frontiers/forum/" class="nav-link">Fórum</a></li>
+                <li><a href="/Travel-frontiers/#contact" class="nav-link">Contacto</a></li>
+            </ul>
+        </div>
+    </header>
+
+    <!-- Post Content -->
+    <main class="post-container">
+        <!-- Loading State -->
+        <div id="postLoading" class="loading">Carregando post...</div>
+
+        <!-- Post Article -->
+        <article id="postContent" class="post-article hidden">
+            <header class="post-header">
+                <h1 id="postTitle"></h1>
+                <div class="post-meta">
+                    <span id="postAuthor" class="meta-author"></span>
+                    <span id="postDate" class="meta-date"></span>
+                    <span id="postReadTime" class="meta-readtime"></span>
+                    <span id="postDestination" class="meta-destination"></span>
+                </div>
+                <img id="postImage" src="" alt="" class="post-thumbnail">
+            </header>
+
+            <div class="post-body">
+                <div id="postBody" class="post-text"></div>
+
+                <!-- Affiliate Link (if applicable) -->
+                <div id="affiliateSection" class="affiliate-section hidden">
+                    <div class="affiliate-box">
+                        <a id="affiliateLink" href="" target="_blank" rel="noopener noreferrer" class="affiliate-button">
+                            <span id="affiliateText"></span>
+                            <span class="affiliate-icon">→</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- CTA Section -->
+                <section class="post-cta">
+                    <div class="cta-box">
+                        <h3 id="ctaTitle"></h3>
+                        <a id="ctaButton" href="#" class="btn btn-primary">Contact me</a>
+                    </div>
+                </section>
+
+                <!-- Related Posts -->
+                <section id="relatedSection" class="related-posts hidden">
+                    <h3>Leia Também</h3>
+                    <div id="relatedContainer" class="related-grid"></div>
+                </section>
+            </div>
+
+            <!-- Like & Share Section -->
+            <footer class="post-footer">
+                <button id="likeBtn" class="like-button">
+                    <span class="like-icon">♥</span>
+                    <span id="likeCount">0</span> Gostos
+                </button>
+            </footer>
+        </article>
+
+        <!-- Comments Section -->
+        <section id="commentsSection" class="comments-section hidden">
+            <h2>Comentários</h2>
+
+            <!-- Comments List -->
+            <div id="commentsList" class="comments-list">
+                <!-- Approved comments loaded here -->
+            </div>
+
+            <!-- Comment Form -->
+            <form id="commentForm" class="comment-form">
+                <h3>Deixe um Comentário</h3>
+                
+                <div class="form-group">
+                    <label for="commenterName">Nome *</label>
+                    <input type="text" id="commenterName" name="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="commenterEmail">Email *</label>
+                    <input type="email" id="commenterEmail" name="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="commenterText">Comentário *</label>
+                    <textarea id="commenterText" name="comment" rows="4" required></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Enviar Comentário</button>
+                <p class="form-note">Os comentários serão moderados antes de aparecer.</p>
+            </form>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 Travel Frontiers. All rights reserved.</p>
+            <a href="/Travel-frontiers/">Voltar ao site</a>
+        </div>
+    </footer>
+
+    <script src="/Travel-frontiers/forum/script.js"></script>
+</body>
+</html>
