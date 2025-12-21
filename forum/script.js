@@ -21,7 +21,7 @@ class ForumManager {
         localStorage.setItem('forumLikes', JSON.stringify(this.likes));
     }
 
-    // Fetch all posts
+    // Fetch all posts - CAMINHO RELATIVO CORRETO
     async loadAllPosts() {
         const postIds = [
             'malta-best-restaurants',
@@ -33,11 +33,13 @@ class ForumManager {
 
         for (const id of postIds) {
             try {
-                const response = await fetch(`/Travel-frontiers/forum/posts/${id}.json`);
+                const response = await fetch(`./posts/${id}.json`);
                 if (response.ok) {
                     const post = await response.json();
                     post.likes = this.likes[id] || 0;
                     this.posts.push(post);
+                } else {
+                    console.error(`Failed to load ${id}: ${response.status}`);
                 }
             } catch (error) {
                 console.error(`Error loading post ${id}:`, error);
@@ -46,10 +48,10 @@ class ForumManager {
         return this.posts;
     }
 
-    // Fetch single post
+    // Fetch single post - CAMINHO RELATIVO CORRETO
     async loadPost(postId) {
         try {
-            const postResponse = await fetch(`/Travel-frontiers/forum/posts/${postId}.json`);
+            const postResponse = await fetch(`./posts/${postId}.json`);
             if (!postResponse.ok) throw new Error('Post not found');
             
             const post = await postResponse.json();
@@ -58,7 +60,7 @@ class ForumManager {
 
             // Load comments
             try {
-                const commentsResponse = await fetch(`/Travel-frontiers/forum/comments/${postId}.json`);
+                const commentsResponse = await fetch(`./comments/${postId}.json`);
                 if (commentsResponse.ok) {
                     const data = await commentsResponse.json();
                     this.comments[postId] = data.comments || [];
@@ -112,7 +114,7 @@ const filterBtns = document.querySelectorAll('.filter-btn');
 // DETECT CURRENT PAGE
 // ============================================
 
-const currentPage = window.location.pathname.includes('/forum/post.html') ? 'post' : 'forum';
+const currentPage = window.location.pathname.endsWith('/post.html') || window.location.pathname.includes('post.html') ? 'post' : 'forum';
 
 // ============================================
 // PAGE: FORUM LISTING (index.html)
@@ -139,7 +141,7 @@ if (currentPage === 'forum' && postsContainer) {
         noResults.classList.add('hidden');
         postsContainer.innerHTML = posts.map(post => `
             <div class="post-card" onclick="openPost('${post.id}')">
-                <img src="${post.thumbnail || '/Travel-frontiers/img/default.jpg'}" alt="${post.title}" class="post-card-image">
+                <img src="${post.thumbnail || './img/default.jpg'}" alt="${post.title}" class="post-card-image" onerror="this.src='./img/default.jpg'">
                 <div class="post-card-content">
                     <span class="post-card-badge">${post.destination}</span>
                     <h3 class="post-card-title">${post.title}</h3>
@@ -182,10 +184,10 @@ if (currentPage === 'forum' && postsContainer) {
         });
     }
 
-    // Open individual post
+    // Open individual post - CAMINHO RELATIVO CORRETO
     window.openPost = function(postId) {
         sessionStorage.setItem('selectedPostId', postId);
-        window.location.href = `/Travel-frontiers/forum/post.html?id=${postId}`;
+        window.location.href = `./post.html?id=${postId}`;
     };
 
     // Initialize on page load
@@ -204,7 +206,7 @@ if (currentPage === 'post' && postContent) {
         const postId = urlParams.get('id') || sessionStorage.getItem('selectedPostId');
 
         if (!postId) {
-            window.location.href = '/Travel-frontiers/forum/';
+            window.location.href = './index.html';
             return;
         }
 
@@ -233,7 +235,7 @@ if (currentPage === 'post' && postContent) {
         document.getElementById('postDate').textContent = new Date(post.date).toLocaleDateString('pt-PT');
         document.getElementById('postReadTime').textContent = post.readTime || '5 min read';
         document.getElementById('postDestination').textContent = `📍 ${post.destination}`;
-        document.getElementById('postImage').src = post.thumbnail || '/Travel-frontiers/img/default.jpg';
+        document.getElementById('postImage').src = post.thumbnail || './img/default.jpg';
         document.getElementById('postImage').alt = post.title;
 
         // Set body content
@@ -316,7 +318,7 @@ if (currentPage === 'post' && postContent) {
             try {
                 // IMPORTANT: Replace YOUR_FORM_ID with your actual Formspree form ID
                 // Get form ID from https://formspree.io
-                const response = await fetch('https://formspree.io/f/mwveqvbl', {
+                const response = await fetch('https://formspree.io/f/YOUR_FORM_ID', {
                     method: 'POST',
                     body: formData,
                     headers: {
