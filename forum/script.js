@@ -318,7 +318,7 @@ if (currentPage === 'post' && postContent) {
             try {
                 // IMPORTANT: Replace YOUR_FORM_ID with your actual Formspree form ID
                 // Get form ID from https://formspree.io
-                const response = await fetch('https://formspree.io/f/YOUR_FORM_ID', {
+                const response = await fetch('https://formspree.io/f/mwveqvbl', {
                     method: 'POST',
                     body: formData,
                     headers: {
