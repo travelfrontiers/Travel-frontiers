@@ -30,10 +30,23 @@ export async function GET(request: NextRequest) {
 
         const regimeLabel = regime ? getRegimeLabel(regime, lang) : '';
 
+        // Format price with currency symbol if needed
         const hasSymbol = ['€', '$', '£'].some(s => price.includes(s));
         const hasCode = ['EUR', 'USD', 'GBP'].some(c => price.toUpperCase().includes(c));
         if (price && !hasSymbol && !hasCode) {
             price = `€${price}`;
+        }
+
+        // Add "From" prefix based on language
+        let priceText = '';
+        if (price) {
+            const fromLabels: Record<string, string> = {
+                pt: 'A partir de',
+                en: 'From',
+                fr: 'À partir de',
+            };
+            const fromLabel = fromLabels[lang] || fromLabels['pt'];
+            priceText = `${fromLabel} ${price}`;
         }
 
         console.log('[GenerateStory] Generating for:', title);
@@ -147,7 +160,7 @@ export async function GET(request: NextRequest) {
                                 {title}
                             </div>
 
-                            {price && (
+                            {priceText && (
                                 <div
                                     style={{
                                         display: 'flex',
@@ -157,11 +170,10 @@ export async function GET(request: NextRequest) {
                                         borderRadius: '32px',
                                         fontSize: '84px',
                                         fontWeight: 900,
-                                        width: 'fit-content',
                                         boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
                                     }}
                                 >
-                                    {price}
+                                    {priceText}
                                 </div>
                             )}
 
