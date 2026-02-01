@@ -152,10 +152,10 @@ export default async function PromotionPage({
                         /* Premium Fallback Style */
                         <div className="p-8 rounded-3xl bg-gradient-to-r from-gray-50 to-white border border-gray-100">
                             <p className="text-sm font-bold text-primary uppercase tracking-widest mb-1">
-                                {lang === 'pt' ? 'Experiência Exclusiva' : 'Exclusive Experience'}
+                                {(dict as any).promo.exclusive}
                             </p>
                             <p className="text-gray-500 italic">
-                                {lang === 'pt' ? 'Contacte-nos para descobrir todos os detalhes deste pacote premium.' : 'Contact us to discover all the details of this premium package.'}
+                                {(dict as any).promo.contactPremium}
                             </p>
                         </div>
                     )}
@@ -165,7 +165,7 @@ export default async function PromotionPage({
                         <div className="flex items-center gap-3 mb-8">
                             <div className="w-1.5 h-8 bg-primary rounded-full" />
                             <h2 className="text-2xl font-bold text-gray-900">
-                                {lang === 'pt' ? 'Detalhes do Programa' : lang === 'en' ? 'Program Details' : 'Détails du Programme'}
+                                {(dict as any).promo.programDetails}
                             </h2>
                         </div>
                         <div className="prose prose-lg prose-orange max-w-none text-gray-600 leading-relaxed marker:text-primary">
@@ -181,7 +181,7 @@ export default async function PromotionPage({
                         <div className="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100 space-y-8">
                             <div>
                                 <span className="text-gray-500 text-sm block mb-1 font-medium">
-                                    {lang === 'pt' ? 'Preço Final' : lang === 'en' ? 'Final Price' : 'Prix Final'}
+                                    {(dict as any).promo.finalPrice}
                                 </span>
                                 <div className="flex items-baseline gap-2">
                                     <span className="text-5xl font-black text-gray-900">€{promo.price}</span>
@@ -194,7 +194,7 @@ export default async function PromotionPage({
                                 <div className="space-y-4">
                                     <h4 className="font-bold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-2">
                                         <CheckCircle2 className="w-5 h-5 text-primary" />
-                                        {lang === 'pt' ? 'O que inclui:' : lang === 'en' ? 'Inclusions:' : 'Inclusions:'}
+                                        {(dict as any).promo.inclusions}
                                     </h4>
                                     <ul className="space-y-3">
                                         {promo.inclusions.map((item: string, i: number) => (
@@ -218,7 +218,7 @@ export default async function PromotionPage({
                                 </Link>
                                 <p className="text-center text-xs text-gray-400 font-medium flex items-center justify-center gap-2">
                                     <Info className="w-3.5 h-3.5" />
-                                    {lang === 'pt' ? 'Proposta em 24-48h' : lang === 'en' ? 'Proposal in 24-48h' : 'Proposition en 24-48h'}
+                                    {(dict as any).promo.proposalResponse}
                                 </p>
                             </div>
                         </div>

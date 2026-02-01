@@ -62,7 +62,7 @@ export default async function Home({
                   />
                 )}
                 <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-4 py-1 rounded-full text-sm font-bold text-dark shadow-sm">
-                  {lang === 'pt' ? 'Desde' : 'From'} €{promo.price}
+                  {(dict as any).promo.from} €{promo.price}
                 </div>
               </div>
 
@@ -72,7 +72,7 @@ export default async function Home({
                   {promo.title}
                 </h2>
                 <div className="mt-auto flex items-center text-primary font-medium text-sm">
-                  {lang === 'pt' ? 'Ver Detalhes' : 'View Details'}
+                  {(dict as any).promo.viewDetails}
                   <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
@@ -86,12 +86,10 @@ export default async function Home({
             <Flame className="w-10 h-10 text-gray-400" />
           </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">
-            {lang === 'pt' ? 'Sem promoções ativas' : 'No active promotions'}
+            {(dict as any).promo.noPromotions}
           </h3>
           <p className="text-gray-500">
-            {lang === 'pt'
-              ? 'Fique atento, novas ofertas serão adicionadas em breve.'
-              : 'Stay tuned, new offers will be added soon.'}
+            {(dict as any).promo.stayTuned}
           </p>
         </div>
       )}

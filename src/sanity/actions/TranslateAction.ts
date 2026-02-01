@@ -23,6 +23,11 @@ export function TranslateAction({ id, type, published, draft, onComplete }: Docu
                     body: JSON.stringify({
                         title: doc.title,
                         description: doc.description,
+                        subtitle: doc.subtitle,
+                        location: doc.location,
+                        duration: doc.duration,
+                        highlights: doc.highlights,
+                        inclusions: doc.inclusions,
                     }),
                     headers: { 'Content-Type': 'application/json' },
                 })
@@ -37,6 +42,11 @@ export function TranslateAction({ id, type, published, draft, onComplete }: Docu
                     _id: `${id}-en`,
                     language: 'en',
                     title: translations.en.title,
+                    subtitle: translations.en.subtitle,
+                    location: translations.en.location,
+                    duration: translations.en.duration,
+                    highlights: translations.en.highlights,
+                    inclusions: translations.en.inclusions,
                     description: [
                         {
                             _key: 'auto-gen',
@@ -54,6 +64,11 @@ export function TranslateAction({ id, type, published, draft, onComplete }: Docu
                     _id: `${id}-fr`,
                     language: 'fr',
                     title: translations.fr.title,
+                    subtitle: translations.fr.subtitle,
+                    location: translations.fr.location,
+                    duration: translations.fr.duration,
+                    highlights: translations.fr.highlights,
+                    inclusions: translations.fr.inclusions,
                     description: [
                         {
                             _key: 'auto-gen',
