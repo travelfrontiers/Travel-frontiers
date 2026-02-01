@@ -12,6 +12,8 @@ import { structureTool } from 'sanity/structure'
 import { schema } from './src/sanity/schemaTypes'
 import { TranslateAction } from './src/sanity/actions/TranslateAction'
 import { GenerateStoryAction } from './src/sanity/actions/GenerateStoryAction'
+import { ArchiveAction } from './src/sanity/actions/ArchiveAction'
+import { ProcessExpiredAction } from './src/sanity/actions/ProcessExpiredAction'
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
@@ -25,7 +27,7 @@ export default defineConfig({
     document: {
         actions: (prev, context) => {
             return context.schemaType === 'promotion'
-                ? [...prev, TranslateAction, GenerateStoryAction]
+                ? [...prev, TranslateAction, GenerateStoryAction, ArchiveAction, ProcessExpiredAction]
                 : prev
         },
     },

@@ -107,6 +107,20 @@ export const promotion = defineType({
             name: 'validUntil',
             title: 'Valid Until',
             type: 'date'
+        }),
+        defineField({
+            name: 'status',
+            title: 'Status',
+            type: 'string',
+            options: {
+                list: [
+                    { title: 'Active', value: 'active' },
+                    { title: 'Archived', value: 'archived' },
+                ],
+            },
+            initialValue: 'active',
+            validation: (Rule) => Rule.required(),
+            description: 'Archived promotions are hidden from frontend but can be reactivated'
         })
     ],
     preview: {

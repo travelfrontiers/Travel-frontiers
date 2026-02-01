@@ -7,7 +7,7 @@ import { Flame, ArrowRight } from "lucide-react";
 async function getPromotions(lang: string) {
   try {
     return await client.fetch(
-      `*[_type == "promotion" && language == $lang] | order(_createdAt desc) {
+      `*[_type == "promotion" && language == $lang && (!defined(status) || status == "active")] | order(_createdAt desc) {
         title,
         "slug": slug.current,
         heroImage,
