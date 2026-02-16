@@ -69,24 +69,34 @@ export async function GET(request: Request) {
 
         for (const promo of expiredPromotions) {
             try {
-                // 1. Archive the PT version
+                // 1. Archive the PT version (works for both published and drafts)
                 await writeClient.patch(promo._id).set({ status: 'archived' }).commit();
-                console.log(`  ✓ Archived PT: ${promo.title}`);
-                results.archived.push(promo.title);
+                console.log(`  ✓ Archived PT: ${promo.title} (${promo._id})`);
+                results.archived.push(`${promo.title} (${promo._id})`);
 
-                // 2. Find and delete EN/FR versions
-                const slug = promo.slug.current;
-                const translations = await writeClient.fetch<Array<{ _id: string; title: string; language: string }>>(
-                    `*[_type == "promotion" 
-                        && slug.current match $slugPattern 
-                        && language in ["en", "fr"]]`,
-                    { slugPattern: `${slug}*` }
-                );
+                // 2. Identify and delete EN/FR versions using IDs (more reliable than slugs)
+                // Remove 'drafts.' prefix if it exists to get the base ID
+                const baseId = promo._id.replace(/^drafts\./, '');
 
-                for (const translation of translations) {
-                    await writeClient.delete(translation._id);
-                    console.log(`  ✓ Deleted ${translation.language.toUpperCase()}: ${translation.title}`);
-                    results.deleted.push(`${translation.language}: ${translation.title}`);
+                const translationIds = [
+                    `${baseId}-en`,
+                    `drafts.${baseId}-en`,
+                    `${baseId}-fr`,
+                    `drafts.${baseId}-fr`
+                ];
+
+                for (const transId of translationIds) {
+                    try {
+                        // Check if it exists before trying to delete (optional but cleaner)
+                        await writeClient.delete(transId);
+                        results.deleted.push(transId);
+                        console.log(`  ✓ Deleted translation: ${transId}`);
+                    } catch (e: any) {
+                        // Ignore if it doesn't exist (404)
+                        if (e.statusCode !== 404) {
+                            console.error(`  ✗ Error deleting ${transId}:`, e.message);
+                        }
+                    }
                 }
 
                 results.expired++;

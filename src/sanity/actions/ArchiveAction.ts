@@ -39,17 +39,21 @@ export function ArchiveAction({ id, draft, published, onComplete }: DocumentActi
                 // Update PT version status to archived
                 await client.patch(id).set({ status: 'archived' }).commit();
 
-                // Get the slug to find EN/FR versions
-                const slug = (doc as any)?.slug?.current;
-                if (slug) {
-                    // Find and delete EN/FR versions
-                    const translations = await client.fetch(
-                        `*[_type == "promotion" && slug.current match $slugPattern && language in ["en", "fr"]]`,
-                        { slugPattern: `${slug}*` }
-                    );
+                // Delete EN/FR versions using ID-based matching (derived from original ID)
+                // This is more reliable than slug matching
+                const baseId = id.replace(/^drafts\./, '');
+                const translationIds = [
+                    `${baseId}-en`,
+                    `drafts.${baseId}-en`,
+                    `${baseId}-fr`,
+                    `drafts.${baseId}-fr`
+                ];
 
-                    for (const translation of translations) {
-                        await client.delete(translation._id);
+                for (const transId of translationIds) {
+                    try {
+                        await client.delete(transId);
+                    } catch (e: any) {
+                        // Ignore 404
                     }
                 }
 

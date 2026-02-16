@@ -10,7 +10,7 @@ export function ProcessExpiredAction(props: DocumentActionProps) {
     const [isProcessing, setIsProcessing] = useState(false);
 
     return {
-        label: 'Process Expired Promotions',
+        label: isProcessing ? 'Processing Expired Promotions...' : 'Process Expired Promotions',
         icon: ClockIcon,
         tone: 'primary',
         disabled: isProcessing,
