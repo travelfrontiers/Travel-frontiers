@@ -34,9 +34,17 @@ export function ProcessExpiredAction(props: DocumentActionProps) {
                 const result = await response.json();
 
                 if (result.success) {
-                    const { summary } = result;
+                    const { summary, debug } = result;
                     if (summary.totalExpired === 0) {
-                        alert('No expired promotions found.');
+                        alert(
+                            'No expired promotions found.\n\n' +
+                            '--- Debug Info ---\n' +
+                            `Date checked: ${debug?.today}\n` +
+                            `Total promos found: ${debug?.totalPromotions}\n` +
+                            `Has Sanity Token: ${debug?.hasToken}\n` +
+                            `Token Prefix: ${debug?.tokenPrefix}\n\n` +
+                            'Check Vercel logs for full document list.'
+                        );
                     } else {
                         alert(
                             `Success!\n\n` +
