@@ -47,7 +47,11 @@ export function ProcessExpiredAction(props: DocumentActionProps) {
                         );
                     }
                 } else {
-                    alert(`Error: ${result.error}`);
+                    if (response.status === 401) {
+                        alert('Error: Unauthorized. In production, this route is secured. Please use Vercel Cron or check your CRON_SECRET environment variable.');
+                    } else {
+                        alert(`Error: ${result.error}`);
+                    }
                 }
             } catch (error: any) {
                 alert(`Error processing expired promotions: ${error.message}`);
