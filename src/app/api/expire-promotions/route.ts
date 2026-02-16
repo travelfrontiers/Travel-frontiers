@@ -34,40 +34,60 @@ export async function GET(request: Request) {
 
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
-        console.log('[ExpirePromotions] Checking for expired promotions...');
-
-        // Find all PT promotions that are expired and still active
         const expiredPromotions = await writeClient.fetch<Array<{
             _id: string;
             title: string;
             slug: { current: string };
             validUntil: string;
             language: string;
+            status: string;
         }>>(
-            `*[_type == "promotion" 
-                && language == "pt" 
-                && defined(validUntil) 
-                && validUntil < $today 
-                && (!defined(status) || status == "active")] {
+            `*[_type == "promotion"] {
                 _id,
                 title,
                 slug,
                 validUntil,
-                language
-            }`,
-            { today }
+                language,
+                status
+            }`
         );
 
-        console.log(`[ExpirePromotions] Found ${expiredPromotions.length} expired promotions`);
+        console.log(`[ExpirePromotions] Total promotions in database: ${expiredPromotions.length}`);
+
+        // Debug info for the user
+        const debugInfo = {
+            today,
+            totalPromotions: expiredPromotions.length,
+            hasToken: !!process.env.SANITY_API_WRITE_TOKEN,
+            tokenPrefix: process.env.SANITY_API_WRITE_TOKEN ? process.env.SANITY_API_WRITE_TOKEN.substring(0, 4) : 'none',
+            allPromos: expiredPromotions.map(p => ({
+                id: p._id,
+                title: p.title,
+                lang: p.language,
+                validUntil: p.validUntil,
+                status: p.status
+            }))
+        };
+
+        // Filter for truly expired ones
+        const trulyExpired = expiredPromotions.filter(promo =>
+            promo.language === 'pt' &&
+            promo.validUntil &&
+            promo.validUntil < today &&
+            (!promo.status || promo.status === 'active')
+        );
+
+        console.log(`[ExpirePromotions] Found ${trulyExpired.length} truly expired promotions after filtering`);
 
         const results = {
             expired: 0,
             archived: [] as string[],
             deleted: [] as string[],
             errors: [] as string[],
+            debug: debugInfo
         };
 
-        for (const promo of expiredPromotions) {
+        for (const promo of trulyExpired) {
             try {
                 // 1. Archive the PT version (works for both published and drafts)
                 await writeClient.patch(promo._id).set({ status: 'archived' }).commit();
