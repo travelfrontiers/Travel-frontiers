@@ -22,13 +22,22 @@ export function ProcessExpiredAction(props: DocumentActionProps) {
                 'Continue?'
             );
 
-            if (!confirmation) return;
-
-            setIsProcessing(true);
-
             try {
+                // In production, we need the secret to bypass the security check
+                const secret = window.prompt('Enter your CRON_SECRET to authorize this manual run:');
+
+                if (!secret && secret !== null) {
+                    alert('Secret is required for manual processing.');
+                    return;
+                }
+
+                setIsProcessing(true);
+
                 const response = await fetch('/api/expire-promotions', {
                     method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${secret}`
+                    }
                 });
 
                 const result = await response.json();
