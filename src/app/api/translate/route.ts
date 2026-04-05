@@ -11,7 +11,7 @@ async function translateWithGemma(text: string, targetLang: string): Promise<str
     if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'models/gemma-4-31b-it' }, { apiVersion: 'v2' });
 
     const langName = targetLang === 'en' ? 'English' : 'French';
     const prompt = `You are a professional travel content translator. Translate the following Portuguese text to ${langName}.\nReturn ONLY the translated text, with no explanations, no quotes, and no extra commentary.\n\n${text}`;

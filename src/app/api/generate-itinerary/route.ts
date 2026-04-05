@@ -81,10 +81,10 @@ export async function POST(request: Request) {
 
         if (!extractedText.trim()) throw new Error("Empty source file.");
 
-        // 3. Generate Detailed Itinerary with Gemini
+        // 3. Generate Detailed Itinerary with Gemini (Gemma 4 - 2026 Config)
         const genAI = new GoogleGenerativeAI(apiKey);
-        // FORCE 'v1' stable API version and use requested model
-        const model = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' }, { apiVersion: 'v1' });
+        // Use v2 and full model path for 2026 stability
+        const model = genAI.getGenerativeModel({ model: 'models/gemma-4-31b-it' }, { apiVersion: 'v2' });
 
         const textPrompt = `
 You are an expert travel planner for "Travel Frontiers". 
