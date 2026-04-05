@@ -15,28 +15,18 @@ async function fetchImageBuffer(url: string): Promise<Buffer> {
     return Buffer.from(await response.arrayBuffer());
 }
 
-async function generateImagenImage(prompt: string, apiKey: string): Promise<Buffer | null> {
+async function generateGeminiImage(prompt: string, apiKey: string): Promise<Buffer | null> {
     try {
-        // Use v1beta endpoint for stable 2026 connection
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:generateImages?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                prompt,
-                number_of_images: 1,
-            }),
-        });
-
-        if (!response.ok) {
-            return null;
-        }
-
-        const data = await response.json();
-        const base64 = data.generatedImages?.[0]?.image?.imageBytes;
-        if (!base64) return null;
-        return Buffer.from(base64, 'base64');
+        const genAI = new GoogleGenerativeAI(apiKey);
+        // Use the 2026 native image model which is unrestricted in the EU/Portugal
+        const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-image-preview' });
+        
+        const result = await model.generateContent(prompt);
+        const data = result.response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        
+        return data ? Buffer.from(data, 'base64') : null;
     } catch (e) {
-        console.error("Imagen error:", e);
+        console.warn("Failed to generate native image:", e);
         return null;
     }
 }
@@ -107,7 +97,7 @@ STYLE GUIDELINES (FOLLOW EXACTLY):
         
         const allImagePrompts = [coverPrompt, ...imageTags.map(m => m[1])];
         const allImageBuffers = await Promise.all(
-            allImagePrompts.map(prompt => generateImagenImage(prompt, apiKey))
+            allImagePrompts.map(prompt => generateGeminiImage(prompt, apiKey))
         );
 
         const coverBuffer = allImageBuffers[0];
