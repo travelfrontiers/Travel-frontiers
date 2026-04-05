@@ -14,6 +14,7 @@ import { TranslateAction } from './src/sanity/actions/TranslateAction'
 import { GenerateStoryAction } from './src/sanity/actions/GenerateStoryAction'
 import { ArchiveAction } from './src/sanity/actions/ArchiveAction'
 import { ProcessExpiredAction } from './src/sanity/actions/ProcessExpiredAction'
+import { GenerateItineraryAction } from './src/sanity/actions/GenerateItineraryAction'
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
@@ -26,9 +27,13 @@ export default defineConfig({
     schema,
     document: {
         actions: (prev, context) => {
-            return context.schemaType === 'promotion'
-                ? [...prev, TranslateAction, GenerateStoryAction, ArchiveAction, ProcessExpiredAction]
-                : prev
+            if (context.schemaType === 'promotion') {
+                return [...prev, TranslateAction, GenerateStoryAction, ArchiveAction, ProcessExpiredAction]
+            }
+            if (context.schemaType === 'roteiro') {
+                return [...prev, GenerateItineraryAction]
+            }
+            return prev
         },
     },
     plugins: [
