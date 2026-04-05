@@ -47,14 +47,12 @@ export function TranslateAction({ id, type, published, draft, onComplete }: Docu
                     duration: translations.en.duration,
                     highlights: translations.en.highlights,
                     inclusions: translations.en.inclusions,
-                    description: [
-                        {
-                            _key: 'auto-gen',
-                            _type: 'block',
-                            children: [{ _key: 'auto-child', _type: 'span', text: translations.en.description }],
-                            style: 'normal',
-                        },
-                    ],
+                    description: (translations.en.description as string[]).map((para: string, i: number) => ({
+                        _key: `auto-gen-en-${i}`,
+                        _type: 'block',
+                        children: [{ _key: `auto-child-en-${i}`, _type: 'span', text: para }],
+                        style: 'normal',
+                    })),
                     slug: { _type: 'slug', current: `${(doc as any).slug?.current}-en` },
                 })
 
@@ -69,14 +67,12 @@ export function TranslateAction({ id, type, published, draft, onComplete }: Docu
                     duration: translations.fr.duration,
                     highlights: translations.fr.highlights,
                     inclusions: translations.fr.inclusions,
-                    description: [
-                        {
-                            _key: 'auto-gen',
-                            _type: 'block',
-                            children: [{ _key: 'auto-child', _type: 'span', text: translations.fr.description }],
-                            style: 'normal',
-                        },
-                    ],
+                    description: (translations.fr.description as string[]).map((para: string, i: number) => ({
+                        _key: `auto-gen-fr-${i}`,
+                        _type: 'block',
+                        children: [{ _key: `auto-child-fr-${i}`, _type: 'span', text: para }],
+                        style: 'normal',
+                    })),
                     slug: { _type: 'slug', current: `${(doc as any).slug?.current}-fr` },
                 })
 

@@ -117,9 +117,12 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Missing title or description" }, { status: 400 });
         }
 
-        const descText = Array.isArray(description)
-            ? description.map(block => block.children?.map((c: any) => c.text).join('')).join('\n')
-            : description;
+        // Extract description as array of paragraph strings (one per block)
+        const descBlocks: string[] = Array.isArray(description)
+            ? description.map((block: any) =>
+                block.children?.map((c: any) => c.text).join('') ?? ''
+              ).filter((t: string) => t.trim() !== '')
+            : [description];
 
         const translateArray = async (arr: string[] | undefined, lang: string) => {
             if (!arr || !Array.isArray(arr)) return [];
@@ -128,7 +131,7 @@ export async function POST(request: Request) {
 
         const enResults = {
             title: await translateText(title, 'en'),
-            description: await translateText(descText, 'en'),
+            description: await translateArray(descBlocks, 'en'),
             subtitle: subtitle ? await translateText(subtitle, 'en') : '',
             location: location ? await translateText(location, 'en') : '',
             duration: duration ? await translateText(duration, 'en') : '',
@@ -138,7 +141,7 @@ export async function POST(request: Request) {
 
         const frResults = {
             title: await translateText(title, 'fr'),
-            description: await translateText(descText, 'fr'),
+            description: await translateArray(descBlocks, 'fr'),
             subtitle: subtitle ? await translateText(subtitle, 'fr') : '',
             location: location ? await translateText(location, 'fr') : '',
             duration: duration ? await translateText(duration, 'fr') : '',
