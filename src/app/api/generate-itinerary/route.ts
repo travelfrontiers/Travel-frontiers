@@ -17,8 +17,8 @@ async function fetchImageBuffer(url: string): Promise<Buffer> {
 
 async function generateImagenImage(prompt: string, apiKey: string): Promise<Buffer | null> {
     try {
-        // Use v1 endpoint for stable connection
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/imagen-3.0-generate-001:generateImages?key=${apiKey}`, {
+        // Use v1beta endpoint for stable 2026 connection
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:generateImages?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -28,16 +28,7 @@ async function generateImagenImage(prompt: string, apiKey: string): Promise<Buff
         });
 
         if (!response.ok) {
-            // Fallback to v1beta if v1 is not available for Imagen
-            const fallbackResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:generateImages?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, number_of_images: 1 }),
-            });
-            if (!fallbackResponse.ok) return null;
-            const data = await fallbackResponse.json();
-            const base64 = data.generatedImages?.[0]?.image?.imageBytes;
-            return base64 ? Buffer.from(base64, 'base64') : null;
+            return null;
         }
 
         const data = await response.json();
@@ -81,10 +72,10 @@ export async function POST(request: Request) {
 
         if (!extractedText.trim()) throw new Error("Empty source file.");
 
-        // 3. Generate Detailed Itinerary with Gemini (Gemma 4 - 2026 Config)
+        // 3. Generate Detailed Itinerary with Gemini (Official 2026 Gemma 4 Config)
         const genAI = new GoogleGenerativeAI(apiKey);
-        // Use v2 and full model path for 2026 stability
-        const model = genAI.getGenerativeModel({ model: 'models/gemma-4-31b-it' }, { apiVersion: 'v2' });
+        // Research confirms Gemma 4 requires v1beta in April 2026
+        const model = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' }, { apiVersion: 'v1beta' });
 
         const textPrompt = `
 You are an expert travel planner for "Travel Frontiers". 
