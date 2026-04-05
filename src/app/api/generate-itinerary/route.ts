@@ -75,7 +75,7 @@ export async function POST(request: Request) {
 
         // 3. Generate Detailed Itinerary with Gemini
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
         const textPrompt = `
 You are an expert travel planner for "Travel Frontiers". 
