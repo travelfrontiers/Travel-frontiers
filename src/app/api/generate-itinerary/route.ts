@@ -3,7 +3,11 @@ import { client } from '../../../sanity/client';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun, Footer } from 'docx';
 import mammoth from 'mammoth';
-const { PDFParse } = require('pdf-parse');
+
+// Polyfill for libraries expecting browser-only DOMMatrix in a Node environment (fixes Vercel build)
+if (typeof global !== 'undefined' && typeof (global as any).DOMMatrix === 'undefined') {
+    (global as any).DOMMatrix = class {};
+}
 
 async function fetchImageBuffer(url: string): Promise<Buffer> {
     const response = await fetch(url);
@@ -39,6 +43,7 @@ async function generateImagenImage(prompt: string, apiKey: string): Promise<Buff
 }
 
 export async function POST(request: Request) {
+    const { PDFParse } = require('pdf-parse');
     try {
         const body = await request.json();
         const { fileRef, title, notes } = body;
