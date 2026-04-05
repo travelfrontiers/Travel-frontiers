@@ -74,45 +74,45 @@ export async function POST(request: Request) {
 
         // 3. Generate Detailed Itinerary with Gemini (Official 2026 Gemma 4 Config)
         const genAI = new GoogleGenerativeAI(apiKey);
-        // Research confirms Gemma 4 requires v1beta in April 2026
         const model = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' }, { apiVersion: 'v1beta' });
 
         const textPrompt = `
-You are an expert travel planner for "Travel Frontiers". 
-Create an immersive, professional itinerary based on these details:
+You are an expert travel luxury planner for "Travel Frontiers". 
+Create an immersive, professional, and high-quality itinerary based on these details:
 ${extractedText.substring(0, 50000)}
 
 User Notes: ${notes || 'None'}
 
-Return ONLY a structured itinerary in Portuguese with these exact markers for every day (e.g. "DIA 1: City", "DIA 2: Beach").
-For every day, include a detailed description of activities.
+STYLE GUIDELINES (FOLLOW EXACTLY):
+- Start with a short, enthusiastic introduction about the trip.
+- Use a day-by-day structure. Format: "DIA X: [CITY NAME] - [MAIN THEME]"
+- Within each day, use a TIMELINE format (e.g., • 09:00: [Activity], • 10:30: [Next]).
+- Include detailed Restaurant Suggestions for Lunch and Dinner for EACH day:
+  o Sugestão: [Name]
+  o Porquê: [Detailed reason why it's special]
+  o Preço: [€, €€, or €€€]
+- Throughout the text, insert this exact tag where a beautiful photo should be: [IMAGE: description of a professional travel photo of the location/activity]
+- Language: Portuguese (Portugal).
+- Tone: Premium, expert, inspiring.
+- NO Markdown (no ** or #).
 `;
 
         const result = await model.generateContent(textPrompt);
         const aiText = result.response.text();
 
-        // 4. Image Generation Tasks (Parallel)
-        // a. Cover Image
-        const coverPromise = generateImagenImage(`A stunning, inviting travel landscape or landmark photograph for an itinerary titled ${title || "a new adventure"}. High professional quality, natural colors.`, apiKey);
+        // 4. Image Generation Logic (Tag-based)
+        const imageTags = Array.from(aiText.matchAll(/\[IMAGE:\s*(.*?)\]/g));
+        // Also add a cover image prompt
+        const coverPrompt = `A stunning, inviting luxury travel landscape for an itinerary titled ${title || "Travel Frontiers"}. Professional travel photography.`;
         
-        // b. Daily Images (Parse the text to find days)
-        const daySections = aiText.split(/DIA \d+/i);
-        const intro = daySections[0] || "";
-        const days = daySections.slice(1);
-        
-        // Match day titles for prompt generation
-        const dayHeaders = Array.from(aiText.matchAll(/DIA (\d+):?\s*(.*)/gi)).map(m => m[2] || `Dia ${m[1]}`);
-        
-        const dailyImagePromises = dayHeaders.map((header, i) => {
-            const context = days[i]?.substring(0, 300) || "";
-            return generateImagenImage(`A beautiful travel photo of ${header}. ${context}. Realistic, professional travel photography.`, apiKey);
-        });
+        const allImagePrompts = [coverPrompt, ...imageTags.map(m => m[1])];
+        const allImageBuffers = await Promise.all(
+            allImagePrompts.map(prompt => generateImagenImage(prompt, apiKey))
+        );
 
-        const [coverBuffer, logoBuffer, ...dailyBuffers] = await Promise.all([
-            coverPromise,
-            fetchImageBuffer("https://www.travelfrontiers.pt/img/logo-newTF.png").catch(() => null),
-            ...dailyImagePromises
-        ]);
+        const coverBuffer = allImageBuffers[0];
+        const dailyBuffers = allImageBuffers.slice(1);
+        const logoBuffer = await fetchImageBuffer("https://www.travelfrontiers.pt/img/logo-newTF.png").catch(() => null);
 
         // 5. Build DOCX
         const children = [];
@@ -133,39 +133,36 @@ For every day, include a detailed description of activities.
             spacing: { after: 600 }
         }));
 
-        // Intro
-        if (intro) {
-            intro.split('\n').filter(l => l.trim()).forEach(line => {
-                children.push(new Paragraph({ children: [new TextRun({ text: line, size: 24 })], spacing: { after: 200 } }));
-            });
-        }
-
-        // Days
-        days.forEach((dayContent, i) => {
-            const header = dayHeaders[i] || `Dia ${i + 1}`;
-            const dayBuffer = dailyBuffers[i];
-
-            // Day Title
-            children.push(new Paragraph({
-                text: `DIA ${i + 1}: ${header.toUpperCase()}`,
-                heading: HeadingLevel.HEADING_2,
-                spacing: { before: 400, after: 200 }
-            }));
-
-            // Daily Image
-            if (dayBuffer) {
+        // Parse text and insert images where tags are
+        let currentImageIndex = 0;
+        const lines = aiText.split('\n');
+        
+        for (const line of lines) {
+            const cleanLine = line.replace(/\[IMAGE:.*?\]/g, '').trim();
+            
+            if (cleanLine) {
+                // Determine if it's a heading
+                const isHeading = cleanLine.startsWith('DIA ');
                 children.push(new Paragraph({
-                    alignment: AlignmentType.CENTER,
-                    children: [new ImageRun({ data: dayBuffer, transformation: { width: 500, height: 250 }, type: 'png' })],
-                    spacing: { after: 300 }
+                    text: cleanLine,
+                    heading: isHeading ? HeadingLevel.HEADING_2 : undefined,
+                    children: isHeading ? [] : [new TextRun({ text: cleanLine, size: 22 })],
+                    spacing: { before: isHeading ? 400 : 0, after: 150 }
                 }));
             }
 
-            // Day Content
-            dayContent.split('\n').filter(l => l.trim()).forEach(line => {
-                children.push(new Paragraph({ children: [new TextRun({ text: line, size: 22 })], spacing: { after: 150 } }));
-            });
-        });
+            // If the original line had an image tag, insert the image buffer
+            if (line.includes('[IMAGE:')) {
+                const imgBuffer = dailyBuffers[currentImageIndex++];
+                if (imgBuffer) {
+                    children.push(new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        children: [new ImageRun({ data: imgBuffer, transformation: { width: 500, height: 280 }, type: 'png' })],
+                        spacing: { before: 200, after: 200 }
+                    }));
+                }
+            }
+        }
 
         const doc = new Document({
             sections: [{
