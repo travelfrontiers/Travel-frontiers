@@ -43,7 +43,7 @@ async function generateImagenImage(prompt: string, apiKey: string): Promise<Buff
 }
 
 export async function POST(request: Request) {
-    const { PDFParse } = require('pdf-parse');
+    const pdfParse = require('pdf-parse');
     try {
         const body = await request.json();
         const { fileRef, title, notes } = body;
@@ -62,9 +62,8 @@ export async function POST(request: Request) {
         // 2. Extract Text
         let extractedText = "";
         if (asset.extension === 'pdf') {
-            const pdf = new PDFParse(new Uint8Array(buffer));
-            const result = await pdf.getText();
-            extractedText = typeof result === 'string' ? result : result.text;
+            const data = await pdfParse(buffer);
+            extractedText = data.text;
         } else if (asset.extension === 'docx' || asset.extension === 'doc') {
             const docxData = await mammoth.extractRawText({ buffer });
             extractedText = docxData.value;
