@@ -17,7 +17,8 @@ async function fetchImageBuffer(url: string): Promise<Buffer> {
 
 async function generateImagenImage(prompt: string, apiKey: string): Promise<Buffer | null> {
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:generateImages?key=${apiKey}`, {
+        // Use v1 endpoint for stable connection
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/imagen-3.0-generate-001:generateImages?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -27,9 +28,16 @@ async function generateImagenImage(prompt: string, apiKey: string): Promise<Buff
         });
 
         if (!response.ok) {
-            const err = await response.json().catch(() => ({}));
-            console.warn("Imagen generation failed:", JSON.stringify(err));
-            return null;
+            // Fallback to v1beta if v1 is not available for Imagen
+            const fallbackResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:generateImages?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt, number_of_images: 1 }),
+            });
+            if (!fallbackResponse.ok) return null;
+            const data = await fallbackResponse.json();
+            const base64 = data.generatedImages?.[0]?.image?.imageBytes;
+            return base64 ? Buffer.from(base64, 'base64') : null;
         }
 
         const data = await response.json();
@@ -75,38 +83,34 @@ export async function POST(request: Request) {
 
         // 3. Generate Detailed Itinerary with Gemini
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        // FORCE 'v1' stable API version and use requested model
+        const model = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' }, { apiVersion: 'v1' });
 
         const textPrompt = `
 You are an expert travel planner for "Travel Frontiers". 
 Create an immersive, professional itinerary based on these details:
----
 ${extractedText.substring(0, 50000)}
----
+
 User Notes: ${notes || 'None'}
 
-Format Instructions:
-- Start with a short enthusiastic introduction.
-- Use a clear "DAY X: [Title]" format for each day (e.g., DAY 1: ARRIVAL IN PARIS). This is critical for document structure.
-- Include restaurant suggestions and insightful tips for each day.
-- NEVER use markdown like ** or #. 
-- Ensure logical flow and beautiful language.
-        `.trim();
+Return ONLY a structured itinerary in Portuguese with these exact markers for every day (e.g. "DIA 1: City", "DIA 2: Beach").
+For every day, include a detailed description of activities.
+`;
 
         const result = await model.generateContent(textPrompt);
-        const aiText = result.response.text().trim();
+        const aiText = result.response.text();
 
         // 4. Image Generation Tasks (Parallel)
         // a. Cover Image
         const coverPromise = generateImagenImage(`A stunning, inviting travel landscape or landmark photograph for an itinerary titled ${title || "a new adventure"}. High professional quality, natural colors.`, apiKey);
         
         // b. Daily Images (Parse the text to find days)
-        const daySections = aiText.split(/DAY \d+/i);
-        const intro = daySections[0];
+        const daySections = aiText.split(/DIA \d+/i);
+        const intro = daySections[0] || "";
         const days = daySections.slice(1);
         
         // Match day titles for prompt generation
-        const dayHeaders = Array.from(aiText.matchAll(/DAY (\d+):?\s*(.*)/gi)).map(m => m[2] || `Day ${m[1]}`);
+        const dayHeaders = Array.from(aiText.matchAll(/DIA (\d+):?\s*(.*)/gi)).map(m => m[2] || `Dia ${m[1]}`);
         
         const dailyImagePromises = dayHeaders.map((header, i) => {
             const context = days[i]?.substring(0, 300) || "";
@@ -139,18 +143,20 @@ Format Instructions:
         }));
 
         // Intro
-        intro.split('\n').filter(l => l.trim()).forEach(line => {
-            children.push(new Paragraph({ children: [new TextRun({ text: line, size: 24 })], spacing: { after: 200 } }));
-        });
+        if (intro) {
+            intro.split('\n').filter(l => l.trim()).forEach(line => {
+                children.push(new Paragraph({ children: [new TextRun({ text: line, size: 24 })], spacing: { after: 200 } }));
+            });
+        }
 
         // Days
         days.forEach((dayContent, i) => {
-            const header = dayHeaders[i] || `Day ${i + 1}`;
+            const header = dayHeaders[i] || `Dia ${i + 1}`;
             const dayBuffer = dailyBuffers[i];
 
             // Day Title
             children.push(new Paragraph({
-                text: `DAY ${i + 1}: ${header.toUpperCase()}`,
+                text: `DIA ${i + 1}: ${header.toUpperCase()}`,
                 heading: HeadingLevel.HEADING_2,
                 spacing: { before: 400, after: 200 }
             }));
