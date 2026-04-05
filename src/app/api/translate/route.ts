@@ -1,24 +1,35 @@
 import { NextResponse } from "next/server";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Hybrid Translation Strategy: DeepL (primary) -> MyMemory (fallback) -> Copy (last resort)
+// Translation Strategy: Gemma 4 (primary) -> DeepL (secondary) -> MyMemory (last resort) -> Copy (fallback)
+
+/**
+ * Translate text using Gemma 4 via Google Generative AI
+ */
+async function translateWithGemma(text: string, targetLang: string): Promise<string> {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemma-4' });
+
+    const langName = targetLang === 'en' ? 'English' : 'French';
+    const prompt = `You are a professional travel content translator. Translate the following Portuguese text to ${langName}.\nReturn ONLY the translated text, with no explanations, no quotes, and no extra commentary.\n\n${text}`;
+
+    const result = await model.generateContent(prompt);
+    const translated = result.response.text().trim();
+
+    if (!translated) throw new Error('Gemma 4 returned an empty translation');
+    return translated;
+}
 
 /**
  * Translate text using DeepL API
- * Free tier: 500,000 characters/month
  */
 async function translateWithDeepL(text: string, targetLang: string): Promise<string> {
     const apiKey = process.env.DEEPL_API_KEY;
+    if (!apiKey) throw new Error('DEEPL_API_KEY not configured');
 
-    if (!apiKey) {
-        throw new Error('DEEPL_API_KEY not configured');
-    }
-
-    // Validate API key format (DeepL Free keys end with :fx and are 36+ chars)
-    if (apiKey.length < 30) {
-        throw new Error('Invalid DeepL API key format (key too short)');
-    }
-
-    // DeepL uses 'EN-US' or 'EN-GB' for English, 'FR' for French
     const deeplLang = targetLang === 'en' ? 'EN-US' : targetLang.toUpperCase();
 
     const response = await fetch('https://api-free.deepl.com/v2/translate', {
@@ -45,18 +56,14 @@ async function translateWithDeepL(text: string, targetLang: string): Promise<str
 
 /**
  * Translate text using MyMemory (fallback)
- * Free, no API key required, 1000 words/day
  */
 async function translateWithMyMemory(text: string, targetLang: string): Promise<string> {
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=pt|${targetLang}`;
     const response = await fetch(url);
 
-    if (!response.ok) {
-        throw new Error(`MyMemory API error (${response.status})`);
-    }
+    if (!response.ok) throw new Error(`MyMemory API error (${response.status})`);
 
     const data = await response.json();
-
     if (data.responseStatus !== 200) {
         throw new Error(`MyMemory returned error: ${data.responseDetails || 'Unknown error'}`);
     }
@@ -70,25 +77,33 @@ async function translateWithMyMemory(text: string, targetLang: string): Promise<
 async function translateText(text: string, targetLang: string): Promise<string> {
     if (!text || text.trim() === '') return '';
 
+    // --- Tier 1: Gemma 4 ---
     try {
-        // Try DeepL first
-        const result = await translateWithDeepL(text, targetLang);
-        console.log(`✓ Translated with DeepL: "${text.substring(0, 30)}..."`);
+        const result = await translateWithGemma(text, targetLang);
+        console.log(`✓ Gemma 4 translated: "${text.substring(0, 30)}..."`);
         return result;
-    } catch (deeplError: any) {
-        console.warn(`DeepL failed: ${deeplError.message}. Trying MyMemory...`);
+    } catch (gemmaError: any) {
+        console.warn(`Gemma 4 failed: ${gemmaError.message}. Trying DeepL...`);
 
+        // --- Tier 2: DeepL ---
         try {
-            // Fallback to MyMemory
-            const result = await translateWithMyMemory(text, targetLang);
-            console.log(`✓ Translated with MyMemory: "${text.substring(0, 30)}..."`);
+            const result = await translateWithDeepL(text, targetLang);
+            console.log(`✓ DeepL translated: "${text.substring(0, 30)}..."`);
             return result;
-        } catch (myMemoryError: any) {
-            console.error(`Both DeepL and MyMemory failed. Returning original text.`);
-            console.error(`  - DeepL: ${deeplError.message}`);
-            console.error(`  - MyMemory: ${myMemoryError.message}`);
-            // Last resort: return original text (user will need to translate manually)
-            return text;
+        } catch (deeplError: any) {
+            console.warn(`DeepL failed: ${deeplError.message}. Trying MyMemory...`);
+
+            // --- Tier 3: MyMemory ---
+            try {
+                const result = await translateWithMyMemory(text, targetLang);
+                console.log(`✓ MyMemory translated: "${text.substring(0, 30)}..."`);
+                return result;
+            } catch (myMemoryError: any) {
+                console.error(`All providers failed (Gemma 4, DeepL, MyMemory). Returning original text.`);
+                console.error(`  - DeepL: ${deeplError.message}`);
+                console.error(`  - MyMemory: ${myMemoryError.message}`);
+                return text;
+            }
         }
     }
 }
@@ -106,13 +121,11 @@ export async function POST(request: Request) {
             ? description.map(block => block.children?.map((c: any) => c.text).join('')).join('\n')
             : description;
 
-        // Helper to translate arrays
         const translateArray = async (arr: string[] | undefined, lang: string) => {
             if (!arr || !Array.isArray(arr)) return [];
             return Promise.all(arr.map(item => translateText(item, lang)));
         };
 
-        // Translate to English
         const enResults = {
             title: await translateText(title, 'en'),
             description: await translateText(descText, 'en'),
@@ -123,7 +136,6 @@ export async function POST(request: Request) {
             inclusions: await translateArray(inclusions, 'en'),
         };
 
-        // Translate to French
         const frResults = {
             title: await translateText(title, 'fr'),
             description: await translateText(descText, 'fr'),
