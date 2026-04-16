@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { client } from '../../../sanity/client';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun, Footer } from 'docx';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun, Footer, BorderStyle, PageBreak, ShadingType } from 'docx';
 import mammoth from 'mammoth';
 
 // Polyfill for libraries expecting browser-only DOMMatrix in a Node environment (fixes Vercel build)
@@ -114,51 +114,112 @@ STYLE GUIDELINES (FOLLOW EXACTLY):
         const dailyBuffers = allImageBuffers.slice(1);
         const logoBuffer = await fetchImageBuffer("https://www.travelfrontiers.pt/img/logo-newTF.png").catch(() => null);
 
-        // 5. Build DOCX
-        const children = [];
+        // 5. Strip any prompt echo - keep only content from the first real paragraph or DIA heading
+        const cleanedAiText = (() => {
+            // Remove lines that look like instructions echoed back
+            const lines = aiText.split('\n');
+            let startIndex = 0;
+            for (let i = 0; i < lines.length; i++) {
+                const l = lines[i].trim();
+                // Skip blank lines, and lines that are instructions echoed back
+                if (l.match(/^(you are|create|style guidelines|user notes|STYLE|based on|return only|write a|format:|language:|tone:|note:|no markdown)/i)) {
+                    startIndex = i + 1;
+                }
+            }
+            return lines.slice(startIndex).join('\n').trim();
+        })();
 
-        // Cover
+        // 6. Build DOCX with professional layout
+        const GOLD = 'B8963E';
+        const DARK = '1A1A2E';
+        const GRAY = '6B7280';
+        const children: any[] = [];
+
+        // ── COVER PAGE ──
         if (coverBuffer) {
             children.push(new Paragraph({
                 alignment: AlignmentType.CENTER,
-                children: [new ImageRun({ data: coverBuffer, transformation: { width: 550, height: 350 }, type: 'png' })],
-                spacing: { after: 400 }
+                children: [new ImageRun({ data: coverBuffer, transformation: { width: 600, height: 380 }, type: 'jpg' })],
+                spacing: { before: 0, after: 400 }
             }));
         }
 
+        // Title block
         children.push(new Paragraph({
-            text: title || "Your Travel Frontiers Itinerary",
-            heading: HeadingLevel.HEADING_1,
             alignment: AlignmentType.CENTER,
-            spacing: { after: 600 }
+            spacing: { before: 200, after: 80 },
+            children: [new TextRun({ text: (title || 'Itinerário de Viagem').toUpperCase(), bold: true, size: 48, color: DARK, font: 'Georgia' })]
         }));
 
-        // Parse text and insert images where tags are
+        // Gold divider line
+        children.push(new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 0, after: 80 },
+            border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: GOLD } },
+            children: []
+        }));
+
+        children.push(new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 100, after: 600 },
+            children: [new TextRun({ text: 'Travel Frontiers — Viagens de Luxo', italics: true, size: 22, color: GRAY, font: 'Calibri' })]
+        }));
+
+        // Page break after cover
+        children.push(new Paragraph({ children: [new PageBreak()] }));
+
+        // ── BODY: Parse AI text and render each line ──
         let currentImageIndex = 0;
-        const lines = aiText.split('\n');
-        
-        for (const line of lines) {
+        const bodyLines = cleanedAiText.split('\n');
+
+        for (const line of bodyLines) {
             const cleanLine = line.replace(/\[IMAGE:.*?\]/g, '').trim();
-            
+
             if (cleanLine) {
-                // Determine if it's a heading
-                const isHeading = cleanLine.startsWith('DIA ');
-                children.push(new Paragraph({
-                    text: cleanLine,
-                    heading: isHeading ? HeadingLevel.HEADING_2 : undefined,
-                    children: isHeading ? [] : [new TextRun({ text: cleanLine, size: 22 })],
-                    spacing: { before: isHeading ? 400 : 0, after: 150 }
-                }));
+                if (cleanLine.match(/^DIA \d+/i)) {
+                    // Day heading – gold background bar style
+                    children.push(new Paragraph({
+                        spacing: { before: 520, after: 160 },
+                        shading: { type: ShadingType.SOLID, color: DARK, fill: DARK },
+                        children: [new TextRun({ text: '  ' + cleanLine.toUpperCase() + '  ', bold: true, size: 26, color: 'FFFFFF', font: 'Calibri' })]
+                    }));
+                } else if (cleanLine.startsWith('•') || cleanLine.startsWith('-') || cleanLine.match(/^\d{2}:\d{2}/)) {
+                    // Timeline items
+                    children.push(new Paragraph({
+                        spacing: { before: 60, after: 60 },
+                        indent: { left: 360 },
+                        children: [new TextRun({ text: cleanLine, size: 21, font: 'Calibri', color: DARK })]
+                    }));
+                } else if (cleanLine.startsWith('o Sugestão') || cleanLine.startsWith('o Porquê') || cleanLine.startsWith('o Preço')) {
+                    // Restaurant card sub-items
+                    children.push(new Paragraph({
+                        spacing: { before: 40, after: 40 },
+                        indent: { left: 720 },
+                        children: [new TextRun({ text: cleanLine, size: 20, italics: cleanLine.startsWith('o Porquê'), font: 'Calibri', color: GRAY })]
+                    }));
+                } else if (cleanLine.length < 80 && cleanLine.includes(':') && !cleanLine.startsWith('http')) {
+                    // Sub-headings (Sugestão para Almoço, etc.)
+                    children.push(new Paragraph({
+                        spacing: { before: 240, after: 80 },
+                        children: [new TextRun({ text: cleanLine, bold: true, size: 22, color: GOLD, font: 'Calibri' })]
+                    }));
+                } else {
+                    // Regular paragraph
+                    children.push(new Paragraph({
+                        spacing: { before: 60, after: 60 },
+                        children: [new TextRun({ text: cleanLine, size: 21, font: 'Calibri', color: DARK })]
+                    }));
+                }
             }
 
-            // If the original line had an image tag, insert the image buffer
+            // Insert Wikimedia photo after image tags
             if (line.includes('[IMAGE:')) {
                 const imgBuffer = dailyBuffers[currentImageIndex++];
                 if (imgBuffer) {
                     children.push(new Paragraph({
                         alignment: AlignmentType.CENTER,
-                        children: [new ImageRun({ data: imgBuffer, transformation: { width: 500, height: 280 }, type: 'png' })],
-                        spacing: { before: 200, after: 200 }
+                        spacing: { before: 240, after: 240 },
+                        children: [new ImageRun({ data: imgBuffer, transformation: { width: 520, height: 290 }, type: 'jpg' })]
                     }));
                 }
             }
@@ -166,23 +227,24 @@ STYLE GUIDELINES (FOLLOW EXACTLY):
 
         const doc = new Document({
             sections: [{
-                properties: {},
-                children: children as any,
+                properties: {
+                    page: {
+                        margin: { top: 1000, right: 900, bottom: 1000, left: 900 }
+                    }
+                },
+                children,
                 footers: {
                     default: new Footer({
                         children: [
                             new Paragraph({
+                                border: { top: { style: BorderStyle.SINGLE, size: 4, color: GOLD } },
                                 alignment: AlignmentType.CENTER,
+                                spacing: { before: 120, after: 60 },
                                 children: [
-                                    logoBuffer ? new ImageRun({ data: logoBuffer, transformation: { width: 40, height: 40 }, type: 'png' }) : new TextRun({ text: "TF" }),
-                                    new TextRun({ text: "  Travel Frontiers", bold: true, size: 24, color: "D4AF37" }),
-                                ],
-                            }),
-                            new Paragraph({
-                                alignment: AlignmentType.CENTER,
-                                children: [
-                                    new TextRun({ text: "www.instagram.com/tf.travel.frontiers  |  www.travelfrontiers.pt", size: 18 }),
-                                ],
+                                    ...(logoBuffer ? [new ImageRun({ data: logoBuffer, transformation: { width: 30, height: 30 }, type: 'png' })] : []),
+                                    new TextRun({ text: '  Travel Frontiers', bold: true, size: 20, color: GOLD, font: 'Calibri' }),
+                                    new TextRun({ text: '   |   www.travelfrontiers.pt   |   @tf.travel.frontiers', size: 18, color: GRAY, font: 'Calibri' }),
+                                ]
                             })
                         ]
                     })
@@ -200,7 +262,7 @@ STYLE GUIDELINES (FOLLOW EXACTLY):
         });
 
     } catch (e: any) {
-        console.error("API Error:", e);
+        console.error('API Error:', e);
         return NextResponse.json({ error: e.message }, { status: 500 });
     }
 }
