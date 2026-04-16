@@ -15,28 +15,28 @@ async function fetchImageBuffer(url: string): Promise<Buffer> {
     return Buffer.from(await response.arrayBuffer());
 }
 
-async function fetchFreeTravelImage(query: string): Promise<Buffer | null> {
+async function fetchFreeTravelImage(query: string): Promise<{ buffer: Buffer; type: 'jpg' | 'png' } | null> {
     try {
-        // Fallback or cleanup the query for better search results
         const cleanQuery = query.replace(/professional travel photo of/i, '').trim();
-        const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=pageimages&generator=search&gsrsearch=${encodeURIComponent(cleanQuery + " travel landmark")}&gsrlimit=1&pithumbsize=1000`;
+        const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=pageimages&generator=search&gsrsearch=${encodeURIComponent(cleanQuery + " landmark")}&gsrlimit=1&pithumbsize=1200`;
         
         const response = await fetch(url);
         const data = await response.json();
         
-        if (data && data.query && data.query.pages) {
+        if (data?.query?.pages) {
             const pages = Object.values(data.query.pages) as any[];
             if (pages.length > 0 && pages[0].thumbnail) {
-                const imgUrl = pages[0].thumbnail.source;
+                const imgUrl: string = pages[0].thumbnail.source;
                 const imgResponse = await fetch(imgUrl);
                 if (imgResponse.ok) {
-                    return Buffer.from(await imgResponse.arrayBuffer());
+                    const type = imgUrl.toLowerCase().includes('.png') ? 'png' : 'jpg';
+                    return { buffer: Buffer.from(await imgResponse.arrayBuffer()), type };
                 }
             }
         }
         return null;
     } catch (e) {
-        console.warn("Failed to fetch Wikimedia image:", e);
+        console.warn('Failed to fetch Wikimedia image:', e);
         return null;
     }
 }
@@ -76,25 +76,31 @@ export async function POST(request: Request) {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' }, { apiVersion: 'v1beta' });
 
-        const textPrompt = `
-You are an expert travel luxury planner for "Travel Frontiers". 
-Create an immersive, professional, and high-quality itinerary based on these details:
+        const textPrompt = `INSTRUÇÕES PARA O MODELO:
+Responde EXCLUSIVAMENTE em Português de Portugal. NÃO USES INGLÊS EM NENHUMA PARTE DA RESPOSTA.
+Não repitas estas instruções. Começa diretamente com o itinerário.
+
+És um planeador de viagens de luxo da "Travel Frontiers" (Portugal).
+Cria um itinerário profissional e imersivo baseado nestes detalhes:
 ${extractedText.substring(0, 50000)}
 
-User Notes: ${notes || 'None'}
+Notas do utilizador: ${notes || 'Nenhuma'}
 
-STYLE GUIDELINES (FOLLOW EXACTLY):
-- Start with a short, enthusiastic introduction about the trip.
-- Use a day-by-day structure. Format: "DIA X: [CITY NAME] - [MAIN THEME]"
-- Within each day, use a TIMELINE format (e.g., • 09:00: [Activity], • 10:30: [Next]).
-- Include detailed Restaurant Suggestions for Lunch and Dinner for EACH day:
-  o Sugestão: [Name]
-  o Porquê: [Detailed reason why it's special]
-  o Preço: [€, €€, or €€€]
-- Throughout the text, insert this exact tag where a photo should be: [IMAGE: Landmark or City Exact Name]. Make the name inside the brackets a simple 2-4 word search term (e.g. [IMAGE: Prague Charles Bridge]).
-- Language: Portuguese (Portugal).
-- Tone: Premium, expert, inspiring.
-- NO Markdown (no ** or #).
+REGRAS DE FORMATAÇÃO (SEGUE EXATAMENTE):
+- Começa com uma introdução entusiasta e curta sobre a viagem (2-3 frases).
+- Estrutura dia a dia. Formato OBRIGATÓRIO: "DIA X: [CIDADE] - [TEMA DO DIA]"
+- Dentro de cada dia, usa formato de HORÁRIO: • HH:MM: [Atividade detalhada]
+  Exemplo: • 09:00: Visita ao Coliseu
+- Em cada dia, inclui sugestões de restaurante para Almoço e Jantar:
+  Sugestão para Almoço:
+  o Sugestão: [Nome do restaurante]
+  o Porquê: [Razão detalhada]
+  o Preço: [€, €€, ou €€€]
+- Insere esta tag exata onde deve aparecer uma fotografia: [IMAGE: Nome Exato do Local]
+  Exemplo: [IMAGE: Coliseu Roma]
+- O texto DEVE ser todo em Português de Portugal. Nenhuma palavra em inglês.
+- Tom: Premium, inspirador, detalhado.
+- SEM Markdown (sem ** ou #).
 `;
 
         const result = await model.generateContent(textPrompt);
@@ -106,23 +112,21 @@ STYLE GUIDELINES (FOLLOW EXACTLY):
         const coverPrompt = `${title || "Europe"} landmark`;
         
         const allImageQueries = [coverPrompt, ...imageTags.map(m => m[1])];
-        const allImageBuffers = await Promise.all(
+        const allImageResults = await Promise.all(
             allImageQueries.map(query => fetchFreeTravelImage(query))
         );
 
-        const coverBuffer = allImageBuffers[0];
-        const dailyBuffers = allImageBuffers.slice(1);
+        const coverResult = allImageResults[0];
+        const dailyResults = allImageResults.slice(1);
         const logoBuffer = await fetchImageBuffer("https://www.travelfrontiers.pt/img/logo-newTF.png").catch(() => null);
 
-        // 5. Strip any prompt echo - keep only content from the first real paragraph or DIA heading
+        // 5. Strip any prompt echo
         const cleanedAiText = (() => {
-            // Remove lines that look like instructions echoed back
             const lines = aiText.split('\n');
             let startIndex = 0;
             for (let i = 0; i < lines.length; i++) {
                 const l = lines[i].trim();
-                // Skip blank lines, and lines that are instructions echoed back
-                if (l.match(/^(you are|create|style guidelines|user notes|STYLE|based on|return only|write a|format:|language:|tone:|note:|no markdown)/i)) {
+                if (l.match(/^(you are|create|style guidelines|user notes|STYLE|based on|return only|write a|format:|language:|tone:|note:|no markdown|INSTRU|És um|Responde|Notas do|Regras|segue exat)/i)) {
                     startIndex = i + 1;
                 }
             }
@@ -135,38 +139,59 @@ STYLE GUIDELINES (FOLLOW EXACTLY):
         const GRAY = '6B7280';
         const children: any[] = [];
 
-        // ── COVER PAGE ──
-        if (coverBuffer) {
+        // ── COVER PAGE: Large photo + branded title block ──
+        if (coverResult?.buffer) {
             children.push(new Paragraph({
                 alignment: AlignmentType.CENTER,
-                children: [new ImageRun({ data: coverBuffer, transformation: { width: 600, height: 380 }, type: 'jpg' })],
-                spacing: { before: 0, after: 400 }
+                spacing: { before: 0, after: 0 },
+                children: [new ImageRun({
+                    data: coverResult.buffer,
+                    transformation: { width: 620, height: 400 },
+                    type: coverResult.type
+                })]
             }));
         }
 
-        // Title block
+        // Gold top border bar under image
         children.push(new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 200, after: 80 },
-            children: [new TextRun({ text: (title || 'Itinerário de Viagem').toUpperCase(), bold: true, size: 48, color: DARK, font: 'Georgia' })]
-        }));
-
-        // Gold divider line
-        children.push(new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 0, after: 80 },
-            border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: GOLD } },
+            border: { top: { style: BorderStyle.SINGLE, size: 18, color: GOLD } },
+            spacing: { before: 200, after: 120 },
             children: []
         }));
 
+        // Title
         children.push(new Paragraph({
             alignment: AlignmentType.CENTER,
-            spacing: { before: 100, after: 600 },
-            children: [new TextRun({ text: 'Travel Frontiers — Viagens de Luxo', italics: true, size: 22, color: GRAY, font: 'Calibri' })]
+            spacing: { before: 0, after: 60 },
+            children: [new TextRun({
+                text: (title || 'Itinerário de Viagem').toUpperCase(),
+                bold: true, size: 52, color: DARK, font: 'Georgia'
+            })]
+        }));
+
+        // Subtitle
+        children.push(new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 0, after: 120 },
+            children: [new TextRun({
+                text: 'Travel Frontiers  ·  Viagens de Luxo',
+                italics: true, size: 22, color: GRAY, font: 'Calibri'
+            })]
+        }));
+
+        // Gold bottom border bar
+        children.push(new Paragraph({
+            border: { bottom: { style: BorderStyle.SINGLE, size: 18, color: GOLD } },
+            spacing: { before: 0, after: 0 },
+            children: []
         }));
 
         // Page break after cover
-        children.push(new Paragraph({ children: [new PageBreak()] }));
+        children.push(new Paragraph({
+            spacing: { before: 400 },
+            children: [new PageBreak()]
+        }));
+
 
         // ── BODY: Parse AI text and render each line ──
         let currentImageIndex = 0;
@@ -214,12 +239,16 @@ STYLE GUIDELINES (FOLLOW EXACTLY):
 
             // Insert Wikimedia photo after image tags
             if (line.includes('[IMAGE:')) {
-                const imgBuffer = dailyBuffers[currentImageIndex++];
-                if (imgBuffer) {
+                const imgRes = dailyResults[currentImageIndex++];
+                if (imgRes?.buffer) {
                     children.push(new Paragraph({
                         alignment: AlignmentType.CENTER,
-                        spacing: { before: 240, after: 240 },
-                        children: [new ImageRun({ data: imgBuffer, transformation: { width: 520, height: 290 }, type: 'jpg' })]
+                        spacing: { before: 200, after: 200 },
+                        children: [new ImageRun({
+                            data: imgRes.buffer,
+                            transformation: { width: 520, height: 290 },
+                            type: imgRes.type
+                        })]
                     }));
                 }
             }
