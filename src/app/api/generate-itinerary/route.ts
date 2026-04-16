@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { client } from '../../../sanity/client';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun, Footer, BorderStyle, PageBreak, ShadingType } from 'docx';
+import { Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, Footer, BorderStyle, PageBreak, ShadingType, ExternalHyperlink } from 'docx';
 import mammoth from 'mammoth';
 
 // Polyfill for libraries expecting browser-only DOMMatrix in a Node environment (fixes Vercel build)
@@ -76,47 +76,59 @@ export async function POST(request: Request) {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' }, { apiVersion: 'v1beta' });
 
-        const textPrompt = `INSTRUÇÕES PARA O MODELO:
-Responde EXCLUSIVAMENTE em Português de Portugal. NÃO USES INGLÊS EM NENHUMA PARTE DA RESPOSTA.
-Não repitas estas instruções. Começa diretamente com o itinerário.
+        // The model MUST start with ===INÍCIO=== — we split on it to guarantee
+        // no prompt echo or source document text ever appears in the output.
+        const textPrompt = `És um planeador de viagens de luxo da "Travel Frontiers" (Portugal).
+Responde EXCLUSIVAMENTE em Português de Portugal. Nem uma única palavra em inglês.
+A tua resposta DEVE começar OBRIGATORIAMENTE com ===INÍCIO=== na primeira linha, sem espaço antes.
+Não escrevas NADA antes de ===INÍCIO===.
 
-És um planeador de viagens de luxo da "Travel Frontiers" (Portugal).
-Cria um itinerário profissional e imersivo baseado nestes detalhes:
-${extractedText.substring(0, 50000)}
+REGRAS DE FORMATAÇÃO:
 
-Notas do utilizador: ${notes || 'Nenhuma'}
+SECÇÃO 1 — INTRODUÇÃO:
+Escreve um parágrafo entusiasta sobre o destino (3-4 frases inspiradoras).
 
-REGRAS DE FORMATAÇÃO (SEGUE EXATAMENTE):
+SECÇÃO 2 — DICAS PRÁTICAS:
+Inclui uma secção "DICAS PRÁTICAS" com estes tópicos em linhas separadas:
+  Transporte: [como se mover - metro, autocarro, táxi, à pé]
+  Moeda: [moeda local e dicas de pagamento]
+  Língua: [idioma local e 3 frases úteis]
+  Clima: [melhor época e o que esperar]
+  Segurança: [dicas de segurança para turistas]
+  Vestuário: [como se vestir, locais religiosos]
+  Emergências: [número de emergência e hospital mais próximo do centro]
 
-SECÇÃO 1 - INTRODUÇÃO E DICAS PRÁTICAS:
-Começa com um parágrafo entusiasta sobre o destino (2-3 frases).
-Depois, inclui uma secção chamada "DICAS PRÁTICAS" com os seguintes tópicos (cada um numa linha separada):
-  Transporte: [Como se mover na cidade - metro, autocarro, táxi, à pé]
-  Moeda: [Moeda local e dicas de pagamento]
-  Língua: [Idioma local e frases úteis]
-  Melhor época: [Clima e quando visitar]
-  Segurança: [Dicas de segurança para turistas]
-  Vestuário: [Como se vestir, locais religiosos, etc.]
-  Emergências: [Número de emergência local, hospitais]
-
-SECÇÃO 2 - ITINERÁRIO DIA A DIA:
-- Estrutura dia a dia. Formato OBRIGATÓRIO: "DIA X: [CIDADE] - [TEMA DO DIA]"
-- Dentro de cada dia, usa formato de HORÁRIO: • HH:MM: [Atividade detalhada e dica local]
-  Exemplo: • 09:00: Visita ao Coliseu (chega cedo para evitar filas)
-- Em cada dia, inclui sugestões de restaurante para Almoço e Jantar:
+SECÇÃO 3 — ITINERÁRIO DIA A DIA:
+- Formato obrigatório do título do dia: DIA X: [CIDADE] - [TEMA DO DIA]
+- Dentro de cada dia usa horários: • HH:MM: [Atividade com dica prática]
+- Em cada dia inclui Almoço e Jantar com este formato exacto:
   Sugestão para Almoço:
   o Sugestão: [Nome do restaurante]
   o Porquê: [Razão detalhada]
+  o Morada: [Endereço completo]
+  o Maps: https://www.google.com/maps/search/?q=[Nome+Restaurante+Cidade]
   o Preço: [€, €€, ou €€€]
-- Insere esta tag exata onde deve aparecer uma fotografia: [IMAGE: Nome Exato do Local em inglês]
+- Insere tags de fotografia: [IMAGE: ExactEnglishLocationName]
   Exemplo: [IMAGE: Colosseum Rome]
-- O texto DEVE ser todo em Português de Portugal. Nenhuma palavra em inglês.
-- Tom: Premium, inspirador, detalhado como um guia de viagem de luxo.
-- SEM Markdown (sem ** ou #).
+
+===INÍCIO===
+
+DADOS DA VIAGEM (usa apenas como referência para criar o itinerário):
+---
+${extractedText.substring(0, 40000)}
+---
+Notas do utilizador: ${notes || 'Nenhuma'}
 `;
 
         const result = await model.generateContent(textPrompt);
-        const aiText = result.response.text();
+        const rawAiText = result.response.text();
+
+        // Split on the ===INÍCIO=== marker — everything before it is discarded.
+        // This is the only reliable way to strip prompt echo and source document text.
+        const markerIndex = rawAiText.indexOf('===INÍCIO===');
+        const aiText = markerIndex >= 0
+            ? rawAiText.slice(markerIndex + '===INÍCIO==='.length).trim()
+            : rawAiText.trim();
 
         // 4. Image Fetching Logic (Wikimedia Commons Free API)
         const imageTags = Array.from(aiText.matchAll(/\[IMAGE:\s*(.*?)\]/g));
@@ -136,24 +148,7 @@ SECÇÃO 2 - ITINERÁRIO DIA A DIA:
         const dailyResults = allImageResults.slice(1);
         const logoBuffer = await fetchImageBuffer("https://www.travelfrontiers.pt/img/logo-newTF.png").catch(() => null);
 
-        // 5. Strip prompt echo AND remove any English lines
-        const cleanedAiText = (() => {
-            const lines = aiText.split('\n');
-            let startIndex = 0;
-            for (let i = 0; i < lines.length; i++) {
-                const l = lines[i].trim();
-                if (l.match(/^(you are|create|style guidelines|user notes|STYLE|based on|return only|write a|format:|language:|tone:|note:|no markdown|INSTRU|És um|Responde|Notas do|Regras|segue exat)/i)) {
-                    startIndex = i + 1;
-                }
-            }
-            // Also filter out lines that appear to be in English (starts with common English words)
-            const englishPattern = /^(The |This |Here |On |At |In |A |An |Your |Our |Each |Day |Note:|Please |Make |Be |To |For |If |When |While |During |After |Before )/;
-            return lines
-                .slice(startIndex)
-                .filter(l => !englishPattern.test(l.trim()))
-                .join('\n')
-                .trim();
-        })();
+        // aiText is already clean — the ===INÍCIO=== marker stripped everything before the itinerary.
 
         // 6. Build DOCX with professional layout
         const GOLD = 'B8963E';
@@ -225,25 +220,46 @@ SECÇÃO 2 - ITINERÁRIO DIA A DIA:
 
         // ── BODY: Parse AI text and render each line ──
         let currentImageIndex = 0;
-        const bodyLines = cleanedAiText.split('\n');
+        const bodyLines = aiText.split('\n');
 
         for (const line of bodyLines) {
             const cleanLine = line.replace(/\[IMAGE:.*?\]/g, '').trim();
 
             if (cleanLine) {
                 if (cleanLine.match(/^DIA \d+/i)) {
-                    // Day heading – gold background bar style
+                    // Day heading – dark bar
                     children.push(new Paragraph({
                         spacing: { before: 520, after: 160 },
                         shading: { type: ShadingType.SOLID, color: DARK, fill: DARK },
                         children: [new TextRun({ text: '  ' + cleanLine.toUpperCase() + '  ', bold: true, size: 26, color: 'FFFFFF', font: 'Calibri' })]
                     }));
-                } else if (cleanLine.startsWith('•') || cleanLine.startsWith('-') || cleanLine.match(/^\d{2}:\d{2}/)) {
+                } else if (cleanLine.startsWith('•') || cleanLine.match(/^\d{2}:\d{2}/)) {
                     // Timeline items
                     children.push(new Paragraph({
-                        spacing: { before: 60, after: 60 },
+                        spacing: { before: 80, after: 80 },
                         indent: { left: 360 },
                         children: [new TextRun({ text: cleanLine, size: 21, font: 'Calibri', color: DARK })]
+                    }));
+                } else if (cleanLine.startsWith('o Morada:')) {
+                    // Restaurant address
+                    children.push(new Paragraph({
+                        spacing: { before: 40, after: 40 },
+                        indent: { left: 720 },
+                        children: [new TextRun({ text: cleanLine, size: 20, font: 'Calibri', color: GRAY })]
+                    }));
+                } else if (cleanLine.startsWith('o Maps:')) {
+                    // Google Maps link — rendered as clickable hyperlink
+                    const url = cleanLine.replace('o Maps:', '').trim();
+                    children.push(new Paragraph({
+                        spacing: { before: 40, after: 40 },
+                        indent: { left: 720 },
+                        children: [
+                            new TextRun({ text: 'o  ', size: 20, font: 'Calibri', color: GRAY }),
+                            new ExternalHyperlink({
+                                link: url,
+                                children: [new TextRun({ text: '📍 Ver no Google Maps', size: 20, color: '1155CC', underline: {}, font: 'Calibri' })]
+                            })
+                        ]
                     }));
                 } else if (cleanLine.startsWith('o Sugestão') || cleanLine.startsWith('o Porquê') || cleanLine.startsWith('o Preço')) {
                     // Restaurant card sub-items
@@ -252,10 +268,10 @@ SECÇÃO 2 - ITINERÁRIO DIA A DIA:
                         indent: { left: 720 },
                         children: [new TextRun({ text: cleanLine, size: 20, italics: cleanLine.startsWith('o Porquê'), font: 'Calibri', color: GRAY })]
                     }));
-                } else if (cleanLine.length < 80 && cleanLine.includes(':') && !cleanLine.startsWith('http')) {
-                    // Sub-headings (Sugestão para Almoço, etc.)
+                } else if (cleanLine.length < 80 && cleanLine.includes(':') && !cleanLine.startsWith('http') && !cleanLine.startsWith('o ')) {
+                    // Sub-headings (Sugestão para Almoço, DICAS PRÁTICAS, etc.)
                     children.push(new Paragraph({
-                        spacing: { before: 240, after: 80 },
+                        spacing: { before: 280, after: 80 },
                         children: [new TextRun({ text: cleanLine, bold: true, size: 22, color: GOLD, font: 'Calibri' })]
                     }));
                 } else {
