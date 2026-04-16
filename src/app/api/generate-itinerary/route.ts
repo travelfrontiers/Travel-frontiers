@@ -87,19 +87,31 @@ ${extractedText.substring(0, 50000)}
 Notas do utilizador: ${notes || 'Nenhuma'}
 
 REGRAS DE FORMATAÇÃO (SEGUE EXATAMENTE):
-- Começa com uma introdução entusiasta e curta sobre a viagem (2-3 frases).
+
+SECÇÃO 1 - INTRODUÇÃO E DICAS PRÁTICAS:
+Começa com um parágrafo entusiasta sobre o destino (2-3 frases).
+Depois, inclui uma secção chamada "DICAS PRÁTICAS" com os seguintes tópicos (cada um numa linha separada):
+  Transporte: [Como se mover na cidade - metro, autocarro, táxi, à pé]
+  Moeda: [Moeda local e dicas de pagamento]
+  Língua: [Idioma local e frases úteis]
+  Melhor época: [Clima e quando visitar]
+  Segurança: [Dicas de segurança para turistas]
+  Vestuário: [Como se vestir, locais religiosos, etc.]
+  Emergências: [Número de emergência local, hospitais]
+
+SECÇÃO 2 - ITINERÁRIO DIA A DIA:
 - Estrutura dia a dia. Formato OBRIGATÓRIO: "DIA X: [CIDADE] - [TEMA DO DIA]"
-- Dentro de cada dia, usa formato de HORÁRIO: • HH:MM: [Atividade detalhada]
-  Exemplo: • 09:00: Visita ao Coliseu
+- Dentro de cada dia, usa formato de HORÁRIO: • HH:MM: [Atividade detalhada e dica local]
+  Exemplo: • 09:00: Visita ao Coliseu (chega cedo para evitar filas)
 - Em cada dia, inclui sugestões de restaurante para Almoço e Jantar:
   Sugestão para Almoço:
   o Sugestão: [Nome do restaurante]
   o Porquê: [Razão detalhada]
   o Preço: [€, €€, ou €€€]
-- Insere esta tag exata onde deve aparecer uma fotografia: [IMAGE: Nome Exato do Local]
-  Exemplo: [IMAGE: Coliseu Roma]
+- Insere esta tag exata onde deve aparecer uma fotografia: [IMAGE: Nome Exato do Local em inglês]
+  Exemplo: [IMAGE: Colosseum Rome]
 - O texto DEVE ser todo em Português de Portugal. Nenhuma palavra em inglês.
-- Tom: Premium, inspirador, detalhado.
+- Tom: Premium, inspirador, detalhado como um guia de viagem de luxo.
 - SEM Markdown (sem ** ou #).
 `;
 
@@ -108,10 +120,14 @@ REGRAS DE FORMATAÇÃO (SEGUE EXATAMENTE):
 
         // 4. Image Fetching Logic (Wikimedia Commons Free API)
         const imageTags = Array.from(aiText.matchAll(/\[IMAGE:\s*(.*?)\]/g));
-        // Add a simple cover image search term based on the title
-        const coverPrompt = `${title || "Europe"} landmark`;
-        
-        const allImageQueries = [coverPrompt, ...imageTags.map(m => m[1])];
+        // Extract the destination city from the title for the cover image.
+        // e.g. "Diana Granja - Roma" → "Roma", "Lisbon Tour" → "Lisbon Tour"
+        const destinationFromTitle = title
+            ? (title.split(/[-–—|,]/)[1] || title).trim()
+            : 'Europe';
+        const coverQuery = destinationFromTitle;
+
+        const allImageQueries = [coverQuery, ...imageTags.map(m => m[1])];
         const allImageResults = await Promise.all(
             allImageQueries.map(query => fetchFreeTravelImage(query))
         );
@@ -120,7 +136,7 @@ REGRAS DE FORMATAÇÃO (SEGUE EXATAMENTE):
         const dailyResults = allImageResults.slice(1);
         const logoBuffer = await fetchImageBuffer("https://www.travelfrontiers.pt/img/logo-newTF.png").catch(() => null);
 
-        // 5. Strip any prompt echo
+        // 5. Strip prompt echo AND remove any English lines
         const cleanedAiText = (() => {
             const lines = aiText.split('\n');
             let startIndex = 0;
@@ -130,7 +146,13 @@ REGRAS DE FORMATAÇÃO (SEGUE EXATAMENTE):
                     startIndex = i + 1;
                 }
             }
-            return lines.slice(startIndex).join('\n').trim();
+            // Also filter out lines that appear to be in English (starts with common English words)
+            const englishPattern = /^(The |This |Here |On |At |In |A |An |Your |Our |Each |Day |Note:|Please |Make |Be |To |For |If |When |While |During |After |Before )/;
+            return lines
+                .slice(startIndex)
+                .filter(l => !englishPattern.test(l.trim()))
+                .join('\n')
+                .trim();
         })();
 
         // 6. Build DOCX with professional layout
@@ -139,27 +161,36 @@ REGRAS DE FORMATAÇÃO (SEGUE EXATAMENTE):
         const GRAY = '6B7280';
         const children: any[] = [];
 
-        // ── COVER PAGE: Large photo + branded title block ──
+        // ── COVER PAGE: Large photo + logo + branded title block ──
         if (coverResult?.buffer) {
             children.push(new Paragraph({
                 alignment: AlignmentType.CENTER,
                 spacing: { before: 0, after: 0 },
                 children: [new ImageRun({
                     data: coverResult.buffer,
-                    transformation: { width: 620, height: 400 },
+                    transformation: { width: 620, height: 380 },
                     type: coverResult.type
                 })]
             }));
         }
 
-        // Gold top border bar under image
+        // Gold border under photo
         children.push(new Paragraph({
             border: { top: { style: BorderStyle.SINGLE, size: 18, color: GOLD } },
-            spacing: { before: 200, after: 120 },
+            spacing: { before: 160, after: 200 },
             children: []
         }));
 
-        // Title
+        // Logo on cover page
+        if (logoBuffer) {
+            children.push(new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 0, after: 140 },
+                children: [new ImageRun({ data: logoBuffer, transformation: { width: 100, height: 100 }, type: 'png' })]
+            }));
+        }
+
+        // Destination title
         children.push(new Paragraph({
             alignment: AlignmentType.CENTER,
             spacing: { before: 0, after: 60 },
@@ -172,7 +203,7 @@ REGRAS DE FORMATAÇÃO (SEGUE EXATAMENTE):
         // Subtitle
         children.push(new Paragraph({
             alignment: AlignmentType.CENTER,
-            spacing: { before: 0, after: 120 },
+            spacing: { before: 0, after: 160 },
             children: [new TextRun({
                 text: 'Travel Frontiers  ·  Viagens de Luxo',
                 italics: true, size: 22, color: GRAY, font: 'Calibri'
@@ -191,7 +222,6 @@ REGRAS DE FORMATAÇÃO (SEGUE EXATAMENTE):
             spacing: { before: 400 },
             children: [new PageBreak()]
         }));
-
 
         // ── BODY: Parse AI text and render each line ──
         let currentImageIndex = 0;
