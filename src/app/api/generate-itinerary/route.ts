@@ -15,18 +15,28 @@ async function fetchImageBuffer(url: string): Promise<Buffer> {
     return Buffer.from(await response.arrayBuffer());
 }
 
-async function generateGeminiImage(prompt: string, apiKey: string): Promise<Buffer | null> {
+async function fetchFreeTravelImage(query: string): Promise<Buffer | null> {
     try {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        // Use the 2026 native image model which is unrestricted in the EU/Portugal
-        const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-image-preview' });
+        // Fallback or cleanup the query for better search results
+        const cleanQuery = query.replace(/professional travel photo of/i, '').trim();
+        const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=pageimages&generator=search&gsrsearch=${encodeURIComponent(cleanQuery + " travel landmark")}&gsrlimit=1&pithumbsize=1000`;
         
-        const result = await model.generateContent(prompt);
-        const data = result.response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        const response = await fetch(url);
+        const data = await response.json();
         
-        return data ? Buffer.from(data, 'base64') : null;
+        if (data && data.query && data.query.pages) {
+            const pages = Object.values(data.query.pages) as any[];
+            if (pages.length > 0 && pages[0].thumbnail) {
+                const imgUrl = pages[0].thumbnail.source;
+                const imgResponse = await fetch(imgUrl);
+                if (imgResponse.ok) {
+                    return Buffer.from(await imgResponse.arrayBuffer());
+                }
+            }
+        }
+        return null;
     } catch (e) {
-        console.warn("Failed to generate native image:", e);
+        console.warn("Failed to fetch Wikimedia image:", e);
         return null;
     }
 }
@@ -81,7 +91,7 @@ STYLE GUIDELINES (FOLLOW EXACTLY):
   o Sugestão: [Name]
   o Porquê: [Detailed reason why it's special]
   o Preço: [€, €€, or €€€]
-- Throughout the text, insert this exact tag where a beautiful photo should be: [IMAGE: description of a professional travel photo of the location/activity]
+- Throughout the text, insert this exact tag where a photo should be: [IMAGE: Landmark or City Exact Name]. Make the name inside the brackets a simple 2-4 word search term (e.g. [IMAGE: Prague Charles Bridge]).
 - Language: Portuguese (Portugal).
 - Tone: Premium, expert, inspiring.
 - NO Markdown (no ** or #).
@@ -90,14 +100,14 @@ STYLE GUIDELINES (FOLLOW EXACTLY):
         const result = await model.generateContent(textPrompt);
         const aiText = result.response.text();
 
-        // 4. Image Generation Logic (Tag-based)
+        // 4. Image Fetching Logic (Wikimedia Commons Free API)
         const imageTags = Array.from(aiText.matchAll(/\[IMAGE:\s*(.*?)\]/g));
-        // Also add a cover image prompt
-        const coverPrompt = `A stunning, inviting luxury travel landscape for an itinerary titled ${title || "Travel Frontiers"}. Professional travel photography.`;
+        // Add a simple cover image search term based on the title
+        const coverPrompt = `${title || "Europe"} landmark`;
         
-        const allImagePrompts = [coverPrompt, ...imageTags.map(m => m[1])];
+        const allImageQueries = [coverPrompt, ...imageTags.map(m => m[1])];
         const allImageBuffers = await Promise.all(
-            allImagePrompts.map(prompt => generateGeminiImage(prompt, apiKey))
+            allImageQueries.map(query => fetchFreeTravelImage(query))
         );
 
         const coverBuffer = allImageBuffers[0];
