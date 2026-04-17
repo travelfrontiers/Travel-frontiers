@@ -72,63 +72,78 @@ export async function POST(request: Request) {
 
         if (!extractedText.trim()) throw new Error("Empty source file.");
 
-        // 3. Generate Detailed Itinerary with Gemini (Official 2026 Gemma 4 Config)
+        // 3. TWO-STEP APPROACH to permanently eliminate prompt echo.
+        // Step 1: Extract key facts from the source document.
+        // Step 2: Generate itinerary from ONLY those facts (raw text never enters step 2).
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' }, { apiVersion: 'v1beta' });
 
-        // The model MUST start with ===INÍCIO=== — we split on it to guarantee
-        // no prompt echo or source document text ever appears in the output.
-        const textPrompt = `És um planeador de viagens de luxo da "Travel Frontiers" (Portugal).
-Responde EXCLUSIVAMENTE em Português de Portugal. Nem uma única palavra em inglês.
-A tua resposta DEVE começar OBRIGATORIAMENTE com ===INÍCIO=== na primeira linha, sem espaço antes.
-Não escrevas NADA antes de ===INÍCIO===.
+        // ── STEP 1: Extract key travel facts ──
+        const extractionPrompt = `Extrai APENAS os dados concretos desta reserva de viagem. Responde APENAS com os campos abaixo, sem mais nada:
 
-REGRAS DE FORMATAÇÃO:
+Destino:
+Datas:
+Duração:
+Viajantes:
+Hotéis:
+Voos:
+Atividades mencionadas:
+Outras notas:
 
-SECÇÃO 1 — INTRODUÇÃO:
-Escreve um parágrafo entusiasta sobre o destino (3-4 frases inspiradoras).
+Documento:
+${extractedText.substring(0, 30000)}`;
 
-SECÇÃO 2 — DICAS PRÁTICAS:
-Inclui uma secção "DICAS PRÁTICAS" com estes tópicos em linhas separadas:
-  Transporte: [como se mover - metro, autocarro, táxi, à pé]
-  Moeda: [moeda local e dicas de pagamento]
-  Língua: [idioma local e 3 frases úteis]
-  Clima: [melhor época e o que esperar]
-  Segurança: [dicas de segurança para turistas]
-  Vestuário: [como se vestir, locais religiosos]
-  Emergências: [número de emergência e hospital mais próximo do centro]
+        const extractionResult = await model.generateContent(extractionPrompt);
+        const travelFacts = extractionResult.response.text();
 
-SECÇÃO 3 — ITINERÁRIO DIA A DIA:
-- Formato obrigatório do título do dia: DIA X: [CIDADE] - [TEMA DO DIA]
-- Dentro de cada dia usa horários: • HH:MM: [Atividade com dica prática]
-- Em cada dia inclui Almoço e Jantar com este formato exacto:
-  Sugestão para Almoço:
-  o Sugestão: [Nome do restaurante]
-  o Porquê: [Razão detalhada]
-  o Morada: [Endereço completo]
-  o Maps: https://www.google.com/maps/search/?q=[Nome+Restaurante+Cidade]
-  o Preço: [€, €€, ou €€€]
-- Insere tags de fotografia: [IMAGE: ExactEnglishLocationName]
-  Exemplo: [IMAGE: Colosseum Rome]
+        // ── STEP 2: Generate the itinerary from ONLY the extracted facts ──
+        // The raw source document text is NOT included here — impossible to echo.
+        const itineraryPrompt = `És um planeador de viagens de luxo da "Travel Frontiers" (Portugal).
+Escreve EXCLUSIVAMENTE em Português de Portugal. Nem uma única palavra em inglês.
+Não escrevas instruções, introduções sobre o que vais fazer, ou comentários. Vai direto ao conteúdo.
 
-===INÍCIO===
+Dados da viagem:
+${travelFacts}
 
-DADOS DA VIAGEM (usa apenas como referência para criar o itinerário):
----
-${extractedText.substring(0, 40000)}
----
-Notas do utilizador: ${notes || 'Nenhuma'}
-`;
+Notas adicionais: ${notes || 'Nenhuma'}
 
-        const result = await model.generateContent(textPrompt);
-        const rawAiText = result.response.text();
+Escreve o itinerário completo com esta estrutura EXACTA:
 
-        // Split on the ===INÍCIO=== marker — everything before it is discarded.
-        // This is the only reliable way to strip prompt echo and source document text.
-        const markerIndex = rawAiText.indexOf('===INÍCIO===');
-        const aiText = markerIndex >= 0
-            ? rawAiText.slice(markerIndex + '===INÍCIO==='.length).trim()
-            : rawAiText.trim();
+INTRODUÇÃO
+Um parágrafo entusiasta sobre o destino (3-4 frases).
+
+DICAS PRÁTICAS
+Transporte: [como se mover na cidade]
+Moeda: [moeda local e dicas de pagamento]
+Língua: [idioma local e 3 frases úteis]
+Clima: [o que esperar]
+Segurança: [dicas para turistas]
+Vestuário: [como se vestir]
+Emergências: [número de emergência e hospital central]
+
+ITINERÁRIO DIA A DIA
+Para cada dia usa esta estrutura:
+DIA X: [CIDADE] - [TEMA DO DIA]
+• HH:MM: [Atividade com dica prática]
+
+Sugestão para Almoço:
+o Sugestão: [Nome do restaurante]
+o Porquê: [Razão detalhada]
+o Morada: [Endereço completo real]
+o Maps: https://www.google.com/maps/search/?api=1&query=[Nome+Restaurante+Cidade]
+o Preço: [€, €€, ou €€€]
+
+Sugestão para Jantar:
+(mesmo formato)
+
+Depois de cada local importante, insere: [IMAGE: English Location Name]
+Exemplo: [IMAGE: Colosseum Rome]
+
+NÃO uses Markdown. NÃO escrevas ** ou #.`;
+
+        const itineraryResult = await model.generateContent(itineraryPrompt);
+        const aiText = itineraryResult.response.text();
+
 
         // 4. Image Fetching Logic (Wikimedia Commons Free API)
         const imageTags = Array.from(aiText.matchAll(/\[IMAGE:\s*(.*?)\]/g));
@@ -148,7 +163,13 @@ Notas do utilizador: ${notes || 'Nenhuma'}
         const dailyResults = allImageResults.slice(1);
         const logoBuffer = await fetchImageBuffer("https://www.travelfrontiers.pt/img/logo-newTF.png").catch(() => null);
 
-        // aiText is already clean — the ===INÍCIO=== marker stripped everything before the itinerary.
+        // Post-process: strip any residual markdown or echoed instructions
+        const cleanedText = aiText
+            .replace(/\*\*/g, '')      // remove bold markdown
+            .replace(/^#+\s*/gm, '')   // remove heading markdown
+            .replace(/^---+$/gm, '')   // remove horizontal rules
+            .replace(/^===.*===$/gm, '') // remove any marker lines
+            .trim();
 
         // 6. Build DOCX with professional layout
         const GOLD = 'B8963E';
@@ -218,9 +239,9 @@ Notas do utilizador: ${notes || 'Nenhuma'}
             children: [new PageBreak()]
         }));
 
-        // ── BODY: Parse AI text and render each line ──
+        // ── BODY: Parse cleaned AI text and render each line ──
         let currentImageIndex = 0;
-        const bodyLines = aiText.split('\n');
+        const bodyLines = cleanedText.split('\n');
 
         for (const line of bodyLines) {
             const cleanLine = line.replace(/\[IMAGE:.*?\]/g, '').trim();
