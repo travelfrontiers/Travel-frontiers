@@ -78,31 +78,54 @@ export async function POST(request: Request) {
         // ── STEP 1: Extract key travel facts (simple model, no system instruction needed) ──
         const extractorModel = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' }, { apiVersion: 'v1beta' });
 
-        const extractionResult = await extractorModel.generateContent(
-            `Extrai APENAS os dados concretos desta reserva. Responde com máximo 300 palavras:\n\nDestino:\nDatas:\nDuração:\nViajantes:\nHotéis:\nVoos:\nAtividades:\nNotas:\n\nDocumento:\n${extractedText.substring(0, 30000)}`
-        );
-        const travelFacts = extractionResult.response.text();
+        const extractionPrompt = `Extrai APENAS os dados concretos (Destino, Datas, Viajantes, Hotéis, Voos, Atividades) desta reserva.
+É absolutamente essencial que resumas tudo em menos de 200 palavras.
+
+<SOURCE_DOCUMENT>
+${extractedText.substring(0, 30000)}
+</SOURCE_DOCUMENT>`;
+
+        const extractionResult = await extractorModel.generateContent(extractionPrompt);
+        let travelFacts = extractionResult.response.text();
+        
+        // Failsafe: if the model still dumps 4 pages, forcefully clip it so step 2 isn't overwhelmed.
+        if (travelFacts.length > 2000) {
+            travelFacts = travelFacts.substring(0, 2000) + '... (truncated)';
+        }
 
         // ── STEP 2: Generate itinerary ──
-        // ALL formatting rules go into systemInstruction (model CANNOT echo these back)
-        const itineraryModel = genAI.getGenerativeModel({
-            model: 'gemma-4-31b-it',
-            systemInstruction: `És um planeador de viagens de luxo da "Travel Frontiers" (Portugal).
+        // Since gemma-4-31b-it might ignore systemInstruction in v1beta, we put ALL rules in the main prompt.
+        const itineraryModel = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' }, { apiVersion: 'v1beta' });
+
+        const itineraryPrompt = `És um planeador de viagens de luxo da "Travel Frontiers" (Portugal).
 Escreve EXCLUSIVAMENTE em Português de Portugal. Nem uma única palavra em inglês.
-Nunca repitas instruções, regras, ou os dados que te são dados. Escreve APENAS o itinerário final.
-Não uses Markdown (sem ** ou #).
+NÃO escrevas introduções, comentários, nem repitas as minhas instruções. Responde apenas com o itinerário.
+NÃO uses Markdown (sem ** ou #).
 
-Estrutura obrigatória do teu output:
+Usa apenas as informações abaixo para a base do itinerário.
+<TRAVEL_DATA>
+${travelFacts}
+Notas adicionais: ${notes || 'Nenhuma'}
+</TRAVEL_DATA>
 
-Começa com um parágrafo entusiasta sobre o destino (3-4 frases).
+ESTRUTURA OBRIGATÓRIA DO ITINERÁRIO (segue estritamente):
 
-Depois escreve DICAS PRÁTICAS com: Transporte, Moeda, Língua (3 frases úteis), Clima, Segurança, Vestuário, Emergências.
+INTRODUÇÃO
+Um parágrafo entusiasta sobre o destino (3-4 frases).
 
-Depois o ITINERÁRIO DIA A DIA. Cada dia:
+DICAS PRÁTICAS
+Transporte: [como se mover na cidade]
+Moeda: [moeda local e dicas de pagamento]
+Língua: [idioma local e 3 frases úteis]
+Clima: [o que esperar]
+Segurança: [dicas para turistas]
+Vestuário: [como se vestir]
+Emergências: [número de emergência e hospital central]
+
+ITINERÁRIO DIA A DIA (para cada dia usa este modelo):
 DIA X: [CIDADE] - [TEMA]
 • HH:MM: [Atividade com dica]
 
-Para Almoço e Jantar em cada dia:
 Sugestão para Almoço:
 o Sugestão: [Nome]
 o Porquê: [Razão]
@@ -110,16 +133,14 @@ o Morada: [Endereço real]
 o Maps: https://www.google.com/maps/search/?api=1&query=[Nome+Restaurante+Cidade]
 o Preço: [€/€€/€€€]
 
-Após cada local importante insere: [IMAGE: English Location Name]
-Exemplo: [IMAGE: Colosseum Rome]`
-        }, { apiVersion: 'v1beta' });
+Sugestão para Jantar:
+(mesmo modelo acima)
 
-        // User message is MINIMAL — just the facts + a one-line command.
-        // The model has NOTHING to echo back.
-        const itineraryResult = await itineraryModel.generateContent(
-            `Cria o itinerário completo para esta viagem:\n\n${travelFacts}\n\nNotas adicionais: ${notes || 'Nenhuma'}`
-        );
+IMPORTANTE: Após cada local principal insere a tag de imagem. Exemplo: [IMAGE: Colosseum Rome]`;
+
+        const itineraryResult = await itineraryModel.generateContent(itineraryPrompt);
         const aiText = itineraryResult.response.text();
+
 
 
         // 4. Image Fetching Logic (Wikimedia Commons Free API)
