@@ -1,9 +1,11 @@
 import { DocumentActionProps, useClient } from 'sanity'
 import { useState } from 'react'
+import { useToast } from '@sanity/ui'
 
 export function GenerateItineraryAction({ id, type, published, draft, onComplete }: DocumentActionProps) {
     const [isGenerating, setIsGenerating] = useState(false)
     const client = useClient({ apiVersion: '2024-01-18' })
+    const toast = useToast()
     const doc = draft || published
 
     if (type !== 'roteiro' || !doc) {
@@ -11,10 +13,15 @@ export function GenerateItineraryAction({ id, type, published, draft, onComplete
     }
 
     return {
-        label: isGenerating ? 'Generating Itinerary...' : 'Generate Word Itinerary',
+        label: isGenerating ? 'Gerando Itinerário...' : 'Regar Itinerário IA (Word)',
         disabled: isGenerating || !doc.sourceFile,
         onHandle: async () => {
             setIsGenerating(true)
+            toast.push({
+                title: 'A IA está a criar o seu itinerário',
+                description: 'Este processo pode demorar até 60 segundos.',
+                status: 'info',
+            })
 
             try {
                 // Get the file reference to find its URL
@@ -53,9 +60,18 @@ export function GenerateItineraryAction({ id, type, published, draft, onComplete
                 window.URL.revokeObjectURL(url)
                 document.body.removeChild(a)
 
+                toast.push({
+                    title: 'Sucesso!',
+                    description: 'Itinerário gerado e transferido com sucesso.',
+                    status: 'success',
+                })
             } catch (err: any) {
                 console.error(err)
-                alert('Generation failed: ' + err.message)
+                toast.push({
+                    title: 'Erro a gerar o itinerário',
+                    description: err.message,
+                    status: 'error',
+                })
             } finally {
                 setIsGenerating(false)
                 onComplete()
