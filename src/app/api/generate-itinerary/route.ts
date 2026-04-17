@@ -97,19 +97,18 @@ ${extractedText.substring(0, 30000)}
         // Since gemma-4-31b-it might ignore systemInstruction in v1beta, we put ALL rules in the main prompt.
         const itineraryModel = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' }, { apiVersion: 'v1beta' });
 
-        const itineraryPrompt = `És um planeador de viagens de luxo da "Travel Frontiers" (Portugal).
-Escreve EXCLUSIVAMENTE em Português de Portugal. Nem uma única palavra em inglês.
-NÃO escrevas introduções, comentários, nem repitas as minhas instruções. Responde apenas com o itinerário.
-NÃO uses Markdown (sem ** ou #).
+        const itineraryPrompt = `És um planeador de viagens da "Travel Frontiers" (Portugal).
+Escreve EXCLUSIVAMENTE em Português de Portugal.
+O teu output DEVE OBRIGATORIAMENTE começar com "[START]" e acabar com "[END]". Tudo o resto será ignorado.
 
-Usa apenas as informações abaixo para a base do itinerário.
 <TRAVEL_DATA>
 ${travelFacts}
 Notas adicionais: ${notes || 'Nenhuma'}
 </TRAVEL_DATA>
 
-ESTRUTURA OBRIGATÓRIA DO ITINERÁRIO (segue estritamente):
+ESTRUTURA CUIDADOSA (usa apenas este formato e não escrevas aspas nem formatação além do texto):
 
+[START]
 INTRODUÇÃO
 Um parágrafo entusiasta sobre o destino (3-4 frases).
 
@@ -122,7 +121,8 @@ Segurança: [dicas para turistas]
 Vestuário: [como se vestir]
 Emergências: [número de emergência e hospital central]
 
-ITINERÁRIO DIA A DIA (para cada dia usa este modelo):
+ITINERÁRIO DIA A DIA
+(Para cada dia:)
 DIA X: [CIDADE] - [TEMA]
 • HH:MM: [Atividade com dica]
 
@@ -134,40 +134,40 @@ o Maps: https://www.google.com/maps/search/?api=1&query=[Nome+Restaurante+Cidade
 o Preço: [€/€€/€€€]
 
 Sugestão para Jantar:
-(mesmo modelo acima)
+(mesmo formato do almoço)
 
-IMPORTANTE: Após cada local principal insere a tag de imagem. Exemplo: [IMAGE: Colosseum Rome]`;
+IMPORTANTE: Após cada local principal insere a tag de imagem. Exemplo: [IMAGE: Colosseum Rome]
+[END]`;
 
         const itineraryResult = await itineraryModel.generateContent(itineraryPrompt);
-        const aiText = itineraryResult.response.text();
+        let aiText = itineraryResult.response.text();
 
+        // Crop strict markers
+        const sIndex = aiText.indexOf('[START]');
+        const eIndex = aiText.lastIndexOf('[END]');
+        if (sIndex !== -1 && eIndex !== -1 && eIndex > sIndex) {
+            aiText = aiText.substring(sIndex + '[START]'.length, eIndex);
+        } else if (sIndex !== -1) {
+            aiText = aiText.substring(sIndex + '[START]'.length);
+        } else if (eIndex !== -1) {
+            aiText = aiText.substring(0, eIndex);
+        }
 
+        // Post-process: strip residual markdown
+        let cleanedText = aiText
+            .replace(/\*\*/g, '')
+            .replace(/^#+\s*/gm, '')
+            .replace(/^---+$/gm, '')
+            .trim();
+
+        // Aggressively drop any remaining lines that are in English
+        const englishPattern = /^(the |this |here |on |at |in |a |an |your |our |each |day |note:|please |make |be |to |for |if |when |while |during |after |before |with |based on|below is|sure|of course)/i;
+        const validLines = cleanedText.split('\n').filter(l => !englishPattern.test(l.trim()));
+        cleanedText = validLines.join('\n').trim();
 
         // 4. Image Fetching Logic (Wikimedia Commons Free API)
-        const imageTags = Array.from(aiText.matchAll(/\[IMAGE:\s*(.*?)\]/g));
-        // Extract the destination city from the title for the cover image.
-        // e.g. "Diana Granja - Roma" → "Roma", "Lisbon Tour" → "Lisbon Tour"
-        const destinationFromTitle = title
-            ? (title.split(/[-–—|,]/)[1] || title).trim()
-            : 'Europe';
-        const coverQuery = destinationFromTitle;
+        const imageTags = Array.from(cleanedText.matchAll(/\[IMAGE:\s*(.*?)\]/g));
 
-        const allImageQueries = [coverQuery, ...imageTags.map(m => m[1])];
-        const allImageResults = await Promise.all(
-            allImageQueries.map(query => fetchFreeTravelImage(query))
-        );
-
-        const coverResult = allImageResults[0];
-        const dailyResults = allImageResults.slice(1);
-        const logoBuffer = await fetchImageBuffer("https://www.travelfrontiers.pt/img/logo-newTF.png").catch(() => null);
-
-        // Post-process: strip any residual markdown or echoed instructions
-        const cleanedText = aiText
-            .replace(/\*\*/g, '')      // remove bold markdown
-            .replace(/^#+\s*/gm, '')   // remove heading markdown
-            .replace(/^---+$/gm, '')   // remove horizontal rules
-            .replace(/^===.*===$/gm, '') // remove any marker lines
-            .trim();
 
         // 6. Build DOCX with professional layout
         const GOLD = 'B8963E';
