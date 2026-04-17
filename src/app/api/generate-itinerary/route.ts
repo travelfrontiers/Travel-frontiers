@@ -72,76 +72,53 @@ export async function POST(request: Request) {
 
         if (!extractedText.trim()) throw new Error("Empty source file.");
 
-        // 3. TWO-STEP APPROACH to permanently eliminate prompt echo.
-        // Step 1: Extract key facts from the source document.
-        // Step 2: Generate itinerary from ONLY those facts (raw text never enters step 2).
+        // 3. TWO-STEP APPROACH with systemInstruction to eliminate ALL echo.
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' }, { apiVersion: 'v1beta' });
 
-        // ── STEP 1: Extract key travel facts ──
-        const extractionPrompt = `Extrai APENAS os dados concretos desta reserva de viagem. Responde APENAS com os campos abaixo, sem mais nada:
+        // ── STEP 1: Extract key travel facts (simple model, no system instruction needed) ──
+        const extractorModel = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' }, { apiVersion: 'v1beta' });
 
-Destino:
-Datas:
-Duração:
-Viajantes:
-Hotéis:
-Voos:
-Atividades mencionadas:
-Outras notas:
-
-Documento:
-${extractedText.substring(0, 30000)}`;
-
-        const extractionResult = await model.generateContent(extractionPrompt);
+        const extractionResult = await extractorModel.generateContent(
+            `Extrai APENAS os dados concretos desta reserva. Responde com máximo 300 palavras:\n\nDestino:\nDatas:\nDuração:\nViajantes:\nHotéis:\nVoos:\nAtividades:\nNotas:\n\nDocumento:\n${extractedText.substring(0, 30000)}`
+        );
         const travelFacts = extractionResult.response.text();
 
-        // ── STEP 2: Generate the itinerary from ONLY the extracted facts ──
-        // The raw source document text is NOT included here — impossible to echo.
-        const itineraryPrompt = `És um planeador de viagens de luxo da "Travel Frontiers" (Portugal).
+        // ── STEP 2: Generate itinerary ──
+        // ALL formatting rules go into systemInstruction (model CANNOT echo these back)
+        const itineraryModel = genAI.getGenerativeModel({
+            model: 'gemma-4-31b-it',
+            systemInstruction: `És um planeador de viagens de luxo da "Travel Frontiers" (Portugal).
 Escreve EXCLUSIVAMENTE em Português de Portugal. Nem uma única palavra em inglês.
-Não escrevas instruções, introduções sobre o que vais fazer, ou comentários. Vai direto ao conteúdo.
+Nunca repitas instruções, regras, ou os dados que te são dados. Escreve APENAS o itinerário final.
+Não uses Markdown (sem ** ou #).
 
-Dados da viagem:
-${travelFacts}
+Estrutura obrigatória do teu output:
 
-Notas adicionais: ${notes || 'Nenhuma'}
+Começa com um parágrafo entusiasta sobre o destino (3-4 frases).
 
-Escreve o itinerário completo com esta estrutura EXACTA:
+Depois escreve DICAS PRÁTICAS com: Transporte, Moeda, Língua (3 frases úteis), Clima, Segurança, Vestuário, Emergências.
 
-INTRODUÇÃO
-Um parágrafo entusiasta sobre o destino (3-4 frases).
+Depois o ITINERÁRIO DIA A DIA. Cada dia:
+DIA X: [CIDADE] - [TEMA]
+• HH:MM: [Atividade com dica]
 
-DICAS PRÁTICAS
-Transporte: [como se mover na cidade]
-Moeda: [moeda local e dicas de pagamento]
-Língua: [idioma local e 3 frases úteis]
-Clima: [o que esperar]
-Segurança: [dicas para turistas]
-Vestuário: [como se vestir]
-Emergências: [número de emergência e hospital central]
-
-ITINERÁRIO DIA A DIA
-Para cada dia usa esta estrutura:
-DIA X: [CIDADE] - [TEMA DO DIA]
-• HH:MM: [Atividade com dica prática]
-
+Para Almoço e Jantar em cada dia:
 Sugestão para Almoço:
-o Sugestão: [Nome do restaurante]
-o Porquê: [Razão detalhada]
-o Morada: [Endereço completo real]
+o Sugestão: [Nome]
+o Porquê: [Razão]
+o Morada: [Endereço real]
 o Maps: https://www.google.com/maps/search/?api=1&query=[Nome+Restaurante+Cidade]
-o Preço: [€, €€, ou €€€]
+o Preço: [€/€€/€€€]
 
-Sugestão para Jantar:
-(mesmo formato)
+Após cada local importante insere: [IMAGE: English Location Name]
+Exemplo: [IMAGE: Colosseum Rome]`
+        }, { apiVersion: 'v1beta' });
 
-Depois de cada local importante, insere: [IMAGE: English Location Name]
-Exemplo: [IMAGE: Colosseum Rome]
-
-NÃO uses Markdown. NÃO escrevas ** ou #.`;
-
-        const itineraryResult = await model.generateContent(itineraryPrompt);
+        // User message is MINIMAL — just the facts + a one-line command.
+        // The model has NOTHING to echo back.
+        const itineraryResult = await itineraryModel.generateContent(
+            `Cria o itinerário completo para esta viagem:\n\n${travelFacts}\n\nNotas adicionais: ${notes || 'Nenhuma'}`
+        );
         const aiText = itineraryResult.response.text();
 
 
