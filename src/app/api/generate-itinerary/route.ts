@@ -167,7 +167,21 @@ IMPORTANTE: Após cada local principal insere a tag de imagem. Exemplo: [IMAGE: 
 
         // 4. Image Fetching Logic (Wikimedia Commons Free API)
         const imageTags = Array.from(cleanedText.matchAll(/\[IMAGE:\s*(.*?)\]/g));
+        // Extract the destination city from the title for the cover image.
+        // e.g. "Diana Granja - Roma" → "Roma", "Lisbon Tour" → "Lisbon Tour"
+        const destinationFromTitle = title
+            ? (title.split(/[-–—|,]/)[1] || title).trim()
+            : 'Europe';
+        const coverQuery = destinationFromTitle;
 
+        const allImageQueries = [coverQuery, ...imageTags.map(m => m[1])];
+        const allImageResults = await Promise.all(
+            allImageQueries.map(query => fetchFreeTravelImage(query))
+        );
+
+        const coverResult = allImageResults[0];
+        const dailyResults = allImageResults.slice(1);
+        const logoBuffer = await fetchImageBuffer("https://www.travelfrontiers.pt/img/logo-newTF.png").catch(() => null);
 
         // 6. Build DOCX with professional layout
         const GOLD = 'B8963E';
