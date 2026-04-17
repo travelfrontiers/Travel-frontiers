@@ -93,88 +93,80 @@ ${extractedText.substring(0, 30000)}
             travelFacts = travelFacts.substring(0, 2000) + '... (truncated)';
         }
 
-        // ── STEP 2: Generate itinerary ──
-        // Since gemma-4-31b-it might ignore systemInstruction in v1beta, we put ALL rules in the main prompt.
+        // ── STEP 2: Generate itinerary JSON ──
         const itineraryModel = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' }, { apiVersion: 'v1beta' });
 
-        const itineraryPrompt = `És um planeador de viagens da "Travel Frontiers" (Portugal).
+        const itineraryPrompt = `És um planeador de viagens de luxo da "Travel Frontiers" (Portugal).
 Escreve EXCLUSIVAMENTE em Português de Portugal.
-O teu output DEVE OBRIGATORIAMENTE começar com "[START]" e acabar com "[END]". Tudo o resto será ignorado.
+O TEU OUTPUT DEVE SER APENAS UM OBJETO JSON VÁLIDO. NÃO ESCREVAS MAIS NADA ANTES NEM DEPOIS DO JSON.
 
 <TRAVEL_DATA>
 ${travelFacts}
 Notas adicionais: ${notes || 'Nenhuma'}
 </TRAVEL_DATA>
 
-ESTRUTURA CUIDADOSA (usa apenas este formato e não escrevas aspas nem formatação além do texto):
+Exemplo de estrutura JSON OBRIGATÓRIA que deves gerar baseada apenas nos dados acima:
+{
+  "introducao": "Um parágrafo entusiasta sobre o destino (3-4 frases, garantindo um tom de luxo).",
+  "dicas": [
+    "Transporte: como se mover...",
+    "Moeda: moeda local...",
+    "Língua: idioma e 3 frases...",
+    "Clima: o que esperar...",
+    "Segurança: dicas...",
+    "Vestuário: como se vestir...",
+    "Emergências: número local..."
+  ],
+  "dias": [
+    {
+      "titulo_dia": "DIA 1: Roma - Cidade Antiga",
+      "atividades": [
+        "09:00: Visita ao Coliseu",
+        "11:30: Fórum Romano"
+      ],
+      "sugestao_almoco": {
+        "nome": "Trattoria Romana",
+        "porque": "Razão descritiva",
+        "morada": "Via del Corso, 12",
+        "maps": "https://www.google.com/maps/search/?api=1&query=Trattoria+Romana+Roma",
+        "preco": "€€"
+      },
+      "sugestao_jantar": {
+        "nome": "Osteria da Fortunata",
+        "porque": "Razão descritiva",
+        "morada": "Via del Pellegrino, 11",
+        "maps": "https://www.google.com/maps/search/?api=1&query=Osteria+da+Fortunata+Roma",
+        "preco": "€€€"
+      },
+      "imagem_nome_ingles": "Colosseum Rome"
+    }
+  ]
+}
 
-[START]
-INTRODUÇÃO
-Um parágrafo entusiasta sobre o destino (3-4 frases).
-
-DICAS PRÁTICAS
-Transporte: [como se mover na cidade]
-Moeda: [moeda local e dicas de pagamento]
-Língua: [idioma local e 3 frases úteis]
-Clima: [o que esperar]
-Segurança: [dicas para turistas]
-Vestuário: [como se vestir]
-Emergências: [número de emergência e hospital central]
-
-ITINERÁRIO DIA A DIA
-(Para cada dia:)
-DIA X: [CIDADE] - [TEMA]
-• HH:MM: [Atividade com dica]
-
-Sugestão para Almoço:
-o Sugestão: [Nome]
-o Porquê: [Razão]
-o Morada: [Endereço real]
-o Maps: https://www.google.com/maps/search/?api=1&query=[Nome+Restaurante+Cidade]
-o Preço: [€/€€/€€€]
-
-Sugestão para Jantar:
-(mesmo formato do almoço)
-
-IMPORTANTE: Após cada local principal insere a tag de imagem. Exemplo: [IMAGE: Colosseum Rome]
-[END]`;
+Responde APENAS com o JSON FINAL correspondente a esta viagem, sem backticks e sem comentários.`;
 
         const itineraryResult = await itineraryModel.generateContent(itineraryPrompt);
-        let aiText = itineraryResult.response.text();
+        const aiText = itineraryResult.response.text();
 
-        // Crop strict markers
-        const sIndex = aiText.indexOf('[START]');
-        const eIndex = aiText.lastIndexOf('[END]');
-        if (sIndex !== -1 && eIndex !== -1 && eIndex > sIndex) {
-            aiText = aiText.substring(sIndex + '[START]'.length, eIndex);
-        } else if (sIndex !== -1) {
-            aiText = aiText.substring(sIndex + '[START]'.length);
-        } else if (eIndex !== -1) {
-            aiText = aiText.substring(0, eIndex);
+        // Extract JSON to strictly avoid any surrounding garbage text
+        const jsonMatch = aiText.match(/\{[\s\S]*\}$/m);
+        if (!jsonMatch) {
+            throw new Error("A Inteligência Artificial falhou ao formatar o itinerário.");
         }
 
-        // Post-process: strip residual markdown
-        let cleanedText = aiText
-            .replace(/\*\*/g, '')
-            .replace(/^#+\s*/gm, '')
-            .replace(/^---+$/gm, '')
-            .trim();
-
-        // Aggressively drop any remaining lines that are in English
-        const englishPattern = /^(the |this |here |on |at |in |a |an |your |our |each |day |note:|please |make |be |to |for |if |when |while |during |after |before |with |based on|below is|sure|of course)/i;
-        const validLines = cleanedText.split('\n').filter(l => !englishPattern.test(l.trim()));
-        cleanedText = validLines.join('\n').trim();
+        let itineraryData;
+        try {
+            itineraryData = JSON.parse(jsonMatch[0]);
+        } catch (err) {
+            throw new Error("A Inteligência Artificial gerou um formato JSON inválido.");
+        }
 
         // 4. Image Fetching Logic (Wikimedia Commons Free API)
-        const imageTags = Array.from(cleanedText.matchAll(/\[IMAGE:\s*(.*?)\]/g));
-        // Extract the destination city from the title for the cover image.
-        // e.g. "Diana Granja - Roma" → "Roma", "Lisbon Tour" → "Lisbon Tour"
-        const destinationFromTitle = title
-            ? (title.split(/[-–—|,]/)[1] || title).trim()
-            : 'Europe';
+        const imageTags = (itineraryData.dias || []).map((d: any) => d.imagem_nome_ingles).filter(Boolean);
+        const destinationFromTitle = title ? (title.split(/[-–—|,]/)[1] || title).trim() : 'Europe';
         const coverQuery = destinationFromTitle;
 
-        const allImageQueries = [coverQuery, ...imageTags.map(m => m[1])];
+        const allImageQueries = [coverQuery, ...imageTags];
         const allImageResults = await Promise.all(
             allImageQueries.map(query => fetchFreeTravelImage(query))
         );
@@ -189,27 +181,15 @@ IMPORTANTE: Após cada local principal insere a tag de imagem. Exemplo: [IMAGE: 
         const GRAY = '6B7280';
         const children: any[] = [];
 
-        // ── COVER PAGE: Large photo + logo + branded title block ──
+        // ── COVER PAGE ──
         if (coverResult?.buffer) {
             children.push(new Paragraph({
                 alignment: AlignmentType.CENTER,
                 spacing: { before: 0, after: 0 },
-                children: [new ImageRun({
-                    data: coverResult.buffer,
-                    transformation: { width: 620, height: 380 },
-                    type: coverResult.type
-                })]
+                children: [new ImageRun({ data: coverResult.buffer, transformation: { width: 620, height: 380 }, type: coverResult.type })]
             }));
         }
-
-        // Gold border under photo
-        children.push(new Paragraph({
-            border: { top: { style: BorderStyle.SINGLE, size: 18, color: GOLD } },
-            spacing: { before: 160, after: 200 },
-            children: []
-        }));
-
-        // Logo on cover page
+        children.push(new Paragraph({ border: { top: { style: BorderStyle.SINGLE, size: 18, color: GOLD } }, spacing: { before: 160, after: 200 }, children: [] }));
         if (logoBuffer) {
             children.push(new Paragraph({
                 alignment: AlignmentType.CENTER,
@@ -217,120 +197,103 @@ IMPORTANTE: Após cada local principal insere a tag de imagem. Exemplo: [IMAGE: 
                 children: [new ImageRun({ data: logoBuffer, transformation: { width: 100, height: 100 }, type: 'png' })]
             }));
         }
-
-        // Destination title
         children.push(new Paragraph({
             alignment: AlignmentType.CENTER,
             spacing: { before: 0, after: 60 },
-            children: [new TextRun({
-                text: (title || 'Itinerário de Viagem').toUpperCase(),
-                bold: true, size: 52, color: DARK, font: 'Georgia'
-            })]
+            children: [new TextRun({ text: (title || 'Itinerário de Viagem').toUpperCase(), bold: true, size: 52, color: DARK, font: 'Georgia' })]
         }));
-
-        // Subtitle
         children.push(new Paragraph({
             alignment: AlignmentType.CENTER,
             spacing: { before: 0, after: 160 },
-            children: [new TextRun({
-                text: 'Travel Frontiers  ·  Viagens de Luxo',
-                italics: true, size: 22, color: GRAY, font: 'Calibri'
-            })]
+            children: [new TextRun({ text: 'Travel Frontiers  ·  Viagens de Luxo', italics: true, size: 22, color: GRAY, font: 'Calibri' })]
         }));
+        children.push(new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 18, color: GOLD } }, spacing: { before: 0, after: 0 }, children: [] }));
+        children.push(new Paragraph({ spacing: { before: 400 }, children: [new PageBreak()] }));
 
-        // Gold bottom border bar
-        children.push(new Paragraph({
-            border: { bottom: { style: BorderStyle.SINGLE, size: 18, color: GOLD } },
-            spacing: { before: 0, after: 0 },
-            children: []
-        }));
+        // ── BODY: Programmatic Rendering ──
 
-        // Page break after cover
-        children.push(new Paragraph({
-            spacing: { before: 400 },
-            children: [new PageBreak()]
-        }));
+        // Introdução
+        if (itineraryData.introducao) {
+            children.push(new Paragraph({
+                spacing: { before: 60, after: 120 },
+                children: [new TextRun({ text: itineraryData.introducao, size: 22, font: 'Calibri', color: DARK, italics: true })]
+            }));
+        }
 
-        // ── BODY: Parse cleaned AI text and render each line ──
+        // Dicas
+        if (Array.isArray(itineraryData.dicas) && itineraryData.dicas.length > 0) {
+            children.push(new Paragraph({
+                spacing: { before: 240, after: 120 },
+                children: [new TextRun({ text: "DICAS PRÁTICAS:", bold: true, size: 22, color: GOLD, font: 'Calibri' })]
+            }));
+            itineraryData.dicas.forEach((dica: string) => {
+                children.push(new Paragraph({
+                    spacing: { before: 60, after: 60 },
+                    children: [new TextRun({ text: dica, size: 21, font: 'Calibri', color: DARK })]
+                }));
+            });
+        }
+
+        // Dias
         let currentImageIndex = 0;
-        const bodyLines = cleanedText.split('\n');
-
-        for (const line of bodyLines) {
-            const cleanLine = line.replace(/\[IMAGE:.*?\]/g, '').trim();
-
-            if (cleanLine) {
-                if (cleanLine.match(/^DIA \d+/i)) {
-                    // Day heading – dark bar
+        if (Array.isArray(itineraryData.dias)) {
+            itineraryData.dias.forEach((dia: any) => {
+                // Título
+                if (dia.titulo_dia) {
                     children.push(new Paragraph({
                         spacing: { before: 520, after: 160 },
                         shading: { type: ShadingType.SOLID, color: DARK, fill: DARK },
-                        children: [new TextRun({ text: '  ' + cleanLine.toUpperCase() + '  ', bold: true, size: 26, color: 'FFFFFF', font: 'Calibri' })]
+                        children: [new TextRun({ text: '  ' + dia.titulo_dia.toUpperCase() + '  ', bold: true, size: 26, color: 'FFFFFF', font: 'Calibri' })]
                     }));
-                } else if (cleanLine.startsWith('•') || cleanLine.match(/^\d{2}:\d{2}/)) {
-                    // Timeline items
+                }
+
+                // Atividades
+                if (Array.isArray(dia.atividades)) {
+                    dia.atividades.forEach((ativ: string) => {
+                        children.push(new Paragraph({
+                            spacing: { before: 80, after: 80 },
+                            indent: { left: 360 },
+                            children: [new TextRun({ text: `• ${ativ}`, size: 21, font: 'Calibri', color: DARK })]
+                        }));
+                    });
+                }
+
+                // Restaurantes helper function
+                const renderRestaurant = (mealType: string, s: any) => {
+                    if (!s) return;
                     children.push(new Paragraph({
-                        spacing: { before: 80, after: 80 },
-                        indent: { left: 360 },
-                        children: [new TextRun({ text: cleanLine, size: 21, font: 'Calibri', color: DARK })]
+                        spacing: { before: 200, after: 80 },
+                        children: [new TextRun({ text: mealType, bold: true, size: 22, color: GOLD, font: 'Calibri' })]
                     }));
-                } else if (cleanLine.startsWith('o Morada:')) {
-                    // Restaurant address
-                    children.push(new Paragraph({
-                        spacing: { before: 40, after: 40 },
-                        indent: { left: 720 },
-                        children: [new TextRun({ text: cleanLine, size: 20, font: 'Calibri', color: GRAY })]
-                    }));
-                } else if (cleanLine.startsWith('o Maps:')) {
-                    // Google Maps link — rendered as clickable hyperlink
-                    const url = cleanLine.replace('o Maps:', '').trim();
-                    children.push(new Paragraph({
+                    if (s.nome) children.push(new Paragraph({ spacing: { before: 40, after: 40 }, indent: { left: 720 }, children: [new TextRun({ text: `o Sugestão: ${s.nome}`, size: 20, font: 'Calibri', color: GRAY })] }));
+                    if (s.porque) children.push(new Paragraph({ spacing: { before: 40, after: 40 }, indent: { left: 720 }, children: [new TextRun({ text: `o Porquê: ${s.porque}`, size: 20, italics: true, font: 'Calibri', color: GRAY })] }));
+                    if (s.morada) children.push(new Paragraph({ spacing: { before: 40, after: 40 }, indent: { left: 720 }, children: [new TextRun({ text: `o Morada: ${s.morada}`, size: 20, font: 'Calibri', color: GRAY })] }));
+                    if (s.maps) children.push(new Paragraph({
                         spacing: { before: 40, after: 40 },
                         indent: { left: 720 },
                         children: [
                             new TextRun({ text: 'o  ', size: 20, font: 'Calibri', color: GRAY }),
-                            new ExternalHyperlink({
-                                link: url,
-                                children: [new TextRun({ text: '📍 Ver no Google Maps', size: 20, color: '1155CC', underline: {}, font: 'Calibri' })]
-                            })
+                            new ExternalHyperlink({ link: s.maps, children: [new TextRun({ text: '📍 Ver no Google Maps', size: 20, color: '1155CC', underline: {}, font: 'Calibri' })] })
                         ]
                     }));
-                } else if (cleanLine.startsWith('o Sugestão') || cleanLine.startsWith('o Porquê') || cleanLine.startsWith('o Preço')) {
-                    // Restaurant card sub-items
-                    children.push(new Paragraph({
-                        spacing: { before: 40, after: 40 },
-                        indent: { left: 720 },
-                        children: [new TextRun({ text: cleanLine, size: 20, italics: cleanLine.startsWith('o Porquê'), font: 'Calibri', color: GRAY })]
-                    }));
-                } else if (cleanLine.length < 80 && cleanLine.includes(':') && !cleanLine.startsWith('http') && !cleanLine.startsWith('o ')) {
-                    // Sub-headings (Sugestão para Almoço, DICAS PRÁTICAS, etc.)
-                    children.push(new Paragraph({
-                        spacing: { before: 280, after: 80 },
-                        children: [new TextRun({ text: cleanLine, bold: true, size: 22, color: GOLD, font: 'Calibri' })]
-                    }));
-                } else {
-                    // Regular paragraph
-                    children.push(new Paragraph({
-                        spacing: { before: 60, after: 60 },
-                        children: [new TextRun({ text: cleanLine, size: 21, font: 'Calibri', color: DARK })]
-                    }));
-                }
-            }
+                    if (s.preco) children.push(new Paragraph({ spacing: { before: 40, after: 40 }, indent: { left: 720 }, children: [new TextRun({ text: `o Preço: ${s.preco}`, size: 20, font: 'Calibri', color: GRAY })] }));
+                };
 
-            // Insert Wikimedia photo after image tags
-            if (line.includes('[IMAGE:')) {
-                const imgRes = dailyResults[currentImageIndex++];
-                if (imgRes?.buffer) {
-                    children.push(new Paragraph({
-                        alignment: AlignmentType.CENTER,
-                        spacing: { before: 200, after: 200 },
-                        children: [new ImageRun({
-                            data: imgRes.buffer,
-                            transformation: { width: 520, height: 290 },
-                            type: imgRes.type
-                        })]
-                    }));
+                renderRestaurant("Sugestão para Almoço:", dia.sugestao_almoco);
+                renderRestaurant("Sugestão para Jantar:", dia.sugestao_jantar);
+
+                // Imagem
+                if (dia.imagem_nome_ingles) {
+                    const imgRes = dailyResults[currentImageIndex++];
+                    if (imgRes?.buffer) {
+                        children.push(new Paragraph({
+                            alignment: AlignmentType.CENTER,
+                            spacing: { before: 300, after: 300 },
+                            children: [new ImageRun({ data: imgRes.buffer, transformation: { width: 520, height: 290 }, type: imgRes.type })]
+                        }));
+                    }
                 }
-            }
+            });
         }
 
         const doc = new Document({
