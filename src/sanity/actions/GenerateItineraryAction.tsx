@@ -1,6 +1,6 @@
 import { DocumentActionProps, useClient } from 'sanity'
 import { useState } from 'react'
-import { useToast } from '@sanity/ui'
+import { useToast, Box, Spinner, Text, Stack } from '@sanity/ui'
 
 export function GenerateItineraryAction({ id, type, published, draft, onComplete }: DocumentActionProps) {
     const [isGenerating, setIsGenerating] = useState(false)
@@ -13,8 +13,21 @@ export function GenerateItineraryAction({ id, type, published, draft, onComplete
     }
 
     return {
-        label: isGenerating ? 'Gerando Itinerário...' : 'Regar Itinerário IA (Word)',
+        label: isGenerating ? 'Gerando Itinerário...' : 'Gerar itinerário IA',
         disabled: isGenerating || !doc.sourceFile,
+        dialog: isGenerating ? {
+            type: 'dialog',
+            header: 'A Gerar Documento...',
+            content: (
+                <Box padding={5}>
+                    <Stack space={4} align="center">
+                        <Spinner muted size={3} />
+                        <Text size={2}>A viajar pelos dados com a IA... Isto pode demorar até 60 segundos.</Text>
+                    </Stack>
+                </Box>
+            ),
+            onClose: () => {} // Prevent accidental closing
+        } : null,
         onHandle: async () => {
             setIsGenerating(true)
             toast.push({
