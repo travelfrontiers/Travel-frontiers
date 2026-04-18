@@ -1,6 +1,6 @@
 import { DocumentActionProps, useClient } from 'sanity'
 import { useState } from 'react'
-import { useToast, Box, Spinner, Text, Stack } from '@sanity/ui'
+import { useToast, Box, Spinner, Text } from '@sanity/ui'
 
 export function GenerateItineraryAction({ id, type, published, draft, onComplete }: DocumentActionProps) {
     const [isGenerating, setIsGenerating] = useState(false)
@@ -20,10 +20,10 @@ export function GenerateItineraryAction({ id, type, published, draft, onComplete
             header: 'A Gerar Documento...',
             content: (
                 <Box padding={5}>
-                    <Stack space={4} align="center">
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
                         <Spinner muted size={3} />
                         <Text size={2}>A viajar pelos dados com a IA... Isto pode demorar até 60 segundos.</Text>
-                    </Stack>
+                    </div>
                 </Box>
             ),
             onClose: () => {} // Prevent accidental closing
