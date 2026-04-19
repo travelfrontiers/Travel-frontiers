@@ -557,6 +557,78 @@ body {
     line-height: 1.5;
 }
 
+    /* --- Secção A Nossa Equipa --- */
+.team-section {
+    padding: 80px 20px;
+    background-color: #ffffff;
+}
+
+.team-grid {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-top: 40px;
+}
+
+.team-member {
+    background: #fff;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* Sombra suave */
+    transition: transform 0.3s ease;
+    text-align: center;
+}
+
+.team-member:hover {
+    transform: translateY(-10px); /* Efeito de flutuar ao passar o rato */
+}
+
+.team-member img {
+    width: 220px;
+    height: 280px;
+    object-fit: cover; /* Garante que a foto não fica deformada */
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+/* --- Cartão CTA (Tornar-se Consultor) --- */
+.cta-box {
+    max-width: 800px;
+    margin: 60px auto 0;
+    padding: 40px;
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); /* Fundo ambar suave */
+    border: 2px dashed #f97316; /* Borda tracejada laranja */
+    border-radius: 24px;
+    text-align: center;
+}
+
+.cta-box h3 {
+    font-size: 1.8rem;
+    color: #1f2937;
+    margin-bottom: 15px;
+}
+
+.cta-box p {
+    color: #4b5563;
+    font-size: 1.1rem;
+    margin-bottom: 25px;
+}
+
+.cta-btn {
+    background-color: #f97316;
+    color: white !important;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.3s;
+}
+
+.cta-btn:hover {
+    background-color: #ea580c;
+}
+
 /* ============================
    PROMOTIONS BUTTON - ALWAYS FIXED & RIGHT - MIDDLE SCREEN
    ============================ */

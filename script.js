@@ -66,6 +66,15 @@ const translations = {
                 }
             ]
         },
+        // NOVA SECÇÃO EQUIPA EM PT
+        team: {
+            title: 'A nossa equipa',
+            name: 'Jéssica Ferreira',
+            role: 'Consultora de Viagem',
+            ctaTitle: 'Queres fazer parte da nossa equipa?',
+            ctaText: 'Torna-te um consultor de viagem Travel Frontiers e ajuda outros a explorar o mundo.',
+            ctaBtn: 'Pedir Informações'
+        },
         testimonials: {
             title: 'Testemunhos dos Clientes',
             subtitle: 'O que dizem sobre nós',
@@ -196,6 +205,15 @@ const translations = {
                 }
             ]
         },
+        // NOVA SECÇÃO EQUIPA EM EN
+        team: {
+            title: 'Our Team',
+            name: 'Jéssica Ferreira',
+            role: 'Travel Consultant',
+            ctaTitle: 'Want to join our team?',
+            ctaText: 'Become a Travel Frontiers travel consultant and help others explore the world.',
+            ctaBtn: 'Request Information'
+        },
         testimonials: {
             title: 'Client Testimonials',
             subtitle: 'What they say about us',
@@ -325,6 +343,15 @@ const translations = {
                     image: 'img/IMG_8984.jpeg'
                 }
             ]
+        },
+        // NOVA SECÇÃO EQUIPA EM FR
+        team: {
+            title: 'Notre Équipe',
+            name: 'Jéssica Ferreira',
+            role: 'Consultante de Voyage',
+            ctaTitle: 'Voulez-vous rejoindre notre équipe?',
+            ctaText: 'Devenez consultant Travel Frontiers et aidez les autres à explorer le monde.',
+            ctaBtn: 'Plus d\'infos'
         },
         testimonials: {
             title: 'Témoignages Clients',
