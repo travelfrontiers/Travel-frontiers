@@ -10,8 +10,8 @@ const translations = {
             promotions: 'Promoções'
         },
         hero: {
-            title: 'Explore as Fronteiras do Mundo',
-            subtitle: 'Descubra novos horizontes com a Travel Frontiers. Planeie a sua próxima aventura com um consultor especializado em experiências personalizadas.',
+            title: 'Consultor de Viagens Personalizadas | Portugal',
+            subtitle: 'Descubra novos horizontes com a Travel Frontiers. Planeie a sua próxima aventura com um consultor especializado em experiências personalizadas, ou junte-se à nossa equipa como consultor de viagem.',
             cta: 'Pedir Orçamento',
             stats: {
                 experience: '15 anos de experiência',
@@ -149,8 +149,8 @@ const translations = {
             promotions: 'Promotions'
         },
         hero: {
-            title: 'Explore the World\'s Frontiers',
-            subtitle: 'Discover new horizons with Travel Frontiers. Plan your next adventure with a consultant specialized in personalized experiences.',
+            title: 'Personalized Travel Consultant | Worldwide Trips',
+            subtitle: 'Discover new horizons with Travel Frontiers. Plan your next adventure anywhere in the world — or join our team as a travel consultant in your country.',
             cta: 'Get Quote',
             stats: {
                 experience: '15 years of experience',
@@ -288,8 +288,8 @@ const translations = {
             promotions: 'Promotions'
         },
         hero: {
-            title: 'Explorez les Frontières du Monde',
-            subtitle: 'Découvrez de nouveaux horizons avec Travel Frontiers. Planifiez votre prochaine aventure avec un consultant spécialisé en expériences personnalisées.',
+            title: 'Consultant en Voyages Personnalisés | Voyages Mondiaux',
+            subtitle: 'Découvrez de nouveaux horizons avec Travel Frontiers. Planifiez votre prochaine aventure partout dans le monde — ou rejoignez notre équipe en tant que consultant voyage dans votre pays.',
             cta: 'Demander un Devis',
             stats: {
                 experience: '15 ans d\'expérience',
