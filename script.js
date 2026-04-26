@@ -455,6 +455,13 @@ function changeLanguage(lang) {
   if (langDropdown) langDropdown.classList.remove('show');
   document.documentElement.lang = lang;
 
+  // Update URL so it's shareable and indexable by Google
+  const urlMap = { pt: '/', en: '/en/', fr: '/fr/' };
+  const targetUrl = urlMap[lang] || '/';
+  if (window.location.pathname !== targetUrl) {
+    history.pushState({ lang }, '', targetUrl);
+  }
+
   updateContent();
   renderServices(translations[currentLanguage].services);
   updateTestimonials();
@@ -948,7 +955,33 @@ window.goToTestimonial = function (index) {
 // Boot
 // ============================
 document.addEventListener('DOMContentLoaded', () => {
-  currentLanguage = 'pt';
+  // Detect language from URL path so /en/ and /fr/ shell pages work correctly
+  const path = window.location.pathname;
+  if (path.startsWith('/en')) {
+    currentLanguage = 'en';
+  } else if (path.startsWith('/fr')) {
+    currentLanguage = 'fr';
+  } else {
+    currentLanguage = 'pt';
+  }
+
+  // Sync the language button label to match detected language
+  const langCode = document.getElementById('langCode');
+  if (langCode) langCode.textContent = currentLanguage.toUpperCase();
+  document.documentElement.lang = currentLanguage;
+
+  // Handle the browser back/forward buttons
+  window.addEventListener('popstate', (e) => {
+    const lang = (e.state && e.state.lang) || 'pt';
+    currentLanguage = lang;
+    const langCode = document.getElementById('langCode');
+    if (langCode) langCode.textContent = lang.toUpperCase();
+    document.documentElement.lang = lang;
+    updateContent();
+    renderServices(translations[currentLanguage].services);
+    updateTestimonials();
+    createTestimonialDots();
+  });
 
   initializeLanguageSelector();
   initializeMobileMenu();
@@ -958,5 +991,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeLightbox();
   initializeCarousel();
 
-  console.log('✅ Page scripts initialised');
+  // Run updateContent once to apply the detected language to all data-translate elements
+  updateContent();
+
+  console.log('✅ Page scripts initialised — language:', currentLanguage);
 });
