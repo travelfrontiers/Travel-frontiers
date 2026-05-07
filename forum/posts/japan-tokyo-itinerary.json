@@ -18,6 +18,13 @@
   "content_pt": "<h2>Dia 1: Leste de Tóquio</h2><p><strong>Manhã:</strong> Visite o Templo Senso-ji em Asakusa</p><p><strong>Tarde:</strong> Explore as lojas vintage de Harajuku e a Rua Takeshita</p><h2>Dia 2: Sul de Tóquio</h2><p><strong>Manhã:</strong> Desfrute do Cruzamento de Shibuya e compras</p><p><strong>Noite:</strong> Pôr do sol na Torre de Tóquio</p><h2>Dia 3: Oeste de Tóquio e Natureza</h2><p><strong>Manhã:</strong> Passeio pela floresta do Santuário Meiji</p><p><strong>Tarde:</strong> Jardins de Shinjuku e exploração do bairro</p>",
   "content_fr": "<h2>Jour 1 : Est de Tokyo</h2><p><strong>Matin :</strong> Visitez le Temple Senso-ji à Asakusa</p><p><strong>Après-midi :</strong> Explorez les boutiques vintage de Harajuku et la rue Takeshita</p><h2>Jour 2 : Sud de Tokyo</h2><p><strong>Matin :</strong> Profitez du Carrefour de Shibuya et du shopping</p><p><strong>Soir :</strong> Coucher de soleil depuis la Tour de Tokyo</p><h2>Jour 3 : Ouest de Tokyo et Nature</h2><p><strong>Matin :</strong> Promenade dans la forêt du Sanctuaire Meiji</p><p><strong>Après-midi :</strong> Jardins de Shinjuku et exploration du quartier</p>",
   "likes": 20,
+  "affiliateLink": {
+    "text": "Book Tokyo tours and experiences on Viator",
+    "text_pt": "Reserve tours e experiências em Tóquio no Viator",
+    "text_fr": "Réservez des tours et expériences à Tokyo sur Viator",
+    "url": "https://vi.me/s/travelfrontiers",
+    "type": "viator"
+  },
   "cta": {
     "text": "Want a personalized Japan itinerary that goes beyond the guidebooks?",
     "text_pt": "Quer um itinerário personalizado para o Japão que vai além dos guias turísticos?",
