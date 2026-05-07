@@ -18,6 +18,13 @@
   "content_pt": "<h2>Alojamento</h2><p><strong>Fique fora de Reykjavik:</strong> Os preços dos hotéis caem significativamente fora da capital.</p><h2>Alimentação</h2><p><strong>Compre nos supermercados:</strong> Supermercados como Bónus e Netto oferecem ótimos preços.</p><h2>Transporte</h2><p><strong>Alugue um carro com outros:</strong> Divida os custos de aluguer e combustível com companheiros de viagem.</p>",
   "content_fr": "<h2>Hébergement</h2><p><strong>Séjournez en dehors de Reykjavik :</strong> Les prix des hôtels baissent considérablement en dehors de la capitale.</p><h2>Alimentation</h2><p><strong>Achetez en supermarché :</strong> Les supermarchés comme Bónus et Netto offrent d'excellentes affaires.</p><h2>Transport</h2><p><strong>Louez une voiture à plusieurs :</strong> Partagez les coûts de location et de carburant avec vos compagnons de voyage.</p>",
   "likes": 10,
+  "affiliateLink": {
+    "text": "Find affordable Iceland tours on Viator",
+    "text_pt": "Encontre tours acessíveis na Islândia no Viator",
+    "text_fr": "Trouvez des tours abordables en Islande sur Viator",
+    "url": "https://vi.me/s/travelfrontiers",
+    "type": "viator"
+  },
   "cta": {
     "text": "Let me help you plan an affordable Iceland trip with insider tips.",
     "text_pt": "Deixe-me ajudá-lo a planear uma viagem acessível à Islândia com dicas de quem conhece.",
