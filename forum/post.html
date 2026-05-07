@@ -4,29 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Post - Travel Frontiers Forum</title>
-    <link rel="stylesheet" href="../style.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-    <!-- Navigation -->
+    <!-- Header — Matching main site glassmorphism style -->
     <header class="navbar">
         <div class="navbar-container">
             <div class="navbar-logo">
-                <a href="/Travel-frontiers/">Travel Frontiers</a>
+                <a href="https://www.travelfrontiers.pt/">
+                    <img src="https://www.travelfrontiers.pt/img/TF_globnobg2.webp" alt="Travel Frontiers Logo" class="logo-img">
+                    <span>Travel Frontiers</span>
+                </a>
             </div>
-            <ul class="nav-menu">
-                <li><a href="/Travel-frontiers/" class="nav-link">Início</a></li>
-                <li><a href="/Travel-frontiers/#services" class="nav-link">Serviços</a></li>
-                <li><a href="/Travel-frontiers/forum/" class="nav-link">Fórum</a></li>
-                <li><a href="/Travel-frontiers/#contact" class="nav-link">Contacto</a></li>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="https://www.travelfrontiers.pt/" class="nav-link" data-translate="nav.home">Início</a></li>
+                <li><a href="https://www.travelfrontiers.pt/#services" class="nav-link" data-translate="nav.services">Serviços</a></li>
+                <li><a href="./" class="nav-link" data-translate="nav.forum">Fórum</a></li>
+                <li><a href="https://www.travelfrontiers.pt/#contact" class="nav-link" data-translate="nav.contact">Contacto</a></li>
             </ul>
+            <div class="nav-actions">
+                <!-- Language Selector -->
+                <div class="language-selector">
+                    <button class="lang-button" id="currentLang">
+                        <span>🌐</span>
+                        <span id="langCode">PT</span>
+                    </button>
+                    <div class="lang-dropdown" id="langDropdown">
+                        <button onclick="changeForumLanguage('pt')">Português</button>
+                        <button onclick="changeForumLanguage('en')">English</button>
+                        <button onclick="changeForumLanguage('fr')">Français</button>
+                    </div>
+                </div>
+                <!-- Mobile Menu Button -->
+                <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
         </div>
     </header>
 
     <!-- Post Content -->
     <main class="post-container">
         <!-- Loading State -->
-        <div id="postLoading" class="loading">Carregando post...</div>
+        <div id="postLoading" class="loading" data-translate="loading.post">Carregando post...</div>
 
         <!-- Post Article -->
         <article id="postContent" class="post-article hidden">
@@ -64,7 +94,7 @@
 
                 <!-- Related Posts -->
                 <section id="relatedSection" class="related-posts hidden">
-                    <h3>Leia Também</h3>
+                    <h3 data-translate="post.readAlso">Leia Também</h3>
                     <div id="relatedContainer" class="related-grid"></div>
                 </section>
             </div>
@@ -73,14 +103,14 @@
             <footer class="post-footer">
                 <button id="likeBtn" class="like-button">
                     <span class="like-icon">♥</span>
-                    <span id="likeCount">0</span> Gostos
+                    <span id="likeCount">0</span> <span data-translate="post.likes">Gostos</span>
                 </button>
             </footer>
         </article>
 
         <!-- Comments Section -->
         <section id="commentsSection" class="comments-section hidden">
-            <h2>Comentários</h2>
+            <h2 data-translate="comments.title">Comentários</h2>
 
             <!-- Comments List -->
             <div id="commentsList" class="comments-list">
@@ -89,10 +119,10 @@
 
             <!-- Comment Form -->
             <form id="commentForm" class="comment-form">
-                <h3>Deixe um Comentário</h3>
+                <h3 data-translate="comments.leaveComment">Deixe um Comentário</h3>
                 
                 <div class="form-group">
-                    <label for="commenterName">Nome *</label>
+                    <label for="commenterName" data-translate="comments.name">Nome *</label>
                     <input type="text" id="commenterName" name="name" required>
                 </div>
 
@@ -102,21 +132,21 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="commenterText">Comentário *</label>
+                    <label for="commenterText" data-translate="comments.comment">Comentário *</label>
                     <textarea id="commenterText" name="comment" rows="4" required></textarea>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Enviar Comentário</button>
-                <p class="form-note">Os comentários serão moderados antes de aparecer.</p>
+                <button type="submit" class="btn btn-primary" data-translate="comments.submit">Enviar Comentário</button>
+                <p class="form-note" data-translate="comments.moderation">Os comentários serão moderados antes de aparecer.</p>
             </form>
         </section>
     </main>
 
-    <!-- Footer -->
+    <!-- Footer — Dark matching main site -->
     <footer class="footer">
         <div class="footer-content">
-            <p>&copy; 2025 Travel Frontiers. All rights reserved.</p>
-            <a href="/Travel-frontiers/">Voltar ao site</a>
+            <p>&copy; 2026 Travel Frontiers. <span data-translate="footer.rights">Todos os direitos reservados.</span></p>
+            <a href="https://www.travelfrontiers.pt/" data-translate="footer.backToSite">Voltar ao site</a>
         </div>
     </footer>
 

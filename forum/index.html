@@ -3,44 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Travel Forum - Destinos, Restaurantes e Dicas de Viagem</title>
+    <title>Fórum de Viagens - Destinos, Restaurantes e Dicas | Travel Frontiers</title>
     <meta name="description" content="Explore o fórum de viagens com dicas de destinos, recomendações de restaurantes e experiências autênticas compartilhadas por viajantes.">
-    <link rel="stylesheet" href="./style.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-    <!-- Navigation (reuse from main site) -->
+    <!-- Header — Matching main site glassmorphism style -->
     <header class="navbar">
         <div class="navbar-container">
             <div class="navbar-logo">
-                <a href="/Travel-frontiers/">Travel Frontiers</a>
+                <a href="https://www.travelfrontiers.pt/">
+                    <img src="https://www.travelfrontiers.pt/img/TF_globnobg2.webp" alt="Travel Frontiers Logo" class="logo-img">
+                    <span>Travel Frontiers</span>
+                </a>
             </div>
-            <ul class="nav-menu">
-                <li><a href="/Travel-frontiers/" class="nav-link">Início</a></li>
-                <li><a href="/Travel-frontiers/#services" class="nav-link">Serviços</a></li>
-                <li><a href="/Travel-frontiers/forum/" class="nav-link active">Fórum</a></li>
-                <li><a href="/Travel-frontiers/#contact" class="nav-link">Contacto</a></li>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="https://www.travelfrontiers.pt/" class="nav-link" data-translate="nav.home">Início</a></li>
+                <li><a href="https://www.travelfrontiers.pt/#services" class="nav-link" data-translate="nav.services">Serviços</a></li>
+                <li><a href="./" class="nav-link active" data-translate="nav.forum">Fórum</a></li>
+                <li><a href="https://www.travelfrontiers.pt/#contact" class="nav-link" data-translate="nav.contact">Contacto</a></li>
             </ul>
+            <div class="nav-actions">
+                <!-- Language Selector -->
+                <div class="language-selector">
+                    <button class="lang-button" id="currentLang">
+                        <span>🌐</span>
+                        <span id="langCode">PT</span>
+                    </button>
+                    <div class="lang-dropdown" id="langDropdown">
+                        <button onclick="changeForumLanguage('pt')">Português</button>
+                        <button onclick="changeForumLanguage('en')">English</button>
+                        <button onclick="changeForumLanguage('fr')">Français</button>
+                    </div>
+                </div>
+                <!-- Mobile Menu Button -->
+                <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
         </div>
     </header>
 
     <!-- Forum Main Section -->
     <main class="forum-container">
         <section class="forum-hero">
-            <h1>Travel Frontiers Forum</h1>
-            <p>Descubra destinos, restaurantes e dicas de viagem compartilhadas pela comunidade</p>
+            <h1>Travel Frontiers <span>Forum</span></h1>
+            <p data-translate="hero.subtitle">Descubra destinos, restaurantes e dicas de viagem compartilhadas pela comunidade</p>
         </section>
 
         <!-- Filter/Category Section -->
         <section class="forum-filters">
             <div class="filter-wrapper">
-                <input type="text" id="searchInput" placeholder="Pesquisar posts..." class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Pesquisar posts..." class="search-box" data-translate-placeholder="search.placeholder">
                 <div class="category-filters">
-                    <button class="filter-btn active" data-filter="all">Todos</button>
-                    <button class="filter-btn" data-filter="destinos">Destinos</button>
-                    <button class="filter-btn" data-filter="restaurants">Restaurantes</button>
-                    <button class="filter-btn" data-filter="dicas">Dicas de Viagem</button>
-                    <button class="filter-btn" data-filter="atividades">Atividades</button>
+                    <button class="filter-btn active" data-filter="all" data-translate="filter.all">Todos</button>
+                    <button class="filter-btn" data-filter="destinos" data-translate="filter.destinations">Destinos</button>
+                    <button class="filter-btn" data-filter="restaurants" data-translate="filter.restaurants">Restaurantes</button>
+                    <button class="filter-btn" data-filter="dicas" data-translate="filter.tips">Dicas de Viagem</button>
+                    <button class="filter-btn" data-filter="atividades" data-translate="filter.activities">Atividades</button>
                 </div>
             </div>
         </section>
@@ -49,21 +79,21 @@
         <section class="forum-posts">
             <div id="postsContainer" class="posts-grid">
                 <!-- Posts loaded by JavaScript -->
-                <div class="loading">Carregando posts...</div>
+                <div class="loading" data-translate="loading">Carregando posts...</div>
             </div>
         </section>
 
         <!-- No Results Message -->
         <section id="noResults" class="no-results hidden">
-            <p>Nenhum post encontrado. Tente outra pesquisa!</p>
+            <p data-translate="noResults">Nenhum post encontrado. Tente outra pesquisa!</p>
         </section>
     </main>
 
-    <!-- Footer (reuse from main site) -->
+    <!-- Footer — Dark matching main site -->
     <footer class="footer">
         <div class="footer-content">
-            <p>&copy; 2025 Travel Frontiers. All rights reserved.</p>
-            <a href="/Travel-frontiers/">Voltar ao site</a>
+            <p>&copy; 2026 Travel Frontiers. <span data-translate="footer.rights">Todos os direitos reservados.</span></p>
+            <a href="https://www.travelfrontiers.pt/" data-translate="footer.backToSite">Voltar ao site</a>
         </div>
     </footer>
 
