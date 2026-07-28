@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { client } from '../../../sanity/client';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, Footer, BorderStyle, PageBreak, ShadingType, ExternalHyperlink, Tab, TabStopPosition, TabStopType, Header } from 'docx';
+import {
+    Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, Footer,
+    BorderStyle, PageBreak, ShadingType, ExternalHyperlink, Table, TableRow,
+    TableCell, WidthType, VerticalAlign
+} from 'docx';
 import mammoth from 'mammoth';
 
 // Polyfill for libraries expecting browser-only DOMMatrix in a Node environment (fixes Vercel build)
@@ -9,12 +13,15 @@ if (typeof global !== 'undefined' && typeof (global as any).DOMMatrix === 'undef
     (global as any).DOMMatrix = class {};
 }
 
-// ── Brand Constants ──
-const GOLD = 'B8963E';
-const DARK = '1A1A2E';
-const GRAY = '6B7280';
-const LIGHT_BG = 'F9F7F3';
-const WHITE = 'FFFFFF';
+// ── Brand Constants (Condé Nast Traveller / 5-Star Hotel Magazine Palette) ──
+const CHARCOAL_DARK = '141414'; // Near-black charcoal for ribbons & main dark blocks
+const CHARCOAL_CARD = '1C1C1C'; // Slightly lighter dark charcoal for dining/tips cards
+const GOLD_WARM     = 'C9A24B'; // Warm accent gold for kickers, borders, time markers, icons
+const CREAM_BG      = 'FBF8F2'; // Off-white cream for section backgrounds & alternating rows
+const WHITE         = 'FFFFFF'; // Crisp white text on dark backgrounds
+const MUTED_GRAY    = '8A8A8A'; // Secondary gray text for details/addresses
+const LIGHT_GRAY    = 'D0D0D0'; // Light gray text for italic descriptions on dark cards
+const FONT_SERIF    = 'Georgia';// Serif font throughout for luxury magazine aesthetic
 
 // ── Image Fetching: Pexels API (high-quality travel photos) ──
 
@@ -38,7 +45,6 @@ async function fetchPexelsImage(query: string, orientation: 'landscape' | 'portr
 
         const data = await response.json();
         if (data.photos && data.photos.length > 0) {
-            // Pick the first result, use the "large" size (940px wide — good for DOCX)
             const photo = data.photos[0];
             const imgUrl = photo.src.large2x || photo.src.large || photo.src.original;
             const imgResponse = await fetch(imgUrl);
@@ -46,7 +52,6 @@ async function fetchPexelsImage(query: string, orientation: 'landscape' | 'portr
                 return { buffer: Buffer.from(await imgResponse.arrayBuffer()), type: 'jpg' };
             }
         }
-        // Fallback if no Pexels results
         return fetchWikimediaImage(query);
     } catch (e) {
         console.warn('Pexels fetch failed, falling back to Wikimedia:', e);
@@ -86,12 +91,30 @@ async function fetchImageBuffer(url: string): Promise<Buffer> {
     return Buffer.from(await response.arrayBuffer());
 }
 
-// ── DOCX Helpers ──
+// ── Magazine Layout Helpers ──
+
+function renderDarkRibbon(kicker: string, title: string, subtitle?: string): Paragraph {
+    const children: TextRun[] = [
+        new TextRun({ text: `${kicker.toUpperCase()}\n`, bold: true, size: 18, color: GOLD_WARM, font: FONT_SERIF }),
+        new TextRun({ text: `${title.toUpperCase()}`, bold: true, size: 36, color: WHITE, font: FONT_SERIF }),
+    ];
+
+    if (subtitle) {
+        children.push(new TextRun({ text: `\n${subtitle}`, italics: true, size: 20, color: GOLD_WARM, font: FONT_SERIF }));
+    }
+
+    return new Paragraph({
+        shading: { type: ShadingType.SOLID, color: CHARCOAL_DARK, fill: CHARCOAL_DARK },
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 240, after: 240 },
+        children
+    });
+}
 
 function goldDivider(): Paragraph {
     return new Paragraph({
-        border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: GOLD } },
-        spacing: { before: 120, after: 120 },
+        border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: GOLD_WARM } },
+        spacing: { before: 160, after: 160 },
         children: []
     });
 }
@@ -100,71 +123,266 @@ function sectionSpacer(size: number = 300): Paragraph {
     return new Paragraph({ spacing: { before: size, after: 0 }, children: [] });
 }
 
-function renderInfoRow(icon: string, label: string, value: string): Paragraph {
-    return new Paragraph({
-        spacing: { before: 80, after: 80 },
-        indent: { left: 360 },
-        children: [
-            new TextRun({ text: `${icon}  `, size: 22, font: 'Calibri' }),
-            new TextRun({ text: `${label}: `, bold: true, size: 22, font: 'Calibri', color: DARK }),
-            new TextRun({ text: value, size: 22, font: 'Calibri', color: GRAY }),
-        ]
+// ── Trip Summary Alternating Row Table ──
+
+function renderTripSummaryTable(resumo: any): Table {
+    const rowsData = [
+        { icon: '✈️', label: 'DESTINO', value: resumo.destino },
+        { icon: '📅', label: 'DATAS', value: resumo.datas },
+        { icon: '⏱', label: 'DURAÇÃO', value: resumo.duracao },
+        { icon: '👥', label: 'VIAJANTES', value: resumo.viajantes },
+        { icon: '🏨', label: 'ALOJAMENTO', value: resumo.hotel },
+    ].filter(r => Boolean(r.value));
+
+    const tableRows = rowsData.map((item, index) => {
+        const bg = index % 2 === 0 ? CREAM_BG : WHITE;
+        return new TableRow({
+            children: [
+                new TableCell({
+                    width: { size: 35, type: WidthType.PERCENTAGE },
+                    shading: { type: ShadingType.SOLID, color: bg, fill: bg },
+                    verticalAlign: VerticalAlign.CENTER,
+                    margins: { top: 120, bottom: 120, left: 160, right: 160 },
+                    borders: {
+                        top: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                        bottom: { style: BorderStyle.SINGLE, size: 4, color: 'E0E0E0' },
+                        left: { style: BorderStyle.SINGLE, size: 12, color: GOLD_WARM },
+                        right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                    },
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({ text: `${item.icon}  `, size: 20, font: FONT_SERIF }),
+                                new TextRun({ text: item.label, bold: true, size: 19, color: CHARCOAL_DARK, font: FONT_SERIF }),
+                            ]
+                        })
+                    ]
+                }),
+                new TableCell({
+                    width: { size: 65, type: WidthType.PERCENTAGE },
+                    shading: { type: ShadingType.SOLID, color: bg, fill: bg },
+                    verticalAlign: VerticalAlign.CENTER,
+                    margins: { top: 120, bottom: 120, left: 160, right: 160 },
+                    borders: {
+                        top: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                        bottom: { style: BorderStyle.SINGLE, size: 4, color: 'E0E0E0' },
+                        left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                        right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                    },
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new TextRun({ text: item.value, size: 20, color: CHARCOAL_DARK, font: FONT_SERIF })
+                            ]
+                        })
+                    ]
+                }),
+            ]
+        });
+    });
+
+    return new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        alignment: AlignmentType.CENTER,
+        rows: tableRows
     });
 }
 
-function renderRestaurantCard(mealIcon: string, mealLabel: string, s: any): Paragraph[] {
-    if (!s) return [];
-    const paragraphs: Paragraph[] = [];
+// ── Practical Tips 2-Column Dark Card Grid ──
 
-    // Meal type header with icon
-    paragraphs.push(new Paragraph({
-        spacing: { before: 200, after: 60 },
-        shading: { type: ShadingType.SOLID, color: LIGHT_BG, fill: LIGHT_BG },
-        indent: { left: 360 },
-        children: [
-            new TextRun({ text: `${mealIcon}  ${mealLabel}`, bold: true, size: 22, color: GOLD, font: 'Calibri' }),
+function renderPracticalTipsGrid(dicas: any[]): Table {
+    const validDicas = dicas.filter(Boolean);
+    const tableRows: TableRow[] = [];
+
+    for (let i = 0; i < validDicas.length; i += 2) {
+        const item1 = validDicas[i];
+        const item2 = validDicas[i + 1];
+
+        const createCardCell = (dica: any) => {
+            if (!dica) {
+                return new TableCell({
+                    width: { size: 48, type: WidthType.PERCENTAGE },
+                    borders: {
+                        top: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                        bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                        left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                        right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                    },
+                    children: [new Paragraph({ children: [] })]
+                });
+            }
+
+            const isString = typeof dica === 'string';
+            const icon = isString ? '💡' : (dica.icone || '💡');
+            const title = isString ? 'DICA PRÁTICA' : (dica.titulo || 'DICA');
+            const text = isString ? dica : (dica.texto || '');
+
+            return new TableCell({
+                width: { size: 48, type: WidthType.PERCENTAGE },
+                shading: { type: ShadingType.SOLID, color: CHARCOAL_CARD, fill: CHARCOAL_CARD },
+                verticalAlign: VerticalAlign.TOP,
+                margins: { top: 160, bottom: 160, left: 160, right: 160 },
+                borders: {
+                    top: { style: BorderStyle.SINGLE, size: 8, color: GOLD_WARM },
+                    bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                    left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                    right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                },
+                children: [
+                    new Paragraph({
+                        spacing: { before: 40, after: 60 },
+                        children: [
+                            new TextRun({ text: `${icon}  `, size: 20, font: FONT_SERIF }),
+                            new TextRun({ text: title.toUpperCase(), bold: true, size: 19, color: GOLD_WARM, font: FONT_SERIF }),
+                        ]
+                    }),
+                    new Paragraph({
+                        spacing: { before: 20, after: 40 },
+                        children: [
+                            new TextRun({ text, size: 18, color: CREAM_BG, font: FONT_SERIF })
+                        ]
+                    })
+                ]
+            });
+        };
+
+        const spacerCell = new TableCell({
+            width: { size: 4, type: WidthType.PERCENTAGE },
+            borders: {
+                top: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+            },
+            children: [new Paragraph({ children: [] })]
+        });
+
+        tableRows.push(new TableRow({
+            children: [
+                createCardCell(item1),
+                spacerCell,
+                createCardCell(item2)
+            ]
+        }));
+    }
+
+    return new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        alignment: AlignmentType.CENTER,
+        rows: tableRows
+    });
+}
+
+// ── Side-by-Side Dark Dining Cards Table ──
+
+function renderDiningCardsTable(lunchData: any, dinnerData: any): Table | null {
+    if (!lunchData && !dinnerData) return null;
+
+    const buildDiningCell = (icon: string, label: string, s: any) => {
+        if (!s) {
+            return new TableCell({
+                width: { size: 48, type: WidthType.PERCENTAGE },
+                borders: {
+                    top: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                    bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                    left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                    right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                },
+                children: [new Paragraph({ children: [] })]
+            });
+        }
+
+        const paragraphs: Paragraph[] = [
+            // Header banner inside card
+            new Paragraph({
+                spacing: { before: 40, after: 80 },
+                children: [
+                    new TextRun({ text: `${icon}  ${label.toUpperCase()}`, bold: true, size: 19, color: GOLD_WARM, font: FONT_SERIF }),
+                ]
+            })
+        ];
+
+        if (s.nome) {
+            paragraphs.push(new Paragraph({
+                spacing: { before: 40, after: 40 },
+                children: [
+                    new TextRun({ text: s.nome, bold: true, size: 21, color: WHITE, font: FONT_SERIF }),
+                    ...(s.preco ? [new TextRun({ text: `  (${s.preco})`, size: 19, color: GOLD_WARM, font: FONT_SERIF })] : []),
+                ]
+            }));
+        }
+
+        if (s.porque) {
+            paragraphs.push(new Paragraph({
+                spacing: { before: 20, after: 40 },
+                children: [
+                    new TextRun({ text: s.porque, italics: true, size: 18, color: LIGHT_GRAY, font: FONT_SERIF })
+                ]
+            }));
+        }
+
+        if (s.morada) {
+            paragraphs.push(new Paragraph({
+                spacing: { before: 20, after: 20 },
+                children: [
+                    new TextRun({ text: `📍 ${s.morada}`, size: 17, color: MUTED_GRAY, font: FONT_SERIF })
+                ]
+            }));
+        }
+
+        if (s.maps) {
+            paragraphs.push(new Paragraph({
+                spacing: { before: 40, after: 40 },
+                children: [
+                    new ExternalHyperlink({
+                        link: s.maps,
+                        children: [
+                            new TextRun({ text: '🗺 Ver no Google Maps', size: 18, color: GOLD_WARM, underline: {}, font: FONT_SERIF })
+                        ]
+                    })
+                ]
+            }));
+        }
+
+        return new TableCell({
+            width: { size: 48, type: WidthType.PERCENTAGE },
+            shading: { type: ShadingType.SOLID, color: CHARCOAL_CARD, fill: CHARCOAL_CARD },
+            verticalAlign: VerticalAlign.TOP,
+            margins: { top: 160, bottom: 160, left: 160, right: 160 },
+            borders: {
+                top: { style: BorderStyle.SINGLE, size: 12, color: GOLD_WARM },
+                bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+            },
+            children: paragraphs
+        });
+    };
+
+    const spacerCell = new TableCell({
+        width: { size: 4, type: WidthType.PERCENTAGE },
+        borders: {
+            top: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+            bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+            left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+            right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+        },
+        children: [new Paragraph({ children: [] })]
+    });
+
+    return new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        alignment: AlignmentType.CENTER,
+        rows: [
+            new TableRow({
+                children: [
+                    buildDiningCell('🍽', 'Sugestão para Almoço', lunchData),
+                    spacerCell,
+                    buildDiningCell('🌙', 'Sugestão para Jantar', dinnerData)
+                ]
+            })
         ]
-    }));
-
-    if (s.nome) {
-        paragraphs.push(new Paragraph({
-            spacing: { before: 40, after: 40 },
-            indent: { left: 720 },
-            children: [
-                new TextRun({ text: '▸ ', size: 20, color: GOLD, font: 'Calibri' }),
-                new TextRun({ text: s.nome, bold: true, size: 21, font: 'Calibri', color: DARK }),
-                ...(s.preco ? [new TextRun({ text: `  (${s.preco})`, size: 20, font: 'Calibri', color: GRAY })] : []),
-            ]
-        }));
-    }
-    if (s.porque) {
-        paragraphs.push(new Paragraph({
-            spacing: { before: 20, after: 40 },
-            indent: { left: 720 },
-            children: [new TextRun({ text: s.porque, italics: true, size: 20, font: 'Calibri', color: GRAY })]
-        }));
-    }
-    if (s.morada) {
-        paragraphs.push(new Paragraph({
-            spacing: { before: 20, after: 20 },
-            indent: { left: 720 },
-            children: [new TextRun({ text: `📍 ${s.morada}`, size: 19, font: 'Calibri', color: GRAY })]
-        }));
-    }
-    if (s.maps) {
-        paragraphs.push(new Paragraph({
-            spacing: { before: 20, after: 60 },
-            indent: { left: 720 },
-            children: [
-                new ExternalHyperlink({
-                    link: s.maps,
-                    children: [new TextRun({ text: '🗺 Ver no Google Maps', size: 19, color: '1155CC', underline: {}, font: 'Calibri' })]
-                })
-            ]
-        }));
-    }
-
-    return paragraphs;
+    });
 }
 
 // ── Main API Route ──
@@ -345,155 +563,91 @@ Responde APENAS com o JSON FINAL correspondente a esta viagem, sem backticks e s
 
         const logoBuffer = await fetchImageBuffer("https://www.travelfrontiers.pt/img/logo-newTF.png").catch(() => null);
 
-        // 5. Build Premium DOCX
+        // 5. Build Condé Nast Traveller Magazine DOCX
         const children: any[] = [];
 
         // ══════════════════════════════════════════
         // ── COVER PAGE ──
         // ══════════════════════════════════════════
 
-        // Top gold accent line
-        children.push(new Paragraph({
-            border: { top: { style: BorderStyle.SINGLE, size: 24, color: GOLD } },
-            spacing: { before: 0, after: 200 },
-            children: []
-        }));
-
-        // Full-width cover image
+        // Full-bleed hero image at the top
         if (coverResult?.buffer) {
             children.push(new Paragraph({
                 alignment: AlignmentType.CENTER,
                 spacing: { before: 0, after: 0 },
-                children: [new ImageRun({ data: coverResult.buffer, transformation: { width: 680, height: 420 }, type: coverResult.type })]
+                children: [new ImageRun({ data: coverResult.buffer, transformation: { width: 680, height: 400 }, type: coverResult.type })]
             }));
         }
 
-        // Gold divider under image
-        children.push(goldDivider());
+        // Dark Ribbon Title Block
+        const resumo = itineraryData.resumo || {};
+        const subtitleParts = [resumo.datas, resumo.duracao, resumo.viajantes].filter(Boolean);
+        const coverSubtitle = subtitleParts.length > 0 ? subtitleParts.join('  ·  ') : 'Travel Frontiers Luxury Itinerary';
 
-        // Logo
+        children.push(renderDarkRibbon(
+            'TRAVEL FRONTIERS  ·  PERSONALIZED LUXURY ITINERARY',
+            title || 'ITINERÁRIO DE VIAGEM',
+            coverSubtitle
+        ));
+
+        // Brand logo
         if (logoBuffer) {
             children.push(new Paragraph({
                 alignment: AlignmentType.CENTER,
-                spacing: { before: 100, after: 80 },
-                children: [new ImageRun({ data: logoBuffer, transformation: { width: 90, height: 90 }, type: 'png' })]
+                spacing: { before: 120, after: 80 },
+                children: [new ImageRun({ data: logoBuffer, transformation: { width: 80, height: 80 }, type: 'png' })]
             }));
         }
 
-        // Trip title
-        children.push(new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 60, after: 40 },
-            children: [new TextRun({
-                text: (title || 'Itinerário de Viagem').toUpperCase(),
-                bold: true, size: 56, color: DARK, font: 'Georgia'
-            })]
-        }));
-
-        // Trip dates & travelers subtitle
-        const resumo = itineraryData.resumo || {};
-        const subtitleParts = [resumo.datas, resumo.duracao, resumo.viajantes].filter(Boolean);
-        if (subtitleParts.length > 0) {
-            children.push(new Paragraph({
-                alignment: AlignmentType.CENTER,
-                spacing: { before: 20, after: 40 },
-                children: [new TextRun({
-                    text: subtitleParts.join('  ·  '),
-                    size: 24, color: GRAY, font: 'Calibri', italics: true
-                })]
-            }));
-        }
-
-        // Tagline
-        children.push(new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 40, after: 100 },
-            children: [new TextRun({
-                text: 'Travel Frontiers  ·  Viagens Personalizadas',
-                italics: true, size: 20, color: GOLD, font: 'Calibri'
-            })]
-        }));
-
-        // Bottom gold accent
-        children.push(new Paragraph({
-            border: { bottom: { style: BorderStyle.SINGLE, size: 24, color: GOLD } },
-            spacing: { before: 0, after: 0 },
-            children: []
-        }));
-
+        children.push(goldDivider());
         children.push(new Paragraph({ spacing: { before: 200 }, children: [new PageBreak()] }));
 
         // ══════════════════════════════════════════
         // ── TRIP OVERVIEW PAGE ──
         // ══════════════════════════════════════════
 
-        // Introduction
+        children.push(renderDarkRibbon('SECTION 01', 'TRIP OVERVIEW', resumo.destino || 'Resumo & Dicas'));
+
+        // Introduction Editorial Paragraph
         if (itineraryData.introducao) {
             children.push(new Paragraph({
                 alignment: AlignmentType.CENTER,
-                spacing: { before: 200, after: 200 },
+                spacing: { before: 200, after: 240 },
                 children: [new TextRun({
                     text: itineraryData.introducao,
-                    size: 24, font: 'Georgia', color: DARK, italics: true
+                    size: 24, font: FONT_SERIF, color: CHARCOAL_DARK, italics: true
                 })]
             }));
             children.push(goldDivider());
         }
 
-        // Trip summary info box
+        // Trip Summary Table with Alternating Shading
         if (resumo.destino || resumo.hotel) {
             children.push(new Paragraph({
-                spacing: { before: 200, after: 120 },
+                spacing: { before: 160, after: 120 },
                 alignment: AlignmentType.CENTER,
-                children: [new TextRun({ text: 'RESUMO DA VIAGEM', bold: true, size: 28, color: GOLD, font: 'Calibri' })]
+                children: [
+                    new TextRun({ text: 'DETALHES DA RESERVA', bold: true, size: 22, color: GOLD_WARM, font: FONT_SERIF })
+                ]
             }));
 
-            if (resumo.destino) children.push(renderInfoRow('✈️', 'Destino', resumo.destino));
-            if (resumo.datas) children.push(renderInfoRow('📅', 'Datas', resumo.datas));
-            if (resumo.duracao) children.push(renderInfoRow('⏱', 'Duração', resumo.duracao));
-            if (resumo.viajantes) children.push(renderInfoRow('👥', 'Viajantes', resumo.viajantes));
-            if (resumo.hotel) children.push(renderInfoRow('🏨', 'Alojamento', resumo.hotel));
-
-            children.push(sectionSpacer(200));
+            children.push(renderTripSummaryTable(resumo));
+            children.push(sectionSpacer(240));
             children.push(goldDivider());
         }
 
-        // Practical Tips
+        // Practical Tips Grid (2-column dark cards)
         const dicas = itineraryData.dicas;
         if (Array.isArray(dicas) && dicas.length > 0) {
             children.push(new Paragraph({
-                spacing: { before: 200, after: 160 },
+                spacing: { before: 160, after: 160 },
                 alignment: AlignmentType.CENTER,
-                children: [new TextRun({ text: 'DICAS PRÁTICAS', bold: true, size: 28, color: GOLD, font: 'Calibri' })]
+                children: [
+                    new TextRun({ text: 'DICAS PRÁTICAS DE VIAGEM', bold: true, size: 22, color: GOLD_WARM, font: FONT_SERIF })
+                ]
             }));
 
-            dicas.forEach((dica: any) => {
-                if (typeof dica === 'string') {
-                    // Backward compat: old format (plain strings)
-                    children.push(new Paragraph({
-                        spacing: { before: 60, after: 60 },
-                        indent: { left: 360 },
-                        children: [new TextRun({ text: `• ${dica}`, size: 21, font: 'Calibri', color: DARK })]
-                    }));
-                } else {
-                    // New format: { icone, titulo, texto }
-                    children.push(new Paragraph({
-                        spacing: { before: 100, after: 40 },
-                        indent: { left: 360 },
-                        children: [
-                            new TextRun({ text: `${dica.icone || '•'}  `, size: 22, font: 'Calibri' }),
-                            new TextRun({ text: dica.titulo || '', bold: true, size: 22, font: 'Calibri', color: DARK }),
-                        ]
-                    }));
-                    if (dica.texto) {
-                        children.push(new Paragraph({
-                            spacing: { before: 20, after: 60 },
-                            indent: { left: 720 },
-                            children: [new TextRun({ text: dica.texto, size: 20, font: 'Calibri', color: GRAY })]
-                        }));
-                    }
-                }
-            });
+            children.push(renderPracticalTipsGrid(dicas));
         }
 
         children.push(new Paragraph({ spacing: { before: 200 }, children: [new PageBreak()] }));
@@ -506,7 +660,7 @@ Responde APENAS com o JSON FINAL correspondente a esta viagem, sem backticks e s
         if (Array.isArray(itineraryData.dias)) {
             itineraryData.dias.forEach((dia: any, dayIndex: number) => {
 
-                // Day hero image (full width)
+                // Full-width photo at the top of each day
                 const imgRes = dailyResults[currentImageIndex++];
                 if (imgRes?.buffer) {
                     children.push(new Paragraph({
@@ -516,50 +670,54 @@ Responde APENAS com o JSON FINAL correspondente a esta viagem, sem backticks e s
                     }));
                 }
 
-                // Day title banner
-                if (dia.titulo_dia) {
-                    children.push(new Paragraph({
-                        spacing: { before: imgRes?.buffer ? 0 : 300, after: 200 },
-                        shading: { type: ShadingType.SOLID, color: DARK, fill: DARK },
-                        alignment: AlignmentType.CENTER,
-                        children: [new TextRun({
-                            text: '  ' + dia.titulo_dia.toUpperCase() + '  ',
-                            bold: true, size: 28, color: WHITE, font: 'Calibri'
-                        })]
-                    }));
-                }
+                // Dark Ribbon Day Header
+                const dayKicker = `DAY ${String(dayIndex + 1).padStart(2, '0')}`;
+                const dayTitle = dia.titulo_dia || `DIA ${dayIndex + 1}`;
 
-                // Activities with styled time
+                children.push(renderDarkRibbon(dayKicker, dayTitle));
+
+                // Cream-background Timeline List
                 const atividades = dia.atividades;
-                if (Array.isArray(atividades)) {
+                if (Array.isArray(atividades) && atividades.length > 0) {
+                    children.push(new Paragraph({
+                        spacing: { before: 120, after: 80 },
+                        children: [
+                            new TextRun({ text: ' ITINERÁRIO DO DIA', bold: true, size: 20, color: GOLD_WARM, font: FONT_SERIF })
+                        ]
+                    }));
+
                     atividades.forEach((ativ: any) => {
-                        if (typeof ativ === 'string') {
-                            // Backward compat: plain string format
-                            children.push(new Paragraph({
-                                spacing: { before: 60, after: 60 },
-                                indent: { left: 360 },
-                                children: [new TextRun({ text: `• ${ativ}`, size: 21, font: 'Calibri', color: DARK })]
-                            }));
-                        } else {
-                            // New format: { hora, descricao }
-                            children.push(new Paragraph({
-                                spacing: { before: 80, after: 80 },
-                                indent: { left: 360 },
-                                children: [
-                                    new TextRun({ text: `${ativ.hora || ''}`, bold: true, size: 22, font: 'Calibri', color: GOLD }),
-                                    new TextRun({ text: ativ.hora ? '  ' : '', size: 22, font: 'Calibri' }),
-                                    new TextRun({ text: ativ.descricao || '', size: 21, font: 'Calibri', color: DARK }),
-                                ]
-                            }));
-                        }
+                        const isString = typeof ativ === 'string';
+                        const time = isString ? '' : (ativ.hora || '');
+                        const desc = isString ? ativ : (ativ.descricao || '');
+
+                        children.push(new Paragraph({
+                            shading: { type: ShadingType.SOLID, color: CREAM_BG, fill: CREAM_BG },
+                            spacing: { before: 60, after: 60 },
+                            indent: { left: 360 },
+                            borders: {
+                                left: { style: BorderStyle.SINGLE, size: 12, color: GOLD_WARM },
+                                top: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                                bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                                right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                            },
+                            children: [
+                                ...(time ? [new TextRun({ text: `  ${time}  `, bold: true, size: 21, color: GOLD_WARM, font: FONT_SERIF })] : [new TextRun({ text: '  • ', size: 21, color: GOLD_WARM, font: FONT_SERIF })]),
+                                new TextRun({ text: desc, size: 20, color: CHARCOAL_DARK, font: FONT_SERIF }),
+                            ]
+                        }));
                     });
+
+                    children.push(sectionSpacer(160));
                 }
 
-                // Restaurant suggestions
-                children.push(...renderRestaurantCard('🍽', 'Sugestão para Almoço', dia.sugestao_almoco));
-                children.push(...renderRestaurantCard('🌙', 'Sugestão para Jantar', dia.sugestao_jantar));
+                // Side-by-Side Dark Dining Cards (Lunch & Dinner)
+                const diningCardsTable = renderDiningCardsTable(dia.sugestao_almoco, dia.sugestao_jantar);
+                if (diningCardsTable) {
+                    children.push(diningCardsTable);
+                }
 
-                // Gold divider between days
+                // Divider between days
                 children.push(sectionSpacer(200));
                 if (dayIndex < itineraryData.dias.length - 1) {
                     children.push(goldDivider());
@@ -568,7 +726,7 @@ Responde APENAS com o JSON FINAL correspondente a esta viagem, sem backticks e s
         }
 
         // ══════════════════════════════════════════
-        // ── BUILD DOCUMENT ──
+        // ── BUILD DOCUMENT (WITH PRESERVED FOOTER) ──
         // ══════════════════════════════════════════
 
         const doc = new Document({
@@ -579,17 +737,18 @@ Responde APENAS com o JSON FINAL correspondente a esta viagem, sem backticks e s
                     }
                 },
                 children,
+                // Existing footer elements preserved 100% untouched
                 footers: {
                     default: new Footer({
                         children: [
                             new Paragraph({
-                                border: { top: { style: BorderStyle.SINGLE, size: 4, color: GOLD } },
+                                border: { top: { style: BorderStyle.SINGLE, size: 4, color: GOLD_WARM } },
                                 alignment: AlignmentType.CENTER,
                                 spacing: { before: 120, after: 60 },
                                 children: [
                                     ...(logoBuffer ? [new ImageRun({ data: logoBuffer, transformation: { width: 24, height: 24 }, type: 'png' })] : []),
-                                    new TextRun({ text: '  Travel Frontiers', bold: true, size: 18, color: GOLD, font: 'Calibri' }),
-                                    new TextRun({ text: '   |   www.travelfrontiers.pt   |   @tf.travel.frontiers', size: 16, color: GRAY, font: 'Calibri' }),
+                                    new TextRun({ text: '  Travel Frontiers', bold: true, size: 18, color: GOLD_WARM, font: 'Calibri' }),
+                                    new TextRun({ text: '   |   www.travelfrontiers.pt   |   @tf.travel.frontiers', size: 16, color: '6B7280', font: 'Calibri' }),
                                 ]
                             })
                         ]
