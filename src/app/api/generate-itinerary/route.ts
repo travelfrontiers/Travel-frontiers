@@ -695,7 +695,7 @@ Responde APENAS com o JSON FINAL correspondente a esta viagem, sem backticks e s
                             shading: { type: ShadingType.SOLID, color: CREAM_BG, fill: CREAM_BG },
                             spacing: { before: 60, after: 60 },
                             indent: { left: 360 },
-                            borders: {
+                            border: {
                                 left: { style: BorderStyle.SINGLE, size: 12, color: GOLD_WARM },
                                 top: { style: BorderStyle.NONE, size: 0, color: 'auto' },
                                 bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
