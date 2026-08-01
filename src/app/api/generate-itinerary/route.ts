@@ -14,10 +14,10 @@ if (typeof global !== 'undefined' && typeof (global as any).DOMMatrix === 'undef
 }
 
 // ── Brand Constants (Condé Nast Traveller / 5-Star Hotel Magazine Palette) ──
-const CHARCOAL_DARK = '141414'; // Near-black charcoal for ribbons & cover title block
+const CHARCOAL_DARK = '141414'; // Near-black charcoal for ribbons & section titles
 const CHARCOAL_CARD = '1C1C1C'; // Dark charcoal for dining & practical tips cards
 const GOLD_WARM     = 'C9A24B'; // Warm accent gold for kickers, borders, time markers, icons
-const CREAM_BG      = 'FBF8F2'; // Off-white cream for section backgrounds & alternating rows
+const CREAM_BG      = 'FBF8F2'; // Off-white cream for cover title box, section backgrounds & alternating rows
 const WHITE         = 'FFFFFF'; // Crisp white text on dark backgrounds
 const MUTED_GRAY    = '8A8A8A'; // Secondary gray text for details/addresses
 const LIGHT_GRAY    = 'D0D0D0'; // Light gray text for italic descriptions on dark cards
@@ -150,77 +150,23 @@ function sectionSpacer(size: number = 300): Paragraph {
     return new Paragraph({ spacing: { before: size, after: 0 }, children: [] });
 }
 
-// ── Perfectly Aligned Footer ──
+// ── Clean Footer (No bar between logo and text) ──
 
 function buildAlignedFooter(logoBuffer: Buffer | null): Footer {
-    if (!logoBuffer) {
-        return new Footer({
-            children: [
-                new Paragraph({
-                    border: { top: { style: BorderStyle.SINGLE, size: 4, color: GOLD_WARM } },
-                    alignment: AlignmentType.CENTER,
-                    spacing: { before: 120, after: 60 },
-                    children: [
-                        new TextRun({ text: 'Travel Frontiers', bold: true, size: 18, color: GOLD_WARM, font: 'Calibri' }),
-                        new TextRun({ text: '   |   www.travelfrontiers.pt   |   @tf.travel.frontiers', size: 16, color: '6B7280', font: 'Calibri' }),
-                    ]
-                })
-            ]
-        });
-    }
-
-    // Borderless 2-cell table with vertical centering ensures perfect alignment of logo with text
-    const footerTable = new Table({
-        width: { size: 100, type: WidthType.PERCENTAGE },
-        alignment: AlignmentType.CENTER,
-        rows: [
-            new TableRow({
+    return new Footer({
+        children: [
+            new Paragraph({
+                border: { top: { style: BorderStyle.SINGLE, size: 4, color: GOLD_WARM } },
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 120, after: 60 },
                 children: [
-                    new TableCell({
-                        width: { size: 40, type: WidthType.PERCENTAGE },
-                        verticalAlign: VerticalAlign.CENTER,
-                        borders: {
-                            top: { style: BorderStyle.SINGLE, size: 4, color: GOLD_WARM },
-                            bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                            left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                            right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                        },
-                        children: [
-                            new Paragraph({
-                                alignment: AlignmentType.RIGHT,
-                                spacing: { before: 60, after: 60 },
-                                children: [
-                                    new ImageRun({ data: logoBuffer, transformation: { width: 22, height: 22 }, type: 'png' })
-                                ]
-                            })
-                        ]
-                    }),
-                    new TableCell({
-                        width: { size: 60, type: WidthType.PERCENTAGE },
-                        verticalAlign: VerticalAlign.CENTER,
-                        borders: {
-                            top: { style: BorderStyle.SINGLE, size: 4, color: GOLD_WARM },
-                            bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                            left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                            right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                        },
-                        children: [
-                            new Paragraph({
-                                alignment: AlignmentType.LEFT,
-                                spacing: { before: 60, after: 60 },
-                                children: [
-                                    new TextRun({ text: '  Travel Frontiers', bold: true, size: 18, color: GOLD_WARM, font: 'Calibri' }),
-                                    new TextRun({ text: '   |   www.travelfrontiers.pt   |   @tf.travel.frontiers', size: 16, color: '6B7280', font: 'Calibri' }),
-                                ]
-                            })
-                        ]
-                    })
+                    ...(logoBuffer ? [new ImageRun({ data: logoBuffer, transformation: { width: 18, height: 18 }, type: 'png' })] : []),
+                    new TextRun({ text: '  Travel Frontiers', bold: true, size: 18, color: GOLD_WARM, font: 'Calibri' }),
+                    new TextRun({ text: '   |   www.travelfrontiers.pt   |   @tf.travel.frontiers', size: 16, color: '6B7280', font: 'Calibri' }),
                 ]
             })
         ]
     });
-
-    return new Footer({ children: [footerTable] });
 }
 
 // ── Trip Summary Alternating Row Table ──
@@ -671,44 +617,70 @@ Responde APENAS com o JSON FINAL correspondente a esta viagem, sem backticks e s
         // ── COVER PAGE ──
         // ══════════════════════════════════════════
 
-        // Full-bleed hero image at the top
+        // Full-bleed hero image at top of cover
         if (coverResult?.buffer) {
             children.push(new Paragraph({
                 alignment: AlignmentType.CENTER,
                 spacing: { before: 0, after: 120 },
-                children: [new ImageRun({ data: coverResult.buffer, transformation: { width: 680, height: 380 }, type: coverResult.type })]
+                children: [new ImageRun({ data: coverResult.buffer, transformation: { width: 680, height: 400 }, type: coverResult.type })]
             }));
         }
 
-        // Dark Ribbon Cover Title Block
+        // Cover Title Block — Shaded box as requested in user screenshot
         const resumo = itineraryData.resumo || {};
-        const subtitleParts = [resumo.datas, resumo.duracao, resumo.viajantes].filter(Boolean);
-        const coverSubtitle = subtitleParts.length > 0 ? subtitleParts.join('  ·  ') : 'Travel Frontiers · Viagens Personalizadas';
+        const titleText = (title || 'ITINERÁRIO DE VIAGEM').toUpperCase();
+        const datesLine = [resumo.datas, resumo.duracao].filter(Boolean).join('  ·  ');
+        const travelersLine = resumo.viajantes || '';
 
-        // Render Cover Ribbon cleanly with distinct paragraphs to prevent smashed text
-        children.push(...renderDarkRibbon(
-            'TRAVEL FRONTIERS  ·  ITINERÁRIO PERSONALIZADO',
-            title || 'ITINERÁRIO DE VIAGEM',
-            coverSubtitle
-        ));
+        children.push(new Paragraph({
+            shading: { type: ShadingType.SOLID, color: CREAM_BG, fill: CREAM_BG },
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 200, after: 60 },
+            children: [
+                new TextRun({ text: titleText, bold: true, size: 44, color: CHARCOAL_DARK, font: FONT_SERIF })
+            ]
+        }));
 
-        children.push(sectionSpacer(160));
+        if (datesLine) {
+            children.push(new Paragraph({
+                shading: { type: ShadingType.SOLID, color: CREAM_BG, fill: CREAM_BG },
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 20, after: travelersLine ? 20 : 200 },
+                children: [
+                    new TextRun({ text: datesLine, italics: true, size: 22, color: GOLD_WARM, font: FONT_SERIF })
+                ]
+            }));
+        }
+
+        if (travelersLine) {
+            children.push(new Paragraph({
+                shading: { type: ShadingType.SOLID, color: CREAM_BG, fill: CREAM_BG },
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 20, after: 200 },
+                children: [
+                    new TextRun({ text: travelersLine, italics: true, size: 22, color: GOLD_WARM, font: FONT_SERIF })
+                ]
+            }));
+        }
+
+        // Generous vertical spacing to distribute content down the center of the cover page
+        children.push(sectionSpacer(480));
 
         // Brand logo centered
         if (logoBuffer) {
             children.push(new Paragraph({
                 alignment: AlignmentType.CENTER,
-                spacing: { before: 100, after: 60 },
-                children: [new ImageRun({ data: logoBuffer, transformation: { width: 80, height: 80 }, type: 'png' })]
+                spacing: { before: 120, after: 80 },
+                children: [new ImageRun({ data: logoBuffer, transformation: { width: 100, height: 100 }, type: 'png' })]
             }));
         }
 
         // Tagline below logo
         children.push(new Paragraph({
             alignment: AlignmentType.CENTER,
-            spacing: { before: 40, after: 120 },
+            spacing: { before: 40, after: 240 },
             children: [
-                new TextRun({ text: 'Travel Frontiers  ·  Viagens Personalizadas', italics: true, size: 20, color: GOLD_WARM, font: FONT_SERIF })
+                new TextRun({ text: 'Travel Frontiers  ·  Viagens Personalizadas', italics: true, size: 22, color: GOLD_WARM, font: FONT_SERIF })
             ]
         }));
 
@@ -840,18 +812,19 @@ Responde APENAS com o JSON FINAL correspondente a esta viagem, sem backticks e s
         }
 
         // ══════════════════════════════════════════
-        // ── BUILD DOCUMENT (WITH PERFECTLY ALIGNED FOOTER) ──
+        // ── BUILD DOCUMENT (TITLE PAGE = TRUE SUPPRESSES COVER FOOTER) ──
         // ══════════════════════════════════════════
 
         const doc = new Document({
             sections: [{
                 properties: {
+                    titlePage: true, // Suppresses footer on cover page (Page 1) while showing on remaining pages
                     page: {
                         margin: { top: 800, right: 800, bottom: 900, left: 800 }
                     }
                 },
                 children,
-                // Perfectly vertically aligned footer with borderless table
+                // Clean footer (no vertical bar between logo & text), displayed on Page 2 onwards
                 footers: {
                     default: buildAlignedFooter(logoBuffer)
                 }
