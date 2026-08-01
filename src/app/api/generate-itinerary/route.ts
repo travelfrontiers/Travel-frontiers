@@ -152,105 +152,59 @@ function sectionSpacer(size: number = 300): Paragraph {
     return new Paragraph({ spacing: { before: size, after: 0 }, children: [] });
 }
 
-// ── Clean Footer (With right-aligned Page Number, suppressed on cover via titlePage: true) ──
+// ── Clean Footer (No table borders, gold top rule on brand text, page number size 10 right-aligned) ──
 
 function buildAlignedFooter(logoBuffer: Buffer | null): Footer {
+    const noBorders = {
+        top: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+        bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+        left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+        right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+    };
+
     const pageNumberParagraph = new Paragraph({
         alignment: AlignmentType.RIGHT,
         spacing: { before: 0, after: 0 },
         children: [
-            new TextRun({ children: [PageNumber.CURRENT], size: 16, color: '6B7280', font: 'Calibri' })
+            new TextRun({ children: [PageNumber.CURRENT], size: 20, color: '8A8A8A', font: 'Calibri' })
         ]
     });
 
-    if (!logoBuffer) {
-        const footerTableNoLogo = new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            alignment: AlignmentType.CENTER,
-            rows: [
-                new TableRow({
-                    children: [
-                        new TableCell({
-                            width: { size: 85, type: WidthType.PERCENTAGE },
-                            verticalAlign: VerticalAlign.CENTER,
-                            margins: { top: 60, bottom: 60, left: 0, right: 0 },
-                            borders: {
-                                top: { style: BorderStyle.SINGLE, size: 4, color: GOLD_WARM },
-                                bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                                left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                                right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                            },
-                            children: [
-                                new Paragraph({
-                                    alignment: AlignmentType.LEFT,
-                                    spacing: { before: 0, after: 0 },
-                                    children: [
-                                        new TextRun({ text: 'Travel Frontiers', bold: true, size: 18, color: GOLD_WARM, font: 'Calibri' }),
-                                        new TextRun({ text: '   |   www.travelfrontiers.pt   |   @tf.travel.frontiers', size: 16, color: '6B7280', font: 'Calibri' }),
-                                    ]
-                                })
-                            ]
-                        }),
-                        new TableCell({
-                            width: { size: 15, type: WidthType.PERCENTAGE },
-                            verticalAlign: VerticalAlign.CENTER,
-                            margins: { top: 60, bottom: 60, left: 0, right: 0 },
-                            borders: {
-                                top: { style: BorderStyle.SINGLE, size: 4, color: GOLD_WARM },
-                                bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                                left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                                right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                            },
-                            children: [pageNumberParagraph]
-                        })
-                    ]
-                })
-            ]
-        });
-        return new Footer({ children: [footerTableNoLogo] });
-    }
-
-    // Borderless 3-cell table: Cell 1 (Logo), Cell 2 (Brand text), Cell 3 (Page Number right-aligned)
     const footerTable = new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         alignment: AlignmentType.CENTER,
+        borders: noBorders,
         rows: [
             new TableRow({
                 children: [
+                    ...(logoBuffer ? [
+                        new TableCell({
+                            width: { size: 5, type: WidthType.PERCENTAGE },
+                            verticalAlign: VerticalAlign.CENTER,
+                            margins: { top: 40, bottom: 40, left: 0, right: 20 },
+                            borders: noBorders,
+                            children: [
+                                new Paragraph({
+                                    alignment: AlignmentType.RIGHT,
+                                    spacing: { before: 0, after: 0 },
+                                    border: { top: { style: BorderStyle.SINGLE, size: 4, color: GOLD_WARM } },
+                                    children: [
+                                        new ImageRun({ data: logoBuffer, transformation: { width: 18, height: 18 }, type: 'png' })
+                                    ]
+                                })
+                            ]
+                        })
+                    ] : []),
                     new TableCell({
-                        width: { size: 5, type: WidthType.PERCENTAGE },
+                        width: { size: logoBuffer ? 80 : 85, type: WidthType.PERCENTAGE },
                         verticalAlign: VerticalAlign.CENTER,
-                        margins: { top: 60, bottom: 60, left: 0, right: 20 },
-                        borders: {
-                            top: { style: BorderStyle.SINGLE, size: 4, color: GOLD_WARM },
-                            bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                            left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                            right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                        },
-                        children: [
-                            new Paragraph({
-                                alignment: AlignmentType.RIGHT,
-                                spacing: { before: 0, after: 0 },
-                                children: [
-                                    new ImageRun({ data: logoBuffer, transformation: { width: 18, height: 18 }, type: 'png' })
-                                ]
-                            })
-                        ]
-                    }),
-                    new TableCell({
-                        width: { size: 80, type: WidthType.PERCENTAGE },
-                        verticalAlign: VerticalAlign.CENTER,
-                        margins: { top: 60, bottom: 60, left: 20, right: 0 },
-                        borders: {
-                            top: { style: BorderStyle.SINGLE, size: 4, color: GOLD_WARM },
-                            bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                            left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                            right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                        },
+                        margins: { top: 40, bottom: 40, left: 20, right: 0 },
+                        borders: noBorders,
                         children: [
                             new Paragraph({
                                 alignment: AlignmentType.LEFT,
                                 spacing: { before: 0, after: 0 },
+                                border: { top: { style: BorderStyle.SINGLE, size: 4, color: GOLD_WARM } },
                                 children: [
                                     new TextRun({ text: 'Travel Frontiers', bold: true, size: 18, color: GOLD_WARM, font: 'Calibri' }),
                                     new TextRun({ text: '   |   www.travelfrontiers.pt   |   @tf.travel.frontiers', size: 16, color: '6B7280', font: 'Calibri' }),
@@ -261,13 +215,8 @@ function buildAlignedFooter(logoBuffer: Buffer | null): Footer {
                     new TableCell({
                         width: { size: 15, type: WidthType.PERCENTAGE },
                         verticalAlign: VerticalAlign.CENTER,
-                        margins: { top: 60, bottom: 60, left: 0, right: 0 },
-                        borders: {
-                            top: { style: BorderStyle.SINGLE, size: 4, color: GOLD_WARM },
-                            bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                            left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                            right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
-                        },
+                        margins: { top: 40, bottom: 40, left: 0, right: 0 },
+                        borders: noBorders,
                         children: [pageNumberParagraph]
                     })
                 ]
