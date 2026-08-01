@@ -660,12 +660,10 @@ Responde APENAS com o JSON FINAL correspondente a esta viagem, sem backticks e s
 
         // 4. Fetch Images — Pexels (with Wikimedia fallback)
         const coverQuery = itineraryData.imagem_capa_ingles || (title ? (title.split(/[-–—|,]/)[1] || title).trim() : 'beautiful travel destination');
-        const mapQuery = itineraryData.imagem_mapa_ingles || `${itineraryData.resumo?.destino || title} travel map route map illustration`;
         const dayImageQueries = (itineraryData.dias || []).map((d: any) => d.imagem_pesquisa_ingles || d.imagem_nome_ingles).filter(Boolean);
 
-        const [coverResult, mapResult, ...dailyResults] = await Promise.all([
+        const [coverResult, ...dailyResults] = await Promise.all([
             fetchPexelsImage(coverQuery, 'landscape'),
-            fetchPexelsImage(mapQuery, 'landscape'),
             ...dayImageQueries.map((q: string) => fetchPexelsImage(q, 'landscape'))
         ]);
 
@@ -768,26 +766,7 @@ Responde APENAS com o JSON FINAL correspondente a esta viagem, sem backticks e s
             children.push(goldDivider());
         }
 
-        // Destination Map Feature
-        if (mapResult?.buffer) {
-            children.push(new Paragraph({
-                spacing: { before: 160, after: 120 },
-                alignment: AlignmentType.CENTER,
-                children: [
-                    new TextRun({ text: 'MAPA DO DESTINO E ROTAS', bold: true, size: 22, color: GOLD_WARM, font: FONT_SERIF })
-                ]
-            }));
 
-            children.push(new Paragraph({
-                alignment: AlignmentType.CENTER,
-                spacing: { before: 40, after: 160 },
-                children: [
-                    new ImageRun({ data: mapResult.buffer, transformation: { width: 680, height: 340 }, type: mapResult.type })
-                ]
-            }));
-
-            children.push(goldDivider());
-        }
 
         // Trip Summary Table with Alternating Shading
         if (resumo.destino || resumo.hotel) {
