@@ -103,21 +103,23 @@ function cleanDayTitle(rawTitle: string): string {
 function renderDarkRibbon(kicker: string, title: string, subtitle?: string): Paragraph[] {
     const paragraphs: Paragraph[] = [];
 
-    // Kicker paragraph
-    paragraphs.push(new Paragraph({
-        shading: { type: ShadingType.SOLID, color: CHARCOAL_DARK, fill: CHARCOAL_DARK },
-        alignment: AlignmentType.CENTER,
-        spacing: { before: 180, after: 40 },
-        children: [
-            new TextRun({ text: kicker.toUpperCase(), bold: true, size: 18, color: GOLD_WARM, font: FONT_SERIF })
-        ]
-    }));
+    // Kicker paragraph (only if provided and non-empty)
+    if (kicker && kicker.trim()) {
+        paragraphs.push(new Paragraph({
+            shading: { type: ShadingType.SOLID, color: CHARCOAL_DARK, fill: CHARCOAL_DARK },
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 180, after: 40 },
+            children: [
+                new TextRun({ text: kicker.toUpperCase(), bold: true, size: 18, color: GOLD_WARM, font: FONT_SERIF })
+            ]
+        }));
+    }
 
     // Title paragraph
     paragraphs.push(new Paragraph({
         shading: { type: ShadingType.SOLID, color: CHARCOAL_DARK, fill: CHARCOAL_DARK },
         alignment: AlignmentType.CENTER,
-        spacing: { before: 40, after: subtitle ? 40 : 180 },
+        spacing: { before: kicker && kicker.trim() ? 40 : 180, after: subtitle ? 40 : 180 },
         children: [
             new TextRun({ text: title.toUpperCase(), bold: true, size: 32, color: WHITE, font: FONT_SERIF })
         ]
@@ -150,23 +152,79 @@ function sectionSpacer(size: number = 300): Paragraph {
     return new Paragraph({ spacing: { before: size, after: 0 }, children: [] });
 }
 
-// ── Clean Footer (No bar between logo and text) ──
+// ── Perfectly Centered Footer Table ──
 
 function buildAlignedFooter(logoBuffer: Buffer | null): Footer {
-    return new Footer({
-        children: [
-            new Paragraph({
-                border: { top: { style: BorderStyle.SINGLE, size: 4, color: GOLD_WARM } },
-                alignment: AlignmentType.CENTER,
-                spacing: { before: 120, after: 60 },
+    if (!logoBuffer) {
+        return new Footer({
+            children: [
+                new Paragraph({
+                    border: { top: { style: BorderStyle.SINGLE, size: 4, color: GOLD_WARM } },
+                    alignment: AlignmentType.CENTER,
+                    spacing: { before: 120, after: 60 },
+                    children: [
+                        new TextRun({ text: 'Travel Frontiers', bold: true, size: 18, color: GOLD_WARM, font: 'Calibri' }),
+                        new TextRun({ text: '   |   www.travelfrontiers.pt   |   @tf.travel.frontiers', size: 16, color: '6B7280', font: 'Calibri' }),
+                    ]
+                })
+            ]
+        });
+    }
+
+    // Borderless 2-cell table with vertical centering guarantees the logo image is perfectly aligned with text
+    const footerTable = new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        alignment: AlignmentType.CENTER,
+        rows: [
+            new TableRow({
                 children: [
-                    ...(logoBuffer ? [new ImageRun({ data: logoBuffer, transformation: { width: 18, height: 18 }, type: 'png' })] : []),
-                    new TextRun({ text: '  Travel Frontiers', bold: true, size: 18, color: GOLD_WARM, font: 'Calibri' }),
-                    new TextRun({ text: '   |   www.travelfrontiers.pt   |   @tf.travel.frontiers', size: 16, color: '6B7280', font: 'Calibri' }),
+                    new TableCell({
+                        width: { size: 6, type: WidthType.PERCENTAGE },
+                        verticalAlign: VerticalAlign.CENTER,
+                        margins: { top: 60, bottom: 60, left: 0, right: 20 },
+                        borders: {
+                            top: { style: BorderStyle.SINGLE, size: 4, color: GOLD_WARM },
+                            bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                            left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                            right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                        },
+                        children: [
+                            new Paragraph({
+                                alignment: AlignmentType.RIGHT,
+                                spacing: { before: 0, after: 0 },
+                                children: [
+                                    new ImageRun({ data: logoBuffer, transformation: { width: 20, height: 20 }, type: 'png' })
+                                ]
+                            })
+                        ]
+                    }),
+                    new TableCell({
+                        width: { size: 94, type: WidthType.PERCENTAGE },
+                        verticalAlign: VerticalAlign.CENTER,
+                        margins: { top: 60, bottom: 60, left: 20, right: 0 },
+                        borders: {
+                            top: { style: BorderStyle.SINGLE, size: 4, color: GOLD_WARM },
+                            bottom: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                            left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                            right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+                        },
+                        children: [
+                            new Paragraph({
+                                alignment: AlignmentType.LEFT,
+                                spacing: { before: 0, after: 0 },
+                                children: [
+                                    new TextRun({ text: 'Travel Frontiers', bold: true, size: 18, color: GOLD_WARM, font: 'Calibri' }),
+                                    new TextRun({ text: '   |   www.travelfrontiers.pt   |   @tf.travel.frontiers', size: 16, color: '6B7280', font: 'Calibri' }),
+                                ]
+                            })
+                        ]
+                    })
                 ]
             })
         ]
     });
+
+    return new Footer({ children: [footerTable] });
 }
 
 // ── Trip Summary Alternating Row Table ──
@@ -508,6 +566,7 @@ Gera um objeto JSON com esta estrutura OBRIGATÓRIA:
     "duracao": "Ex: 7 noites / 8 dias"
   },
   "imagem_capa_ingles": "Pesquisa específica em inglês para a foto de capa (ex: 'Santorini sunset blue domes Greece aerial')",
+  "imagem_mapa_ingles": "Pesquisa específica em inglês para o mapa turístico do destino (ex: 'Malaga Andalucia Spain geographic travel map illustration')",
   "introducao": "2-3 frases entusiastas sobre o destino. Deve fazer o cliente sentir que vai ter uma experiência inesquecível.",
   "dicas": [
     {
@@ -601,10 +660,12 @@ Responde APENAS com o JSON FINAL correspondente a esta viagem, sem backticks e s
 
         // 4. Fetch Images — Pexels (with Wikimedia fallback)
         const coverQuery = itineraryData.imagem_capa_ingles || (title ? (title.split(/[-–—|,]/)[1] || title).trim() : 'beautiful travel destination');
+        const mapQuery = itineraryData.imagem_mapa_ingles || `${itineraryData.resumo?.destino || title} travel map route map illustration`;
         const dayImageQueries = (itineraryData.dias || []).map((d: any) => d.imagem_pesquisa_ingles || d.imagem_nome_ingles).filter(Boolean);
 
-        const [coverResult, ...dailyResults] = await Promise.all([
+        const [coverResult, mapResult, ...dailyResults] = await Promise.all([
             fetchPexelsImage(coverQuery, 'landscape'),
+            fetchPexelsImage(mapQuery, 'landscape'),
             ...dayImageQueries.map((q: string) => fetchPexelsImage(q, 'landscape'))
         ]);
 
@@ -691,7 +752,8 @@ Responde APENAS com o JSON FINAL correspondente a esta viagem, sem backticks e s
         // ── TRIP OVERVIEW PAGE ──
         // ══════════════════════════════════════════
 
-        children.push(...renderDarkRibbon('SECTION 01', 'TRIP OVERVIEW', resumo.destino || 'Resumo & Dicas'));
+        // Title translated to PT-PT without "SECTION 01"
+        children.push(...renderDarkRibbon('', 'VISÃO GERAL DA VIAGEM', resumo.destino || 'Resumo & Dicas'));
 
         // Introduction Editorial Paragraph
         if (itineraryData.introducao) {
@@ -703,6 +765,27 @@ Responde APENAS com o JSON FINAL correspondente a esta viagem, sem backticks e s
                     size: 24, font: FONT_SERIF, color: CHARCOAL_DARK, italics: true
                 })]
             }));
+            children.push(goldDivider());
+        }
+
+        // Destination Map Feature
+        if (mapResult?.buffer) {
+            children.push(new Paragraph({
+                spacing: { before: 160, after: 120 },
+                alignment: AlignmentType.CENTER,
+                children: [
+                    new TextRun({ text: 'MAPA DO DESTINO E ROTAS', bold: true, size: 22, color: GOLD_WARM, font: FONT_SERIF })
+                ]
+            }));
+
+            children.push(new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 40, after: 160 },
+                children: [
+                    new ImageRun({ data: mapResult.buffer, transformation: { width: 680, height: 340 }, type: mapResult.type })
+                ]
+            }));
+
             children.push(goldDivider());
         }
 
@@ -824,7 +907,7 @@ Responde APENAS com o JSON FINAL correspondente a esta viagem, sem backticks e s
                     }
                 },
                 children,
-                // Clean footer (no vertical bar between logo & text), displayed on Page 2 onwards
+                // Perfectly vertically centered footer with 2-cell table
                 footers: {
                     default: buildAlignedFooter(logoBuffer)
                 }
