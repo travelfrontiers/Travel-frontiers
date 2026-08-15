@@ -207,29 +207,21 @@ class ForumManager {
     }
 
     async loadAllPosts() {
-        const postIds = [
-            'malta-best-restaurants',
-            'malta-hidden-gems',
-            'iceland-hiking-guide',
-            'iceland-budget-tips',
-            'japan-tokyo-itinerary'
-        ];
-
-        for (const id of postIds) {
-            try {
-                const response = await fetch(`./posts/${id}.json`);
-                if (response.ok) {
-                    const post = await response.json();
-                    post.likes = this.likes[id] || 0;
-                    this.posts.push(post);
-                } else {
-                    console.error(`Failed to load ${id}: ${response.status}`);
-                }
-            } catch (error) {
-                console.error(`Error loading post ${id}:`, error);
+        try {
+            // Load all posts from central index (1 single fast request)
+            const response = await fetch('./posts/index.json');
+            if (response.ok) {
+                const postsList = await response.json();
+                this.posts = postsList.map(post => {
+                    post.likes = this.likes[post.id] || post.likes || 0;
+                    return post;
+                });
+                return this.posts;
             }
+        } catch (error) {
+            console.error('Error loading posts index:', error);
         }
-        return this.posts;
+        return [];
     }
 
     async loadPost(postId) {
@@ -238,19 +230,20 @@ class ForumManager {
             if (!postResponse.ok) throw new Error('Post not found');
 
             const post = await postResponse.json();
-            post.likes = this.likes[postId] || 0;
+            post.likes = this.likes[postId] || post.likes || 0;
             this.currentPostId = postId;
             this._currentPost = post;
 
-            // Load comments
+            // Load comments (defaults cleanly to empty list on 404 without needing boilerplate files)
             try {
                 const commentsResponse = await fetch(`./comments/${postId}.json`);
                 if (commentsResponse.ok) {
                     const data = await commentsResponse.json();
                     this.comments[postId] = data.comments || [];
+                } else {
+                    this.comments[postId] = [];
                 }
-            } catch (error) {
-                console.log('No comments yet for this post');
+            } catch (_) {
                 this.comments[postId] = [];
             }
 
