@@ -1,4 +1,23 @@
 {
-  "postId": "[post-id]",
-  "comments": []
+  "postId": "iceland-hiking-guide",
+  "comments": [
+    {
+      "name": "Olga Steinsdóttir",
+      "date": "2026-01-10",
+      "text": "Laugavegur is on my bucket list! Did you do it in one go or with stops at the huts? Any advice on the best time of year for the trail?",
+      "approved": true
+    },
+    {
+      "name": "Pedro Alves",
+      "date": "2026-03-05",
+      "text": "Fiz o trilho de Skógafoss em junho — a névoa das cascatas ao amanhecer é mágica. Vale muito a pena levantar cedo! Obrigado pela dica Tiago.",
+      "approved": true
+    },
+    {
+      "name": "Claire Dupont",
+      "date": "2026-04-15",
+      "text": "We attempted Landmannalaugar in August — the colorful rhyolite mountains are surreal. Pack a proper rain jacket though, weather changes fast!",
+      "approved": true
+    }
+  ]
 }

@@ -1,4 +1,23 @@
 {
-  "postId": "[post-id]",
-  "comments": []
+  "postId": "japan-tokyo-itinerary",
+  "comments": [
+    {
+      "name": "Yuki Tanaka",
+      "date": "2026-01-22",
+      "text": "As someone who lives in Tokyo, I'd add Yanaka to Day 1 — it's an old shitamachi neighbourhood that survived WWII and feels like a different era. The shopping street (Yanaka Ginza) is fantastic.",
+      "approved": true
+    },
+    {
+      "name": "Rui Santos",
+      "date": "2026-02-19",
+      "text": "Estive 3 dias em Tóquio em abril — os jardins de Shinjuku na época das cerejeiras são absolutamente deslumbrantes. Confirmo o Senso-ji de manhã cedo antes das multidões. Itinerário excelente!",
+      "approved": true
+    },
+    {
+      "name": "Hannah Brooks",
+      "date": "2026-04-02",
+      "text": "Tokyo Tower at sunset is gorgeous but Skytree gives a better 360° view if you can only do one. Loved the Meiji Shrine walk — so peaceful even on a busy Saturday.",
+      "approved": true
+    }
+  ]
 }

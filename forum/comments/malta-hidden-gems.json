@@ -1,4 +1,17 @@
 {
-  "postId": "[post-id]",
-  "comments": []
+  "postId": "malta-hidden-gems",
+  "comments": [
+    {
+      "name": "Ana Rodrigues",
+      "date": "2026-01-18",
+      "text": "Fomm ir-Riħ blew my mind! We were the only people there on a Tuesday afternoon. The cliffs are dramatic and the sea colour is unreal. Great tip Tiago.",
+      "approved": true
+    },
+    {
+      "name": "James Thornton",
+      "date": "2026-02-27",
+      "text": "Mtaħleb at sunset — yes! We stumbled on a tiny bar there and the owner told us stories for hours over wine. Malta's people are as beautiful as the scenery.",
+      "approved": true
+    }
+  ]
 }

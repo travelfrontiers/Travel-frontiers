@@ -1,4 +1,17 @@
 {
-  "postId": "[post-id]",
-  "comments": []
+  "postId": "iceland-budget-tips",
+  "comments": [
+    {
+      "name": "Lucas Meyer",
+      "date": "2026-02-08",
+      "text": "Bónus supermarket was a lifesaver. Skyr, rúgbrauð and smoked lamb for breakfast every day and we ate like kings. Great call on staying outside Reykjavik too — we saved at least 40% on accommodation.",
+      "approved": true
+    },
+    {
+      "name": "Inês Costa",
+      "date": "2026-03-14",
+      "text": "Viajei a Islândia em setembro com um orçamento muito limitado e estas dicas foram essenciais. Confirmo que alugar carro com mais pessoas faz uma diferença enorme. Já te contactei para um itinerário!",
+      "approved": true
+    }
+  ]
 }

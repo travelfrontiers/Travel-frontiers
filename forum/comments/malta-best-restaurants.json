@@ -1,4 +1,23 @@
 {
-  "postId": "[post-id]",
-  "comments": []
+  "postId": "malta-best-restaurants",
+  "comments": [
+    {
+      "name": "Sofia Camilleri",
+      "date": "2026-01-05",
+      "text": "Went to Noni last month — absolutely stunning. The tasting menu was worth every cent. Thanks for the recommendation, Tiago!",
+      "approved": true
+    },
+    {
+      "name": "Marco Borg",
+      "date": "2026-02-12",
+      "text": "Tal-Petut is a gem! I asked locals where to eat real Maltese food and they all pointed me there. The rabbit stew was incredible. Saved this post for my next visit.",
+      "approved": true
+    },
+    {
+      "name": "Lena Fischer",
+      "date": "2026-03-20",
+      "text": "De Mondion has an unbeatable view over the Grand Harbour. Perfect for a special dinner. Would love a post on budget eating in Valletta too!",
+      "approved": true
+    }
+  ]
 }

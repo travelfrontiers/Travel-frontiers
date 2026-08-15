@@ -55,6 +55,11 @@
 
     <!-- Post Content -->
     <main class="post-container">
+        <!-- Breadcrumb -->
+        <nav class="post-breadcrumb" aria-label="breadcrumb">
+            <a id="breadcrumbBack" href="./">← <span data-translate="nav.forum">Fórum</span></a>
+        </nav>
+
         <!-- Loading State -->
         <div id="postLoading" class="loading" data-translate="loading.post">Carregando post...</div>
 
@@ -68,6 +73,7 @@
                     <span id="postReadTime" class="meta-readtime"></span>
                     <span id="postDestination" class="meta-destination"></span>
                 </div>
+                <div id="postTags" class="post-tags hidden"></div>
                 <img id="postImage" src="" alt="" class="post-thumbnail">
             </header>
 
@@ -137,6 +143,7 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary" data-translate="comments.submit">Enviar Comentário</button>
+                <div id="formFeedback" class="form-feedback hidden"></div>
                 <p class="form-note" data-translate="comments.moderation">Os comentários serão moderados antes de aparecer.</p>
             </form>
         </section>

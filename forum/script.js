@@ -115,9 +115,10 @@ function changeForumLanguage(lang) {
         displayPosts(forum.posts);
     }
 
-    // Re-render post if on detail page
+    // Re-render post + related if on detail page
     if (currentPage === 'post' && forum._currentPost) {
         displayPost(forum._currentPost);
+        displayRelatedPosts();
         displayComments(forum.currentPostId);
     }
 }
@@ -155,6 +156,32 @@ function getLocalizedField(obj, field) {
     if (!obj) return '';
     const langField = `${field}_${currentForumLang}`;
     return obj[langField] || obj[field] || '';
+}
+
+// Helper: return localized category label
+const CATEGORY_MAP = {
+    destinos:    { pt: 'Destinos',    en: 'Destinations', fr: 'Destinations' },
+    restaurants: { pt: 'Restaurantes', en: 'Restaurants',  fr: 'Restaurants'  },
+    dicas:       { pt: 'Dicas',        en: 'Tips',          fr: 'Conseils'     },
+    atividades:  { pt: 'Atividades',   en: 'Activities',    fr: 'Activités'    }
+};
+
+function getLocalizedCategory(category) {
+    if (!category) return '';
+    const key = category.toLowerCase();
+    const map = CATEGORY_MAP[key];
+    return map ? (map[currentForumLang] || map.pt) : category;
+}
+
+// Helper: relative date string
+function formatRelativeDate(dateStr) {
+    const diffDays = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+    if (diffDays < 1)  return { pt: 'Hoje', en: 'Today', fr: "Auj." }[currentForumLang]  || 'Today';
+    if (diffDays < 30) return { pt: `${diffDays}d atrás`, en: `${diffDays}d ago`, fr: `il y a ${diffDays}j` }[currentForumLang] || `${diffDays}d ago`;
+    const m = Math.floor(diffDays / 30);
+    if (m < 12)        return { pt: `${m}m atrás`, en: `${m}mo ago`, fr: `il y a ${m}m` }[currentForumLang] || `${m}mo ago`;
+    const y = Math.floor(m / 12);
+    return { pt: `${y}a atrás`, en: `${y}y ago`, fr: `il y a ${y}a` }[currentForumLang] || `${y}y ago`;
 }
 
 // ============================================
@@ -243,6 +270,18 @@ class ForumManager {
     getApprovedComments(postId) {
         return this.comments[postId]?.filter(c => c.approved) || [];
     }
+
+    async loadRelatedPosts(ids) {
+        const related = [];
+        for (const id of ids) {
+            try {
+                const res = await fetch(`./posts/${id}.json`);
+                if (res.ok) related.push(await res.json());
+            } catch (_) { /* skip missing */ }
+        }
+        this._relatedPosts = related;
+        return related;
+    }
 }
 
 // ============================================
@@ -297,18 +336,23 @@ if (currentPage === 'forum' && postsContainer) {
             const title = getLocalizedField(post, 'title');
             const excerpt = getLocalizedField(post, 'excerpt');
             const readTime = getLocalizedField(post, 'readTime');
+            const catLabel = getLocalizedCategory(post.category);
+            const dateLabel = formatRelativeDate(post.date);
+            const firstName = (post.author || '').split(' ')[0];
 
             return `
             <div class="post-card" onclick="openPost('${post.id}')">
                 <div class="post-card-image-wrapper">
                     <img src="${post.thumbnail || './img/default.png'}" alt="${title}" class="post-card-image" onerror="this.style.display='none'">
+                    <span class="post-card-category">${catLabel}</span>
                 </div>
                 <div class="post-card-content">
-                    <span class="post-card-badge">${post.destination}</span>
+                    <div class="post-card-destination">📍 ${post.destination}</div>
                     <h3 class="post-card-title">${title}</h3>
                     <p class="post-card-excerpt">${excerpt}</p>
                     <div class="post-card-meta">
-                        <span class="post-card-readtime">${readTime || '5 min'}</span>
+                        <span class="post-card-author">✍ ${firstName}</span>
+                        <span class="post-card-date">${dateLabel}</span>
                         <span class="post-card-likes">♥ ${post.likes || 0}</span>
                     </div>
                 </div>
@@ -324,12 +368,25 @@ if (currentPage === 'forum' && postsContainer) {
             btn.classList.add('active');
 
             const filter = btn.dataset.filter;
-            const filtered = filter === 'all'
+            const byCategory = filter === 'all'
                 ? forum.posts
                 : forum.posts.filter(p => p.category.toLowerCase() === filter);
 
-            filteredPosts = filtered;
-            displayPosts(filtered);
+            filteredPosts = byCategory;
+
+            // Re-apply any active search query on top of the new category filter
+            const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            if (query) {
+                const searched = byCategory.filter(p => {
+                    const title = getLocalizedField(p, 'title').toLowerCase();
+                    const excerpt = getLocalizedField(p, 'excerpt').toLowerCase();
+                    const dest = p.destination.toLowerCase();
+                    return title.includes(query) || excerpt.includes(query) || dest.includes(query);
+                });
+                displayPosts(searched);
+            } else {
+                displayPosts(byCategory);
+            }
         });
     });
 
@@ -368,10 +425,10 @@ if (currentPage === 'post' && postContent) {
 
     async function initPostPage() {
         const urlParams = new URLSearchParams(window.location.search);
-        const postId = urlParams.get('id') || sessionStorage.getItem('selectedPostId');
+        const postId = urlParams.get('id');
 
         if (!postId) {
-            window.location.href = './index.html';
+            window.location.href = './';
             return;
         }
 
@@ -382,7 +439,15 @@ if (currentPage === 'post' && postContent) {
             return;
         }
 
+        // Load related posts before rendering so cards are available
+        if (post.relatedPosts && post.relatedPosts.length > 0) {
+            await forum.loadRelatedPosts(post.relatedPosts);
+        } else {
+            forum._relatedPosts = [];
+        }
+
         displayPost(post);
+        displayRelatedPosts();
         displayComments(postId);
         setupCommentForm(postId);
     }
@@ -405,11 +470,25 @@ if (currentPage === 'post' && postContent) {
         document.getElementById('postAuthor').textContent = `${byText} ${post.author}`;
         document.getElementById('postDate').textContent = new Date(post.date).toLocaleDateString(locale);
         document.getElementById('postReadTime').textContent = readTime || '5 min read';
-        document.getElementById('postDestination').textContent = `📍 ${post.destination}`;
+        // FIX: CSS ::before already adds 📍 — only set the text
+        document.getElementById('postDestination').textContent = post.destination;
         document.getElementById('postImage').src = post.thumbnail || './img/default.png';
         document.getElementById('postImage').alt = title;
 
         document.getElementById('postBody').innerHTML = content;
+
+        // Tags
+        const postTagsEl = document.getElementById('postTags');
+        if (postTagsEl && post.tags && post.tags.length > 0) {
+            postTagsEl.innerHTML = post.tags.map(tag => `<span class="tag">#${tag}</span>`).join('');
+            postTagsEl.classList.remove('hidden');
+        } else if (postTagsEl) {
+            postTagsEl.classList.add('hidden');
+        }
+
+        // Breadcrumb — preserve active language in URL
+        const breadcrumb = document.getElementById('breadcrumbBack');
+        if (breadcrumb) breadcrumb.href = `./?lang=${currentForumLang}`;
 
         // Affiliate link
         if (post.affiliateLink) {
@@ -443,13 +522,35 @@ if (currentPage === 'post' && postContent) {
             newLikeBtn.classList.add('liked');
         });
 
-        // Related posts
-        if (post.relatedPosts && post.relatedPosts.length > 0) {
-            document.getElementById('relatedSection').classList.remove('hidden');
-        }
-
         // Update page title
         document.title = `${title} - Travel Frontiers Forum`;
+    };
+
+    // Render related posts from pre-loaded forum._relatedPosts
+    window.displayRelatedPosts = function() {
+        const related = forum._relatedPosts || [];
+        const relatedSection = document.getElementById('relatedSection');
+        const relatedContainer = document.getElementById('relatedContainer');
+        if (!relatedSection || !relatedContainer) return;
+
+        if (related.length === 0) {
+            relatedSection.classList.add('hidden');
+            return;
+        }
+
+        relatedSection.classList.remove('hidden');
+        relatedContainer.innerHTML = related.map(rp => {
+            const rpTitle = getLocalizedField(rp, 'title');
+            return `
+                <a class="related-item" href="./post.html?id=${rp.id}&lang=${currentForumLang}">
+                    <img class="related-item-img" src="${rp.thumbnail || './img/default.png'}" alt="${rpTitle}" onerror="this.style.display='none'">
+                    <div class="related-item-body">
+                        <span class="related-item-dest">${rp.destination}</span>
+                        <h4>${rpTitle}</h4>
+                    </div>
+                </a>
+            `;
+        }).join('');
     };
 
     window.displayComments = function(postId) {
@@ -483,12 +584,16 @@ if (currentPage === 'post' && postContent) {
             const name = document.getElementById('commenterName').value;
             const email = document.getElementById('commenterEmail').value;
             const text = document.getElementById('commenterText').value;
+            const feedbackEl = document.getElementById('formFeedback');
 
             const formData = new FormData();
             formData.append('name', name);
             formData.append('email', email);
             formData.append('comment', text);
             formData.append('postId', postId);
+
+            const successText = getForumTranslation('comments.success') || 'Comentário enviado!';
+            const errorText = getForumTranslation('comments.error') || 'Erro ao enviar comentário.';
 
             try {
                 const response = await fetch('https://formspree.io/f/mwveqvbl', {
@@ -497,19 +602,24 @@ if (currentPage === 'post' && postContent) {
                     headers: { 'Accept': 'application/json' }
                 });
 
-                const successText = getForumTranslation('comments.success') || 'Comentário enviado!';
-                const errorText = getForumTranslation('comments.error') || 'Erro ao enviar comentário.';
-
                 if (response.ok) {
-                    alert(successText);
+                    if (feedbackEl) {
+                        feedbackEl.textContent = successText;
+                        feedbackEl.className = 'form-feedback success';
+                    }
                     commentForm.reset();
                 } else {
-                    alert(errorText);
+                    if (feedbackEl) {
+                        feedbackEl.textContent = errorText;
+                        feedbackEl.className = 'form-feedback error';
+                    }
                 }
             } catch (error) {
                 console.error('Error submitting comment:', error);
-                const errorText = getForumTranslation('comments.error') || 'Erro ao enviar comentário.';
-                alert(errorText);
+                if (feedbackEl) {
+                    feedbackEl.textContent = errorText;
+                    feedbackEl.className = 'form-feedback error';
+                }
             }
         });
     }
