@@ -1,5 +1,26 @@
 [
   {
+    "id": "bulgaria-segredos",
+    "title": "Segredos da Bulgária - O que explorar",
+    "title_pt": "Segredos da Bulgária - O que explorar",
+    "title_fr": "Segredos da Bulgária - O que explorar",
+    "destination": "Madeira",
+    "category": "destinos",
+    "author": "Tiago Ferreira",
+    "date": "2026-08-16",
+    "readTime": "6 min read",
+    "readTime_pt": "6 min de leitura",
+    "readTime_fr": "6 min de lecture",
+    "thumbnail": "./img/bulgaria-segredos.png",
+    "excerpt": "Segredos da Bulgária - O que explorar",
+    "excerpt_pt": "Segredos da Bulgária - O que explorar",
+    "excerpt_fr": "Segredos da Bulgária - O que explorar",
+    "likes": 0,
+    "tags": [
+      "bulgaria-segredos"
+    ]
+  },
+  {
     "id": "malta-best-restaurants",
     "title": "Malta's Best Restaurants - A Local's Guide",
     "title_pt": "Os Melhores Restaurantes de Malta - Guia Local",
