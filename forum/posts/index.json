@@ -1,0 +1,23 @@
+[
+  {
+    "id": "descobrir-macau",
+    "title": "5 dias em Macau com foco em história, cultura e arquitectura",
+    "title_pt": "5 dias em Macau com foco em história, cultura e arquitectura",
+    "title_fr": "5 dias em Macau com foco em história, cultura e arquitectura",
+    "destination": "Madeira",
+    "category": "destinos",
+    "author": "Tiago Ferreira",
+    "date": "2026-08-16",
+    "readTime": "5 min read",
+    "readTime_pt": "5 min de leitura",
+    "readTime_fr": "5 min de lecture",
+    "thumbnail": "./img/descobrir-macau.png",
+    "excerpt": "5 dias em Macau com foco em história, cultura e arquitectura",
+    "excerpt_pt": "5 dias em Macau com foco em história, cultura e arquitectura",
+    "excerpt_fr": "5 dias em Macau com foco em história, cultura e arquitectura",
+    "likes": 0,
+    "tags": [
+      "descobrir-macau"
+    ]
+  }
+]
