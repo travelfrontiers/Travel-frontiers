@@ -1177,3 +1177,353 @@ a {
         padding: 12px 16px;
     }
 }
+
+/* ============================================
+   TRAVEL FRONTIERS EDITORIAL ARTICLE — v2
+   ============================================ */
+
+.post-container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 24px 90px;
+}
+
+.post-article {
+    background: transparent;
+    overflow: visible;
+}
+
+.post-header {
+    margin-bottom: 42px;
+}
+
+.post-header h1 {
+    max-width: 880px;
+    margin: 0 auto 22px;
+    font-size: clamp(2.15rem, 5vw, 3.35rem);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.12;
+    color: #111827;
+}
+
+.post-meta {
+    max-width: 880px;
+    margin: 0 auto 28px;
+    padding: 0 0 20px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.86rem;
+    gap: 18px;
+}
+
+.post-thumbnail {
+    width: 100%;
+    max-height: 540px;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 20px;
+    margin: 0 auto;
+    box-shadow: 0 18px 45px rgba(17, 24, 39, 0.14);
+}
+
+.post-body {
+    font-size: 1.075rem;
+    line-height: 1.85;
+    color: #374151;
+}
+
+.post-text {
+    max-width: 760px;
+    margin: 0 auto 52px;
+}
+
+.post-text p {
+    margin: 0 0 1.35rem;
+}
+
+.post-text p:first-child {
+    font-size: 1.18rem;
+    line-height: 1.8;
+    color: #1f2937;
+}
+
+.post-text h2 {
+    position: relative;
+    margin: 3.4rem 0 1.2rem;
+    padding-left: 16px;
+    font-size: 1.65rem;
+    line-height: 1.3;
+    color: #111827;
+    font-weight: 700;
+}
+
+.post-text h2::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.15em;
+    bottom: 0.15em;
+    width: 4px;
+    border-radius: 4px;
+    background: var(--gradient-primary);
+}
+
+.post-text strong {
+    color: #111827;
+    font-weight: 700;
+}
+
+.post-text em {
+    color: #4b5563;
+}
+
+.post-text ul,
+.post-text ol {
+    margin: 1.1rem 0 1.6rem;
+    padding-left: 1.5rem;
+}
+
+.post-text li {
+    margin-bottom: 0.65rem;
+    padding-left: 0.25rem;
+}
+
+.post-text li::marker {
+    color: var(--primary-color);
+}
+
+.post-text blockquote {
+    margin: 2rem 0;
+    padding: 1.2rem 1.4rem;
+    border-left: 4px solid var(--primary-color);
+    border-radius: 0 12px 12px 0;
+    background: var(--bg-warm);
+    color: #4b5563;
+    font-size: 1rem;
+}
+
+.post-text a {
+    color: var(--primary-color);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+}
+
+.post-text a:hover {
+    color: var(--primary-hover);
+}
+
+.post-cta {
+    max-width: 760px;
+    margin: 60px auto 40px;
+    border-radius: 20px;
+    padding: 46px 32px;
+}
+
+.post-footer {
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+@media (max-width: 700px) {
+    .post-container {
+        padding: 30px 18px 60px;
+    }
+
+    .post-header h1 {
+        font-size: 2rem;
+    }
+
+    .post-body {
+        font-size: 1rem;
+    }
+
+    .post-text p:first-child {
+        font-size: 1.08rem;
+    }
+
+    .post-thumbnail {
+        border-radius: 14px;
+    }
+
+    .post-cta {
+        padding: 36px 22px;
+    }
+}
+
+
+/* ============================================
+   TRAVEL FRONTIERS EDITORIAL ARTICLE — v2
+   ============================================ */
+
+.post-container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 24px 90px;
+}
+
+.post-article {
+    background: transparent;
+    overflow: visible;
+}
+
+.post-header {
+    margin-bottom: 42px;
+}
+
+.post-header h1 {
+    max-width: 880px;
+    margin: 0 auto 22px;
+    font-size: clamp(2.15rem, 5vw, 3.35rem);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.12;
+    color: #111827;
+}
+
+.post-meta {
+    max-width: 880px;
+    margin: 0 auto 28px;
+    padding: 0 0 20px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.86rem;
+    gap: 18px;
+}
+
+.post-thumbnail {
+    width: 100%;
+    max-height: 540px;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 20px;
+    margin: 0 auto;
+    box-shadow: 0 18px 45px rgba(17, 24, 39, 0.14);
+}
+
+.post-body {
+    font-size: 1.075rem;
+    line-height: 1.85;
+    color: #374151;
+}
+
+.post-text {
+    max-width: 760px;
+    margin: 0 auto 52px;
+}
+
+.post-text p {
+    margin: 0 0 1.35rem;
+}
+
+.post-text p:first-child {
+    font-size: 1.18rem;
+    line-height: 1.8;
+    color: #1f2937;
+}
+
+.post-text h2 {
+    position: relative;
+    margin: 3.4rem 0 1.2rem;
+    padding-left: 16px;
+    font-size: 1.65rem;
+    line-height: 1.3;
+    color: #111827;
+    font-weight: 700;
+}
+
+.post-text h2::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.15em;
+    bottom: 0.15em;
+    width: 4px;
+    border-radius: 4px;
+    background: var(--gradient-primary);
+}
+
+.post-text strong {
+    color: #111827;
+    font-weight: 700;
+}
+
+.post-text em {
+    color: #4b5563;
+}
+
+.post-text ul,
+.post-text ol {
+    margin: 1.1rem 0 1.6rem;
+    padding-left: 1.5rem;
+}
+
+.post-text li {
+    margin-bottom: 0.65rem;
+    padding-left: 0.25rem;
+}
+
+.post-text li::marker {
+    color: var(--primary-color);
+}
+
+.post-text blockquote {
+    margin: 2rem 0;
+    padding: 1.2rem 1.4rem;
+    border-left: 4px solid var(--primary-color);
+    border-radius: 0 12px 12px 0;
+    background: var(--bg-warm);
+    color: #4b5563;
+    font-size: 1rem;
+}
+
+.post-text a {
+    color: var(--primary-color);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+}
+
+.post-text a:hover {
+    color: var(--primary-hover);
+}
+
+.post-cta {
+    max-width: 760px;
+    margin: 60px auto 40px;
+    border-radius: 20px;
+    padding: 46px 32px;
+}
+
+.post-footer {
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+@media (max-width: 700px) {
+    .post-container {
+        padding: 30px 18px 60px;
+    }
+
+    .post-header h1 {
+        font-size: 2rem;
+    }
+
+    .post-body {
+        font-size: 1rem;
+    }
+
+    .post-text p:first-child {
+        font-size: 1.08rem;
+    }
+
+    .post-thumbnail {
+        border-radius: 14px;
+    }
+
+    .post-cta {
+        padding: 36px 22px;
+    }
+}
+

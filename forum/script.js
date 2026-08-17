@@ -445,6 +445,146 @@ if (currentPage === 'post' && postContent) {
         setupCommentForm(postId);
     }
 
+
+    function renderForumMarkdown(markdown) {
+        if (!markdown) return '';
+
+        const escapeHtml = (value) =>
+            value
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+
+        const inline = (value) => {
+            let html = escapeHtml(value);
+
+            html = html.replace(
+                /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+                '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+            );
+
+            html = html.replace(
+                /\*\*([^*]+)\*\*/g,
+                '<strong>$1</strong>'
+            );
+
+            html = html.replace(
+                /(?<!\*)\*([^*]+)\*(?!\*)/g,
+                '<em>$1</em>'
+            );
+
+            return html;
+        };
+
+        const lines = markdown
+            .replace(/\r\n/g, '\n')
+            .split('\n');
+
+        const output = [];
+        let paragraph = [];
+        let listType = null;
+        let listItems = [];
+
+        const flushParagraph = () => {
+            if (!paragraph.length) return;
+
+            const value = paragraph.join(' ').trim();
+
+            if (value) {
+                output.push(`<p>${inline(value)}</p>`);
+            }
+
+            paragraph = [];
+        };
+
+        const flushList = () => {
+            if (!listItems.length) return;
+
+            const tag = listType === 'ol' ? 'ol' : 'ul';
+
+            output.push(
+                `<${tag}>${listItems.map(item => `<li>${inline(item)}</li>`).join('')}</${tag}>`
+            );
+
+            listItems = [];
+            listType = null;
+        };
+
+        for (const rawLine of lines) {
+            const line = rawLine.trim();
+
+            if (!line) {
+                flushParagraph();
+                flushList();
+                continue;
+            }
+
+            // Markdown headings
+            const heading = line.match(/^#{1,3}\s+(.+)$/);
+
+            if (heading) {
+                flushParagraph();
+                flushList();
+
+                output.push(`<h2>${inline(heading[1])}</h2>`);
+                continue;
+            }
+
+            // Unordered list
+            const unordered = line.match(/^[-*]\s+(.+)$/);
+
+            if (unordered) {
+                flushParagraph();
+
+                if (listType !== 'ul') {
+                    flushList();
+                    listType = 'ul';
+                }
+
+                listItems.push(unordered[1]);
+                continue;
+            }
+
+            // Ordered list
+            const ordered = line.match(/^\d+\.\s+(.+)$/);
+
+            if (ordered) {
+                flushParagraph();
+
+                if (listType !== 'ol') {
+                    flushList();
+                    listType = 'ol';
+                }
+
+                listItems.push(ordered[1]);
+                continue;
+            }
+
+            // Blockquote
+            const quote = line.match(/^>\s*(.+)$/);
+
+            if (quote) {
+                flushParagraph();
+                flushList();
+
+                output.push(
+                    `<blockquote>${inline(quote[1])}</blockquote>`
+                );
+
+                continue;
+            }
+
+            paragraph.push(line);
+        }
+
+        flushParagraph();
+        flushList();
+
+        return output.join('\n');
+    }
+
     window.displayPost = function(post) {
         postLoading.classList.add('hidden');
         postContent.classList.remove('hidden');
@@ -468,7 +608,8 @@ if (currentPage === 'post' && postContent) {
         document.getElementById('postImage').src = post.thumbnail || './img/default.png';
         document.getElementById('postImage').alt = title;
 
-        document.getElementById('postBody').innerHTML = content;
+        document.getElementById('postBody').innerHTML =
+            renderForumMarkdown(content);
 
         // Tags
         const postTagsEl = document.getElementById('postTags');
