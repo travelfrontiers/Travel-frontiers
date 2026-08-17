@@ -1,5 +1,29 @@
 [
   {
+    "id": "3-dias-em-paris-arquitetura-e-gastronomia",
+    "title": "3 dias em Paris com foco em arquitetura e gastronomia",
+    "title_pt": "3 dias em Paris com foco em arquitetura e gastronomia",
+    "title_fr": "3 dias em Paris com foco em arquitetura e gastronomia",
+    "destination": "Paris",
+    "category": "destinos",
+    "author": "Tiago Ferreira",
+    "date": "2026-08-17",
+    "readTime": "5 min read",
+    "readTime_pt": "5 min de leitura",
+    "readTime_fr": "5 min de lecture",
+    "thumbnail": "./img/3-dias-em-paris-arquitetura-e-gastronomia.png",
+    "excerpt": "3 dias em Paris com foco em arquitetura e gastronomia",
+    "excerpt_pt": "3 dias em Paris com foco em arquitetura e gastronomia",
+    "excerpt_fr": "3 dias em Paris com foco em arquitetura e gastronomia",
+    "likes": 0,
+    "tags": [
+      "paris",
+      "frança",
+      "arquitetura",
+      "gastronomia"
+    ]
+  },
+  {
     "id": "4-dias-em-praga-historia-e-gastronomia",
     "title": "4 dias em Praga com foco em história e gastronomia",
     "title_pt": "4 dias em Praga com foco em história e gastronomia",
