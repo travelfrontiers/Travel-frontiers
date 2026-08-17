@@ -1,5 +1,26 @@
 [
   {
+    "id": "sicilia",
+    "title": "5 dias na Sicília com foco em história, gastronomia e praias",
+    "title_pt": "5 dias na Sicília com foco em história, gastronomia e praias",
+    "title_fr": "5 dias na Sicília com foco em história, gastronomia e praias",
+    "destination": "Madeira",
+    "category": "restaurants",
+    "author": "Tiago Ferreira",
+    "date": "2026-08-17",
+    "readTime": "5 min read",
+    "readTime_pt": "5 min de leitura",
+    "readTime_fr": "5 min de lecture",
+    "thumbnail": "./img/sicilia.png",
+    "excerpt": "5 dias na Sicília com foco em história, gastronomia e praias",
+    "excerpt_pt": "5 dias na Sicília com foco em história, gastronomia e praias",
+    "excerpt_fr": "5 dias na Sicília com foco em história, gastronomia e praias",
+    "likes": 0,
+    "tags": [
+      "sicilia"
+    ]
+  },
+  {
     "id": "bulgaria-segredos",
     "title": "Segredos da Bulgária - O que explorar",
     "title_pt": "Segredos da Bulgária - O que explorar",
