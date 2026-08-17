@@ -1,5 +1,26 @@
 [
   {
+    "id": "quioto-japan",
+    "title": "Joias escondidas em Quioto",
+    "title_pt": "Joias escondidas em Quioto",
+    "title_fr": "Joias escondidas em Quioto",
+    "destination": "Quioto",
+    "category": "destinos",
+    "author": "Tiago Ferreira",
+    "date": "2026-08-17",
+    "readTime": "5 min read",
+    "readTime_pt": "5 min de leitura",
+    "readTime_fr": "5 min de lecture",
+    "thumbnail": "./img/quioto-japan.png",
+    "excerpt": "Joias escondidas em Quioto",
+    "excerpt_pt": "Joias escondidas em Quioto",
+    "excerpt_fr": "Joias escondidas em Quioto",
+    "likes": 0,
+    "tags": [
+      "quioto-japan"
+    ]
+  },
+  {
     "id": "sicilia",
     "title": "5 dias na Sicília com foco em história, gastronomia e praias",
     "title_pt": "5 dias na Sicília com foco em história, gastronomia e praias",
