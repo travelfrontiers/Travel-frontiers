@@ -1,5 +1,29 @@
 [
   {
+    "id": "4-dias-em-praga-historia-e-gastronomia",
+    "title": "4 dias em Praga com foco em história e gastronomia",
+    "title_pt": "4 dias em Praga com foco em história e gastronomia",
+    "title_fr": "4 dias em Praga com foco em história e gastronomia",
+    "destination": "Praga",
+    "category": "destinos",
+    "author": "Tiago Ferreira",
+    "date": "2026-08-17",
+    "readTime": "5 min read",
+    "readTime_pt": "5 min de leitura",
+    "readTime_fr": "5 min de lecture",
+    "thumbnail": "./img/4-dias-em-praga-historia-e-gastronomia.png",
+    "excerpt": "4 dias em Praga com foco em história e gastronomia",
+    "excerpt_pt": "4 dias em Praga com foco em história e gastronomia",
+    "excerpt_fr": "4 dias em Praga com foco em história e gastronomia",
+    "likes": 0,
+    "tags": [
+      "praga",
+      "europa",
+      "historia",
+      "gastronomia"
+    ]
+  },
+  {
     "id": "quioto-japan",
     "title": "Joias escondidas em Quioto",
     "title_pt": "Joias escondidas em Quioto",
