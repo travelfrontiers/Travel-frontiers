@@ -43,9 +43,24 @@ INDEX_FILE.write_text(
     encoding="utf-8"
 )
 
-subprocess.run(["git", "add", "forum/posts/index.json"], check=True)
+subprocess.run(
+    ["git", "config", "user.name", "Travel Frontiers Bot"],
+    check=True
+)
+
+subprocess.run(
+    ["git", "config", "user.email", "bot@travelfrontiers.pt"],
+    check=True
+)
+
+subprocess.run(
+    ["git", "add", "forum/posts/index.json"],
+    check=True
+)
+
 subprocess.run(
     ["git", "commit", "-m", f"bot: sync index for {post_id}"],
     check=True
 )
+
 subprocess.run(["git", "push"], check=True)
