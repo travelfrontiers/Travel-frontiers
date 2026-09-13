@@ -1,6 +1,7 @@
 name: Sync Forum Index
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - "forum/posts/*.json"
@@ -24,6 +25,7 @@ jobs:
 
       - name: Find changed post
         id: post
+        shell: bash
         run: |
           file=$(git diff --name-only HEAD^ HEAD -- "forum/posts/*.json" ":!forum/posts/index.json" | head -n 1)
           id=$(basename "$file" .json)
