@@ -184,31 +184,6 @@
     ]
   },
   {
-    "id": "malta-best-restaurants",
-    "title": "Malta's Best Restaurants - A Local's Guide",
-    "title_pt": "Os Melhores Restaurantes de Malta - Guia Local",
-    "title_fr": "Les Meilleurs Restaurants de Malte - Guide Local",
-    "destination": "Malta",
-    "category": "Restaurants",
-    "author": "Tiago Ferreira",
-    "date": "2025-12-21",
-    "readTime": "5 min read",
-    "readTime_pt": "5 min de leitura",
-    "readTime_fr": "5 min de lecture",
-    "thumbnail": "./img/malta-restaurant.png",
-    "excerpt": "Discover the best dining experiences in Malta, from hidden gems to award-winning restaurants.",
-    "excerpt_pt": "Descubra as melhores experiências gastronómicas em Malta, desde joias escondidas a restaurantes premiados.",
-    "excerpt_fr": "Découvrez les meilleures expériences gastronomiques à Malte, des perles cachées aux restaurants primés.",
-    "likes": 12,
-    "tags": [
-      "restaurants",
-      "dining",
-      "food",
-      "local-tips",
-      "malta"
-    ]
-  },
-  {
     "id": "malta-hidden-gems",
     "title": "Malta's Hidden Gems - Off the Beaten Path",
     "title_pt": "Joias Escondidas de Malta - Fora dos Roteiros Turísticos",
