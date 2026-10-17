@@ -564,22 +564,41 @@ export async function POST(request: Request) {
         const ai = new GoogleGenAI({ apiKey });
 
         // ── STEP 1: Extract complete, exhaustive travel facts & day-by-day plan from source ──
-        const extractionPrompt = `És um especialista em reservas turísticas da "Travel Frontiers".
-Analisa atentamente todo o documento de reserva anexado e extrai TODOS os detalhes concretos da viagem, sem omitir nada:
+        const extractionPrompt = `És um especialista sénior em reservas de viagens da "Travel Frontiers".
+Analisa atentamente todo o documento de reserva anexado (lê todas as páginas, incluindo capas, mapas, tabelas de cronograma, voos e alojamentos).
 
-1. DESTINO E DATAS: Destino principal, destinos secundários, datas exatas de início e fim, duração (dias e noites).
-2. VIAJANTES: Quantidade de adultos/crianças e nomes se mencionados.
-3. ALOJAMENTO: Todos os hotéis contratados (nomes exatos, categoria e localização).
-4. TRANSPORTES: Todos os voos (companhia, números de voo, horários de partida/chegada), transferes ou aluguer de viatura.
-5. PROGRAMA / ITINERÁRIO CONTRATADO: Se o documento contiver um programa, passeios, excursões ou visitas dia a dia, extrai DETALHADAMENTE CADA UM DOS DIAS, locais a visitar, horários e pontos de encontro.
-6. SERVIÇOS INCLUÍDOS E OBSERVAÇÕES: Guias, refeições incluídas, bilhetes para monumentos, etc.
+Extrai os factos REAIS da viagem com rigor absoluto:
 
-Não inventes nada que não conste no documento. Extrai todos os factos reais com o máximo detalhe possível.`;
+1. DESTINOS REAIS DA VIAGEM:
+   - Lê o título oficial do circuito na capa ou cabeçalho (ex: "Circuito Hong Kong, Macau, Cantão (Guangzhou) e Yangshuo").
+   - Lista APENAS as cidades/regiões onde os clientes pernoitam ou que fazem parte do roteiro contratado.
+   - REGRA CRÍTICA: NÃO inventes destinos! NÃO confundas nomes de ruas (por exemplo, "Rua de Pequim" em Macau é apenas o endereço do hotel Holiday Inn em Macau; NÃO significa que os clientes vão a Pequim!) nem cidades mencionadas em comparações textuais.
+
+2. DATAS E ANO DA VIAGEM:
+   - Lê o ano e as datas exatas de início e fim da viagem (ATENÇÃO ao ano real que está escrito no documento, por exemplo 2027; NUNCA inventes anos passados como 2024).
+   - Duração total em noites e dias.
+
+3. VIAJANTES:
+   - Número exato de passageiros (ex: "4 adultos").
+
+4. VOOS:
+   - Companhia aérea, números de voo, aeroportos de partida/escala/destino, datas e horários exatos de ida e regresso.
+
+5. ALOJAMENTOS E CRONOGRAMA DE CIDADES (MUITO IMPORTANTE):
+   Lista ordenada cronologicamente por datas de check-in e check-out com:
+   - Cidade / Destino
+   - Datas exatas e número de noites
+   - Nome exato do hotel contratado
+
+6. PONTOS DE INTERESSE E ATIVIDADES:
+   - Lista os pontos de interesse e visitas sugeridas para cada cidade mencionados no documento.
+
+Apresenta este resumo estruturado com total fidelidade ao documento.`;
 
         let extractionResult: any;
 
-        // If we have a PDF and extractedText is poor or missing, pass PDF natively to Gemini
-        if (isPdf && (!extractedText || extractedText.length < 100)) {
+        if (isPdf && buffer.length < 20 * 1024 * 1024) {
+            // ALWAYS pass PDF natively to Gemini for 100% visual layout & OCR fidelity
             extractionResult = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: [
@@ -604,24 +623,33 @@ Não inventes nada que não conste no documento. Extrai todos os factos reais co
             throw new Error("Não foi possível extrair informações úteis do documento de origem.");
         }
 
-        // ── STEP 2: Generate itinerary JSON respecting the actual booking ──
+        // ── STEP 2: Generate itinerary JSON strictly respecting the actual booking ──
         const itineraryPrompt = `És um planeador de viagens de luxo da "Travel Frontiers" (Portugal).
 Escreve EXCLUSIVAMENTE em Português de Portugal.
 O TEU OUTPUT DEVE SER APENAS UM OBJETO JSON VÁLIDO. NÃO ESCREVAS MAIS NADA ANTES NEM DEPOIS DO JSON.
 
 Com base nos dados reais extraídos da reserva, cria o documento oficial de itinerário em formato JSON.
 
-REGRAS CRÍTICAS:
-1. RIGOR TOTAL COM O DOCUMENTO:
-   - Respeita rigorosamente o destino, os hotéis contratados, os voos e as datas.
-   - Se o documento tiver visitas, passeios ou atividades contratadas/programadas para cada dia, ELAS SÃO OBRIGATÓRIAS e devem figurar no dia e horário correspondente.
-   - O número de dias no array "dias" DEVE corresponder à duração real da viagem indicada no documento.
-2. COMPLETA COM QUALIDADE:
-   - Se algum dia estiver livre ou sem atividades pré-marcadas no documento, sugere experiências autênticas, visitas a monumentos icónicos e passeios adaptados ao perfil do destino.
+REGRAS OBRIGATÓRIAS E CRÍTICAS:
+1. RIGOR TOTAL COM OS DADOS REAIS:
+   - Respeita escrupulosamente as datas, o ANO (ex: 2027), os viajantes, as cidades e os hotéis da reserva.
+   - Cidades da viagem: APENAS aquelas onde os clientes vão pernoitar ou que estão no circuito contratado (ex: se o circuito é Hong Kong, Macau, Cantão e Yangshuo, NUNCA incluas Pequim nem outras cidades fora da rota).
+   - O campo "resumo.datas" DEVE conter o intervalo real de datas com o ano correto (ex: "6 a 22 de Abril de 2027").
+   - O campo "resumo.duracao" DEVE refletir a duração real (ex: "14 noites / 16 dias").
+   - O campo "resumo.viajantes" DEVE refletir o número real (ex: "4 adultos").
+   - O campo "resumo.hotel" deve mencionar os hotéis do circuito contratado.
+   - O campo "resumo.destino" deve conter os destinos reais da reserva (ex: "Hong Kong, Macau, Cantão e Yangshuo").
+
+2. ESTRUTURA DOS DIAS:
+   - Cria o itinerário dia a dia cobrindo a totalidade da estadia em cada uma das cidades onde o cliente pernoita, pela ordem cronológica da reserva.
+   - Para cada dia, inclui atividades realistas e apelativas adequadas a essa cidade/região (aproveitando os pontos de interesse mencionados na reserva).
+   - Em dias de voo ou viagem entre cidades, menciona a deslocação/transporte e a chegada à nova cidade.
+
 3. GASTRONOMIA:
-   - Para cada dia, inclui sugestões reais de almoço e jantar com nomes verídicos de restaurantes locais de qualidade.
+   - Para cada dia, inclui sugestões reais de almoço e jantar com nomes verídicos de restaurantes locais na cidade em que o cliente se encontra nesse dia.
+
 4. TÍTULOS DOS DIAS:
-   - Para "titulo_dia", NUNCA escrevas "Dia 1:" ou "DIA 1" no título; escreve apenas o tema/local principal (ex: "Chegada a Málaga e Passeio pelo Centro Histórico", "Desfiladeiro e Ponte Nova de Ronda").
+   - Para "titulo_dia", NUNCA escrevas "Dia 1:" ou "DIA 1" no título; escreve apenas a cidade e o tema (ex: "Hong Kong - Chegada e Vistas de Victoria Peak", "Macau - Centro Histórico e Ruínas de São Paulo", "Yangshuo - Paisagens Cársicas e Rio Li").
 
 <DADOS_DA_RESERVA>
 ${travelFacts}
