@@ -1,25 +1,26 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
-// Translation Strategy: Gemma 4 (primary) -> DeepL (secondary) -> MyMemory (last resort) -> Copy (fallback)
+// Translation Strategy: Gemini (primary) -> DeepL (secondary) -> MyMemory (last resort) -> Copy (fallback)
 
 /**
- * Translate text using Gemma 4 via Google Generative AI
+ * Translate text using Gemini via @google/genai
  */
 async function translateWithGemma(text: string, targetLang: string): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' }, { apiVersion: 'v1beta' });
-
+    const ai = new GoogleGenAI({ apiKey });
     const langName = targetLang === 'en' ? 'English' : 'French';
     const prompt = `You are a professional travel content translator. Translate the following Portuguese text to ${langName}.\nReturn ONLY the translated text, with no explanations, no quotes, and no extra commentary.\n\n${text}`;
 
-    const result = await model.generateContent(prompt);
-    const translated = result.response.text().trim();
+    const result = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt
+    });
+    const translated = (result.text ?? '').trim();
 
-    if (!translated) throw new Error('Gemma 4 returned an empty translation');
+    if (!translated) throw new Error('AI returned an empty translation');
     return translated;
 }
 

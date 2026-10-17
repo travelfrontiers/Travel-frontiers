@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { client } from '../../../sanity/client';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import {
     Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, Footer,
     BorderStyle, PageBreak, ShadingType, ExternalHyperlink, Table, TableRow,
@@ -507,59 +507,128 @@ export async function POST(request: Request) {
         if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
 
         // 1. Fetch file from Sanity
-        const asset = await client.fetch('*[_id == $id][0]{ url, extension }', { id: fileRef });
-        if (!asset || !asset.url) throw new Error("Could not find file asset.");
+        const asset = await client.fetch('*[_id == $id][0]{ url, extension, originalFilename, mimeType }', { id: fileRef });
+        if (!asset || !asset.url) throw new Error("Ficheiro de origem não encontrado no Sanity.");
 
         const fileResponse = await fetch(asset.url);
+        if (!fileResponse.ok) throw new Error(`Falha ao descarregar o ficheiro de origem (${fileResponse.status}).`);
         const arrayBuffer = await fileResponse.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
-        // 2. Extract Text
+        // Determine file extension safely (case-insensitive)
+        let ext = (asset.extension || '').toLowerCase().replace(/^\./, '');
+        if (!ext && asset.url) {
+            const urlPath = asset.url.split('?')[0];
+            ext = (urlPath.split('.').pop() || '').toLowerCase();
+        }
+        if (!ext && asset.originalFilename) {
+            ext = (asset.originalFilename.split('.').pop() || '').toLowerCase();
+        }
+
+        // 2. Extract Text from Source File
         let extractedText = "";
-        if (asset.extension === 'pdf') {
-            const data = await pdfParse(buffer);
-            extractedText = data.text;
-        } else if (asset.extension === 'docx' || asset.extension === 'doc') {
-            const docxData = await mammoth.extractRawText({ buffer });
-            extractedText = docxData.value;
-        } else if (asset.extension === 'txt') {
-            extractedText = buffer.toString('utf-8');
+        let isPdf = ext === 'pdf' || asset.mimeType === 'application/pdf';
+
+        if (isPdf) {
+            try {
+                const data = await pdfParse(buffer);
+                extractedText = (data.text || '').trim();
+            } catch (err) {
+                console.warn('pdf-parse failed:', err);
+            }
+        } else if (ext === 'docx' || asset.mimeType?.includes('wordprocessingml')) {
+            try {
+                const docxData = await mammoth.extractRawText({ buffer });
+                extractedText = (docxData.value || '').trim();
+            } catch (err) {
+                console.warn('mammoth docx extraction failed:', err);
+            }
+        } else if (ext === 'doc' || asset.mimeType?.includes('msword')) {
+            try {
+                const docxData = await mammoth.extractRawText({ buffer });
+                extractedText = (docxData.value || '').trim();
+            } catch {
+                extractedText = buffer.toString('utf-8').replace(/[^\x20-\x7E\xA0-\xFF\n\r\t]/g, ' ').trim();
+            }
+        } else {
+            // Text or other format
+            extractedText = buffer.toString('utf-8').trim();
         }
 
-        if (!extractedText.trim()) throw new Error("Empty source file.");
-
-        // 3. TWO-STEP AI APPROACH
-        const genAI = new GoogleGenerativeAI(apiKey);
-
-        // ── STEP 1: Extract key travel facts ──
-        const extractorModel = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' }, { apiVersion: 'v1beta' });
-
-        const extractionPrompt = `Extrai APENAS os dados concretos (Destino, Datas, Viajantes, Hotéis, Voos, Atividades) desta reserva.
-É absolutamente essencial que resumas tudo em menos de 200 palavras.
-
-<SOURCE_DOCUMENT>
-${extractedText.substring(0, 30000)}
-</SOURCE_DOCUMENT>`;
-
-        const extractionResult = await extractorModel.generateContent(extractionPrompt);
-        let travelFacts = extractionResult.response.text();
-
-        // Failsafe: clip if too long
-        if (travelFacts.length > 2000) {
-            travelFacts = travelFacts.substring(0, 2000) + '... (truncated)';
+        // If extraction is empty and it's not a PDF that can be passed directly, throw error
+        if (!extractedText && !isPdf) {
+            throw new Error("O ficheiro de origem está vazio ou não contém texto legível.");
         }
 
-        // ── STEP 2: Generate itinerary JSON with enriched structure ──
-        const itineraryModel = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' }, { apiVersion: 'v1beta' });
+        // 3. AI EXTRACTION & ITINERARY GENERATION
+        const ai = new GoogleGenAI({ apiKey });
 
-        const itineraryPrompt = `És um planeador de viagens da "Travel Frontiers" (Portugal).
+        // ── STEP 1: Extract complete, exhaustive travel facts & day-by-day plan from source ──
+        const extractionPrompt = `És um especialista em reservas turísticas da "Travel Frontiers".
+Analisa atentamente todo o documento de reserva anexado e extrai TODOS os detalhes concretos da viagem, sem omitir nada:
+
+1. DESTINO E DATAS: Destino principal, destinos secundários, datas exatas de início e fim, duração (dias e noites).
+2. VIAJANTES: Quantidade de adultos/crianças e nomes se mencionados.
+3. ALOJAMENTO: Todos os hotéis contratados (nomes exatos, categoria e localização).
+4. TRANSPORTES: Todos os voos (companhia, números de voo, horários de partida/chegada), transferes ou aluguer de viatura.
+5. PROGRAMA / ITINERÁRIO CONTRATADO: Se o documento contiver um programa, passeios, excursões ou visitas dia a dia, extrai DETALHADAMENTE CADA UM DOS DIAS, locais a visitar, horários e pontos de encontro.
+6. SERVIÇOS INCLUÍDOS E OBSERVAÇÕES: Guias, refeições incluídas, bilhetes para monumentos, etc.
+
+Não inventes nada que não conste no documento. Extrai todos os factos reais com o máximo detalhe possível.`;
+
+        let extractionResult: any;
+
+        // If we have a PDF and extractedText is poor or missing, pass PDF natively to Gemini
+        if (isPdf && (!extractedText || extractedText.length < 100)) {
+            extractionResult = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: [
+                    {
+                        inlineData: {
+                            data: buffer.toString('base64'),
+                            mimeType: 'application/pdf'
+                        }
+                    },
+                    extractionPrompt
+                ]
+            });
+        } else {
+            extractionResult = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: `${extractionPrompt}\n\n<DOCUMENTO_ORIGEM>\n${extractedText.substring(0, 100000)}\n</DOCUMENTO_ORIGEM>`
+            });
+        }
+
+        const travelFacts = extractionResult.text ?? '';
+        if (!travelFacts.trim()) {
+            throw new Error("Não foi possível extrair informações úteis do documento de origem.");
+        }
+
+        // ── STEP 2: Generate itinerary JSON respecting the actual booking ──
+        const itineraryPrompt = `És um planeador de viagens de luxo da "Travel Frontiers" (Portugal).
 Escreve EXCLUSIVAMENTE em Português de Portugal.
 O TEU OUTPUT DEVE SER APENAS UM OBJETO JSON VÁLIDO. NÃO ESCREVAS MAIS NADA ANTES NEM DEPOIS DO JSON.
 
-<TRAVEL_DATA>
+Com base nos dados reais extraídos da reserva, cria o documento oficial de itinerário em formato JSON.
+
+REGRAS CRÍTICAS:
+1. RIGOR TOTAL COM O DOCUMENTO:
+   - Respeita rigorosamente o destino, os hotéis contratados, os voos e as datas.
+   - Se o documento tiver visitas, passeios ou atividades contratadas/programadas para cada dia, ELAS SÃO OBRIGATÓRIAS e devem figurar no dia e horário correspondente.
+   - O número de dias no array "dias" DEVE corresponder à duração real da viagem indicada no documento.
+2. COMPLETA COM QUALIDADE:
+   - Se algum dia estiver livre ou sem atividades pré-marcadas no documento, sugere experiências autênticas, visitas a monumentos icónicos e passeios adaptados ao perfil do destino.
+3. GASTRONOMIA:
+   - Para cada dia, inclui sugestões reais de almoço e jantar com nomes verídicos de restaurantes locais de qualidade.
+4. TÍTULOS DOS DIAS:
+   - Para "titulo_dia", NUNCA escrevas "Dia 1:" ou "DIA 1" no título; escreve apenas o tema/local principal (ex: "Chegada a Málaga e Passeio pelo Centro Histórico", "Desfiladeiro e Ponte Nova de Ronda").
+
+<DADOS_DA_RESERVA>
 ${travelFacts}
-Notas adicionais: ${notes || 'Nenhuma'}
-</TRAVEL_DATA>
+
+NOTAS ADICIONAIS DO AGENTE:
+${notes || 'Nenhuma'}
+</DADOS_DA_RESERVA>
 
 Gera um objeto JSON com esta estrutura OBRIGATÓRIA:
 {
@@ -571,7 +640,6 @@ Gera um objeto JSON com esta estrutura OBRIGATÓRIA:
     "duracao": "Ex: 7 noites / 8 dias"
   },
   "imagem_capa_ingles": "Pesquisa específica em inglês para a foto de capa (ex: 'Santorini sunset blue domes Greece aerial')",
-  "imagem_mapa_ingles": "Pesquisa específica em inglês para o mapa turístico do destino (ex: 'Malaga Andalucia Spain geographic travel map illustration')",
   "introducao": "2-3 frases entusiastas sobre o destino. Deve fazer o cliente sentir que vai ter uma experiência inesquecível.",
   "dicas": [
     {
@@ -612,43 +680,39 @@ Gera um objeto JSON com esta estrutura OBRIGATÓRIA:
   ],
   "dias": [
     {
-      "titulo_dia": "Roma - Cidade Antiga",
+      "titulo_dia": "Cidade - Tema do Dia",
       "imagem_pesquisa_ingles": "Colosseum Rome Italy golden hour travel photography",
       "atividades": [
         {
           "hora": "09:00",
-          "descricao": "Visita guiada ao Coliseu com acesso prioritário"
-        },
-        {
-          "hora": "11:30",
-          "descricao": "Passeio pelo Fórum Romano e Palatino"
+          "descricao": "Descrição da atividade detalhada com dicas práticas"
         }
       ],
       "sugestao_almoco": {
-        "nome": "Trattoria Romana",
-        "porque": "Pasta artesanal com ingredientes locais frescos",
-        "morada": "Via del Corso, 12",
-        "maps": "https://www.google.com/maps/search/?api=1&query=Trattoria+Romana+Roma",
+        "nome": "Nome do Restaurante",
+        "porque": "Especialidade gastronómica e ambiente",
+        "morada": "Morada real na cidade",
+        "maps": "https://www.google.com/maps/search/?api=1&query=Restaurante+Cidade",
         "preco": "€€"
       },
       "sugestao_jantar": {
-        "nome": "Osteria da Fortunata",
-        "porque": "Conhecida pela melhor cacio e pepe de Roma",
-        "morada": "Via del Pellegrino, 11",
-        "maps": "https://www.google.com/maps/search/?api=1&query=Osteria+da+Fortunata+Roma",
+        "nome": "Nome do Restaurante",
+        "porque": "Especialidade gastronómica e ambiente",
+        "morada": "Morada real na cidade",
+        "maps": "https://www.google.com/maps/search/?api=1&query=Restaurante+Cidade",
         "preco": "€€€"
       }
     }
   ]
 }
 
-IMPORTANTE: Para "imagem_pesquisa_ingles" de cada dia, escreve uma query ESPECÍFICA em inglês que produza fotos bonitas do local principal visitado nesse dia.
-Para "titulo_dia", NUNCA inclua "Dia 1:" ou "DIA 1" no título, apenas o nome da atividade/local principal (ex: "Roma - Cidade Antiga", "Chegada a Málaga").
-
 Responde APENAS com o JSON FINAL correspondente a esta viagem, sem backticks e sem comentários.`;
 
-        const itineraryResult = await itineraryModel.generateContent(itineraryPrompt);
-        const aiText = itineraryResult.response.text();
+        const itineraryResult = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: itineraryPrompt
+        });
+        const aiText = itineraryResult.text ?? '';
 
         // Extract JSON
         const jsonMatch = aiText.match(/\{[\s\S]*\}$/m);

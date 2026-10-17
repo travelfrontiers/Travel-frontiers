@@ -9,7 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
+    "@google/genai": "^2.30.0",
     "@portabletext/react": "^6.0.2",
     "@sanity/image-url": "^1.2.0",
     "@sanity/vision": "^4.22.0",
