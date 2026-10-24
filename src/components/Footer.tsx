@@ -5,6 +5,8 @@ type FooterProps = {
 };
 
 export default function Footer({ lang }: FooterProps) {
+    const currentYear = new Date().getFullYear();
+
     const content = {
         pt: {
             about: "Descubra novos horizontes com a Travel Frontiers. Há 15 anos a explorar o mundo, estamos hoje presentes em Portugal para o ajudar a planear a sua próxima aventura.",
@@ -12,7 +14,7 @@ export default function Footer({ lang }: FooterProps) {
             contact: "Contacto",
             followMe: "Segue-me",
             whatsapp: "Contactar por WhatsApp",
-            copyright: "© 2025 Travel Frontiers. Todos os direitos reservados.",
+            copyright: `© ${currentYear} Travel Frontiers. Todos os direitos reservados.`,
             rnavt: "iCligo Consultant - RNAVT 3301",
             privacy: "Política de Privacidade",
             terms: "Termos de Serviço",
@@ -23,7 +25,7 @@ export default function Footer({ lang }: FooterProps) {
             contact: "Contact",
             followMe: "Follow me",
             whatsapp: "Contact via WhatsApp",
-            copyright: "© 2025 Travel Frontiers. All rights reserved.",
+            copyright: `© ${currentYear} Travel Frontiers. All rights reserved.`,
             rnavt: "iCligo Consultant - RNAVT 3301",
             privacy: "Privacy Policy",
             terms: "Terms of Service",
@@ -34,7 +36,7 @@ export default function Footer({ lang }: FooterProps) {
             contact: "Contact",
             followMe: "Suivez-moi",
             whatsapp: "Contacter par WhatsApp",
-            copyright: "© 2025 Travel Frontiers. Tous droits réservés.",
+            copyright: `© ${currentYear} Travel Frontiers. Tous droits réservés.`,
             rnavt: "iCligo Consultant - RNAVT 3301",
             privacy: "Politique de Confidentialité",
             terms: "Conditions d'Utilisation",
@@ -47,6 +49,7 @@ export default function Footer({ lang }: FooterProps) {
         { href: "https://www.travelfrontiers.pt/#home", label: { pt: "Início", en: "Home", fr: "Accueil" } },
         { href: "https://www.travelfrontiers.pt/#about", label: { pt: "Sobre", en: "About", fr: "À propos" } },
         { href: "https://www.travelfrontiers.pt/#services", label: { pt: "Serviços", en: "Services", fr: "Services" } },
+        { href: "https://www.travelfrontiers.pt/forum/", label: { pt: "Guias & Dicas", en: "Guides & Tips", fr: "Guides & Conseils" } },
         { href: "https://www.travelfrontiers.pt/#testimonials", label: { pt: "Testemunhos", en: "Testimonials", fr: "Témoignages" } },
         { href: "https://www.travelfrontiers.pt/#contact", label: { pt: "Contacto", en: "Contact", fr: "Contact" } },
     ];
@@ -139,12 +142,22 @@ export default function Footer({ lang }: FooterProps) {
                             <p>{t.rnavt}</p>
                         </div>
                         <div className="flex gap-6">
-                            <Link href="#" className="hover:text-orange-500 transition-colors duration-300">
+                            <a
+                                href="https://www.travelfrontiers.pt/privacy.html"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-orange-500 transition-colors duration-300"
+                            >
                                 {t.privacy}
-                            </Link>
-                            <Link href="#" className="hover:text-orange-500 transition-colors duration-300">
+                            </a>
+                            <a
+                                href="https://www.travelfrontiers.pt/terms.html"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-orange-500 transition-colors duration-300"
+                            >
                                 {t.terms}
-                            </Link>
+                            </a>
                         </div>
                     </div>
                 </div>

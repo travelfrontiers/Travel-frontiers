@@ -90,6 +90,22 @@
                     </div>
                 </div>
 
+                <!-- Author Bio Card -->
+                <section class="author-bio-card">
+                    <div class="author-bio-avatar">
+                        <img src="https://www.travelfrontiers.pt/img/logo-newTF.png" alt="Tiago Ferreira - Travel Frontiers" class="author-img">
+                    </div>
+                    <div class="author-bio-info">
+                        <div class="author-bio-header">
+                            <h4 class="author-name">Tiago Ferreira</h4>
+                            <span id="authorRole" class="author-badge">Consultor Certificado · RNAVT 3301</span>
+                        </div>
+                        <p id="authorBio" class="author-desc">
+                            Mais de 15 anos a explorar o mundo e 40+ países visitados. Especialista em desenhar viagens personalizadas com o equilíbrio perfeito entre qualidade, autenticidade e tranquilidade.
+                        </p>
+                    </div>
+                </section>
+
                 <!-- CTA Section -->
                 <section class="post-cta">
                     <div class="cta-box">
@@ -107,10 +123,27 @@
 
             <!-- Like & Share Section -->
             <footer class="post-footer">
-                <button id="likeBtn" class="like-button">
-                    <span class="like-icon">♥</span>
-                    <span id="likeCount">0</span> <span data-translate="post.likes">Gostos</span>
-                </button>
+                <div class="footer-actions">
+                    <button id="likeBtn" class="like-button">
+                        <span class="like-icon">♥</span>
+                        <span id="likeCount">0</span> <span data-translate="post.likes">Gostos</span>
+                    </button>
+                    <div class="share-bar">
+                        <span class="share-label" data-translate="post.share">Partilhar:</span>
+                        <a id="shareWhatsApp" href="#" target="_blank" rel="noopener noreferrer" class="share-btn share-wa" title="Partilhar no WhatsApp">
+                            WhatsApp
+                        </a>
+                        <a id="shareFacebook" href="#" target="_blank" rel="noopener noreferrer" class="share-btn share-fb" title="Partilhar no Facebook">
+                            Facebook
+                        </a>
+                        <a id="shareTwitter" href="#" target="_blank" rel="noopener noreferrer" class="share-btn share-tw" title="Partilhar no X">
+                            X
+                        </a>
+                        <button id="shareCopy" class="share-btn share-copy" title="Copiar link">
+                            <span id="copyBtnText" data-translate="post.copyLink">Copiar Link</span>
+                        </button>
+                    </div>
+                </div>
             </footer>
         </article>
 

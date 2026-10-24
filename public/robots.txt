@@ -2,4 +2,4 @@
 Allow: /
 
 # Sitemap
-Sitemap: https://travelfrontiers-promotions.manus.space/sitemap.xml
+Sitemap: https://promo.travelfrontiers.pt/sitemap.xml

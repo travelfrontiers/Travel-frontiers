@@ -27,7 +27,7 @@ export function generateMetadata({
         fr: "Découvrez nos promotions de voyage exclusives. Planification 100% personnalisée avec proposition en 24-48h. 15+ ans d'expérience, 40+ pays explorés.",
     };
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://travelfrontiers-promotions.manus.space";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://promo.travelfrontiers.pt";
     const fullTitle = title || defaultTitles[lang];
     const fullDescription = description || defaultDescriptions[lang];
     const fullImage = image || `${siteUrl}/og-image.png`;

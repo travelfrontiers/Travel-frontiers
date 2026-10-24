@@ -1326,6 +1326,173 @@ a {
     margin: 0 auto;
 }
 
+/* Author Bio Card */
+.author-bio-card {
+    max-width: 760px;
+    margin: 50px auto 30px;
+    padding: 28px;
+    background: #fafaf9;
+    border: 1px solid #e7e5e4;
+    border-radius: 18px;
+    display: flex;
+    gap: 22px;
+    align-items: center;
+}
+
+.author-bio-avatar {
+    flex-shrink: 0;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #fff;
+    border: 2px solid #f97316;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.author-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.author-bio-info {
+    flex: 1;
+}
+
+.author-bio-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+
+.author-name {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1c1917;
+}
+
+.author-badge {
+    display: inline-block;
+    background: #ffedd5;
+    color: #c2410c;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    letter-spacing: 0.02em;
+}
+
+.author-desc {
+    margin: 0;
+    font-size: 0.92rem;
+    color: #57534e;
+    line-height: 1.55;
+}
+
+/* Footer Actions & Social Sharing */
+.footer-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding-top: 24px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.share-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.share-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.share-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.share-wa {
+    background: #25D366;
+    color: white;
+}
+.share-wa:hover {
+    background: #20ba5a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+
+.share-fb {
+    background: #1877F2;
+    color: white;
+}
+.share-fb:hover {
+    background: #1464cc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
+}
+
+.share-tw {
+    background: #0f1419;
+    color: white;
+}
+.share-tw:hover {
+    background: #272c30;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(15, 20, 25, 0.3);
+}
+
+.share-copy {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+}
+.share-copy:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+@media (max-width: 700px) {
+    .author-bio-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 22px 18px;
+    }
+
+    .author-bio-header {
+        justify-content: center;
+    }
+
+    .footer-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .share-bar {
+        justify-content: center;
+    }
+}
+
 @media (max-width: 700px) {
     .post-container {
         padding: 30px 18px 60px;
@@ -1499,6 +1666,173 @@ a {
 .post-footer {
     max-width: 760px;
     margin: 0 auto;
+}
+
+/* Author Bio Card */
+.author-bio-card {
+    max-width: 760px;
+    margin: 50px auto 30px;
+    padding: 28px;
+    background: #fafaf9;
+    border: 1px solid #e7e5e4;
+    border-radius: 18px;
+    display: flex;
+    gap: 22px;
+    align-items: center;
+}
+
+.author-bio-avatar {
+    flex-shrink: 0;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #fff;
+    border: 2px solid #f97316;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.author-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.author-bio-info {
+    flex: 1;
+}
+
+.author-bio-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+
+.author-name {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1c1917;
+}
+
+.author-badge {
+    display: inline-block;
+    background: #ffedd5;
+    color: #c2410c;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    letter-spacing: 0.02em;
+}
+
+.author-desc {
+    margin: 0;
+    font-size: 0.92rem;
+    color: #57534e;
+    line-height: 1.55;
+}
+
+/* Footer Actions & Social Sharing */
+.footer-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding-top: 24px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.share-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.share-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.share-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.share-wa {
+    background: #25D366;
+    color: white;
+}
+.share-wa:hover {
+    background: #20ba5a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+
+.share-fb {
+    background: #1877F2;
+    color: white;
+}
+.share-fb:hover {
+    background: #1464cc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
+}
+
+.share-tw {
+    background: #0f1419;
+    color: white;
+}
+.share-tw:hover {
+    background: #272c30;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(15, 20, 25, 0.3);
+}
+
+.share-copy {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+}
+.share-copy:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+@media (max-width: 700px) {
+    .author-bio-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 22px 18px;
+    }
+
+    .author-bio-header {
+        justify-content: center;
+    }
+
+    .footer-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .share-bar {
+        justify-content: center;
+    }
 }
 
 @media (max-width: 700px) {

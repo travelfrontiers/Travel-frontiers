@@ -1,5 +1,5 @@
 export function generateStructuredData(lang: "pt" | "en" | "fr") {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://travelfrontiers-promotions.manus.space";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://promo.travelfrontiers.pt";
 
     const descriptions = {
         pt: "Consultoria de Viagens Personalizadas",

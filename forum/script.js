@@ -11,7 +11,19 @@ const forumTranslations = {
         loading: 'Carregando posts...',
         'loading.post': 'Carregando post...',
         noResults: 'Nenhum post encontrado. Tente outra pesquisa!',
-        post: { readAlso: 'Leia Também', likes: 'Gostos', notFound: 'Post não encontrado.', by: 'por' },
+        post: {
+            readAlso: 'Leia Também',
+            likes: 'Gostos',
+            notFound: 'Post não encontrado.',
+            by: 'por',
+            share: 'Partilhar:',
+            copyLink: 'Copiar Link',
+            copied: 'Link Copiado!'
+        },
+        author: {
+            role: 'Consultor Certificado · RNAVT 3301',
+            bio: 'Mais de 15 anos a explorar o mundo e 40+ países visitados. Especialista em desenhar viagens personalizadas com o equilíbrio perfeito entre qualidade, autenticidade e tranquilidade.'
+        },
         comments: {
             title: 'Comentários',
             leaveComment: 'Deixe um Comentário',
@@ -33,7 +45,19 @@ const forumTranslations = {
         loading: 'Loading posts...',
         'loading.post': 'Loading post...',
         noResults: 'No posts found. Try another search!',
-        post: { readAlso: 'Read Also', likes: 'Likes', notFound: 'Post not found.', by: 'by' },
+        post: {
+            readAlso: 'Read Also',
+            likes: 'Likes',
+            notFound: 'Post not found.',
+            by: 'by',
+            share: 'Share:',
+            copyLink: 'Copy Link',
+            copied: 'Link Copied!'
+        },
+        author: {
+            role: 'Certified Travel Consultant · RNAVT 3301',
+            bio: 'Over 15 years exploring the world across 40+ countries. Specializing in bespoke travel itineraries balancing luxury, authenticity, and peace of mind.'
+        },
         comments: {
             title: 'Comments',
             leaveComment: 'Leave a Comment',
@@ -55,7 +79,19 @@ const forumTranslations = {
         loading: 'Chargement des posts...',
         'loading.post': 'Chargement du post...',
         noResults: 'Aucun post trouvé. Essayez une autre recherche !',
-        post: { readAlso: 'Lire Aussi', likes: 'J\'aime', notFound: 'Post non trouvé.', by: 'par' },
+        post: {
+            readAlso: 'Lire Aussi',
+            likes: 'J\'aime',
+            notFound: 'Post non trouvé.',
+            by: 'par',
+            share: 'Partager :',
+            copyLink: 'Copier le Lien',
+            copied: 'Lien Copié !'
+        },
+        author: {
+            role: 'Consultant Voyage Certifié · RNAVT 3301',
+            bio: 'Plus de 15 ans à explorer le monde dans plus de 40 pays. Spécialisé dans la conception d\'itinéraires sur-mesure alliant qualité, authenticité e sérénité.'
+        },
         comments: {
             title: 'Commentaires',
             leaveComment: 'Laisser un Commentaire',
@@ -635,9 +671,47 @@ if (currentPage === 'post' && postContent) {
         // CTA
         const ctaText = getLocalizedField(post.cta, 'text');
         const ctaButton = getLocalizedField(post.cta, 'button');
+        const ctaLink = getLocalizedField(post.cta, 'link') || post.cta.link;
         document.getElementById('ctaTitle').textContent = ctaText;
-        document.getElementById('ctaButton').href = post.cta.link;
+        document.getElementById('ctaButton').href = ctaLink;
         document.getElementById('ctaButton').textContent = ctaButton;
+        if (ctaLink && ctaLink.startsWith('https://wa.me/')) {
+            document.getElementById('ctaButton').target = '_blank';
+            document.getElementById('ctaButton').rel = 'noopener noreferrer';
+        }
+
+        // Author Card Localization
+        const authorRoleEl = document.getElementById('authorRole');
+        if (authorRoleEl) authorRoleEl.textContent = getForumTranslation('author.role');
+        const authorBioEl = document.getElementById('authorBio');
+        if (authorBioEl) authorBioEl.textContent = getForumTranslation('author.bio');
+
+        // Social Sharing Buttons
+        const currentPostUrl = window.location.href;
+        const encodedPostUrl = encodeURIComponent(currentPostUrl);
+        const encodedPostTitle = encodeURIComponent(title);
+
+        const shareWa = document.getElementById('shareWhatsApp');
+        if (shareWa) shareWa.href = `https://api.whatsapp.com/send?text=${encodedPostTitle}%20${encodedPostUrl}`;
+
+        const shareFb = document.getElementById('shareFacebook');
+        if (shareFb) shareFb.href = `https://www.facebook.com/sharer/sharer.php?u=${encodedPostUrl}`;
+
+        const shareTw = document.getElementById('shareTwitter');
+        if (shareTw) shareTw.href = `https://twitter.com/intent/tweet?text=${encodedPostTitle}&url=${encodedPostUrl}`;
+
+        const shareCopy = document.getElementById('shareCopy');
+        if (shareCopy) {
+            shareCopy.onclick = async () => {
+                try {
+                    await navigator.clipboard.writeText(currentPostUrl);
+                    const copyTextEl = document.getElementById('copyBtnText') || shareCopy;
+                    const origText = copyTextEl.textContent;
+                    copyTextEl.textContent = getForumTranslation('post.copied') || 'Copiado!';
+                    setTimeout(() => { copyTextEl.textContent = origText; }, 2000);
+                } catch (_) {}
+            };
+        }
 
         // Like button
         const likeBtn = document.getElementById('likeBtn');

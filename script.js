@@ -5,6 +5,7 @@ const translations = {
             home: 'Início',
             about: 'Sobre',
             services: 'Serviços',
+            forum: 'Guias',
             testimonials: 'Testemunhos',
             contact: 'Contacto',
             promotions: 'Promoções'
@@ -144,6 +145,7 @@ const translations = {
             home: 'Home',
             about: 'About',
             services: 'Services',
+            forum: 'Guides',
             testimonials: 'Testimonials',
             contact: 'Contact',
             promotions: 'Promotions'
@@ -283,6 +285,7 @@ const translations = {
             home: 'Accueil',
             about: 'À propos',
             services: 'Services',
+            forum: 'Guides',
             testimonials: 'Témoignages',
             contact: 'Contact',
             promotions: 'Promotions'
@@ -477,6 +480,34 @@ function updateContent() {
     const key = element.getAttribute('data-translate');
     const translation = getTranslation(key);
     if (translation) element.textContent = translation;
+  });
+
+  // Synchronize promo links across desktop & mobile nav to match active language
+  const promoLinks = document.querySelectorAll('a[href*="promo.travelfrontiers.pt"]');
+  promoLinks.forEach((link) => {
+    link.href = `https://promo.travelfrontiers.pt/${currentLanguage}`;
+  });
+
+  // Synchronize floating action button (FAB) href and tooltip title
+  const promoFab = document.getElementById('promotions-fab');
+  if (promoFab) {
+    promoFab.href = `https://promo.travelfrontiers.pt/${currentLanguage}`;
+    const promoTitle = translations[currentLanguage]?.promotions?.title;
+    if (promoTitle) {
+      promoFab.setAttribute('title', promoTitle);
+    }
+  }
+
+  // Synchronize consultant WhatsApp recruitment CTA message according to language
+  const whatsappConsultantMsgs = {
+    pt: 'Quero%20saber%20mais%20sobre%20ser%20consultor%20de%20viagens!',
+    en: 'I%20want%20to%20know%20more%20about%20being%20a%20travel%20consultant!',
+    fr: 'Je%20veux%20en%20savoir%20plus%20sur%20le%20poste%20de%20consultant%20voyage!'
+  };
+  const consultantLinks = document.querySelectorAll('a[href*="wa.me/351918376604?text="]');
+  consultantLinks.forEach((link) => {
+    const msg = whatsappConsultantMsgs[currentLanguage] || whatsappConsultantMsgs.pt;
+    link.href = `https://wa.me/351918376604?text=${msg}`;
   });
 }
 

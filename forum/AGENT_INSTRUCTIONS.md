@@ -47,20 +47,23 @@ File path: `forum/posts/<post-id>.json` (e.g. `forum/posts/rome-food-guide.json`
   "content_fr": "<h2>Introduction</h2><p>La cuisine romaine est authentique, riche et inoubliable...</p><h2>Les Pâtes Incontournables</h2><p>Ne partez pas sans goûter l'authentique Carbonara et Cacio e Pepe...</p>",
   "likes": 0,
   "affiliateLink": {
-    "text": "Book a Rome Street Food Tour on Viator",
-    "text_pt": "Reserve um Street Food Tour em Roma no Viator",
-    "text_fr": "Réservez un Food Tour à Rome sur Viator",
-    "url": "https://www.viator.com/?pid=P00279385&mcid=42383&medium=link",
+    "text": "Explore tours and experiences in Rome on Viator",
+    "text_pt": "Ver passeios e experiências em Roma no Viator",
+    "text_fr": "Découvrez les visites et activités à Rome sur Viator",
+    "url": "https://www.viator.com/search/Rome?pid=P00279385&mcid=42383&medium=link",
     "type": "viator"
   },
   "cta": {
     "text": "Want a personalized Rome itinerary with curated restaurant bookings?",
-    "text_pt": "Quer um itinerário personalizado para Roma com reservas nos melhores restaurantes?",
-    "text_fr": "Vous souhaitez un itinéraire personnalisé à Rome avec réservations de restaurants ?",
-    "button": "Request a custom plan",
-    "button_pt": "Pedir plano personalizado",
-    "button_fr": "Demander un plan sur-mesure",
-    "link": "https://www.travelfrontiers.pt/#contact"
+    "text_pt": "Quer um itinerário personalizado para Roma com curadoria especializada?",
+    "text_fr": "Vous souhaitez un itinéraire personnalisé pour Rome avec des réservations sélectionnées ?",
+    "button": "Plan my trip via WhatsApp",
+    "button_pt": "Falar com o Tiago no WhatsApp",
+    "button_fr": "Contacter Tiago sur WhatsApp",
+    "link": "https://wa.me/351918376604?text=Ol%C3%A1%20Tiago%21%20Li%20o%20guia%20de%20Roma%20no%20Travel%20Frontiers%20e%20gostaria%20de%20pedir%20uma%20proposta%20de%20viagem%20personalizada.",
+    "link_pt": "https://wa.me/351918376604?text=Ol%C3%A1%20Tiago%21%20Li%20o%20guia%20de%20Roma%20no%20Travel%20Frontiers%20e%20gostaria%20de%20pedir%20uma%20proposta%20de%20viagem%20personalizada.",
+    "link_en": "https://wa.me/351918376604?text=Hi%20Tiago%21%20I%20read%20the%20Rome%20guide%20on%20Travel%20Frontiers%20and%20would%20love%20to%20get%20a%20custom%20travel%20proposal.",
+    "link_fr": "https://wa.me/351918376604?text=Bonjour%20Tiago%20%21%20J%27ai%20lu%20l%27article%20sur%20Rome%20sur%20Travel%20Frontiers%20et%20j%27aimerais%20recevoir%20une%20proposition%20de%20voyage%20sur%20mesure."
   },
   "relatedPosts": ["malta-best-restaurants"],
   "tags": ["rome", "food", "restaurants", "italy", "local-tips"]
