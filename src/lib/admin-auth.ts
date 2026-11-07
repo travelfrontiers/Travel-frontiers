@@ -64,7 +64,7 @@ export async function verifyGoogleIdToken(
 
     const jwk = (await googleSigningKeys()).find((key) => key.kid === header.kid && key.alg === "RS256");
     if (!jwk) return null;
-    const publicKey = createPublicKey({ key: jwk, format: "jwk" });
+    const publicKey = createPublicKey({ key: jwk, format: "jwk" } as Parameters<typeof createPublicKey>[0]);
     const validSignature = verifySignature(
       "RSA-SHA256",
       Buffer.from(`${encodedHeader}.${encodedClaims}`),
