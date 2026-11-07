@@ -6,7 +6,7 @@
 2. Inicia sessão no Sanity Studio com a mesma conta usada para gerir as promoções.
 3. No menu do Studio, escolhe **Calculadora de comissão**.
 
-A calculadora fica dentro do Studio existente. Não há um segundo ecrã de login nem configuração de um cliente OAuth separado.
+A calculadora fica dentro do Studio existente e usa a sessão já aberta.
 
 ## Acesso
 
