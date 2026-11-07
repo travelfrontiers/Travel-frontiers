@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const roundEuro = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
 const formatEuro = (value: number) => new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(Number.isFinite(value) ? value : 0);
@@ -10,6 +10,8 @@ function amount(value: string) {
 }
 
 export default function CommissionCalculator() {
+  const [darkMode, setDarkMode] = useState(false);
+  const [themeReady, setThemeReady] = useState(false);
   const [commission, setCommission] = useState("617.49");
   const [travelerCount, setTravelerCount] = useState("4");
   const [travelerPrice, setTravelerPrice] = useState("1286");
@@ -18,6 +20,16 @@ export default function CommissionCalculator() {
   const [shareSaving, setShareSaving] = useState(false);
   const [cedeCommission, setCedeCommission] = useState(false);
   const [requestedCession, setRequestedCession] = useState("0");
+
+  useEffect(() => {
+    const savedTheme = window.localStorage.getItem("tf-commission-theme");
+    setDarkMode(savedTheme === "dark");
+    setThemeReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (themeReady) window.localStorage.setItem("tf-commission-theme", darkMode ? "dark" : "light");
+  }, [darkMode, themeReady]);
 
   const result = useMemo(() => {
     const commissionTotal = amount(commission);
@@ -54,11 +66,14 @@ export default function CommissionCalculator() {
   const sharingVisible = selfTravels && shareSaving && result.people > 1;
 
   return (
-    <div className="tf-calc">
+    <div className={`tf-calc ${darkMode ? "tf-calc-dark" : ""}`}>
       <header className="tf-calc-intro">
-        <p className="tf-calc-eyebrow">Área de consultoria</p>
-        <h1>Calculadora de comissão</h1>
-        <p>Introduz os valores da viagem e define quanto da tua comissão queres ceder aos viajantes.</p>
+        <div className="tf-calc-intro-copy">
+          <p className="tf-calc-eyebrow">Área de consultoria</p>
+          <h1>Calculadora de comissão</h1>
+          <p>Introduz os valores da viagem e define quanto da tua comissão queres ceder aos viajantes.</p>
+        </div>
+        <button className="tf-calc-theme" type="button" aria-pressed={darkMode} onClick={() => setDarkMode((current) => !current)}>{darkMode ? "☀ Modo claro" : "☾ Modo escuro"}</button>
       </header>
       <div className="tf-calc-grid">
         <section className="tf-calc-card" aria-labelledby="trip-data-heading">
@@ -122,7 +137,14 @@ export default function CommissionCalculator() {
         .tf-calc-hero{border-radius:17px;padding:19px 20px;color:#fff;background:linear-gradient(125deg,#f97316,#f59e0b);box-shadow:0 12px 26px #f973162b}.tf-calc-hero>span,.tf-calc-hero small{display:block;color:#fff5e9;font-size:12px}.tf-calc-hero output{display:block;margin-top:4px;font-size:clamp(32px,4vw,42px);line-height:1.12;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums}.tf-calc-hero small{margin-top:5px}
         .tf-calc-breakdown{margin-top:17px}.tf-calc-breakdown>div{display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid #f0f1f2;font-size:13px}.tf-calc-breakdown>div:last-child{border:0}.tf-calc-breakdown span{color:#6b7280}.tf-calc-breakdown strong{color:#1a1a1a;text-align:right;font-variant-numeric:tabular-nums}.tf-calc-breakdown .tf-calc-total strong{color:#ea580c}
         .tf-calc-cession-result{display:flex;justify-content:space-between;gap:12px;margin-top:15px;padding:12px 13px;background:#f9fafb;border-radius:12px;font-size:13px}.tf-calc-cession-result span{color:#6b7280}.tf-calc-cession-result strong{text-align:right;color:#1a1a1a}.tf-calc-note,.tf-calc-device-note{color:#6b7280;font-size:12px;line-height:1.5}.tf-calc-note{margin:15px 0 0}.tf-calc-device-note{text-align:center;margin:25px 0 0;color:#9ca3af}
-        @media(max-width:820px){.tf-calc-grid{grid-template-columns:1fr}.tf-calc-result{position:static;order:-1}}@media(max-width:520px){.tf-calc{padding:24px 14px 50px}.tf-calc-card{padding:19px;border-radius:17px}.tf-calc-fields-two{grid-template-columns:1fr;gap:0}.tf-calc-intro h1{font-size:32px}}
+        .tf-calc-intro{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}.tf-calc-intro-copy{flex:1}.tf-calc-theme{flex:none;margin-top:2px;padding:10px 14px;border:1px solid #d1d5db;border-radius:999px;background:#fff;color:#1a1a1a;font:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:background .2s,border-color .2s,color .2s}.tf-calc-theme:hover{background:#fff7ed;border-color:#f97316}
+        .tf-calc-dark{max-width:none;min-height:100vh;margin:0;padding:26px max(20px,calc((100vw - 1120px)/2)) 64px;background:#101820;color:#dbe3ea;color-scheme:dark}
+        .tf-calc-dark .tf-calc-intro h1,.tf-calc-dark .tf-calc-section-title h2,.tf-calc-dark .tf-calc-field label,.tf-calc-dark .tf-calc-toggle strong,.tf-calc-dark .tf-calc-breakdown strong,.tf-calc-dark .tf-calc-cession-result strong{color:#f3f6f8}
+        .tf-calc-dark .tf-calc-intro-copy>p:last-child,.tf-calc-dark .tf-calc-field small,.tf-calc-dark .tf-calc-help,.tf-calc-dark .tf-calc-toggle small,.tf-calc-dark .tf-calc-breakdown span,.tf-calc-dark .tf-calc-cession-result span,.tf-calc-dark .tf-calc-note,.tf-calc-dark .tf-calc-summary-head>p,.tf-calc-dark .tf-calc-device-note,.tf-calc-dark .tf-calc-muted{color:#a9b6c2}
+        .tf-calc-dark .tf-calc-card{background:#18232d;border-color:#30414d;box-shadow:0 18px 48px rgba(0,0,0,.22)}
+        .tf-calc-dark .tf-calc-section-title>span{background:#35271e;color:#ff9b57}.tf-calc-dark .tf-calc-toggle{background:#242a2d;border-color:#69462d}.tf-calc-dark .tf-calc-field input{background:#111b23;border-color:#46535e;color:#f3f6f8}.tf-calc-dark .tf-calc-field input:focus{border-color:#fb923c;box-shadow:0 0 0 4px #f9731628}.tf-calc-dark .tf-calc-field label span{color:#a9b6c2}
+        .tf-calc-dark .tf-calc-theme{background:#24323d;border-color:#4a5b68;color:#f3f6f8}.tf-calc-dark .tf-calc-theme:hover{background:#35271e;border-color:#fb923c}.tf-calc-dark hr{border-top-color:#30414d}.tf-calc-dark .tf-calc-breakdown>div{border-bottom-color:#30414d}.tf-calc-dark .tf-calc-cession{background:#242a2d;border-color:#69462d}.tf-calc-dark .tf-calc-cession-result{background:#202c35}.tf-calc-dark .tf-calc-warning{color:#fdba74}
+        @media(max-width:820px){.tf-calc-grid{grid-template-columns:1fr}.tf-calc-result{position:static;order:-1}}@media(max-width:520px){.tf-calc{padding:24px 14px 50px}.tf-calc-dark{padding:24px 14px 50px}.tf-calc-intro{gap:12px;align-items:center}.tf-calc-theme{padding:9px 11px;font-size:12px}.tf-calc-card{padding:19px;border-radius:17px}.tf-calc-fields-two{grid-template-columns:1fr;gap:0}.tf-calc-intro h1{font-size:32px}}
       `}</style>
     </div>
   );
