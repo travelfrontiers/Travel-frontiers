@@ -483,7 +483,7 @@ function updateContent() {
   });
 
   // Synchronize promo links across desktop & mobile nav to match active language
-  const promoLinks = document.querySelectorAll('a[href*="promo.travelfrontiers.pt"]');
+  const promoLinks = document.querySelectorAll('a[href*="promo.travelfrontiers.pt"]:not([data-admin-link])');
   promoLinks.forEach((link) => {
     link.href = `https://promo.travelfrontiers.pt/${currentLanguage}`;
   });
