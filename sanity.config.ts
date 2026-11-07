@@ -14,6 +14,7 @@ import { TranslateAction } from './src/sanity/actions/TranslateAction'
 import { GenerateStoryAction } from './src/sanity/actions/GenerateStoryAction'
 import { ArchiveAction } from './src/sanity/actions/ArchiveAction'
 import { ProcessExpiredAction } from './src/sanity/actions/ProcessExpiredAction'
+import CommissionCalculator from './src/components/commission-calculator'
 import { GenerateItineraryAction } from './src/sanity/actions/GenerateItineraryAction'
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!
@@ -36,6 +37,9 @@ export default defineConfig({
             return prev
         },
     },
+    tools: [
+        { name: 'comissoes', title: 'Calculadora de comissão', component: CommissionCalculator },
+    ],
     plugins: [
         structureTool(),
         // Vision is a tool that lets you query your content with GROQ in the studio
