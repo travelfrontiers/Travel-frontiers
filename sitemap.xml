@@ -1,50 +1,159 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Main Landing Pages -->
   <url>
     <loc>https://www.travelfrontiers.pt/</loc>
-    <lastmod>2026-04-26</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <url>
     <loc>https://www.travelfrontiers.pt/en/</loc>
-    <lastmod>2026-04-26</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <url>
     <loc>https://www.travelfrontiers.pt/fr/</loc>
-    <lastmod>2026-04-26</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
+  <!-- Promotions Platform -->
   <url>
     <loc>https://promo.travelfrontiers.pt/pt</loc>
-    <lastmod>2026-04-17</lastmod>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://promo.travelfrontiers.pt/en</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://promo.travelfrontiers.pt/fr</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Travel Guides & Forum -->
+  <url>
+    <loc>https://www.travelfrontiers.pt/forum/</loc>
+    <lastmod>2026-11-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
+    <loc>https://www.travelfrontiers.pt/forum/post.html?id=3-dias-em-paris-arquitetura-e-gastronomia</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.travelfrontiers.pt/forum/post.html?id=4-dias-costa-amalfitana-italia-imperdiveis</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.travelfrontiers.pt/forum/post.html?id=4-dias-em-praga-historia-e-gastronomia</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.travelfrontiers.pt/forum/post.html?id=bulgaria-segredos</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.travelfrontiers.pt/forum/post.html?id=iceland-budget-tips</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.travelfrontiers.pt/forum/post.html?id=iceland-hiking-guide</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.travelfrontiers.pt/forum/post.html?id=japan-tokyo-itinerary</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.travelfrontiers.pt/forum/post.html?id=malta-hidden-gems</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.travelfrontiers.pt/forum/post.html?id=melhores-mercados-de-natal-escapadinha-tres-dias</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.travelfrontiers.pt/forum/post.html?id=quioto-japan</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.travelfrontiers.pt/forum/post.html?id=sargaco-nas-caraibas-e-dicas-para-ferias</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.travelfrontiers.pt/forum/post.html?id=sicilia</loc>
+    <lastmod>2026-11-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Legal & Policies -->
+  <url>
     <loc>https://www.travelfrontiers.pt/privacy.html</loc>
-    <lastmod>2025-08-14</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <url>
     <loc>https://www.travelfrontiers.pt/terms.html</loc>
-    <lastmod>2026-04-17</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <url>
     <loc>https://www.travelfrontiers.pt/politica-cookies.html</loc>
-    <lastmod>2025-09-12</lastmod>
+    <lastmod>2026-11-07</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

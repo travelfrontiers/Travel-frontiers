@@ -1,5 +1,7 @@
 import { client, urlFor } from "@/sanity/client";
 import { Locale, getDictionary } from "@/i18n/dictionaries";
+import { generateMetadata as generateSeoMetadata } from "@/lib/seo";
+import type { Metadata } from "next";
 import { PortableText } from "@portabletext/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -7,6 +9,53 @@ import { ChevronLeft, Calendar, MapPin, Clock, Star, CheckCircle2, Info } from "
 import { notFound } from "next/navigation";
 
 export const revalidate = 0; // Force fresh data from Sanity
+
+type PageProps = {
+    params: Promise<{ lang: string; slug: string }>;
+};
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+    const { lang, slug } = await params;
+    const promo = await getPromotion(slug, lang);
+
+    if (!promo) {
+        return generateSeoMetadata({
+            lang: (lang as "pt" | "en" | "fr") || "pt",
+            title: "Promoção Não Encontrada | Travel Frontiers",
+        });
+    }
+
+    const priceText = promo.price ? ` | Desde €${promo.price}` : "";
+    const title = `${promo.title}${priceText} - Travel Frontiers`;
+    const description = promo.subtitle || (
+        lang === "fr"
+            ? `Découvrez notre offre exclusive pour ${promo.location || promo.title}. Conseil & réservation Travel Frontiers (RNAVT 3301).`
+            : lang === "en"
+                ? `Discover our exclusive travel offer for ${promo.location || promo.title}. Personalized travel planning by Travel Frontiers.`
+                : `Descubra a nossa oferta exclusiva para ${promo.location || promo.title}. Consultoria e planeamento sob medida pela Travel Frontiers.`
+    );
+
+    let imageUrl: string | undefined;
+    if (promo.heroImage) {
+        try {
+            imageUrl = urlFor(promo.heroImage).width(1200).height(630).fit("crop").url();
+        } catch {
+            imageUrl = undefined;
+        }
+    }
+
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://promo.travelfrontiers.pt";
+    const pageUrl = `${siteUrl}/${lang}/promo/${slug}`;
+
+    return generateSeoMetadata({
+        lang: (lang as "pt" | "en" | "fr") || "pt",
+        title,
+        description,
+        image: imageUrl,
+        url: pageUrl,
+        type: "article",
+    });
+}
 
 async function getPromotion(slug: string, lang: string) {
     try {
