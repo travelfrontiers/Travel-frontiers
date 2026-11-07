@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Translation Strategy: Gemma 4 (primary) -> DeepL (secondary) -> MyMemory (last resort) -> Copy (fallback)
+// Translation Strategy: Gemini (primary) -> DeepL (secondary) -> MyMemory (last resort) -> Copy (fallback)
 
 /**
- * Translate text using Gemma 4 via Google Generative AI
+ * Translate text using Gemini via Google Generative AI
  */
-async function translateWithGemma(text: string, targetLang: string): Promise<string> {
+async function translateWithGemini(text: string, targetLang: string): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' }, { apiVersion: 'v1beta' });
+    const aiModel = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+    const model = genAI.getGenerativeModel({ model: aiModel });
 
     const langName = targetLang === 'en' ? 'English' : 'French';
     const prompt = `You are a professional travel content translator. Translate the following Portuguese text to ${langName}.\nReturn ONLY the translated text, with no explanations, no quotes, and no extra commentary.\n\n${text}`;
@@ -19,7 +20,7 @@ async function translateWithGemma(text: string, targetLang: string): Promise<str
     const result = await model.generateContent(prompt);
     const translated = result.response.text().trim();
 
-    if (!translated) throw new Error('Gemma 4 returned an empty translation');
+    if (!translated) throw new Error('Gemini returned an empty translation');
     return translated;
 }
 
@@ -77,13 +78,13 @@ async function translateWithMyMemory(text: string, targetLang: string): Promise<
 async function translateText(text: string, targetLang: string): Promise<string> {
     if (!text || text.trim() === '') return '';
 
-    // --- Tier 1: Gemma 4 ---
+    // --- Tier 1: Gemini ---
     try {
-        const result = await translateWithGemma(text, targetLang);
-        console.log(`✓ Gemma 4 translated: "${text.substring(0, 30)}..."`);
+        const result = await translateWithGemini(text, targetLang);
+        console.log(`✓ Gemini translated: "${text.substring(0, 30)}..."`);
         return result;
-    } catch (gemmaError: any) {
-        console.warn(`Gemma 4 failed: ${gemmaError.message}. Trying DeepL...`);
+    } catch (geminiError: any) {
+        console.warn(`Gemini failed: ${geminiError.message}. Trying DeepL...`);
 
         // --- Tier 2: DeepL ---
         try {

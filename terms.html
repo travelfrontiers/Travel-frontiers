@@ -59,8 +59,10 @@
         <a href="index.html#home">Início</a>
         <a href="index.html#about">Sobre</a>
         <a href="index.html#services">Serviços</a>
+        <a href="/forum/">Guias</a>
         <a href="index.html#testimonials">Testemunhos</a>
         <a href="index.html#contact">Contacto</a>
+        <a href="https://promo.travelfrontiers.pt/pt">Promoções</a>
       </nav>
     </div>
   </div>
@@ -135,4 +137,59 @@
     <p>Data will be processed according to the Privacy Policy, in compliance with GDPR.</p>
     <h2>8. Governing Law</h2>
     <p>
-      These terms are governed by Portuguese law and any disputes will be resolved
+      These terms are governed by Portuguese law and any disputes will be resolved in the competent courts of Portugal.
+    </p>
+  </div>
+
+  <!-- Français -->
+  <div id="terms-fr" class="terms-text">
+    <h2>1. Identification et Licence Légale</h2>
+    <p>
+      Tiago Ferreira agit en tant que consultant indépendant associé à la plateforme iCligo (RNAVT 3301), voyagiste et agence de voyages légalement enregistrée au Portugal. Le numéro RNAVT 3301 fait référence à l'entité iCligo qui fournit les produits et services de voyage.
+    </p>
+    <h2>2. Nature des Services</h2>
+    <p>
+      Tiago Ferreira fournit des services de conseil personnalisé et de planification de voyages, en utilisant la plateforme iCligo pour accéder à un réseau de fournisseurs de voyages. Tout en participant à la préparation des séjours, il n'est pas voyagiste direct et ne conclut pas de contrats en son nom propre.
+    </p>
+    <h2>3. Responsabilités</h2>
+    <p>
+      iCligo, en tant que voyagiste agréé, est responsable des réservations finales et des contrats avec les fournisseurs. Tiago Ferreira s'engage à fournir des conseils basés sur son expertise, mais ne peut être tenu responsable des événements indépendants de son intervention directe.
+    </p>
+    <h2>4. Obligations du Client</h2>
+    <p>
+      Le client doit fournir des informations exactes pour la conception optimale des itinéraires et accepte que les réservations et contrats soient formalisés via iCligo.
+    </p>
+    <h2>5. Propriété Intellectuelle</h2>
+    <p>Tous les documents, propositions et itinéraires sont la propriété intellectuelle exclusive du consultant.</p>
+    <h2>6. Conditions Commerciales</h2>
+    <p>
+      Les modalités de paiement, d'annulation et de modification sont toujours communiquées au client et respectent la législation en vigueur.
+    </p>
+    <h2>7. Confidentialité</h2>
+    <p>Les données personnelles sont traitées conformément à notre Politique de Confidentialité et en conformité avec le RGPD.</p>
+    <h2>8. Droit Applicable</h2>
+    <p>
+      Les présentes conditions sont régies par le droit portugais et tout litige sera soumis aux tribunaux compétents au Portugal.
+    </p>
+  </div>
+
+</main>
+
+<script>
+function showLang(lang) {
+    document.querySelectorAll('.terms-text').forEach(el => el.classList.remove('active'));
+    var el = document.getElementById('terms-' + lang);
+    if (el) el.classList.add('active');
+}
+</script>
+
+<footer class="footer">
+    <div class="container">
+        <p style="padding:20px 0; text-align:center; color:#9ca3af;">
+            &copy; 2026 Travel Frontiers. Todos os direitos reservados.
+        </p>
+    </div>
+</footer>
+
+</body>
+</html>

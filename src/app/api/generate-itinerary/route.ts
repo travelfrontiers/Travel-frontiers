@@ -74,9 +74,10 @@ export async function POST(request: Request) {
 
         // 3. TWO-STEP APPROACH with systemInstruction to eliminate ALL echo.
         const genAI = new GoogleGenerativeAI(apiKey);
+        const aiModel = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 
         // ── STEP 1: Extract key travel facts (simple model, no system instruction needed) ──
-        const extractorModel = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' }, { apiVersion: 'v1beta' });
+        const extractorModel = genAI.getGenerativeModel({ model: aiModel });
 
         const extractionPrompt = `Extrai APENAS os dados concretos (Destino, Datas, Viajantes, Hotéis, Voos, Atividades) desta reserva.
 É absolutamente essencial que resumas tudo em menos de 200 palavras.
@@ -94,7 +95,7 @@ ${extractedText.substring(0, 30000)}
         }
 
         // ── STEP 2: Generate itinerary JSON ──
-        const itineraryModel = genAI.getGenerativeModel({ model: 'gemma-4-31b-it' }, { apiVersion: 'v1beta' });
+        const itineraryModel = genAI.getGenerativeModel({ model: aiModel });
 
         const itineraryPrompt = `És um planeador de viagens de luxo da "Travel Frontiers" (Portugal).
 Escreve EXCLUSIVAMENTE em Português de Portugal.

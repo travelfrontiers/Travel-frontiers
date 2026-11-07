@@ -216,6 +216,20 @@ export default async function PromotionPage({
                                 >
                                     {dict.nav.contact}
                                 </Link>
+                                <a
+                                    href={`https://wa.me/351918376604?text=${encodeURIComponent(
+                                        lang === 'fr'
+                                            ? `Bonjour! Je suis intéressé(e) par la promotion "${promo.title}". Pouvez-vous m'envoyer plus de détails?`
+                                            : lang === 'en'
+                                                ? `Hi! I'm interested in the "${promo.title}" promotion. Can you send me more details?`
+                                                : `Olá! Estou interessado na promoção "${promo.title}". Pode enviar-me mais detalhes?`
+                                    )}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block w-full bg-green-500 hover:bg-green-600 text-white font-black py-5 rounded-2xl transition-all shadow-xl shadow-green-200 active:scale-[0.98] text-center"
+                                >
+                                    💬 WhatsApp
+                                </a>
                                 <p className="text-center text-xs text-gray-400 font-medium flex items-center justify-center gap-2">
                                     <Info className="w-3.5 h-3.5" />
                                     {(dict as any).promo.proposalResponse}
