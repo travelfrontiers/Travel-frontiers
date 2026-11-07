@@ -23,7 +23,7 @@ export default function CommissionCalculator() {
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("tf-commission-theme");
-    setDarkMode(savedTheme === "dark");
+    setDarkMode(savedTheme ? savedTheme === "dark" : true);
     setThemeReady(true);
   }, []);
 
