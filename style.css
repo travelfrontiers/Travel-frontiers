@@ -14,22 +14,6 @@
 
 /* Modern CSS Reset */
 *, *::before, *::after {
-    margin: 0;/* CSS Custom Properties for better performance and maintainability */
-:root {
-    --primary-color: #f97316;
-    --primary-hover: #ea580c;
-    --secondary-color: #fbbf24;
-    --text-color: #333;
-    --bg-color: #fff;
-    --border-color: #d1d5db;
-    --gradient-primary: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    --transition-base: all 0.3s ease;
-}
-
-/* Modern CSS Reset */
-*, *::before, *::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;

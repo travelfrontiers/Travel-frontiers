@@ -54,19 +54,11 @@ export async function GET(request: Request) {
 
         console.log(`[ExpirePromotions] Total promotions in database: ${expiredPromotions.length}`);
 
-        // Debug info for the user
+        // Safe operational info (no sensitive credentials/token prefixes exposed)
         const debugInfo = {
             today,
             totalPromotions: expiredPromotions.length,
             hasToken: !!process.env.SANITY_API_WRITE_TOKEN,
-            tokenPrefix: process.env.SANITY_API_WRITE_TOKEN ? process.env.SANITY_API_WRITE_TOKEN.substring(0, 4) : 'none',
-            allPromos: expiredPromotions.map(p => ({
-                id: p._id,
-                title: p.title,
-                lang: p.language,
-                validUntil: p.validUntil,
-                status: p.status
-            }))
         };
 
         // Filter for truly expired ones
