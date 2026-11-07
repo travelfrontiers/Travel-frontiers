@@ -31,6 +31,7 @@ export default function AdminLogin({ clientId }: { clientId: string }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    if (!clientId) return;
     let active = true;
     fetch("/api/admin-google", { cache: "no-store" })
       .then(async (response) => {
@@ -42,7 +43,7 @@ export default function AdminLogin({ clientId }: { clientId: string }) {
         if (active) setError(reason instanceof Error ? reason.message : "Não foi possível iniciar o login.");
       });
     return () => { active = false; };
-  }, []);
+  }, [clientId]);
 
   useEffect(() => {
     if (!scriptReady || !nonce || !clientId || !buttonRef.current || !window.google) return;
