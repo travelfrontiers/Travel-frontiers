@@ -483,7 +483,12 @@ function updateContent() {
   });
 
   // Synchronize promo links across desktop & mobile nav to match active language
-  const promoLinks = document.querySelectorAll('a[href*="promo.travelfrontiers.pt"]:not([data-admin-link])');
+  const requestFormLinks = document.querySelectorAll('[data-request-form-link]');
+  requestFormLinks.forEach((link) => {
+    link.href = `https://promo.travelfrontiers.pt/${currentLanguage}/pedido`;
+  });
+
+  const promoLinks = document.querySelectorAll('a[href*="promo.travelfrontiers.pt"]:not([data-admin-link]):not([data-request-form-link])');
   promoLinks.forEach((link) => {
     link.href = `https://promo.travelfrontiers.pt/${currentLanguage}`;
   });

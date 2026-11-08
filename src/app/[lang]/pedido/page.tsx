@@ -5,17 +5,14 @@ const pageCopy = {
   pt: {
     title: "Vamos planear a tua próxima viagem",
     intro: "Partilha algumas informações para eu preparar uma proposta à tua medida. Os campos assinalados com * são obrigatórios.",
-    disclosure: "Travel Frontiers é a marca de consultoria de viagens de Tiago Ferreira, integrada na GupiTravel.",
   },
   en: {
     title: "Let’s plan your next trip",
     intro: "Share a few details so I can prepare a proposal for you. Fields marked with * are required.",
-    disclosure: "Travel Frontiers is Tiago Ferreira’s travel consultancy brand, part of GupiTravel.",
   },
   fr: {
     title: "Planifions votre prochain voyage",
     intro: "Partagez quelques informations pour que je puisse préparer une proposition sur mesure. Les champs marqués d’un * sont obligatoires.",
-    disclosure: "Travel Frontiers est la marque de conseil en voyages de Tiago Ferreira, intégrée à GupiTravel.",
   },
 };
 
@@ -33,7 +30,6 @@ export default async function TripRequestPage({ params }: { params: Promise<{ la
       <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-10">
         <TripRequestForm lang={locale} />
       </div>
-      <p className="mx-auto mt-6 max-w-3xl text-center text-xs text-slate-500">{copy.disclosure}</p>
     </section>
   );
 }

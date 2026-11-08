@@ -26,7 +26,7 @@ export default function Header({ lang }: HeaderProps) {
         { href: "https://www.travelfrontiers.pt/#services", label: { pt: "Serviços", en: "Services", fr: "Services" } },
         { href: "https://www.travelfrontiers.pt/forum/", label: { pt: "Guias", en: "Guides", fr: "Guides" } },
         { href: "https://www.travelfrontiers.pt/#testimonials", label: { pt: "Testemunhos", en: "Testimonials", fr: "Témoignages" } },
-        { href: "https://www.travelfrontiers.pt/#contact", label: { pt: "Contacto", en: "Contact", fr: "Contact" } },
+        { href: `https://promo.travelfrontiers.pt/${lang}/pedido`, label: { pt: "Contacto", en: "Contact", fr: "Contact" } },
         { href: `/${lang}`, label: { pt: "Promoções", en: "Promotions", fr: "Promotions" } },
     ];
 
