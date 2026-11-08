@@ -39,7 +39,29 @@ begin
     where id = linked_trip.id;
   end loop;
 
-  -- Linked leads are detached by ON DELETE SET NULL; docs and client links cascade.
+  -- Retain an anonymous opportunity record while removing its personal details.
+  update public.crm_leads
+  set client_id = null,
+      full_name = 'Cliente removido',
+      email = 'removed-' || id::text || '@privacy.invalid',
+      phone = null,
+      destination = null,
+      departure_date = null,
+      return_date = null,
+      date_flexible = false,
+      adults = 1,
+      children_ages = '{}',
+      travel_style = null,
+      budget = null,
+      notes = null,
+      internal_notes = null,
+      follow_up_date = null,
+      lost_reason = null,
+      status = 'lost',
+      updated_at = now()
+  where client_id = p_client_id;
+
+  -- Documents and client links cascade; trip records/tasks stay operational.
   delete from public.crm_clients where id = p_client_id;
 end;
 $$;
