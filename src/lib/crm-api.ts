@@ -37,4 +37,4 @@ export function supabaseAdminConfig() {
   };
 }
 
-export const CRM_LEAD_STATUSES = ["new", "qualifying", "research", "quote_preparing", "quote_sent", "awaiting_reply", "won", "lost"] as const;
+export const CRM_LEAD_STATUSES = ["new", "quote_preparing", "quote_sent", "awaiting_reply", "won", "lost"] as const;
