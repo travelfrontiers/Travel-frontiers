@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   const date_flexible = body.date_flexible === true;
   const consent_privacy = body.consent_privacy === true;
 
-  if (!full_name || full_name.length < 2 || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!full_name || full_name.length < 2 || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !destination) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
   const budgetLabels: Record<string, Record<string, string>> = {
@@ -53,6 +53,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
   if ((departure_date && !/^\d{4}-\d{2}-\d{2}$/.test(departure_date)) || (return_date && !/^\d{4}-\d{2}-\d{2}$/.test(return_date))) {
+    return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+  }
+  if (!date_flexible && (!departure_date || !return_date)) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
   if (departure_date && return_date && return_date < departure_date) {

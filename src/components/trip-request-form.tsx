@@ -8,24 +8,24 @@ const budgetIds = ["under_500", "500_1000", "1000_1500", "1500_2000", "over_2000
 
 const copy = {
   pt: {
-    fullName: "Nome completo", email: "Email", phone: "Telefone", destination: "Destino pretendido", destinationHint: "Destino ou ‘estou aberto a sugestões’",
-    departure: "Data de partida", returning: "Data de regresso", flexible: "Tenho flexibilidade nas datas", travelers: "Quantas pessoas vão viajar? *", adults: "Adultos *", children: "Crianças", selectAge: "Seleciona a idade", adult: "adulto", adultsPlural: "adultos", year: "ano", years: "anos",
+    fullName: "Nome completo", email: "Email", phone: "Telefone", destination: "Destino ou ideia de viagem", destinationHint: "Ex.: Japão, praia com crianças ou estou aberto a sugestões",
+    departure: "Data de partida", returning: "Data de regresso", flexible: "Tenho flexibilidade nas datas", dateRule: "Indica as datas de partida e regresso ou assinala que tens flexibilidade.", travelers: "Quantas pessoas vão viajar? *", adults: "Adultos *", children: "Crianças", selectAge: "Seleciona a idade", adult: "adulto", adultsPlural: "adultos", year: "ano", years: "anos",
     budgetTitle: "Qual é o orçamento aproximado por pessoa? *", budgetHint: "Considera o valor aproximado que tens disponível por pessoa para a viagem.",
     budgets: ["Até 500 €", "500 € – 1.000 €", "1.000 € – 1.500 €", "1.500 € – 2.000 €", "Mais de 2.000 €", "Ainda não defini"],
     style: "Estilo de viagem", styleHint: "Praia, circuito, cidade…", details: "Mais detalhes", detailsHint: "Partilha todas as preferências ou requisitos importantes para a tua viagem",
     privacy: "Li a", privacyLink: "informação de privacidade", privacyEnd: "e autorizo a utilização dos dados para responder a este pedido. *", send: "Enviar pedido", sending: "A enviar…", sent: "Obrigado. Recebi o teu pedido e entrarei em contacto contigo.", pending: "O pedido ficou registado, mas a notificação por email ainda não está configurada.", failed: "Não foi possível enviar o pedido. Tenta novamente mais tarde.", invalid: "Revê os campos obrigatórios e tenta novamente.",
   },
   en: {
-    fullName: "Full name", email: "Email", phone: "Phone", destination: "Preferred destination", destinationHint: "Destination or ‘I’m open to suggestions’",
-    departure: "Departure date", returning: "Return date", flexible: "My dates are flexible", travelers: "How many people are travelling? *", adults: "Adults *", children: "Children", selectAge: "Select age", adult: "adult", adultsPlural: "adults", year: "year", years: "years",
+    fullName: "Full name", email: "Email", phone: "Phone", destination: "Destination or trip idea", destinationHint: "E.g. Japan, a beach trip with children, or I’m open to suggestions",
+    departure: "Departure date", returning: "Return date", flexible: "My dates are flexible", dateRule: "Enter departure and return dates, or select that your dates are flexible.", travelers: "How many people are travelling? *", adults: "Adults *", children: "Children", selectAge: "Select age", adult: "adult", adultsPlural: "adults", year: "year", years: "years",
     budgetTitle: "What is your approximate budget per person? *", budgetHint: "Consider the approximate amount you have available per person for this trip.",
     budgets: ["Up to €500", "€500 – €1,000", "€1,000 – €1,500", "€1,500 – €2,000", "Over €2,000", "I haven’t decided yet"],
     style: "Travel style", styleHint: "Beach, touring, city break…", details: "More details", detailsHint: "Share any preferences or important requirements for your trip",
     privacy: "I have read the", privacyLink: "privacy information", privacyEnd: "and consent to the use of my data to respond to this request. *", send: "Send request", sending: "Sending…", sent: "Thank you. Your request has been received and I’ll be in touch.", pending: "Your request was recorded, but email notifications are not configured yet.", failed: "We couldn’t send your request. Please try again later.", invalid: "Please review the required fields and try again.",
   },
   fr: {
-    fullName: "Nom complet", email: "E-mail", phone: "Téléphone", destination: "Destination souhaitée", destinationHint: "Destination ou « je suis ouvert(e) aux suggestions »",
-    departure: "Date de départ", returning: "Date de retour", flexible: "Mes dates sont flexibles", travelers: "Combien de personnes voyagent ? *", adults: "Adultes *", children: "Enfants", selectAge: "Sélectionnez l’âge", adult: "adulte", adultsPlural: "adultes", year: "an", years: "ans",
+    fullName: "Nom complet", email: "E-mail", phone: "Téléphone", destination: "Destination ou idée de voyage", destinationHint: "Ex. : Japon, séjour balnéaire avec enfants ou ouvert(e) aux suggestions",
+    departure: "Date de départ", returning: "Date de retour", flexible: "Mes dates sont flexibles", dateRule: "Indiquez les dates de départ et de retour, ou sélectionnez l’option de flexibilité.", travelers: "Combien de personnes voyagent ? *", adults: "Adultes *", children: "Enfants", selectAge: "Sélectionnez l’âge", adult: "adulte", adultsPlural: "adultes", year: "an", years: "ans",
     budgetTitle: "Quel est le budget approximatif par personne ? *", budgetHint: "Indiquez le montant approximatif disponible par personne pour le voyage.",
     budgets: ["Jusqu’à 500 €", "500 € – 1 000 €", "1 000 € – 1 500 €", "1 500 € – 2 000 €", "Plus de 2 000 €", "Je n’ai pas encore décidé"],
     style: "Style de voyage", styleHint: "Plage, circuit, ville…", details: "Plus de détails", detailsHint: "Partagez vos préférences ou toute exigence importante pour votre voyage",
@@ -40,6 +40,7 @@ export default function TripRequestForm({ lang }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [childrenCount, setChildrenCount] = useState(0);
+  const [dateFlexible, setDateFlexible] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -66,6 +67,7 @@ export default function TripRequestForm({ lang }: Props) {
       if (!response.ok) throw new Error(result.error === "invalid_request" ? t.invalid : t.failed);
       form.reset();
       setChildrenCount(0);
+      setDateFlexible(false);
       setMessage(result.notificationPending ? t.pending : t.sent);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : t.failed);
@@ -80,11 +82,14 @@ export default function TripRequestForm({ lang }: Props) {
         <label className="space-y-2 text-sm font-medium text-slate-800">{t.fullName} *<input className={inputClass} name="full_name" autoComplete="name" required minLength={2} maxLength={160} /></label>
         <label className="space-y-2 text-sm font-medium text-slate-800">{t.email} *<input className={inputClass} name="email" type="email" autoComplete="email" required maxLength={254} /></label>
         <label className="space-y-2 text-sm font-medium text-slate-800">{t.phone}<input className={inputClass} name="phone" type="tel" autoComplete="tel" maxLength={40} /></label>
-        <label className="space-y-2 text-sm font-medium text-slate-800">{t.destination}<input className={inputClass} name="destination" maxLength={240} placeholder={t.destinationHint} /></label>
-        <label className="space-y-2 text-sm font-medium text-slate-800">{t.departure}<input className={inputClass} name="departure_date" type="date" /></label>
-        <label className="space-y-2 text-sm font-medium text-slate-800">{t.returning}<input className={inputClass} name="return_date" type="date" /></label>
+        <label className="space-y-2 text-sm font-medium text-slate-800">{t.destination} *<input className={inputClass} name="destination" maxLength={240} placeholder={t.destinationHint} required /></label>
+        <label className="space-y-2 text-sm font-medium text-slate-800">{t.departure}{dateFlexible ? "" : " *"}<input className={inputClass} name="departure_date" type="date" required={!dateFlexible} /></label>
+        <label className="space-y-2 text-sm font-medium text-slate-800">{t.returning}{dateFlexible ? "" : " *"}<input className={inputClass} name="return_date" type="date" required={!dateFlexible} /></label>
       </div>
-      <label className="flex items-center gap-3 text-sm text-slate-700"><input name="date_flexible" type="checkbox" className="size-4 accent-teal-800" />{t.flexible}</label>
+      <div className="space-y-2">
+        <label className="flex items-center gap-3 text-sm text-slate-700"><input name="date_flexible" type="checkbox" checked={dateFlexible} onChange={(event) => setDateFlexible(event.target.checked)} className="size-4 accent-teal-800" />{t.flexible}</label>
+        <p className="text-sm text-slate-500">{t.dateRule}</p>
+      </div>
 
       <fieldset className="space-y-3">
         <legend className="text-base font-semibold text-slate-900">{t.travelers}</legend>
