@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import type { Locale } from "@/i18n/dictionaries";
 
 const inputClass = "w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20";
@@ -19,7 +19,7 @@ const copy = {
     budgetTitle: "Qual é o orçamento aproximado por pessoa? *", budgetHint: "Considera o valor aproximado que tens disponível por pessoa para a viagem.",
     budgets: ["Até 500 €", "500 € – 1.000 €", "1.000 € – 1.500 €", "1.500 € – 2.000 €", "Mais de 2.000 €", "Ainda não defini"],
     style: "Estilo de viagem", styleHint: "Praia, circuito, cidade…", details: "Mais detalhes", detailsHint: "Partilha todas as preferências ou requisitos importantes para a tua viagem",
-    privacy: "Li a", privacyLink: "informação de privacidade", privacyEnd: "e autorizo a utilização dos dados para responder a este pedido. *", send: "Enviar pedido", sending: "A enviar…", sent: "Pedido enviado com sucesso! Vou analisar as informações e responder-te por email nas próximas 24 horas.", pending: "O pedido ficou registado, mas a notificação por email ainda não está configurada.", failed: "Não foi possível enviar o pedido. Tenta novamente mais tarde.", invalid: "Revê os campos obrigatórios e tenta novamente.",
+    privacy: "Li a", privacyLink: "informação de privacidade", privacyEnd: "e autorizo a utilização dos dados para responder a este pedido. *", send: "Enviar pedido", sending: "A enviar…", sent: "Pedido enviado com sucesso! Vou analisar as informações e responder-te por email nas próximas 24 horas.", failed: "Não foi possível enviar o pedido. Tenta novamente mais tarde.", invalid: "Revê os campos obrigatórios e tenta novamente.",
   },
   en: {
     fullName: "Full name", email: "Email", emailInvalid: "Enter a valid email address.", dateOrder: "The return date must be after the departure date.", phone: "Phone", destination: "Destination or trip idea", destinationHint: "E.g. Japan, a beach trip with children, or I’m open to suggestions",
@@ -27,7 +27,7 @@ const copy = {
     budgetTitle: "What is your approximate budget per person? *", budgetHint: "Consider the approximate amount you have available per person for this trip.",
     budgets: ["Up to €500", "€500 – €1,000", "€1,000 – €1,500", "€1,500 – €2,000", "Over €2,000", "I haven’t decided yet"],
     style: "Travel style", styleHint: "Beach, touring, city break…", details: "More details", detailsHint: "Share any preferences or important requirements for your trip",
-    privacy: "I have read the", privacyLink: "privacy information", privacyEnd: "and consent to the use of my data to respond to this request. *", send: "Send request", sending: "Sending…", sent: "Request sent successfully! I’ll review your details and reply by email within the next 24 hours.", pending: "Your request was recorded, but email notifications are not configured yet.", failed: "We couldn’t send your request. Please try again later.", invalid: "Please review the required fields and try again.",
+    privacy: "I have read the", privacyLink: "privacy information", privacyEnd: "and consent to the use of my data to respond to this request. *", send: "Send request", sending: "Sending…", sent: "Request sent successfully! I’ll review your details and reply by email within the next 24 hours.", failed: "We couldn’t send your request. Please try again later.", invalid: "Please review the required fields and try again.",
   },
   fr: {
     fullName: "Nom complet", email: "E-mail", emailInvalid: "Saisissez une adresse e-mail valide.", dateOrder: "La date de retour doit être postérieure à la date de départ.", phone: "Téléphone", destination: "Destination ou idée de voyage", destinationHint: "Ex. : Japon, séjour balnéaire avec enfants ou ouvert(e) aux suggestions",
@@ -35,7 +35,7 @@ const copy = {
     budgetTitle: "Quel est le budget approximatif par personne ? *", budgetHint: "Indiquez le montant approximatif disponible par personne pour le voyage.",
     budgets: ["Jusqu’à 500 €", "500 € – 1 000 €", "1 000 € – 1 500 €", "1 500 € – 2 000 €", "Plus de 2 000 €", "Je n’ai pas encore décidé"],
     style: "Style de voyage", styleHint: "Plage, circuit, ville…", details: "Plus de détails", detailsHint: "Partagez vos préférences ou toute exigence importante pour votre voyage",
-    privacy: "J’ai lu les", privacyLink: "informations de confidentialité", privacyEnd: "et j’autorise l’utilisation de mes données pour répondre à cette demande. *", send: "Envoyer la demande", sending: "Envoi…", sent: "Demande envoyée avec succès ! Je vais examiner les informations et vous répondre par e-mail dans les prochaines 24 heures.", pending: "Votre demande a été enregistrée, mais les notifications par e-mail ne sont pas encore configurées.", failed: "Impossible d’envoyer la demande. Veuillez réessayer plus tard.", invalid: "Vérifiez les champs obligatoires et réessayez.",
+    privacy: "J’ai lu les", privacyLink: "informations de confidentialité", privacyEnd: "et j’autorise l’utilisation de mes données pour répondre à cette demande. *", send: "Envoyer la demande", sending: "Envoi…", sent: "Demande envoyée avec succès ! Je vais examiner les informations et vous répondre par e-mail dans les prochaines 24 heures.", failed: "Impossible d’envoyer la demande. Veuillez réessayer plus tard.", invalid: "Vérifiez les champs obligatoires et réessayez.",
   },
 } satisfies Record<Locale, { [key: string]: string | string[] }>;
 
@@ -45,6 +45,9 @@ export default function TripRequestForm({ lang }: Props) {
   const t = copy[lang];
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [success, setSuccess] = useState(false);
+  const confirmationRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (success) confirmationRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }); }, [success]);
   const [childrenCount, setChildrenCount] = useState(0);
   const [dateFlexible, setDateFlexible] = useState(false);
   const [email, setEmail] = useState("");
@@ -58,6 +61,7 @@ export default function TripRequestForm({ lang }: Props) {
     event.preventDefault();
     setBusy(true);
     setMessage("");
+    setSuccess(false);
     const form = event.currentTarget;
     const data = new FormData(form);
     const childrenAges = Array.from({ length: childrenCount }, (_, index) => Number(data.get(`child_age_${index + 1}`)));
@@ -84,8 +88,10 @@ export default function TripRequestForm({ lang }: Props) {
       setEmailTouched(false);
       setDepartureDate("");
       setReturnDate("");
-      setMessage(result.notificationPending ? t.pending : t.sent);
+      setMessage(t.sent);
+      setSuccess(true);
     } catch (error) {
+      setSuccess(false);
       setMessage(error instanceof Error ? error.message : t.failed);
     } finally {
       setBusy(false);
@@ -94,6 +100,7 @@ export default function TripRequestForm({ lang }: Props) {
 
   return (
     <form onSubmit={submit} className="space-y-7">
+      {message && <div ref={confirmationRef} id="trip-request-confirmation" role="status" aria-live="polite" tabIndex={-1} className={`rounded-xl border p-4 text-sm font-medium outline-none ${success ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-red-200 bg-red-50 text-red-800"}`}>{message}</div>}
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="space-y-2 text-sm font-medium text-slate-800">{t.fullName} *<input className={inputClass} name="full_name" autoComplete="name" required minLength={2} maxLength={160} /></label>
         <label className="space-y-2 text-sm font-medium text-slate-800">{t.email} *<input className={`${inputClass} ${emailTouched && email.length > 0 && !emailValid ? "border-red-600 focus:border-red-600 focus:ring-red-600/20" : ""}`} name="email" type="email" inputMode="email" autoComplete="email" required maxLength={254} pattern="[^\s@]+@[^\s@]+\.[^\s@]{2,}" value={email} aria-invalid={emailTouched && email.length > 0 && !emailValid} onChange={(event) => setEmail(event.target.value)} onBlur={() => setEmailTouched(true)} /></label>
@@ -150,7 +157,6 @@ export default function TripRequestForm({ lang }: Props) {
       </div>
       <label className="hidden" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" /></label>
       <label className="flex items-start gap-3 text-sm leading-6 text-slate-700"><input name="consent_privacy" type="checkbox" required className="mt-1 size-4 accent-teal-800" /><span>{t.privacy} <a href="https://www.travelfrontiers.pt/privacy.html" target="_blank" rel="noreferrer" className="underline">{t.privacyLink}</a> {t.privacyEnd}</span></label>
-      {message && <p role="status" className="rounded-xl bg-slate-50 p-4 text-sm text-slate-800">{message}</p>}
       <button className="rounded-full bg-teal-800 px-7 py-3 font-semibold text-white transition hover:bg-teal-900 disabled:cursor-wait disabled:opacity-60" type="submit" disabled={busy}>{busy ? t.sending : t.send}</button>
     </form>
   );
