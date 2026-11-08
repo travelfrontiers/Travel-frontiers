@@ -35,3 +35,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: "Não foi possível ligar à base de dados." }, { status: 502 });
   }
 }
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!await isAuthorizedStudioUser(request)) return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
+  const { id } = await params;
+  if (!isUuid(id)) return NextResponse.json({ error: "Documento inválido." }, { status: 400 });
+  const config = supabaseAdminConfig();
+  if (!config) return NextResponse.json({ error: "A base de dados não está configurada." }, { status: 503 });
+  try {
+    const response = await fetch(`${config.url}/rest/v1/crm_client_documents?id=eq.${encodeURIComponent(id)}&select=id`, {
+      method: "DELETE", headers: { ...config.headers, Prefer: "return=representation" }, cache: "no-store",
+    });
+    if (!response.ok) return NextResponse.json({ error: "Não foi possível apagar o documento." }, { status: 502 });
+    const rows = await response.json();
+    if (!rows.length) return NextResponse.json({ error: "O documento já não existe." }, { status: 404 });
+    return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "private, no-store" } });
+  } catch { return NextResponse.json({ error: "Não foi possível ligar à base de dados." }, { status: 502 }); }
+}

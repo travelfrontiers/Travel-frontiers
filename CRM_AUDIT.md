@@ -1,6 +1,9 @@
 # Revisão do CRM Travel Frontiers
 Data: 8 de novembro de 2026
 
+## Atualização após decisão do utilizador
+A fase seguinte corrige gravação atómica, elimina documentos individualmente, integra o Drive e limita submissões no servidor. O check-in dois dias antes foi aceite, com alerta por email. OCR e limpeza do PDF existente no Git foram excluídos expressamente. Consultar CRM_DELIVERY_STATUS.md para o estado atual e o que ainda falta; as secções abaixo conservam a evidência da revisão original.
+
 ## Âmbito e evidência
 Revisão do componente CRM, de todas as rotas em src/app/api/crm, do leitor de PDF, das migrações 001–009 e do plano funcional. Identidade visual comparada com style.css e com os logótipos existentes.
 A revisão é de código e de testes isolados com dados sintéticos. Não é uma certificação de segurança nem uma validação integral com dados reais.
