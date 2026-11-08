@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
         `Email: ${email}`,
         phone ? `Telefone: ${phone}` : null,
         destination ? `Destino: ${destination}` : null,
+        `Flexibilidade nas datas: ${date_flexible ? "Sim" : "Não"}`,
         departure_date ? `Partida: ${departure_date}` : null,
         return_date ? `Regresso: ${return_date}` : null,
         `Adultos: ${adults}`,
