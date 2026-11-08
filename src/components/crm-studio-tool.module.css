@@ -103,3 +103,7 @@
 .root[data-theme="dark"] [class~="bg-slate-950"] { background-color: var(--crm-border); }
 @media (max-width: 640px) { .logo { width: 84px; height: 52px; } }
 @media (prefers-reduced-motion: reduce) { .root *, .root *::before, .root *::after { transition: none !important; scroll-behavior: auto !important; } }
+
+
+.root[data-theme="dark"] [class~="bg-rose-50"] { background-color: #40232d; }
+.root[data-theme="dark"] [class~="text-red-700"] { color: #ffb9b9; }

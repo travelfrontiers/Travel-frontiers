@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { dateOnly } from "@/lib/crm-office-api";
 import { isAuthorizedStudioUser, supabaseAdminConfig } from "@/lib/crm-api";
 
 export const runtime = "nodejs";
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Pedido inválido." }, { status: 400 }); }
   const title = typeof body.title === "string" ? body.title.trim() : "";
   const dueDate = body.due_date;
-  if (!title || title.length > 240 || !(dueDate === null || typeof dueDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dueDate))) {
+  if (!title || title.length > 240 || !(dueDate === null || dateOnly(dueDate))) {
     return NextResponse.json({ error: "Indica uma tarefa válida." }, { status: 400 });
   }
 
@@ -32,3 +33,4 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Não foi possível ligar à base de dados." }, { status: 502 });
   }
 }
+

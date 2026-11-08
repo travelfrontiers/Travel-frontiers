@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { travelTypes } from "@/lib/crm-office-api";
 import { isAuthorizedStudioUser, supabaseAdminConfig } from "@/lib/crm-api";
 
 export const runtime = "nodejs";
@@ -14,6 +15,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Pedido inválido." }, { status: 400 }); }
+  const travelType = typeof body.travel_type === "string" ? body.travel_type : "general";
   const { status, destination, departure_date, return_date } = body;
   const clientIds = body.client_ids;
   const validDate = (value: unknown) => {
@@ -29,7 +31,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const currency = typeof body.currency === "string" ? body.currency.trim().toUpperCase() : "EUR";
   const tripNotes = typeof body.trip_notes === "string" ? body.trip_notes.trim() : "";
   const validClientIds = Array.isArray(clientIds) && clientIds.length > 0 && clientIds.length <= 30 && clientIds.every((clientId) => typeof clientId === "string" && isUuid(clientId));
-  if (!validClientIds || typeof status !== "string" || !tripStatuses.includes(status as (typeof tripStatuses)[number]) ||
+  if (!travelTypes.includes(travelType as (typeof travelTypes)[number]) || !validClientIds || typeof status !== "string" || !tripStatuses.includes(status as (typeof tripStatuses)[number]) ||
       !(destination === null || typeof destination === "string" && destination.length <= 240) ||
       !validDate(departure_date) ||
       !validDate(return_date) ||
@@ -46,7 +48,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       method: "POST", headers: config.headers,
       body: JSON.stringify({
         p_trip_id: id, p_client_ids: [...new Set(clientIds as string[])],
-        p_fields: { status, destination, departure_date, return_date, operator, adults,
+        p_fields: { travel_type: travelType, status, destination, departure_date, return_date, operator, adults,
           children_count: childrenCount, total_amount: totalAmount, currency, trip_notes: tripNotes },
       }), cache: "no-store",
     });
@@ -86,3 +88,4 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ error: "Não foi possível ligar à base de dados." }, { status: 502 });
   }
 }
+

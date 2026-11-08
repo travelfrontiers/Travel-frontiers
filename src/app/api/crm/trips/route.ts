@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { isAuthorizedStudioUser, supabaseAdminConfig } from "@/lib/crm-api";
+import { travelTypes } from "@/lib/crm-office-api";
 import { extractTripFieldsFromPdfText } from "@/lib/crm-trip-pdf";
 
 export const runtime = "nodejs";
@@ -79,6 +80,7 @@ export async function POST(request: NextRequest) {
   const totalAmount = body.total_amount === "" || body.total_amount === null || body.total_amount === undefined ? null : Number(body.total_amount);
   const currency = typeof body.currency === "string" ? body.currency.trim().toUpperCase() : "EUR";
   const tripNotes = typeof body.trip_notes === "string" ? body.trip_notes.trim() : "";
+  const travelType = typeof body.travel_type === "string" ? body.travel_type : "general";
   const statuses = ["planning", "confirmed", "travelling", "completed", "cancelled"];
   const serviceTypes = ["flight", "accommodation", "activity", "transfer", "insurance", "other"];
   const validDate = (value: unknown): value is string | null => {
@@ -102,7 +104,7 @@ export async function POST(request: NextRequest) {
     return { service_type: service.service_type, title, provider: provider || null, reference: reference || null, starts_on: startsOn, ends_on: endsOn, details: details || null };
   });
   if (services.some((service) => service === null)) return NextResponse.json({ error: "Revê os dados dos voos e alojamentos extraídos." }, { status: 400 });
-  if (clientIds.length < 1 || clientIds.length > 30 || !clientIds.every(isUuid) || reference.length > 80 || destination.length > 240 || !statuses.includes(status) ||
+  if (!travelTypes.includes(travelType as (typeof travelTypes)[number]) || clientIds.length < 1 || clientIds.length > 30 || !clientIds.every(isUuid) || reference.length > 80 || destination.length > 240 || !statuses.includes(status) ||
       !validDate(departureDate) || !validDate(returnDate) ||
       typeof departureDate === "string" && typeof returnDate === "string" && returnDate < departureDate ||
       operator.length > 160 || adults !== null && (!Number.isInteger(adults) || adults < 1 || adults > 20) ||
@@ -113,22 +115,25 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const response = await fetch(`${config.url}/rest/v1/rpc/crm_create_trip_with_clients`, {
+    const response = await fetch(`${config.url}/rest/v1/rpc/crm_create_typed_trip`, {
       method: "POST",
       headers: config.headers,
       body: JSON.stringify({
         p_client_ids: clientIds,
-        p_reference: reference || null,
-        p_destination: destination || null,
-        p_departure_date: departureDate,
-        p_return_date: returnDate,
-        p_status: status,
-        p_operator: operator || null,
-        p_adults: adults,
-        p_children_count: childrenCount,
-        p_total_amount: totalAmount,
-        p_currency: currency,
-        p_trip_notes: tripNotes || null,
+        p_travel_type: travelType,
+        p_data: {
+        reference: reference || null,
+        destination: destination || null,
+        departure_date: departureDate,
+        return_date: returnDate,
+        status: status,
+        operator: operator || null,
+        adults: adults,
+        children_count: childrenCount,
+        total_amount: totalAmount,
+        currency: currency,
+        trinotes: tripNotes || null,
+        },
         p_services: services,
       }),
       cache: "no-store",
@@ -218,3 +223,4 @@ async function convertWonLead(config: NonNullable<ReturnType<typeof supabaseAdmi
     return NextResponse.json({ error: "Não foi possível ligar à base de dados." }, { status: 502 });
   }
 }
+
