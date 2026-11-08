@@ -215,7 +215,7 @@ function extractSingleDate(text: string) {
     return isValidDateOnly(value) ? value : "";
   }
   const monthExpr = monthExpression;
-  const long = new RegExp(`(\d{1,2})\s+de\s+(${monthExpr})\s+de\s+(\d{4})`, "i").exec(text);
+  const long = new RegExp(`(\\d{1,2})\\s+de\\s+(${monthExpr})\\s+de\\s+(\\d{4})`, "i").exec(text);
   return long ? parsePtDate(long[1], long[2], long[3]) : "";
 }
 
