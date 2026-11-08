@@ -30,7 +30,7 @@ function ClientMultiSelect({ clients, fieldName = "client_ids", selectedIds = []
   return <fieldset className="space-y-2 sm:col-span-2"><legend className="text-sm font-semibold">{title}</legend><p className="text-xs font-normal text-slate-500">Seleciona uma ou várias pessoas que viajam juntas.</p><div className="grid max-h-48 gap-2 overflow-y-auto rounded-xl border border-slate-300 p-3 sm:grid-cols-2">{clients.map((entry) => <label key={entry.id} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm hover:bg-slate-50"><input type="checkbox" name={fieldName} value={entry.id} checked={selected.includes(entry.id)} onChange={(event) => setSelected((current) => event.target.checked ? [...current, entry.id] : current.filter((id) => id !== entry.id))} className="size-4 accent-teal-800" /><span>{entry.full_name}{entry.email ? <span className="block text-xs font-normal text-slate-500">{entry.email}</span> : null}</span></label>)}</div></fieldset>;
 }
 type ClientDocument = { id: string; client_id: string; document_type: "passport" | "identity_card" | "residence_permit" | "other"; document_number: string; expires_on: string; created_at: string; updated_at: string };
-type TripTask = { id: string; trip_id: string; title: string; due_at: string | null; completed: boolean; sort_order: number };
+type TripTask = { id: string; trip_id: string; title: string; due_at: string | null; completed: boolean; sort_order: number; source_service_id?: string | null };
 type TripService = { id: string; trip_id: string; service_type: "flight" | "accommodation" | "activity" | "transfer" | "insurance" | "other"; title: string; provider: string | null; reference: string | null; starts_on: string | null; ends_on: string | null; details: string | null; sort_order: number };
 type Trip = { id: string; client_id: string; client_ids: string[]; lead_id: string | null; reference: string | null; destination: string | null; departure_date: string | null; return_date: string | null; status: (typeof tripStatuses)[number]["id"]; operator: string | null; adults: number | null; children_count: number | null; total_amount: number | null; currency: string; trip_notes: string | null; services: TripService[]; tasks: TripTask[] };
 type View = "dashboard" | "pipeline" | "clients" | "trips" | "calendar";
@@ -60,7 +60,13 @@ const pipelineStageColors: Record<LeadStatus, string> = {
 const inputClass = "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20";
 
 function dateLabel(value: string) {
-  return new Intl.DateTimeFormat("pt-PT", { dateStyle: "medium" }).format(new Date(value));
+  return new Intl.DateTimeFormat("pt-PT", { dateStyle: "medium", timeZone: "Europe/Lisbon" }).format(new Date(value));
+}
+
+function localDateInput(value: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Lisbon", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(value));
+  const part = (type: string) => parts.find((entry) => entry.type === type)?.value || "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
 function localToday() {
@@ -295,7 +301,7 @@ export default function CrmStudioTool() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível criar a viagem.");
-      setShowTripForm(false); ; form.reset();
+      setShowTripForm(false); setTripClientIds([]); form.reset();
       setShowPdfImport(false); setPdfPreview(null);
       await refresh(); goToView("trips");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Não foi possível criar a viagem."); }
@@ -613,8 +619,8 @@ export default function CrmStudioTool() {
             <h4 className="border-t border-slate-200 pt-5 text-sm font-semibold">Checklist <span className="font-normal text-slate-500">({trip.tasks.filter((task) => task.completed).length}/{trip.tasks.length})</span></h4><p className="mt-1 text-xs text-slate-500">O CRM cria automaticamente uma tarefa de check-in dois dias antes de cada voo com data definida.</p>
             <div className="mt-3 space-y-3">{trip.tasks.map((task) => <form key={task.id} onSubmit={(event) => saveTask(event, trip, task)} className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl bg-slate-50 p-3">
               <input type="checkbox" name="completed" defaultChecked={task.completed} aria-label={`Concluída: ${task.title}`} className="size-4 accent-teal-800" />
-              <div className="space-y-2"><label className="sr-only" htmlFor={`task-title-${task.id}`}>Tarefa</label><input id={`task-title-${task.id}`} name="title" defaultValue={task.title} maxLength={240} className={`${inputClass} ${task.completed ? "text-slate-400 line-through" : ""}`} /><label className="sr-only" htmlFor={`task-date-${task.id}`}>Prazo</label><input id={`task-date-${task.id}`} name="due_date" type="date" defaultValue={task.due_at?.slice(0, 10) || ""} className={inputClass} /></div>
-              <div className="flex flex-col gap-2"><button disabled={saving} className="rounded-lg bg-teal-800 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">Guardar</button><button type="button" disabled={saving} onClick={() => void deleteTask(trip, task)} className="rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-600">Remover</button></div>
+              <div className="space-y-2"><label className="sr-only" htmlFor={`task-title-${task.id}`}>Tarefa</label><input id={`task-title-${task.id}`} name="title" defaultValue={task.title} maxLength={240} readOnly={Boolean(task.source_service_id)} className={`${inputClass} ${task.completed ? "text-slate-400 line-through" : ""}`} /><label className="sr-only" htmlFor={`task-date-${task.id}`}>Prazo</label><input id={`task-date-${task.id}`} name="due_date" type="date" defaultValue={task.due_at ? localDateInput(task.due_at) : ""} readOnly={Boolean(task.source_service_id)} className={inputClass} /></div>
+              <div className="flex flex-col gap-2"><button disabled={saving} className="rounded-lg bg-teal-800 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">Guardar</button>{!task.source_service_id && <button type="button" disabled={saving} onClick={() => void deleteTask(trip, task)} className="rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-600">Remover</button>}</div>
             </form>)}</div>
             <form onSubmit={(event) => addTask(event, trip)} className="mt-4 grid gap-2 sm:grid-cols-[1fr_160px_auto]"><label className="sr-only" htmlFor={`new-task-${trip.id}`}>Nova tarefa</label><input id={`new-task-${trip.id}`} name="title" required maxLength={240} placeholder="Adicionar tarefa à checklist" className={inputClass} /><label className="sr-only" htmlFor={`new-task-date-${trip.id}`}>Prazo da nova tarefa</label><input id={`new-task-date-${trip.id}`} name="due_date" type="date" className={inputClass} /><button disabled={saving} className="rounded-full bg-teal-800 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-60">Adicionar</button></form>
           </article>)}</div>
