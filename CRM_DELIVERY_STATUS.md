@@ -43,3 +43,25 @@ Testes isolados dos handlers com dependências de rede simuladas: apenas uma cha
 A migração 010 foi aplicada e os testes SQL transacionais passaram: gravação atómica, associações, eliminação individual, metadados Drive, deduplicação, limite horário, lease de lembretes e reagendamento de voo. Todos os dados sintéticos foram revertidos. O build de preview do código foi concluído com estado READY. A migração 011 é aplicada após confirmar a publicação da nova rota em produção. O consentimento Google ocorre na primeira operação do utilizador; não se deve assumir que um upload real foi testado sem esse passo.
 
 Os testes de handlers podem ser repetidos com `node scripts/check-crm-operations.cjs`, com as dependências de desenvolvimento instaladas; usam rede simulada e não enviam emails reais.
+
+## Implementação dos pontos 1, 2, 4 e 5
+- Propostas: versões de valor/validade/condições/inclusões/exclusões/notas e documento Drive, ligadas ao pedido, cliente e viagem; concorrência protegida por versão esperada. Aceitação registada manualmente com nota da resposta do cliente. Conversão idempotente para viagem.
+- Checklists: templates por tipo de viagem, aplicação manual ou automática; prazos relativos à partida/regresso; tarefas pré/durante/pós. Conclusões, remoções e ajustes manuais são preservados; opção para retomar o automatismo. Check-in mantém as regras e o alerta por email existentes.
+- Calendário mensal/semanal: partidas, regressos, tarefas, próximos contactos, validade documental e de propostas; filtros por tipo/cliente/pesquisa/conclusão e abertura da ficha certa.
+- Histórico: alterações de clientes, pedidos, propostas, viagens, tarefas, serviços e documentação, e notas manuais por ficha. Captura começa nesta migração; não inventa um histórico anterior. Guarda nomes dos campos alterados e estados, sem cópias de valores pessoais ou número do documento.
+- Duplicados: candidatos por nome, email ou telefone normalizado, até 100 pares por consulta. Junção só após revisão de duas fichas, escolha dos dados finais e confirmação explícita; associações são transferidas numa transação.
+- Filtros: fase e seguimento de pedidos; idioma/documentação/viagens dos clientes; destino/referência/operador/cliente/estado/tipo/datas de viagens; propostas e histórico com paginação própria.
+- Os novos ecrãs respeitam os temas claro/escuro e a identidade Travel Frontiers. Mantém-se o mesmo acesso Admin, sem uma nova conta ou serviço pago.
+
+### Validação desta fase
+- Regressões isoladas em `scripts/check-crm-office.cjs`: autorização, validações, conflito de versões, proteção dos lembretes de voo, preservação da hora ao concluir tarefas, alterações manuais, calendário com todos os viajantes e mudança de hora.
+- Testes de base de dados em `supabase/tests/crm_office_regression.sql`, sempre com BEGIN/ROLLBACK e dados fictícios: versões, aceitação manual, conversão, checklists, junção de fichas, cascatas e permissões.
+- Aplicar a migração 012 antes de publicar as rotas novas. A grelha de calendário usa consultas por intervalo, sem depender da lista de viagens carregada no navegador.
+
+### Restante trabalho do plano
+- Ponto 3: revisão PDF lado a lado, identificação de campos ausentes/ambíguos e cobertura estruturada dos campos comuns ainda em falta.
+- Emails/IMAP, templates editáveis aprovados e comunicações assistidas pré/pós-orçamento e viagem.
+- Pagamentos, parcelas/prazos e condições da reserva como modelo próprio; a validade comercial da proposta não substitui esses prazos.
+- Seleção de ficheiros Drive já existentes via Picker; atualmente os ficheiros são enviados pela ficha e podem ser associados à proposta.
+- Indicadores financeiros/comerciais avançados no dashboard; exportação, retenção e eliminação integral de dados pessoais em notas.
+- Paginação/agregação completa das listas antigas antes de aumentar o volume de dados. Os novos módulos já paginam histórico/propostas e consultam o calendário por intervalo.
