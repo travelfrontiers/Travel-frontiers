@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     }
     const clientsByTrip = new Map<string, string[]>();
     for (const relation of tripClients as { trip_id: string; client_id: string }[]) clientsByTrip.set(relation.trip_id, [...(clientsByTrip.get(relation.trip_id) || []), relation.client_id]);
-    const tripsWithTasks = (trips as { id: string; client_id: string }[]).map((trip) => ({ ...trip, client_ids: clientsByTrip.get(trip.id) || [trip.client_id], tasks: tasksByTrip.get(trip.id) || [], services: servicesByTrip.get(trip.id) || [] }));
+    const tripsWithTasks = (trips as { id: string; client_id: string }[]).map((trip) => ({ ...trip, client_ids: clientsByTrip.get(trip.id) || (trip.client_id ? [trip.client_id] : []), tasks: tasksByTrip.get(trip.id) || [], services: servicesByTrip.get(trip.id) || [] }));
     return NextResponse.json({ trips: tripsWithTasks }, { headers: { "Cache-Control": "private, no-store" } });
   } catch {
     return NextResponse.json({ error: "Não foi possível ligar à base de dados." }, { status: 502 });
