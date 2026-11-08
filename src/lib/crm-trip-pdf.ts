@@ -28,6 +28,8 @@ const monthNumber: Record<string, string> = {
   agosto: "08", ago: "08", setembro: "09", set: "09", outubro: "10", out: "10", novembro: "11", nov: "11", dezembro: "12", dez: "12",
 };
 
+const monthExpression = "janeiro|jan\\.?|fevereiro|fev\\.?|março|marco|mar\\.?|abril|abr\\.?|maio|mai\\.?|junho|jun\\.?|julho|jul\\.?|agosto|ago\\.?|setembro|set\\.?|outubro|out\\.?|novembro|nov\\.?|dezembro|dez\\.?|january|jan\\.?|february|feb\\.?|février|fevrier|févr\\.?|fev\\.?|march|mars|mar\\.?|april|apr\\.?|avril|avr\\.?|may|mai|june|jun\\.?|juin|july|jul\\.?|juillet|august|aug\\.?|août|aout|september|sept\\.?|sep\\.?|october|oct\\.?|octobre|oct\\.?|november|nov\\.?|novembre|nov\\.?|december|dec\\.?|décembre|decembre|déc\\.?|dez\\.?";
+
 function parsePtDate(day: string, month: string, year: string) {
   const monthValue = monthNumber[month.toLocaleLowerCase("pt-PT").replace(/\.$/, "")];
   if (!monthValue) return "";
@@ -42,9 +44,14 @@ function isValidDateOnly(value: string) {
 }
 
 function extractDateRange(text: string) {
+  const departureLabeled = extractLabeledDate(text, /(?:data de )?(?:partida|sa[ií]da|in[ií]cio|departure|outbound)\b/i);
+  const returnLabeled = extractLabeledDate(text, /(?:data de )?(?:regresso|retorno|volta|chegada|return|inbound)\b/i);
+  if (departureLabeled && returnLabeled && returnLabeled >= departureLabeled) {
+    return { departure_date: departureLabeled, return_date: returnLabeled };
+  }
   const itineraryRange = extractItineraryDateRange(text);
   if (itineraryRange.departure_date && itineraryRange.return_date) return itineraryRange;
-  const monthExpr = "janeiro|jan\\.?|fevereiro|fev\\.?|março|marco|mar\\.?|abril|abr\\.?|maio|mai\\.?|junho|jun\\.?|julho|jul\\.?|agosto|ago\\.?|setembro|set\\.?|outubro|out\\.?|novembro|nov\\.?|dezembro|dez\\.?";
+  const monthExpr = monthExpression;
   const rangeSeparator = "(?:-|–|—|→|\\u2192|\\u27a1|[\\uE000-\\uF8FF]|a|até)";
   const longRange = new RegExp(`(\\d{1,2})\\s+de\\s+(${monthExpr})\\s+de\\s+(\\d{4})\\s*${rangeSeparator}\\s*(\\d{1,2})\\s+de\\s+(${monthExpr})\\s+de\\s+(\\d{4})`, "i").exec(text);
   if (longRange) return { departure_date: parsePtDate(longRange[1], longRange[2], longRange[3]), return_date: parsePtDate(longRange[4], longRange[5], longRange[6]) };
@@ -186,19 +193,34 @@ function extractPrice(text: string) {
   return { amount: "", currency: "EUR" };
 }
 
+function extractLabeledDate(text: string, label: RegExp) {
+  const lines = text.split(/\r?\n/).map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!label.test(lines[index])) continue;
+    const date = extractSingleDate(lines[index]) || extractSingleDate(lines[index + 1] || "");
+    if (date) return date;
+  }
+  return "";
+}
+
 function extractSingleDate(text: string) {
+  const iso = /(?<!\d)(\d{4})-(\d{1,2})-(\d{1,2})(?!\d)/.exec(text);
+  if (iso) {
+    const value = `${iso[1]}-${iso[2].padStart(2, "0")}-${iso[3].padStart(2, "0")}`;
+    return isValidDateOnly(value) ? value : "";
+  }
   const numeric = /(\d{1,2})[/.](\d{1,2})[/.](\d{4})/.exec(text);
   if (numeric) {
     const value = `${numeric[3]}-${numeric[2].padStart(2, "0")}-${numeric[1].padStart(2, "0")}`;
     return isValidDateOnly(value) ? value : "";
   }
-  const monthExpr = "janeiro|jan\\.?|fevereiro|fev\\.?|março|marco|mar\\.?|abril|abr\\.?|maio|mai\\.?|junho|jun\\.?|julho|jul\\.?|agosto|ago\\.?|setembro|set\\.?|outubro|out\\.?|novembro|nov\\.?|dezembro|dez\\.?";
+  const monthExpr = monthExpression;
   const long = new RegExp(`(\\d{1,2})\\s+de\\s+(${monthExpr})\\s+de\\s+(\\d{4})`, "i").exec(text);
   return long ? parsePtDate(long[1], long[2], long[3]) : "";
 }
 
 function extractDateBounds(text: string) {
-  const monthExpr = "janeiro|jan\\.?|fevereiro|fev\\.?|março|marco|mar\\.?|abril|abr\\.?|maio|mai\\.?|junho|jun\\.?|julho|jul\\.?|agosto|ago\\.?|setembro|set\\.?|outubro|out\\.?|novembro|nov\\.?|dezembro|dez\\.?";
+  const monthExpr = monthExpression;
   const dates: string[] = [];
   const longDate = new RegExp(`(\\d{1,2})\\s+de\\s+(${monthExpr})\\s+de\\s+(\\d{4})`, "gi");
   for (const match of text.matchAll(longDate)) {
@@ -210,6 +232,8 @@ function extractDateBounds(text: string) {
     const value = `${match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`;
     if (isValidDateOnly(value)) dates.push(value);
   }
+  const isoDate = /(?<!\d)(\d{4})-(\d{2})-(\d{2})(?!\d)/g;
+  for (const match of text.matchAll(isoDate)) if (isValidDateOnly(match[0])) dates.push(match[0]);
   if (!dates.length) return { departure_date: "", return_date: "" };
   const ordered = dates.sort();
   return { departure_date: ordered[0], return_date: ordered.at(-1) || ordered[0] };
@@ -315,18 +339,20 @@ export function extractTripFieldsFromPdfText(text: string): TripPdfFields {
   const adults = extractPassengerCount(cleanText, "adults");
   const children = extractPassengerCount(cleanText, "children");
   const dates = extractDateRange(cleanText);
+  const services = extractTravelServices(cleanText);
+  const flightDates = [...new Set(services.filter((service) => service.service_type === "flight").flatMap((service) => [service.starts_on, service.ends_on]).filter(isValidDateOnly))].sort();
   const price = extractPrice(cleanText);
   return {
     reference,
     destination: extractDestination(cleanText),
-    departure_date: dates.departure_date,
-    return_date: dates.return_date,
+    departure_date: dates.departure_date || flightDates[0] || "",
+    return_date: dates.return_date || flightDates.at(-1) || "",
     adults,
     children_count: children,
     total_amount: price.amount,
     currency: price.currency,
     operator: extractOperator(cleanText),
     trip_notes: "",
-    services: extractTravelServices(cleanText),
+    services,
   };
 }
