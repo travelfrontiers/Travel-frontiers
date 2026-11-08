@@ -43,6 +43,13 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  calls=[];result=await cron.GET(request({},{"x-vercel-cron":"1"}));assert.equal(result.status,401);assert.equal(calls.length,0);
  const drive=load("src/app/api/crm/drive/route.ts");
  authorized=false;calls=[];result=await drive.GET(request({}));assert.equal(result.status,401);assert.equal(calls.length,0);
+ const upload=load("src/lib/crm-drive-upload.ts").uploadCrmDriveFile;
+ const file=new File([new Uint8Array(6*1024*1024)],"Synthetic.pdf",{type:"application/pdf"});
+ const uploadedCalls=[];
+ const send=async(url,init)=>{uploadedCalls.push({url,init});return uploadedCalls.length===1?{ok:true,headers:new Headers({Location:"https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&upload_id=synthetic"})}:{ok:true,json:async()=>({id:"synthetic_file_id",name:file.name,mimeType:file.type})};};
+ await upload(file,"synthetic-token","synthetic-folder",send);
+ assert.equal(uploadedCalls.length,2);assert.equal(uploadedCalls[1].init.method,"PUT");assert.equal(uploadedCalls[1].init.body,file);
+ let attempts=0;await assert.rejects(upload(file,"synthetic-token","synthetic-folder",async()=>{attempts++;return {ok:true,headers:new Headers({Location:"https://untrusted.invalid/upload/drive/files"})};}));assert.equal(attempts,1);
  console.log("PASS: atomic RPC-only trip save; missing-client rollback error; document delete/404; public rate limit; hashed IP; dedup suppresses mail; new request notifies; cron rejects forged header; Drive requires CRM auth.");
 })().catch(error=>{console.error(error);process.exitCode=1});
 
