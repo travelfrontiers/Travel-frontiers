@@ -36,17 +36,19 @@ export async function POST(request: NextRequest) {
   const budget = clean(body.budget, 120);
   const notes = clean(body.notes, 4000);
   const adults = Number(body.adults);
-  const children_ages = Array.isArray(body.children_ages)
-    ? body.children_ages.map(Number)
-    : [];
-  const validChildrenAges = children_ages.length <= 12 && children_ages.every((age) => Number.isInteger(age) && age >= 0 && age <= 17);
+  const rawChildrenAges = Array.isArray(body.children_ages) ? body.children_ages : [];
+  const children_ages = rawChildrenAges.map(Number);
+  const children_count = body.children_count === undefined ? rawChildrenAges.length : Number(body.children_count);
+  const validChildrenAges = rawChildrenAges.length <= 12 && children_count === rawChildrenAges.length &&
+    rawChildrenAges.every((age) => (typeof age === "number" || typeof age === "string" && age.trim() !== "") &&
+      Number.isInteger(Number(age)) && Number(age) >= 0 && Number(age) <= 17);
   const departure_date = clean(body.departure_date, 10);
   const return_date = clean(body.return_date, 10);
   const date_flexible = body.date_flexible === true;
   const consent_privacy = body.consent_privacy === true;
 
   if (!full_name || full_name.length < 2 || !email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || !destination) {
-    return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+    return NextResponse.json({ error: "invalid_request", field: "contact" }, { status: 400 });
   }
   const budgetLabels: Record<string, Record<string, string>> = {
     under_500: { pt: "Até 500 €", en: "Up to €500", fr: "Jusqu’à 500 €" },
@@ -56,17 +58,19 @@ export async function POST(request: NextRequest) {
     over_2000: { pt: "Mais de 2.000 €", en: "Over €2,000", fr: "Plus de 2 000 €" },
     undecided: { pt: "Ainda não defini", en: "I haven’t decided yet", fr: "Je n’ai pas encore décidé" },
   };
-  if (!Number.isInteger(adults) || adults < 1 || adults > 20 || !validChildrenAges || !budget || !budgetLabels[budget] || !consent_privacy) {
-    return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+  if (!Number.isInteger(adults) || adults < 1 || adults > 20 || !validChildrenAges) {
+    return NextResponse.json({ error: "invalid_request", field: "travelers" }, { status: 400 });
   }
-  if ((departure_date && !validDate(departure_date)) || (return_date && !validDate(return_date))) {
-    return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+  if (!budget || !budgetLabels[budget]) {
+    return NextResponse.json({ error: "invalid_request", field: "budget" }, { status: 400 });
   }
-  if (!date_flexible && (!departure_date || !return_date)) {
-    return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+  if (!consent_privacy) {
+    return NextResponse.json({ error: "invalid_request", field: "privacy" }, { status: 400 });
   }
-  if (departure_date && return_date && return_date <= departure_date) {
-    return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+  if ((departure_date && !validDate(departure_date)) || (return_date && !validDate(return_date)) ||
+      !date_flexible && (!departure_date || !return_date) ||
+      departure_date && return_date && return_date <= departure_date) {
+    return NextResponse.json({ error: "invalid_request", field: "dates" }, { status: 400 });
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
