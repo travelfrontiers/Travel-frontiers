@@ -45,8 +45,8 @@ function isValidDateOnly(value: string) {
 }
 
 function extractDateRange(text: string) {
-  const departureLabeled = extractLabeledDate(text, /(?:data de )?(?:partida|sa[ií]da|in[ií]cio|departure|outbound)\b/i);
-  const returnLabeled = extractLabeledDate(text, /(?:data de )?(?:regresso|retorno|volta|chegada|return|inbound)\b/i);
+  const departureLabeled = extractLabeledDate(text, /(?:data de )?(?:partida|sa[ií]da|in[ií]cio|departure|outbound|d[ée]part)\b/i);
+  const returnLabeled = extractLabeledDate(text, /(?:data de )?(?:regresso|retorno|volta|chegada|return|inbound|retour)\b/i);
   if (departureLabeled && returnLabeled && returnLabeled >= departureLabeled) {
     return { departure_date: departureLabeled, return_date: returnLabeled };
   }
@@ -54,7 +54,7 @@ function extractDateRange(text: string) {
   if (itineraryRange.departure_date && itineraryRange.return_date) return itineraryRange;
   const monthExpr = monthExpression;
   const rangeSeparator = "(?:-|–|—|→|\\u2192|\\u27a1|[\\uE000-\\uF8FF]|a|até)";
-  const longRange = new RegExp(`(\\d{1,2})\\s+de\\s+(${monthExpr})\\s+de\\s+(\\d{4})\\s*${rangeSeparator}\\s*(\\d{1,2})\\s+de\\s+(${monthExpr})\\s+de\\s+(\\d{4})`, "i").exec(text);
+  const longRange = new RegExp(`(\\d{1,2})\\s+(?:de\\s+)?(${monthExpr})\\s+(?:de\\s+)?(\\d{4})\\s*${rangeSeparator}\\s*(\\d{1,2})\\s+(?:de\\s+)?(${monthExpr})\\s+(?:de\\s+)?(\\d{4})`, "i").exec(text);
   if (longRange) return { departure_date: parsePtDate(longRange[1], longRange[2], longRange[3]), return_date: parsePtDate(longRange[4], longRange[5], longRange[6]) };
 
   const numericRange = new RegExp("(\\d{1,2})[/.](\\d{1,2})[/.](\\d{4})\\s*" + rangeSeparator + "\\s*(\\d{1,2})[/.](\\d{1,2})[/.](\\d{4})", "i").exec(text);
@@ -216,14 +216,14 @@ function extractSingleDate(text: string) {
     return isValidDateOnly(value) ? value : "";
   }
   const monthExpr = monthExpression;
-  const long = new RegExp(`(\\d{1,2})\\s+de\\s+(${monthExpr})\\s+de\\s+(\\d{4})`, "i").exec(text);
+  const long = new RegExp(`(\\d{1,2})\\s+(?:de\\s+)?(${monthExpr})\\s+(?:de\\s+)?(\\d{4})`, "i").exec(text);
   return long ? parsePtDate(long[1], long[2], long[3]) : "";
 }
 
 function extractDateBounds(text: string) {
   const monthExpr = monthExpression;
   const dates: string[] = [];
-  const longDate = new RegExp(`(\\d{1,2})\\s+de\\s+(${monthExpr})\\s+de\\s+(\\d{4})`, "gi");
+  const longDate = new RegExp(`(\\d{1,2})\\s+(?:de\\s+)?(${monthExpr})\\s+(?:de\\s+)?(\\d{4})`, "gi");
   for (const match of text.matchAll(longDate)) {
     const value = parsePtDate(match[1], match[2], match[3]);
     if (value) dates.push(value);
