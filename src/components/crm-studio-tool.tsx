@@ -7,8 +7,7 @@ import type { TripPdfFields } from "@/lib/crm-trip-pdf";
 
 const adminEmail = "tf.travel.frontiers@gmail.com";
 const leadStatuses = [
-  { id: "new", label: "Novos pedidos" }, { id: "qualifying", label: "A qualificar" },
-  { id: "research", label: "Em pesquisa" }, { id: "quote_preparing", label: "A preparar orçamento" },
+  { id: "new", label: "Novos pedidos" }, { id: "quote_preparing", label: "A preparar orçamento" },
   { id: "quote_sent", label: "Orçamento enviado" }, { id: "awaiting_reply", label: "A aguardar resposta" },
   { id: "won", label: "Ganho" }, { id: "lost", label: "Perdido" },
 ] as const;
@@ -21,7 +20,7 @@ type LeadStatus = (typeof leadStatuses)[number]["id"];
 type Lead = {
   id: string; created_at: string; full_name: string; email: string; language: "pt" | "en" | "fr";
   phone: string | null; destination: string | null; departure_date: string | null; return_date: string | null;
-  date_flexible: boolean; adults: number; children_ages: number[]; travel_style: string | null;
+  date_flexible: boolean; client_id: string | null; adults: number; children_ages: number[]; travel_style: string | null;
   budget: string | null; notes: string | null; status: LeadStatus; internal_notes: string | null; follow_up_date: string | null; lost_reason: string | null;
 };
 type Client = { id: string; full_name: string; email: string | null; phone: string | null; language: "pt" | "en" | "fr"; internal_notes: string | null; source: string; created_at: string; updated_at: string };
@@ -50,7 +49,7 @@ const metricToneClasses: Record<string, { card: string; icon: string; value: str
   slate: { card: "border-slate-200 from-white to-slate-50 hover:border-slate-300", icon: "bg-slate-100 text-slate-700", value: "text-slate-950" },
 };
 const pipelineStageColors: Record<LeadStatus, string> = {
-  new: "bg-sky-500", qualifying: "bg-cyan-500", research: "bg-teal-500", quote_preparing: "bg-indigo-500",
+  new: "bg-sky-500", quote_preparing: "bg-indigo-500",
   quote_sent: "bg-violet-500", awaiting_reply: "bg-amber-500", won: "bg-emerald-500", lost: "bg-slate-400",
 };
 const inputClass = "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20";
@@ -215,6 +214,24 @@ export default function CrmStudioTool() {
       setSelected((current) => current?.id === lead.id ? updatedLead : current);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Não foi possível mover o pedido."); }
     finally { setMovingLeadId(null); setDraggingLeadId(null); }
+  }
+
+  async function createClientFromLead(lead: Lead) {
+    if (lead.client_id) return;
+    setSaving(true); setError("");
+    try {
+      const response = await authorizedFetch(`/api/crm/leads/${lead.id}/client`, { method: "POST" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Não foi possível criar o cliente.");
+      const savedClient = result.client as Client;
+      const updatedLead = result.lead as Lead;
+      setClients((current) => current.some((client) => client.id === savedClient.id)
+        ? current.map((client) => client.id === savedClient.id ? savedClient : client)
+        : [...current, savedClient].sort((a, b) => a.full_name.localeCompare(b.full_name, "pt-PT")));
+      setLeads((current) => current.map((item) => item.id === updatedLead.id ? updatedLead : item));
+      setSelected(updatedLead);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Não foi possível criar o cliente."); }
+    finally { setSaving(false); }
   }
 
   async function convertLead(lead: Lead) {
@@ -605,6 +622,7 @@ export default function CrmStudioTool() {
         <div className="flex items-start justify-between gap-4"><div><p className="text-sm text-slate-500">Pedido de viagem</p><h2 id="lead-title" className="mt-1 text-2xl font-bold">{selected.full_name}</h2></div><button type="button" onClick={() => setSelected(null)} className="rounded-full border border-slate-300 px-3 py-1 text-sm" aria-label="Fechar detalhes">Fechar</button></div>
         {error && <p role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
         <dl className="mt-6 grid grid-cols-2 gap-4 text-sm"><div className="col-span-2"><dt className="text-slate-500">Email</dt><dd><a className="font-medium text-teal-800 underline" href={`mailto:${selected.email}`}>{selected.email}</a></dd></div>{selected.phone && <div><dt className="text-slate-500">Telefone</dt><dd><a className="font-medium" href={`tel:${selected.phone}`}>{selected.phone}</a></dd></div>}<div><dt className="text-slate-500">Idioma</dt><dd className="font-medium">{selected.language.toUpperCase()}</dd></div>{selected.destination && <div className="col-span-2"><dt className="text-slate-500">Destino</dt><dd className="font-medium">{selected.destination}</dd></div>}<div><dt className="text-slate-500">Partida</dt><dd className="font-medium">{selected.departure_date || "Por definir"}</dd></div><div><dt className="text-slate-500">Regresso</dt><dd className="font-medium">{selected.return_date || "Por definir"}</dd></div><div><dt className="text-slate-500">Flexibilidade nas datas</dt><dd className="font-medium">{selected.date_flexible ? "Sim" : "Não"}</dd></div><div><dt className="text-slate-500">Viajantes</dt><dd className="font-medium">{selected.adults} adultos · {selected.children_ages.length} crianças{selected.children_ages.length ? ` (${selected.children_ages.join(", ")} anos)` : ""}</dd></div><div><dt className="text-slate-500">Orçamento / pessoa</dt><dd className="font-medium">{selected.budget ? budgetLabels[selected.budget] || selected.budget : "—"}</dd></div>{selected.travel_style && <div className="col-span-2"><dt className="text-slate-500">Estilo de viagem</dt><dd className="font-medium">{selected.travel_style}</dd></div>}{selected.notes && <div className="col-span-2"><dt className="text-slate-500">Mais detalhes</dt><dd className="whitespace-pre-wrap font-medium">{selected.notes}</dd></div>}</dl>
+        <div className="mt-6 rounded-xl border border-teal-100 bg-teal-50 p-4"><p className="text-sm text-slate-700">Podes criar o cliente com os dados deste pedido; nome, email, telefone e idioma são copiados automaticamente.</p><button type="button" disabled={saving || Boolean(selected.client_id)} onClick={() => void createClientFromLead(selected)} className="mt-3 rounded-full border border-teal-800 px-5 py-2.5 text-sm font-semibold text-teal-800 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60">{saving ? "A guardar…" : selected.client_id ? "Cliente já associado" : "Criar cliente a partir do pedido"}</button></div>
         <form key={selected.id} onSubmit={saveLead} className="mt-8 space-y-5 border-t border-slate-200 pt-6"><label className="block space-y-2 text-sm font-semibold">Fase comercial<select name="status" defaultValue={selected.status} className={inputClass}>{leadStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label><label className="block space-y-2 text-sm font-semibold">Próximo contacto<input name="follow_up_date" type="date" defaultValue={selected.follow_up_date || ""} className={inputClass} /><span className="text-xs font-normal text-slate-500">Aparece no Dashboard e no calendário.</span></label>{selected.status === "lost" && <label className="block space-y-2 text-sm font-semibold">Motivo de perda<textarea name="lost_reason" defaultValue={selected.lost_reason || ""} rows={2} maxLength={500} className={inputClass} /></label>}<label className="block space-y-2 text-sm font-semibold">Notas internas<textarea name="internal_notes" defaultValue={selected.internal_notes || ""} rows={5} maxLength={4000} className={inputClass} placeholder="Acompanhamento e próximos passos" /></label>{saved && <p role="status" className="text-sm text-teal-800">Alterações guardadas.</p>}<div className="flex flex-wrap gap-3"><button disabled={saving} className="rounded-full bg-teal-800 px-6 py-3 font-semibold text-white hover:bg-teal-900 disabled:opacity-60">{saving ? "A guardar…" : "Guardar alterações"}</button>{selected.status === "won" && !trips.some((trip) => trip.lead_id === selected.id) && <button type="button" disabled={saving} onClick={() => void convertLead(selected)} className="rounded-full border border-teal-800 px-5 py-3 font-semibold text-teal-800 hover:bg-teal-50 disabled:opacity-60">Criar viagem e checklist</button>}</div></form>
       </aside></div>}
     </main>
