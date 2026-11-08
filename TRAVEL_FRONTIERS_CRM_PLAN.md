@@ -235,3 +235,16 @@ As migrações `202611080004_crm_trip_import_fields.sql`, `202611080005_crm_lead
 Limites ainda abertos: a extração de PDFs é heurística e precisa de validação com amostras de operadores diferentes; preço, condições e campos ambíguos continuam a exigir revisão manual. O PDF não é arquivado no Google Drive e o formulário não apresenta o PDF lado a lado com os campos; falta integrar o Drive com OAuth autorizado. Não usar preços, datas ou condições extraídos sem revisão. Não guardar documentos de viagem no GitHub. A auditoria encontrou um PDF de cliente já versionado no repositório; `.gitignore` agora impede novos PDFs, mas a cópia no histórico Git ainda precisa de limpeza controlada.
 
 A tarefa atual exclui SMTP/IMAP, templates de email e envio de comunicações. A confirmação do orçamento continua a ser feita pelo cliente em resposta manual ao email.
+
+## 14. Decisões posteriores à revisão — 8 de novembro de 2026
+
+- O lembrete de check-in dois dias antes é suficiente; não implementar hora/fuso apenas para obter 48 horas exatas. Deve existir alerta efetivo para Tiago. Foi acrescentado um resumo diário por email via SMTP existente, apenas para Tiago, das tarefas automáticas pendentes e ainda não notificadas.
+- Gravação dos campos da viagem e dos viajantes passa a uma única transação PostgreSQL.
+- Proteção do formulário no Supabase existente: limites de frequência, deduplicação de submissões e retirada do INSERT público depois da publicação da nova rota. Sem novo serviço pago.
+- Não implementar OCR para PDFs digitalizados; o utilizador confirmou que os PDFs usados terão texto do tipo já conhecido.
+- Eliminação individual dos metadados de documentos, com confirmação.
+- Google Drive autorizado para a conta tf.travel.frontiers@gmail.com: cliente OAuth web próprio, apenas origem de produção e âmbito drive.file, com verificação da conta. O acesso temporário fica na memória do navegador; não existe segundo login do CRM.
+- Ficheiros guardados em Travel Frontiers CRM / Cliente ou Viagem; a associação é guardada no CRM. O PDF usado na importação fica disponível para guardar na ficha depois de confirmar a viagem, sem nova seleção do ficheiro.
+- Retirar uma ligação do CRM mantém o ficheiro no Drive. A eliminação de uma ficha remove associações do CRM, não apaga ficheiros do Drive silenciosamente.
+- Não alterar nem limpar o PDF existente no Git, por instrução explícita do utilizador.
+- Consultar CRM_DELIVERY_STATUS.md para o estado e lacunas remanescentes; esta entrega não representa a conclusão de todo o plano.

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import { createHmac } from "node:crypto";
+import { supabaseAdminConfig } from "@/lib/crm-api";
 
 export const runtime = "nodejs";
 
@@ -19,7 +21,11 @@ function validDate(value: string): boolean {
 export async function POST(request: NextRequest) {
   let body: Record<string, unknown>;
   try {
-    body = await request.json();
+    const raw = await request.text();
+    if (raw.length > 16000) return NextResponse.json({ error: "invalid_request" }, { status: 413 });
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+    body = parsed as Record<string, unknown>;
   } catch {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
@@ -82,35 +88,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "invalid_request", field: "dates" }, { status: 400 });
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  const legacyAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const anonKey = publishableKey || legacyAnonKey;
-  if (!supabaseUrl || !anonKey) {
-    return NextResponse.json({ error: "service_unavailable" }, { status: 503 });
-  }
-
+  const config = supabaseAdminConfig();
+  const hashSecret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!config || !hashSecret) return NextResponse.json({ error: "service_unavailable" }, { status: 503 });
+  const lead = { full_name, email, language, phone, destination, departure_date, return_date,
+    date_flexible, adults, children_ages, travel_style, budget, notes, consent_privacy };
+  const hash = (value: string) => createHmac("sha256", hashSecret).update(value).digest("hex");
+  const address = (request.headers.get("x-vercel-forwarded-for") || request.headers.get("x-forwarded-for") || "unknown").split(",")[0].trim();
   try {
-    const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/rest/v1/crm_leads`, {
-      method: "POST",
-      headers: {
-        apikey: anonKey,
-        ...(publishableKey ? {} : { Authorization: `Bearer ${anonKey}` }),
-        "Content-Type": "application/json",
-        Prefer: "return=minimal",
-      },
-      body: JSON.stringify({
-        full_name, email, language, phone, destination, departure_date, return_date,
-        date_flexible, adults, children_ages, travel_style, budget, notes,
-        consent_privacy, privacy_consent_at: new Date().toISOString(),
-        status: "new", source: "public_form",
-      }),
+    const response = await fetch(`${config.url}/rest/v1/rpc/crm_submit_public_request`, {
+      method: "POST", headers: config.headers,
+      body: JSON.stringify({ p_client_hash: hash("ip:" + address), p_request_hash: hash("request:" + JSON.stringify(lead)), p_lead: lead }),
       cache: "no-store",
     });
     if (!response.ok) {
-      console.error("Supabase lead insert failed", response.status, await response.text());
+      const failure = await response.json().catch(() => null) as { message?: string } | null;
+      if (failure?.message?.includes("rate_limited")) return NextResponse.json({ error: "rate_limited" }, { status: 429, headers: { "Retry-After": "3600" } });
+      console.error("Lead insert failed", response.status);
       return NextResponse.json({ error: "save_failed" }, { status: 502 });
     }
+    const result = await response.json() as { duplicate?: boolean };
+    if (result.duplicate) return NextResponse.json({ ok: true, duplicate: true });
     const smtpHost = process.env.CRM_SMTP_HOST;
     const smtpUser = process.env.CRM_SMTP_USER;
     const smtpPassword = process.env.CRM_SMTP_PASSWORD;

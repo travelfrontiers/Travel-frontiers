@@ -42,24 +42,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 
   try {
-    const response = await fetch(`${config.url}/rest/v1/crm_trips?id=eq.${encodeURIComponent(id)}&select=*`, {
-      method: "PATCH", headers: { ...config.headers, Prefer: "return=representation" },
-      body: JSON.stringify({ status, destination: typeof destination === "string" ? destination.trim() || null : null, departure_date, return_date, operator: operator || null, adults, children_count: childrenCount, total_amount: totalAmount, currency, trip_notes: tripNotes || null, updated_at: new Date().toISOString() }),
-      cache: "no-store",
+    const response = await fetch(`${config.url}/rest/v1/rpc/crm_update_trip`, {
+      method: "POST", headers: config.headers,
+      body: JSON.stringify({
+        p_trip_id: id, p_client_ids: [...new Set(clientIds as string[])],
+        p_fields: { status, destination, departure_date, return_date, operator, adults,
+          children_count: childrenCount, total_amount: totalAmount, currency, trip_notes: tripNotes },
+      }), cache: "no-store",
     });
-    if (!response.ok) return NextResponse.json({ error: "Não foi possível guardar a viagem." }, { status: 502 });
-    const rows = await response.json();
-    if (!Array.isArray(rows) || !rows[0]) return NextResponse.json({ error: "A viagem já não existe." }, { status: 404 });
-    const clientsResponse = await fetch(`${config.url}/rest/v1/rpc/crm_set_trip_clients`, {
-      method: "POST", headers: config.headers, body: JSON.stringify({ p_trip_id: id, p_client_ids: clientIds }), cache: "no-store",
-    });
-    if (!clientsResponse.ok) {
-      const failure = await clientsResponse.json().catch(() => null) as { message?: string } | null;
-      if (failure?.message?.includes("client_not_found")) return NextResponse.json({ error: "Um dos clientes selecionados já não existe." }, { status: 404 });
-      console.error("CRM trip clients update failed", clientsResponse.status);
-      return NextResponse.json({ error: "A viagem foi guardada, mas não foi possível atualizar os clientes." }, { status: 502 });
+    if (!response.ok) {
+      const failure = await response.json().catch(() => null) as { message?: string } | null;
+      if (failure?.message?.includes("trip_not_found")) return NextResponse.json({ error: "A viagem já não existe." }, { status: 404 });
+      if (failure?.message?.includes("client_not_found")) return NextResponse.json({ error: "Um dos clientes selecionados já não existe. Nenhuma alteração foi guardada." }, { status: 409 });
+      return NextResponse.json({ error: "Não foi possível guardar a viagem. Nenhuma alteração foi guardada." }, { status: 502 });
     }
-    return NextResponse.json({ trip: { ...rows[0], client_ids: clientIds } }, { headers: { "Cache-Control": "private, no-store" } });
+    return NextResponse.json({ trip: await response.json() }, { headers: { "Cache-Control": "private, no-store" } });
   } catch {
     return NextResponse.json({ error: "Não foi possível ligar à base de dados." }, { status: 502 });
   }
