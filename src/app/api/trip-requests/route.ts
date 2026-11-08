@@ -9,6 +9,13 @@ function clean(value: unknown, max: number): string | null {
   return result ? result.slice(0, max) : null;
 }
 
+function validDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
 export async function POST(request: NextRequest) {
   let body: Record<string, unknown>;
   try {
@@ -22,7 +29,7 @@ export async function POST(request: NextRequest) {
 
   const full_name = clean(body.full_name, 160);
   const language = body.language === "en" || body.language === "fr" ? body.language : "pt";
-  const email = clean(body.email, 254)?.toLowerCase() ?? null;
+  const email = clean(body.email, 255)?.toLowerCase() ?? null;
   const phone = clean(body.phone, 40);
   const destination = clean(body.destination, 240);
   const travel_style = clean(body.travel_style, 120);
@@ -38,7 +45,7 @@ export async function POST(request: NextRequest) {
   const date_flexible = body.date_flexible === true;
   const consent_privacy = body.consent_privacy === true;
 
-  if (!full_name || full_name.length < 2 || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !destination) {
+  if (!full_name || full_name.length < 2 || !email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || !destination) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
   const budgetLabels: Record<string, Record<string, string>> = {
@@ -52,13 +59,13 @@ export async function POST(request: NextRequest) {
   if (!Number.isInteger(adults) || adults < 1 || adults > 20 || !validChildrenAges || !budget || !budgetLabels[budget] || !consent_privacy) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
-  if ((departure_date && !/^\d{4}-\d{2}-\d{2}$/.test(departure_date)) || (return_date && !/^\d{4}-\d{2}-\d{2}$/.test(return_date))) {
+  if ((departure_date && !validDate(departure_date)) || (return_date && !validDate(return_date))) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
   if (!date_flexible && (!departure_date || !return_date)) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
-  if (departure_date && return_date && return_date < departure_date) {
+  if (departure_date && return_date && return_date <= departure_date) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
 
