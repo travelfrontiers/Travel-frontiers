@@ -21,7 +21,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const internalNotes = typeof body.internal_notes === "string" ? body.internal_notes.trim() || null : null;
 
   if (fullName.length < 2 || fullName.length > 160 ||
-      (email !== null && (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))) ||
+      (email !== null && (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) ||
       (phone !== null && phone.length > 40) || !languages.includes(language as (typeof languages)[number]) ||
       (internalNotes !== null && internalNotes.length > 4000)) {
     return NextResponse.json({ error: "Revê o nome, email, telefone, idioma e notas do cliente." }, { status: 400 });
