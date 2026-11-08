@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 node_modules
+
+# Customer and operator PDFs belong in the restricted Google Drive archive, not Git.
+*.pdf

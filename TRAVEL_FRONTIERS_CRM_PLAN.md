@@ -17,12 +17,14 @@ A interface e os materiais destinados ao cliente devem usar a identidade Travel 
 - Os orçamentos chegam da plataforma e de múltiplos operadores (incluindo Soltour). Os documentos variam, mas pretende-se extrair e normalizar os campos comuns, não criar uma integração exclusiva por operador.
 - A extração de orçamentos deve incluir validação humana antes de os dados serem considerados finais ou usados em comunicações.
 - A comunicação atual por email mantém-se. Nesta fase não haverá botão, link ou mecanismo automático de aceitação de orçamento: o cliente confirma respondendo manualmente ao email.
-- Conta empresarial Roundcube disponível e acesso às configurações sob controlo do utilizador.
-- Remetente previsto: `tiago.ferreira@gupitravel.pt`; CC da agência: `geral@gupitravel.pt`.
+- Conta empresarial Roundcube disponível e acesso às configurações sob controlo do utilizador. O utilizador autorizou a integração SMTP/IMAP para o CRM; segredos e parâmetros ainda têm de ser configurados de forma segura.
+- Remetente previsto: `tiago.ferreira@gupitravel.pt`; alertas internos de novos pedidos/orçamentos vão apenas para Tiago, sem CC para a agência. Emails enviados aos clientes podem seguir os templates contratuais aprovados pela agência.
 - Google Drive será usado para documentos; GitHub para código.
-- A arquitetura proposta é Next.js e Supabase, a validar antes da implementação.
-- Mac mini M4 com 16 GB de memória e 512 GB de armazenamento é infraestrutura futura proposta para processamento. Não implementar agora backups, NAS ou infraestrutura local.
-- O pedido nesta fase é de planeamento. Não alterar a aplicação atual nem implementar funcionalidades.
+- A arquitetura escolhida é Next.js e Supabase Free, sob condição de não ativar serviços pagos nem incorrer em custos adicionais.
+- O CRM será usado apenas pelo Tiago.
+- A área Admin deve manter um único acesso Google através do Sanity Studio existente (`tf.travel.frontiers@gmail.com`), com CRM e Promoções como ferramentas na mesma área; não criar um segundo login para o CRM.
+- O Mac mini M4 (16 GB/512 GB) está disponível e já executa outros agentes; pode ser considerado para processamento local, respeitando recursos e isolamento. Não implementar backups ou NAS nesta fase.
+- A implementação começou num branch separado; a aplicação principal não é alterada até revisão/integração.
 
 ## 3. Âmbito funcional proposto
 
@@ -37,6 +39,10 @@ As regras condicionais devem revelar apenas perguntas relevantes (por exemplo, i
 ### 3.2 CRM, leads e pipeline comercial
 
 Manter um registo por contacto e um ou mais pedidos/oportunidades associados, evitando duplicados quando possível. O pipeline deve permitir estados configuráveis, por exemplo:
+
+O Dashboard do CRM deve ser a página inicial e resumir pedidos em curso e novos, distribuição por fase, pedidos recentes, viagens ativas e próximas partidas, tarefas com prazo e alertas de documentação vencida/a vencer. Os cartões devem abrir a área correspondente para ação; não inventar valores comerciais enquanto o modelo de dados não os suportar.
+
+O pipeline comercial deve estar disponível como quadro Kanban horizontal, com uma coluna por fase. O utilizador pode abrir cada pedido e mudar a fase arrastando o cartão ou usando um controlo acessível dentro do cartão.
 
 1. Novo pedido
 2. A qualificar / informação em falta
@@ -57,11 +63,14 @@ Disponibilizar tarefas e checklists configuráveis (por exemplo, documentos, pag
 
 ### 3.4 Orçamentos PDF: ingestão e validação
 
+O objetivo principal é evitar voltar a introduzir manualmente no CRM os dados de uma proposta/reserva e facilitar a criação da viagem operacional a partir do orçamento recebido. O PDF não deve ser tratado apenas como arquivo. Depois da extração e validação humana, os campos confirmados devem preencher a ficha de viagem e a checklist, associados ao cliente/pedido correto. Só criar ou atualizar a viagem após o utilizador rever e confirmar os dados.
+
 Permitir anexar PDFs recebidos da plataforma ou de operadores diversos. Propor um fluxo de extração que:
 - guarda o ficheiro original no Google Drive, com ligação e metadados no CRM;
 - extrai texto e, quando necessário, aplica OCR a PDFs digitalizados;
 - normaliza campos comuns, por exemplo operador/fornecedor, referência, destino, datas, duração, viajantes, voos, alojamento, regime, serviços incluídos/excluídos, preço, moeda, condições, validade e observações;
 - associa os dados extraídos à oportunidade correta, com possibilidade de correção;
+- prepara uma ficha de viagem preenchida com os dados comuns disponíveis no PDF (cliente, destino, datas, viajantes, referência e outros campos aplicáveis), para revisão e confirmação antes de guardar;
 - assinala campos ausentes, ambiguidades e baixa confiança;
 - apresenta o PDF e os valores extraídos lado a lado para revisão humana;
 - só após aprovação grava/usa os valores normalizados e permite preparar a comunicação ao cliente.
@@ -72,9 +81,12 @@ Não assumir que todos os PDFs contêm todos os campos ou têm o mesmo formato. 
 
 Usar Roundcube como interface de email existente e avaliar envio/consulta pelo servidor empresarial via SMTP/IMAP, apenas depois de confirmar suporte, autenticação, limites e autorização da agência. A configuração deve usar segredos protegidos no servidor e nunca expor credenciais no browser ou no repositório.
 
-Identidade pretendida:
+Identidade pretendida para alertas internos do CRM:
 - De: Tiago Ferreira <tiago.ferreira@gupitravel.pt>
-- CC: geral@gupitravel.pt
+- Para: Tiago Ferreira <tiago.ferreira@gupitravel.pt>
+- Sem CC para a GupiTravel.
+
+Emails enviados aos clientes seguem os templates pré-contratuais aprovados pela agência, a validar antes de automatizar.
 
 Preparar modelos editáveis para:
 - receção do pedido e pedido de dados em falta;
@@ -92,9 +104,9 @@ Modelos devem aceitar personalização, revisão antes de envio, registo do envi
 
 - Google Drive: guardar PDFs de orçamentos e documentos de viagem, usando organização e permissões a definir. No CRM guardar metadados e referências seguras; evitar duplicação desnecessária.
 - GitHub: manter código, histórico e documentação técnica. Nunca guardar credenciais, tokens, dados pessoais ou documentos de clientes no repositório.
-- Supabase (proposta): autenticação, base de dados PostgreSQL e armazenamento apenas se a decisão de arquitetura e as condições de privacidade/custo forem aprovadas.
+- Supabase: base de dados PostgreSQL no plano Free. A autenticação permanece no Sanity Studio existente; o servidor valida o token do Studio e usa uma chave Supabase de serviço não pública para consultas CRM.
 - Next.js (proposta): aplicação web para interface e lógica de servidor.
-- Mac mini M4, 16 GB/512 GB: considerar numa fase futura para processamento local/auxiliar de documentos, após avaliação de segurança, disponibilidade e manutenção. Não é requisito para a primeira fase.
+- Mac mini M4, 16 GB/512 GB: está disponível e já executa outros agentes; avaliar capacidade, isolamento e operação antes de executar serviços locais. Não implementar backups ou NAS nesta fase.
 - Backups, NAS e replicação local estão fora do âmbito atual.
 
 ## 4. Dados, segurança e privacidade
@@ -119,13 +131,13 @@ A definição final deve ser revista pelo utilizador e, quando aplicável, pela 
 ## 5. Arquitetura proposta (a validar)
 
 - Aplicação: Next.js, aproveitando a base técnica existente no repositório.
-- Dados e autenticação: Supabase/PostgreSQL, com políticas de acesso no servidor e por linha quando adequadas.
+- Dados: Supabase/PostgreSQL no plano Free. Autenticação Google pelo Sanity Studio existente; as rotas do CRM validam a identidade do Studio e a lista de permissões antes de consultar a base de dados no servidor.
 - Ficheiros: Google Drive como arquivo operacional inicial, com referências/metadados no CRM; avaliar Supabase Storage apenas se trouxer benefício claro.
 - Email: Roundcube e serviços SMTP/IMAP da GupiTravel, após confirmação de compatibilidade e autorização.
 - Processamento de PDF: fluxo assíncrono e observável, com extração/OCR e validação humana; decidir entre serviço gerido ou processamento local após estimativa de custos, qualidade e privacidade.
-- Infraestrutura futura: avaliar Mac mini M4 16GB/512GB apenas numa fase posterior. Não pressupor que seja servidor sempre ligado ou destino de cópias de segurança.
+- Infraestrutura local: Mac mini M4 16GB/512GB disponível; avaliar operação e coexistência com os agentes existentes. Não o assumir como servidor sempre ligado ou destino de cópias de segurança.
 
-A marcação técnica de Next.js e Supabase é uma proposta consolidada para orientar a análise, não uma decisão de implementação irreversível. Confirmar também alojamento, ambientes, domínio, monitorização, recuperação e custo mensal previsto.
+Next.js e Supabase Free foram escolhidos para iniciar a implementação, com a condição de não ativar recursos pagos. Se os limites Free forem insuficientes, parar e rever alternativas antes de qualquer upgrade. Confirmar também alojamento, ambientes, domínio, monitorização, recuperação e custo mensal previsto.
 
 ## 6. Fases de implementação propostas
 
@@ -150,7 +162,7 @@ Antes de escolher fornecedores ou ativar serviços, estimar custos de alojamento
 - As contas de email indicadas estão disponíveis para uso empresarial, mas os parâmetros e permissões SMTP/IMAP ainda não foram verificados.
 - O Google Drive existente poderá ser usado para documentos, mas pastas, partilhas e políticas ainda precisam de desenho.
 - Os PDFs partilhados anteriormente ilustram formatos de origem; não se presume que cubram todas as variantes de operador.
-- O CRM é inicialmente para o consultor e poderá necessitar de acesso da agência no futuro, sujeito a decisão e permissões.
+- O CRM é exclusivamente para Tiago; não criar contas para outros colaboradores sem nova decisão.
 - A extração automática é assistiva; o utilizador valida valores antes de os usar.
 - A marca e a aplicação existentes devem ser inspecionadas e reutilizadas durante o desenho; não se deve pedir ao utilizador que reenvie elementos já presentes no repositório.
 
@@ -165,7 +177,7 @@ Antes de escolher fornecedores ou ativar serviços, estimar custos de alojamento
 - Parâmetros SMTP/IMAP, autenticação (incluindo eventual MFA/app password), limites, política de CC e arquivo, e autorização da GupiTravel para integrações.
 - Provedor de alojamento, região dos dados, custos, backup/recuperação gerida, monitorização e política de retenção de logs.
 - Tratamento de dados sensíveis e de menores, finalidades, prazos e processos de acesso/correção/eliminação.
-- Papel futuro do Mac mini, modelo de operação e responsáveis por atualizações e suporte.
+- Modelo de operação local do Mac mini e responsáveis por atualizações e suporte.
 - Plano de migração de eventuais leads atuais e critérios de deduplicação.
 
 ## 10. Critérios de aceitação do plano e das fases
@@ -175,7 +187,7 @@ Antes de escolher fornecedores ou ativar serviços, estimar custos de alojamento
 - [x] Explica a relação entre Travel Frontiers e GupiTravel.
 - [x] Consolida formulário condicional, leads/pipeline, viagens operacionais, PDFs, email e documentos.
 - [x] Mantém a aceitação do orçamento por resposta manual e exclui botão/link nesta fase.
-- [x] Regista arquitetura proposta, Mac mini como possibilidade futura e exclusão de backups/NAS agora.
+- [x] Regista a arquitetura escolhida, disponibilidade do Mac mini e exclusão de backups/NAS agora.
 - [x] Distingue decisões confirmadas, pressupostos e pontos por validar.
 - [x] Inclui segurança, privacidade, custos, fases e critérios verificáveis.
 - [x] Não altera a aplicação nem implementa funções.
@@ -195,3 +207,31 @@ Antes de escolher fornecedores ou ativar serviços, estimar custos de alojamento
 ## 11. Estado do documento
 
 Este documento consolida o contexto disponível nesta conversa e serve como referência de continuidade para futuras sessões. Os itens por validar devem ser resolvidos antes da respetiva fase. Qualquer alteração às decisões confirmadas deve ser registada aqui antes de orientar trabalho posterior.
+
+
+## 12. Decisões e progresso após a consolidação
+
+- Supabase foi aceite como base de dados, desde que permaneça no plano Free e sem ativação de serviços pagos. Se as quotas forem insuficientes, parar e propor alternativas antes de qualquer upgrade.
+- O Mac mini está disponível no ambiente de trabalho atual e já executa outros agentes. Avaliar concorrência de recursos e isolamento antes de correr serviços do CRM nele.
+- Utilizador único: Tiago, autenticado na área Admin existente com `tf.travel.frontiers@gmail.com`. Formulário público para visitantes, CRM sem segundo login.
+- Checklist mínima vista no Trello: enviar email com a mensagem para o quarto, fazer check-in e perguntar se está tudo bem; deve ser editável por viagem.
+- Campos do formulário e de orçamentos devem seguir este plano; as perguntas podem ser condicionais e o visitante não deve ser solicitado a introduzir mais dados do que o necessário.
+- Implementação: formulário público PT/EN/FR com orçamento obrigatório, regras para crianças e aviso interno apenas para Tiago; base Supabase; CRM dentro do Studio existente com pipeline, conversão de pedidos ganhos em viagens e checklist editável.
+- Antes de produção faltam rever proteção antiabuso, política de retenção e recuperação dos dados. A configuração de emails fica fora da tarefa atual.
+
+- Decisão adicional: notificações automáticas internas do formulário e de orçamentos são enviadas apenas para Tiago Ferreira, sem CC à GupiTravel.
+- Decisão adicional do utilizador: cada cliente pode ter vários documentos registados com tipo, número/ID e data de validade; o dashboard do CRM deve alertar para documentos vencidos ou a vencer nos próximos 30 dias.
+- O número/ID do documento é dado pessoal de acesso restrito. O CRM não deve guardar imagens/cópias do documento nesta funcionalidade, nem mostrar o número nos alertas do dashboard. O acesso continua limitado à sessão Google autorizada do Admin; retenção e eliminação devem ser definidas antes de uso operacional continuado.
+
+
+## 13. Estado da implementação do CRM — 8 de novembro de 2026
+
+Implementado no projeto local `Travel-frontiers`, no branch `travel-frontiers-crm`, sem alterações aos fluxos de email: dashboard inicial; Kanban horizontal com mudança acessível de fase; registo manual de clientes e viagens; associação de clientes a várias viagens; campos operacionais de viagem; serviços/reservas editáveis; checklist mínima editável; calendário de partidas, regressos e tarefas; metadados de documentação do cliente e alertas de validade; formulário público PT/EN/FR; próximo contacto e motivo de perda no pipeline; pré-preenchimento de campos comuns da viagem a partir de PDFs, incluindo sugestões de voos e alojamento revistas manualmente; vistas comerciais e operacionais explicitamente separadas na navegação.
+
+Revisão visual do dashboard: cartões de situação para pedidos novos/ativos, orçamentos à espera do cliente, viagens ativas, tarefas atrasadas e documentação; contagem visual de todas as fases do pipeline e estados operacionais das viagens; agenda dos próximos 14 dias, pedidos recentes, alertas documentais e partidas próximas. Mantém atalhos para novo cliente, importação de orçamento, Kanban, calendário e viagens, sem apresentar projeções de receita sem dados que as sustentem.
+
+As migrações `202611080004_crm_trip_import_fields.sql`, `202611080005_crm_lead_followups.sql` e `202611080006_crm_create_trip_services.sql` foram aplicadas no projeto Supabase Free. A compilação de produção foi concluída com sucesso.
+
+Limites ainda abertos: a extração de PDFs é heurística e precisa de validação com amostras de operadores diferentes; preço, condições e campos ambíguos continuam a exigir revisão manual. O PDF não é arquivado no Google Drive e o formulário não apresenta o PDF lado a lado com os campos; falta integrar o Drive com OAuth autorizado. Não usar preços, datas ou condições extraídos sem revisão. Não guardar documentos de viagem no GitHub. A auditoria encontrou um PDF de cliente já versionado no repositório; `.gitignore` agora impede novos PDFs, mas a cópia no histórico Git ainda precisa de limpeza controlada.
+
+A tarefa atual exclui SMTP/IMAP, templates de email e envio de comunicações. A confirmação do orçamento continua a ser feita pelo cliente em resposta manual ao email.
