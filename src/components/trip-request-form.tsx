@@ -19,7 +19,7 @@ const copy = {
     budgetTitle: "Qual é o orçamento aproximado por pessoa? *", budgetHint: "Considera o valor aproximado que tens disponível por pessoa para a viagem.",
     budgets: ["Até 500 €", "500 € – 1.000 €", "1.000 € – 1.500 €", "1.500 € – 2.000 €", "Mais de 2.000 €", "Ainda não defini"],
     style: "Estilo de viagem", styleHint: "Praia, circuito, cidade…", details: "Mais detalhes", detailsHint: "Partilha todas as preferências ou requisitos importantes para a tua viagem",
-    privacy: "Li a", privacyLink: "informação de privacidade", privacyEnd: "e autorizo a utilização dos dados para responder a este pedido. *", send: "Enviar pedido", sending: "A enviar…", sent: "Pedido enviado com sucesso! Vou analisar as informações e responder-te por email nas próximas 24 horas.", failed: "Não foi possível enviar o pedido. Tenta novamente mais tarde.", invalid: "Revê os campos obrigatórios e tenta novamente.",
+    privacy: "Li a", privacyLink: "informação de privacidade", privacyEnd: "e autorizo a utilização dos dados para responder a este pedido. *", send: "Enviar pedido", sending: "A enviar…", sent: "Pedido enviado com sucesso! Vou analisar as informações e responder-te por email nas próximas 24 horas.", failed: "Não foi possível enviar o pedido. Tenta novamente mais tarde.", invalid: "Revê os campos obrigatórios e tenta novamente.", invalidContact: "Confirma o nome e o formato do email.", invalidDestination: "Indica o destino ou uma ideia de viagem.", invalidTravelers: "Confirma o número de adultos e seleciona a idade de cada criança.", invalidBudget: "Seleciona um orçamento aproximado.", invalidPrivacy: "Assinala a autorização de privacidade.", invalidDates: "Confirma as datas de partida e regresso.",
   },
   en: {
     fullName: "Full name", email: "Email", emailInvalid: "Enter a valid email address.", dateOrder: "The return date must be after the departure date.", phone: "Phone", destination: "Destination or trip idea", destinationHint: "E.g. Japan, a beach trip with children, or I’m open to suggestions",
@@ -27,7 +27,7 @@ const copy = {
     budgetTitle: "What is your approximate budget per person? *", budgetHint: "Consider the approximate amount you have available per person for this trip.",
     budgets: ["Up to €500", "€500 – €1,000", "€1,000 – €1,500", "€1,500 – €2,000", "Over €2,000", "I haven’t decided yet"],
     style: "Travel style", styleHint: "Beach, touring, city break…", details: "More details", detailsHint: "Share any preferences or important requirements for your trip",
-    privacy: "I have read the", privacyLink: "privacy information", privacyEnd: "and consent to the use of my data to respond to this request. *", send: "Send request", sending: "Sending…", sent: "Request sent successfully! I’ll review your details and reply by email within the next 24 hours.", failed: "We couldn’t send your request. Please try again later.", invalid: "Please review the required fields and try again.",
+    privacy: "I have read the", privacyLink: "privacy information", privacyEnd: "and consent to the use of my data to respond to this request. *", send: "Send request", sending: "Sending…", sent: "Request sent successfully! I’ll review your details and reply by email within the next 24 hours.", failed: "We couldn’t send your request. Please try again later.", invalid: "Please review the required fields and try again.", invalidContact: "Check your name and email format.", invalidDestination: "Enter a destination or trip idea.", invalidTravelers: "Check the number of adults and select an age for each child.", invalidBudget: "Select an approximate budget.", invalidPrivacy: "Please confirm the privacy consent.", invalidDates: "Check the departure and return dates.",
   },
   fr: {
     fullName: "Nom complet", email: "E-mail", emailInvalid: "Saisissez une adresse e-mail valide.", dateOrder: "La date de retour doit être postérieure à la date de départ.", phone: "Téléphone", destination: "Destination ou idée de voyage", destinationHint: "Ex. : Japon, séjour balnéaire avec enfants ou ouvert(e) aux suggestions",
@@ -35,7 +35,7 @@ const copy = {
     budgetTitle: "Quel est le budget approximatif par personne ? *", budgetHint: "Indiquez le montant approximatif disponible par personne pour le voyage.",
     budgets: ["Jusqu’à 500 €", "500 € – 1 000 €", "1 000 € – 1 500 €", "1 500 € – 2 000 €", "Plus de 2 000 €", "Je n’ai pas encore décidé"],
     style: "Style de voyage", styleHint: "Plage, circuit, ville…", details: "Plus de détails", detailsHint: "Partagez vos préférences ou toute exigence importante pour votre voyage",
-    privacy: "J’ai lu les", privacyLink: "informations de confidentialité", privacyEnd: "et j’autorise l’utilisation de mes données pour répondre à cette demande. *", send: "Envoyer la demande", sending: "Envoi…", sent: "Demande envoyée avec succès ! Je vais examiner les informations et vous répondre par e-mail dans les prochaines 24 heures.", failed: "Impossible d’envoyer la demande. Veuillez réessayer plus tard.", invalid: "Vérifiez les champs obligatoires et réessayez.",
+    privacy: "J’ai lu les", privacyLink: "informations de confidentialité", privacyEnd: "et j’autorise l’utilisation de mes données pour répondre à cette demande. *", send: "Envoyer la demande", sending: "Envoi…", sent: "Demande envoyée avec succès ! Je vais examiner les informations et vous répondre par e-mail dans les prochaines 24 heures.", failed: "Impossible d’envoyer la demande. Veuillez réessayer plus tard.", invalid: "Vérifiez les champs obligatoires et réessayez.", invalidContact: "Vérifiez votre nom et le format de l’adresse e-mail.", invalidDestination: "Indiquez une destination ou une idée de voyage.", invalidTravelers: "Vérifiez le nombre d’adultes et sélectionnez l’âge de chaque enfant.", invalidBudget: "Sélectionnez un budget approximatif.", invalidPrivacy: "Veuillez confirmer votre consentement à la confidentialité.", invalidDates: "Vérifiez les dates de départ et de retour.",
   },
 } satisfies Record<Locale, { [key: string]: string | string[] }>;
 
@@ -64,13 +64,19 @@ export default function TripRequestForm({ lang }: Props) {
     setSuccess(false);
     const form = event.currentTarget;
     const data = new FormData(form);
-    const childrenAges = Array.from({ length: childrenCount }, (_, index) => Number(data.get(`child_age_${index + 1}`)));
+    const rawChildrenAges = Array.from({ length: childrenCount }, (_, index) => data.get(`child_age_${index + 1}`));
+    if (rawChildrenAges.some((age) => age === null || age === "")) {
+      setBusy(false);
+      setMessage(t.invalidTravelers);
+      return;
+    }
+    const childrenAges = rawChildrenAges.map(Number);
     const payload = {
       language: lang,
       full_name: data.get("full_name"), email: data.get("email"), phone: data.get("phone"),
       destination: data.get("destination"), departure_date: data.get("departure_date"),
       return_date: data.get("return_date"), date_flexible: data.get("date_flexible") === "on",
-      adults: Number(data.get("adults")), children_ages: childrenAges,
+      adults: Number(data.get("adults")), children_count: childrenCount, children_ages: childrenAges,
       travel_style: data.get("travel_style"), budget: data.get("budget"), notes: data.get("notes"),
       consent_privacy: data.get("consent_privacy") === "on", website: data.get("website"),
     };
@@ -80,7 +86,13 @@ export default function TripRequestForm({ lang }: Props) {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error === "invalid_request" ? t.invalid : t.failed);
+      if (!response.ok) {
+        const fieldMessages: Record<string, string> = {
+          contact: t.invalidContact, destination: t.invalidDestination, travelers: t.invalidTravelers,
+          budget: t.invalidBudget, privacy: t.invalidPrivacy, dates: t.invalidDates,
+        };
+        throw new Error(result.error === "invalid_request" ? fieldMessages[result.field] || t.invalid : t.failed);
+      }
       form.reset();
       setChildrenCount(0);
       setDateFlexible(false);
