@@ -145,20 +145,27 @@ export default function CrmStudioTool() {
   }
 
   useEffect(() => {
-    const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
-    const clientToken = client.config().token;
-    const storedValue = projectId ? window.localStorage.getItem(`__studio_auth_token_${projectId}`) : null;
-    let storedToken = "";
-    if (storedValue) {
+    function syncSession() {
+      if (!user) { setToken(""); return; }
+      const clientToken = client.config().token;
+      const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
+      let storedToken = "";
       try {
-        const parsed = JSON.parse(storedValue) as { token?: unknown };
-        storedToken = typeof parsed.token === "string" ? parsed.token : storedValue;
-      } catch {
-        storedToken = storedValue;
-      }
+        const storedValue = projectId ? window.localStorage.getItem(`__studio_auth_token_${projectId}`) : null;
+        if (storedValue) {
+          try {
+            const parsed = JSON.parse(storedValue) as { token?: unknown };
+            storedToken = typeof parsed.token === "string" ? parsed.token : storedValue;
+          } catch { storedToken = storedValue; }
+        }
+      } catch { /* Use the Studio client if browser storage is unavailable. */ }
+      setToken(clientToken || storedToken || "");
     }
-    setToken(clientToken || storedToken || "");
-  }, [client]);
+    syncSession();
+    window.addEventListener("focus", syncSession);
+    window.addEventListener("storage", syncSession);
+    return () => { window.removeEventListener("focus", syncSession); window.removeEventListener("storage", syncSession); };
+  }, [client, user]);
 
   const authorizedFetch = useCallback((url: string, init: RequestInit = {}) => fetch(url, {
     ...init,
