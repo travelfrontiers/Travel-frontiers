@@ -19,7 +19,7 @@ const copy = {
     budgetTitle: "Qual é o orçamento aproximado por pessoa? *", budgetHint: "Considera o valor aproximado que tens disponível por pessoa para a viagem.",
     budgets: ["Até 500 €", "500 € – 1.000 €", "1.000 € – 1.500 €", "1.500 € – 2.000 €", "Mais de 2.000 €", "Ainda não defini"],
     style: "Estilo de viagem", styleHint: "Praia, circuito, cidade…", details: "Mais detalhes", detailsHint: "Partilha todas as preferências ou requisitos importantes para a tua viagem",
-    privacy: "Li a", privacyLink: "informação de privacidade", privacyEnd: "e autorizo a utilização dos dados para responder a este pedido. *", send: "Enviar pedido", sending: "A enviar…", sent: "Obrigado. Recebi o teu pedido e entrarei em contacto contigo.", pending: "O pedido ficou registado, mas a notificação por email ainda não está configurada.", failed: "Não foi possível enviar o pedido. Tenta novamente mais tarde.", invalid: "Revê os campos obrigatórios e tenta novamente.",
+    privacy: "Li a", privacyLink: "informação de privacidade", privacyEnd: "e autorizo a utilização dos dados para responder a este pedido. *", send: "Enviar pedido", sending: "A enviar…", sent: "Pedido enviado com sucesso! Vou analisar as informações e responder-te por email nas próximas 24 horas.", pending: "O pedido ficou registado, mas a notificação por email ainda não está configurada.", failed: "Não foi possível enviar o pedido. Tenta novamente mais tarde.", invalid: "Revê os campos obrigatórios e tenta novamente.",
   },
   en: {
     fullName: "Full name", email: "Email", emailInvalid: "Enter a valid email address.", dateOrder: "The return date must be after the departure date.", phone: "Phone", destination: "Destination or trip idea", destinationHint: "E.g. Japan, a beach trip with children, or I’m open to suggestions",
@@ -27,7 +27,7 @@ const copy = {
     budgetTitle: "What is your approximate budget per person? *", budgetHint: "Consider the approximate amount you have available per person for this trip.",
     budgets: ["Up to €500", "€500 – €1,000", "€1,000 – €1,500", "€1,500 – €2,000", "Over €2,000", "I haven’t decided yet"],
     style: "Travel style", styleHint: "Beach, touring, city break…", details: "More details", detailsHint: "Share any preferences or important requirements for your trip",
-    privacy: "I have read the", privacyLink: "privacy information", privacyEnd: "and consent to the use of my data to respond to this request. *", send: "Send request", sending: "Sending…", sent: "Thank you. Your request has been received and I’ll be in touch.", pending: "Your request was recorded, but email notifications are not configured yet.", failed: "We couldn’t send your request. Please try again later.", invalid: "Please review the required fields and try again.",
+    privacy: "I have read the", privacyLink: "privacy information", privacyEnd: "and consent to the use of my data to respond to this request. *", send: "Send request", sending: "Sending…", sent: "Request sent successfully! I’ll review your details and reply by email within the next 24 hours.", pending: "Your request was recorded, but email notifications are not configured yet.", failed: "We couldn’t send your request. Please try again later.", invalid: "Please review the required fields and try again.",
   },
   fr: {
     fullName: "Nom complet", email: "E-mail", emailInvalid: "Saisissez une adresse e-mail valide.", dateOrder: "La date de retour doit être postérieure à la date de départ.", phone: "Téléphone", destination: "Destination ou idée de voyage", destinationHint: "Ex. : Japon, séjour balnéaire avec enfants ou ouvert(e) aux suggestions",
@@ -35,7 +35,7 @@ const copy = {
     budgetTitle: "Quel est le budget approximatif par personne ? *", budgetHint: "Indiquez le montant approximatif disponible par personne pour le voyage.",
     budgets: ["Jusqu’à 500 €", "500 € – 1 000 €", "1 000 € – 1 500 €", "1 500 € – 2 000 €", "Plus de 2 000 €", "Je n’ai pas encore décidé"],
     style: "Style de voyage", styleHint: "Plage, circuit, ville…", details: "Plus de détails", detailsHint: "Partagez vos préférences ou toute exigence importante pour votre voyage",
-    privacy: "J’ai lu les", privacyLink: "informations de confidentialité", privacyEnd: "et j’autorise l’utilisation de mes données pour répondre à cette demande. *", send: "Envoyer la demande", sending: "Envoi…", sent: "Merci. Votre demande a bien été reçue et je vous contacterai.", pending: "Votre demande a été enregistrée, mais les notifications par e-mail ne sont pas encore configurées.", failed: "Impossible d’envoyer la demande. Veuillez réessayer plus tard.", invalid: "Vérifiez les champs obligatoires et réessayez.",
+    privacy: "J’ai lu les", privacyLink: "informations de confidentialité", privacyEnd: "et j’autorise l’utilisation de mes données pour répondre à cette demande. *", send: "Envoyer la demande", sending: "Envoi…", sent: "Demande envoyée avec succès ! Je vais examiner les informations et vous répondre par e-mail dans les prochaines 24 heures.", pending: "Votre demande a été enregistrée, mais les notifications par e-mail ne sont pas encore configurées.", failed: "Impossible d’envoyer la demande. Veuillez réessayer plus tard.", invalid: "Vérifiez les champs obligatoires et réessayez.",
   },
 } satisfies Record<Locale, { [key: string]: string | string[] }>;
 
