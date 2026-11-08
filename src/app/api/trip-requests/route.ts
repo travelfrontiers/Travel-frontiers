@@ -57,9 +57,9 @@ export async function POST(request: NextRequest) {
   }
   const budgetLabels: Record<string, Record<string, string>> = {
     under_500: { pt: "Até 500 €", en: "Up to €500", fr: "Jusqu’à 500 €" },
-    500_1000: { pt: "500 € – 1.000 €", en: "€500 – €1,000", fr: "500 € – 1 000 €" },
-    1000_1500: { pt: "1.000 € – 1.500 €", en: "€1,000 – €1,500", fr: "1 000 € – 1 500 €" },
-    1500_2000: { pt: "1.500 € – 2.000 €", en: "€1,500 – €2,000", fr: "1 500 € – 2 000 €" },
+    "500_1000": { pt: "500 € – 1.000 €", en: "€500 – €1,000", fr: "500 € – 1 000 €" },
+    "1000_1500": { pt: "1.000 € – 1.500 €", en: "€1,000 – €1,500", fr: "1 000 € – 1 500 €" },
+    "1500_2000": { pt: "1.500 € – 2.000 €", en: "€1,500 – €2,000", fr: "1 500 € – 2 000 €" },
     over_2000: { pt: "Mais de 2.000 €", en: "Over €2,000", fr: "Plus de 2 000 €" },
     undecided: { pt: "Ainda não defini", en: "I haven’t decided yet", fr: "Je n’ai pas encore décidé" },
   };
