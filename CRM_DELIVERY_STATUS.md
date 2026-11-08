@@ -43,3 +43,8 @@
 - **Dashboard**: indicadores financeiros/comerciais avançados baseados em propostas/valores reais.
 - **Gestão de dados**: exportação, retenção, eliminação integral de informação pessoal em notas livres e paginação/agregação completa das listas antigas antes de aumentar o volume.
 - Não considerar o CRM integralmente concluído enquanto estes blocos permanecerem pendentes.
+
+## Verificação em Production
+- Publicação da fase concluída com estado READY em Production, domínio promo.travelfrontiers.pt, após integração do PR #19.
+- Sessão Google renovada com autorização do utilizador; dados reais do CRM voltaram a carregar sem o erro de credencial antigo.
+- Ecrãs de propostas, histórico, duplicados e templates abertos no Admin publicado. Verificação visual identificou contraste a melhorar no texto secundário do tema escuro; corrigido juntamente com a seleção conjunta de documentos do cliente e viagem na proposta.

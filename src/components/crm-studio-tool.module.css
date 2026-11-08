@@ -107,3 +107,5 @@
 
 .root[data-theme="dark"] [class~="bg-rose-50"] { background-color: #40232d; }
 .root[data-theme="dark"] [class~="text-red-700"] { color: #ffb9b9; }
+
+.root[data-theme="dark"] [class~="text-slate-500"] { color: var(--crm-muted); }
