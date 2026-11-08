@@ -194,7 +194,7 @@ function extractPrice(text: string) {
 }
 
 function extractLabeledDate(text: string, label: RegExp) {
-  const lines = text.split(/\\r?\\n/).map((line) => line.replace(/\\s+/g, " ").trim()).filter(Boolean);
+  const lines = text.split(/\r?\n/).map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
   for (let index = 0; index < lines.length; index += 1) {
     if (!label.test(lines[index])) continue;
     const date = extractSingleDate(lines[index]) || extractSingleDate(lines[index + 1] || "");
@@ -204,7 +204,7 @@ function extractLabeledDate(text: string, label: RegExp) {
 }
 
 function extractSingleDate(text: string) {
-  const iso = /(?<!\\d)(\\d{4})-(\\d{1,2})-(\\d{1,2})(?!\\d)/.exec(text);
+  const iso = /(?<!\d)(\d{4})-(\d{1,2})-(\d{1,2})(?!\d)/.exec(text);
   if (iso) {
     const value = `${iso[1]}-${iso[2].padStart(2, "0")}-${iso[3].padStart(2, "0")}`;
     return isValidDateOnly(value) ? value : "";
@@ -215,7 +215,7 @@ function extractSingleDate(text: string) {
     return isValidDateOnly(value) ? value : "";
   }
   const monthExpr = monthExpression;
-  const long = new RegExp(`(\\d{1,2})\\s+de\\s+(${monthExpr})\\s+de\\s+(\\d{4})`, "i").exec(text);
+  const long = new RegExp(`(\d{1,2})\s+de\s+(${monthExpr})\s+de\s+(\d{4})`, "i").exec(text);
   return long ? parsePtDate(long[1], long[2], long[3]) : "";
 }
 
@@ -232,7 +232,7 @@ function extractDateBounds(text: string) {
     const value = `${match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`;
     if (isValidDateOnly(value)) dates.push(value);
   }
-  const isoDate = /(?<!\\d)(\\d{4})-(\\d{2})-(\\d{2})(?!\\d)/g;
+  const isoDate = /(?<!\d)(\d{4})-(\d{2})-(\d{2})(?!\d)/g;
   for (const match of text.matchAll(isoDate)) if (isValidDateOnly(match[0])) dates.push(match[0]);
   if (!dates.length) return { departure_date: "", return_date: "" };
   const ordered = dates.sort();
