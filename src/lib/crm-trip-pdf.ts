@@ -23,12 +23,13 @@ export type TripPdfFields = {
 };
 
 const monthNumber: Record<string, string> = {
+  january: "01", janvier: "01", janv: "01", february: "02", feb: "02", février: "02", fevrier: "02", févr: "02", march: "03", mars: "03", april: "04", apr: "04", avril: "04", avr: "04", may: "05", june: "06", juin: "06", july: "07", juillet: "07", august: "08", aug: "08", août: "08", aout: "08", september: "09", sep: "09", sept: "09", septembre: "09", october: "10", oct: "10", octobre: "10", november: "11", novembre: "11", december: "12", dec: "12", décembre: "12", decembre: "12", déc: "12",
   janeiro: "01", jan: "01", fevereiro: "02", fev: "02", março: "03", marco: "03", mar: "03",
   abril: "04", abr: "04", maio: "05", mai: "05", junho: "06", jun: "06", julho: "07", jul: "07",
   agosto: "08", ago: "08", setembro: "09", set: "09", outubro: "10", out: "10", novembro: "11", nov: "11", dezembro: "12", dez: "12",
 };
 
-const monthExpression = "janeiro|jan\\.?|fevereiro|fev\\.?|março|marco|mar\\.?|abril|abr\\.?|maio|mai\\.?|junho|jun\\.?|julho|jul\\.?|agosto|ago\\.?|setembro|set\\.?|outubro|out\\.?|novembro|nov\\.?|dezembro|dez\\.?|january|jan\\.?|february|feb\\.?|février|fevrier|févr\\.?|fev\\.?|march|mars|mar\\.?|april|apr\\.?|avril|avr\\.?|may|mai|june|jun\\.?|juin|july|jul\\.?|juillet|august|aug\\.?|août|aout|september|sept\\.?|sep\\.?|october|oct\\.?|octobre|oct\\.?|november|nov\\.?|novembre|nov\\.?|december|dec\\.?|décembre|decembre|déc\\.?|dez\\.?";
+const monthExpression = "janvier|janv\\.?|septembre|janeiro|jan\\.?|fevereiro|fev\\.?|março|marco|mar\\.?|abril|abr\\.?|maio|mai\\.?|junho|jun\\.?|julho|jul\\.?|agosto|ago\\.?|setembro|set\\.?|outubro|out\\.?|novembro|nov\\.?|dezembro|dez\\.?|january|jan\\.?|february|feb\\.?|février|fevrier|févr\\.?|fev\\.?|march|mars|mar\\.?|april|apr\\.?|avril|avr\\.?|may|mai|june|jun\\.?|juin|july|jul\\.?|juillet|august|aug\\.?|août|aout|september|sept\\.?|sep\\.?|october|oct\\.?|octobre|oct\\.?|november|nov\\.?|novembre|nov\\.?|december|dec\\.?|décembre|decembre|déc\\.?|dez\\.?";
 
 function parsePtDate(day: string, month: string, year: string) {
   const monthValue = monthNumber[month.toLocaleLowerCase("pt-PT").replace(/\.$/, "")];
