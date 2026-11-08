@@ -51,7 +51,7 @@ export default function TripRequestForm({ lang }: Props) {
   const [emailTouched, setEmailTouched] = useState(false);
   const [departureDate, setDepartureDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
-  const emailValid = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(email);
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
   const returnDateInvalid = Boolean(departureDate && returnDate && returnDate <= departureDate);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -96,7 +96,7 @@ export default function TripRequestForm({ lang }: Props) {
     <form onSubmit={submit} className="space-y-7">
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="space-y-2 text-sm font-medium text-slate-800">{t.fullName} *<input className={inputClass} name="full_name" autoComplete="name" required minLength={2} maxLength={160} /></label>
-        <label className="space-y-2 text-sm font-medium text-slate-800">{t.email} *<input className={`${inputClass} ${emailTouched && email.length > 0 && !emailValid ? "border-red-600 focus:border-red-600 focus:ring-red-600/20" : ""}`} name="email" type="email" inputMode="email" autoComplete="email" required maxLength={254} pattern="[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}" value={email} aria-invalid={emailTouched && email.length > 0 && !emailValid} onChange={(event) => setEmail(event.target.value)} onBlur={() => setEmailTouched(true)} /></label>
+        <label className="space-y-2 text-sm font-medium text-slate-800">{t.email} *<input className={`${inputClass} ${emailTouched && email.length > 0 && !emailValid ? "border-red-600 focus:border-red-600 focus:ring-red-600/20" : ""}`} name="email" type="email" inputMode="email" autoComplete="email" required maxLength={254} pattern="[^\s@]+@[^\s@]+\.[^\s@]{2,}" value={email} aria-invalid={emailTouched && email.length > 0 && !emailValid} onChange={(event) => setEmail(event.target.value)} onBlur={() => setEmailTouched(true)} /></label>
         {emailTouched && email.length > 0 && !emailValid && <p role="alert" className="-mt-4 text-sm text-red-700">{t.emailInvalid}</p>}
         <label className="space-y-2 text-sm font-medium text-slate-800">{t.phone}<input className={inputClass} name="phone" type="tel" autoComplete="tel" maxLength={40} /></label>
         <label className="space-y-2 text-sm font-medium text-slate-800">{t.destination} *<input className={inputClass} name="destination" maxLength={240} placeholder={t.destinationHint} required /></label>
