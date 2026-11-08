@@ -291,7 +291,7 @@ export default function CrmStudioTool() {
   }
 
   async function deleteClient(client: Client) {
-    const confirmed = window.confirm(`Apagar ${client.full_name}? Os dados pessoais e documentos serão removidos. As viagens, tarefas e reservas ficam guardadas sem este cliente associado; pedidos comerciais também deixam de apontar para a ficha. Esta ação não pode ser anulada.`);
+    const confirmed = window.confirm(`Apagar ${client.full_name}? A ficha, os documentos e os dados pessoais dos pedidos associados serão removidos. As viagens, tarefas e reservas ficam guardadas sem este cliente associado. Esta ação não pode ser anulada.`);
     if (!confirmed) return;
     setSaving(true); setError("");
     try {
@@ -660,7 +660,7 @@ export default function CrmStudioTool() {
           <div className="grid gap-5 xl:grid-cols-2">{trips.map((trip) => <article key={trip.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-5"><p className="text-xs font-semibold uppercase tracking-wide text-teal-800">{tripClientName(trip, clients, leads)}{trip.reference ? ` · ${trip.reference}` : ""}</p><h3 className="mt-1 text-xl font-bold">{trip.destination || "Destino por definir"}</h3></div>
             <form key={`${trip.id}-${trip.status}-${trip.departure_date}-${trip.destination}-${trip.operator}-${trip.adults}-${trip.children_count}-${trip.total_amount}-${trip.client_ids?.join(",")}`} onSubmit={(event) => saveTrip(event, trip)} className="mb-6 grid gap-3 sm:grid-cols-2">
-              <ClientMultiSelect clients={clients} selectedIds={trip.client_ids?.length ? trip.client_ids : [trip.client_id]} />
+              <ClientMultiSelect clients={clients} selectedIds={trip.client_ids?.length ? trip.client_ids : trip.client_id ? [trip.client_id] : []} />
               <label className="space-y-1 text-xs font-semibold text-slate-600">Estado<select name="status" defaultValue={trip.status} className={inputClass}>{tripStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label>
               <label className="space-y-1 text-xs font-semibold text-slate-600">Operador<input name="operator" defaultValue={trip.operator || ""} maxLength={160} className={inputClass} /></label>
               <label className="space-y-1 text-xs font-semibold text-slate-600">Destino<input name="destination" defaultValue={trip.destination || ""} maxLength={240} className={inputClass} /></label>
