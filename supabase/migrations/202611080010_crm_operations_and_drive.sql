@@ -129,14 +129,14 @@ grant execute on function public.crm_claim_checkin_reminders(uuid) to service_ro
 grant execute on function public.crm_finish_checkin_reminders(uuid,boolean) to service_role;
 
 create or replace function public.crm_reset_checkin_delivery()
-returns trigger language plpgsql security definer set search_path=public,pg_temp as $
+returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 begin
  if old.starts_on is distinct from new.starts_on then
   update public.crm_trip_tasks set reminder_sent_at=null,reminder_claimed_at=null,reminder_claim_token=null
   where source_service_id=new.id;
  end if;
  return new;
-end; $;
+end; $$;
 drop trigger if exists crm_reset_checkin_delivery on public.crm_trip_services;
 create trigger crm_reset_checkin_delivery after update of starts_on on public.crm_trip_services
 for each row execute function public.crm_reset_checkin_delivery();
