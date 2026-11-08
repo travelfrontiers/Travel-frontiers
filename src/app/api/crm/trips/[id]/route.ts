@@ -64,3 +64,28 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: "Não foi possível ligar à base de dados." }, { status: 502 });
   }
 }
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!await isAuthorizedStudioUser(request)) return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
+  const { id } = await params;
+  if (!isUuid(id)) return NextResponse.json({ error: "Viagem inválida." }, { status: 400 });
+  const config = supabaseAdminConfig();
+  if (!config) return NextResponse.json({ error: "A ligação segura à base de dados não está configurada." }, { status: 503 });
+
+  try {
+    const response = await fetch(`${config.url}/rest/v1/crm_trips?id=eq.${encodeURIComponent(id)}&select=id`, {
+      method: "DELETE",
+      headers: { ...config.headers, Prefer: "return=representation" },
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      console.error("CRM trip delete failed", response.status);
+      return NextResponse.json({ error: "Não foi possível apagar a viagem." }, { status: 502 });
+    }
+    const rows = await response.json();
+    if (!Array.isArray(rows) || rows.length === 0) return NextResponse.json({ error: "A viagem já não existe." }, { status: 404 });
+    return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "private, no-store" } });
+  } catch {
+    return NextResponse.json({ error: "Não foi possível ligar à base de dados." }, { status: 502 });
+  }
+}
