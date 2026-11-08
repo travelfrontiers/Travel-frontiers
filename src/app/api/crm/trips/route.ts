@@ -16,16 +16,17 @@ export async function GET(request: NextRequest) {
   if (!config) return NextResponse.json({ error: "A ligação segura à base de dados não está configurada." }, { status: 503 });
 
   try {
-    const [tripsResponse, tasksResponse, servicesResponse] = await Promise.all([
+    const [tripsResponse, tasksResponse, servicesResponse, tripClientsResponse] = await Promise.all([
       fetch(`${config.url}/rest/v1/crm_trips?select=*&order=departure_date.asc.nullslast`, { headers: config.headers, cache: "no-store" }),
       fetch(`${config.url}/rest/v1/crm_trip_tasks?select=*&order=sort_order.asc,created_at.asc`, { headers: config.headers, cache: "no-store" }),
       fetch(`${config.url}/rest/v1/crm_trip_services?select=*&order=sort_order.asc,created_at.asc`, { headers: config.headers, cache: "no-store" }),
+      fetch(`${config.url}/rest/v1/crm_trip_clients?select=trip_id,client_id`, { headers: config.headers, cache: "no-store" }),
     ]);
-    if (!tripsResponse.ok || !tasksResponse.ok || !servicesResponse.ok) {
-      console.error("CRM trips query failed", tripsResponse.status, tasksResponse.status, servicesResponse.status);
+    if (!tripsResponse.ok || !tasksResponse.ok || !servicesResponse.ok || !tripClientsResponse.ok) {
+      console.error("CRM trips query failed", tripsResponse.status, tasksResponse.status, servicesResponse.status, tripClientsResponse.status);
       return NextResponse.json({ error: "Não foi possível carregar as viagens." }, { status: 502 });
     }
-    const [trips, tasks, services] = await Promise.all([tripsResponse.json(), tasksResponse.json(), servicesResponse.json()]);
+    const [trips, tasks, services, tripClients] = await Promise.all([tripsResponse.json(), tasksResponse.json(), servicesResponse.json(), tripClientsResponse.json()]);
     const tasksByTrip = new Map<string, unknown[]>();
     for (const task of tasks as { trip_id: string }[]) {
       const existing = tasksByTrip.get(task.trip_id) || [];
@@ -38,7 +39,9 @@ export async function GET(request: NextRequest) {
       existing.push(service);
       servicesByTrip.set(service.trip_id, existing);
     }
-    const tripsWithTasks = (trips as { id: string }[]).map((trip) => ({ ...trip, tasks: tasksByTrip.get(trip.id) || [], services: servicesByTrip.get(trip.id) || [] }));
+    const clientsByTrip = new Map<string, string[]>();
+    for (const relation of tripClients as { trip_id: string; client_id: string }[]) clientsByTrip.set(relation.trip_id, [...(clientsByTrip.get(relation.trip_id) || []), relation.client_id]);
+    const tripsWithTasks = (trips as { id: string; client_id: string }[]).map((trip) => ({ ...trip, client_ids: clientsByTrip.get(trip.id) || [trip.client_id], tasks: tasksByTrip.get(trip.id) || [], services: servicesByTrip.get(trip.id) || [] }));
     return NextResponse.json({ trips: tripsWithTasks }, { headers: { "Cache-Control": "private, no-store" } });
   } catch {
     return NextResponse.json({ error: "Não foi possível ligar à base de dados." }, { status: 502 });
@@ -64,7 +67,7 @@ export async function POST(request: NextRequest) {
     return convertWonLead(config, leadId);
   }
 
-  const clientId = body.client_id;
+  const clientIds = Array.isArray(body.client_ids) ? body.client_ids : body.client_id ? [body.client_id] : [];
   const reference = typeof body.reference === "string" ? body.reference.trim() : "";
   const destination = typeof body.destination === "string" ? body.destination.trim() : "";
   const departureDate = body.departure_date === "" ? null : body.departure_date;
@@ -99,7 +102,7 @@ export async function POST(request: NextRequest) {
     return { service_type: service.service_type, title, provider: provider || null, reference: reference || null, starts_on: startsOn, ends_on: endsOn, details: details || null };
   });
   if (services.some((service) => service === null)) return NextResponse.json({ error: "Revê os dados dos voos e alojamentos extraídos." }, { status: 400 });
-  if (!isUuid(clientId) || reference.length > 80 || destination.length > 240 || !statuses.includes(status) ||
+  if (clientIds.length < 1 || clientIds.length > 30 || !clientIds.every(isUuid) || reference.length > 80 || destination.length > 240 || !statuses.includes(status) ||
       !validDate(departureDate) || !validDate(returnDate) ||
       typeof departureDate === "string" && typeof returnDate === "string" && returnDate < departureDate ||
       operator.length > 160 || adults !== null && (!Number.isInteger(adults) || adults < 1 || adults > 20) ||
@@ -110,11 +113,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const response = await fetch(`${config.url}/rest/v1/rpc/crm_create_trip_with_details`, {
+    const response = await fetch(`${config.url}/rest/v1/rpc/crm_create_trip_with_clients`, {
       method: "POST",
       headers: config.headers,
       body: JSON.stringify({
-        p_client_id: clientId,
+        p_client_ids: clientIds,
         p_reference: reference || null,
         p_destination: destination || null,
         p_departure_date: departureDate,
