@@ -37,8 +37,8 @@ type View = "dashboard" | "pipeline" | "clients" | "trips" | "calendar";
 type CrmArea = "commercial" | "operational";
 
 const budgetLabels: Record<string, string> = {
-  under_500: "Até 500 €", 500_1000: "500 € – 1.000 €", 1000_1500: "1.000 € – 1.500 €",
-  1500_2000: "1.500 € – 2.000 €", over_2000: "Mais de 2.000 €", undecided: "Ainda não defini",
+  under_500: "Até 500 €", "500_1000": "500 € – 1.000 €", "1000_1500": "1.000 € – 1.500 €",
+  "1500_2000": "1.500 € – 2.000 €", over_2000: "Mais de 2.000 €", undecided: "Ainda não defini",
 };
 const documentTypeLabels: Record<ClientDocument["document_type"], string> = {
   passport: "Passaporte", identity_card: "Cartão de cidadão", residence_permit: "Título de residência", other: "Outro documento",
