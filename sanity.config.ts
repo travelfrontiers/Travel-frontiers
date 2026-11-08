@@ -25,8 +25,8 @@ export default defineConfig({
     basePath: '/admin',
     projectId,
     dataset,
-    // Local CRM API calls need a bearer token; keep production's default dual-mode login.
-    auth: { loginMethod: process.env.NODE_ENV === 'development' ? 'token' : 'dual' },
+    // CRM server routes validate the Studio bearer token in every environment.
+    auth: { loginMethod: 'token' },
     // Add and edit the content schema in the './sanity/schema' folder
     schema,
     document: {

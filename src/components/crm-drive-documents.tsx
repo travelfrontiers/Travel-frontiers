@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { uploadCrmDriveFile } from "@/lib/crm-drive-upload";
 type StoredFile = { id: string; drive_file_id: string; file_name: string; mime_type: string };
 type AccessReply = { access_token?: string; expires_in?: number; error?: string };
 type GoogleClient = { accounts: { oauth2: { initTokenClient: (options: { client_id: string; scope: string; hint: string; callback: (reply: AccessReply) => void; error_callback: () => void }) => { requestAccessToken: (options: { prompt: string }) => void } } } };
@@ -85,12 +86,7 @@ export default function CrmDriveDocuments({ authorizedFetch, tripId, clientId, t
         const token = await authorize(googleClientId);
         const root = await folder(token, "root", "Travel Frontiers CRM");
         const destination = await folder(token, (tripId ? "trip-" + tripId : "client-" + clientId), (tripId ? "Viagem · " : "Cliente · ") + title, root);
-        const data = new FormData();
-        data.append("metadata", new Blob([JSON.stringify({ name: selected.name, parents: [destination] })], { type: "application/json" }));
-        data.append("file", selected);
-        const response = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: data });
-        if (!response.ok) throw new Error("Não foi possível guardar o ficheiro no Drive. Confirma o espaço disponível e a ligação Google.");
-        uploaded = await response.json() as { id: string; name: string; mimeType: string };
+        uploaded = await uploadCrmDriveFile(selected, token, destination);
         setPending(uploaded);
       }
       if (!uploaded) throw new Error("Seleciona um ficheiro.");
