@@ -423,6 +423,19 @@ export default function CrmStudioTool() {
     finally { setSaving(false); }
   }
 
+  async function deleteTrip(trip: Trip) {
+    const confirmed = window.confirm(`Apagar a viagem “${trip.destination || "Destino por definir"}”? A ficha da viagem, os ${trip.services.length} serviços/reservas e as ${trip.tasks.length} tarefas da checklist serão removidos. Os clientes e o pedido comercial associado permanecem. Esta ação não pode ser anulada.`);
+    if (!confirmed) return;
+    setSaving(true); setError("");
+    try {
+      const response = await authorizedFetch(`/api/crm/trips/${trip.id}`, { method: "DELETE" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Não foi possível apagar a viagem.");
+      setTrips((current) => current.filter((entry) => entry.id !== trip.id));
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Não foi possível apagar a viagem."); }
+    finally { setSaving(false); }
+  }
+
   async function deleteTripService(trip: Trip, service: TripService) {
     if (!window.confirm(`Remover o serviço “${service.title}”?`)) return;
     setSaving(true); setError("");
@@ -658,7 +671,7 @@ export default function CrmStudioTool() {
           {clients.length === 0 && <p className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Cria primeiro um cliente na secção Clientes para poderes associar-lhe uma viagem.</p>}
           {trips.length === 0 && <p className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">Ainda não há viagens. Podes converter um pedido ganho ou adicionar uma viagem a um cliente.</p>}
           <div className="grid gap-5 xl:grid-cols-2">{trips.map((trip) => <article key={trip.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <div className="mb-5"><p className="text-xs font-semibold uppercase tracking-wide text-teal-800">{tripClientName(trip, clients, leads)}{trip.reference ? ` · ${trip.reference}` : ""}</p><h3 className="mt-1 text-xl font-bold">{trip.destination || "Destino por definir"}</h3></div>
+            <div className="mb-5 flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wide text-teal-800">{tripClientName(trip, clients, leads)}{trip.reference ? ` · ${trip.reference}` : ""}</p><h3 className="mt-1 text-xl font-bold">{trip.destination || "Destino por definir"}</h3></div><button type="button" disabled={saving} onClick={() => void deleteTrip(trip)} className="shrink-0 rounded-full border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Apagar viagem</button></div>
             <form key={`${trip.id}-${trip.status}-${trip.departure_date}-${trip.destination}-${trip.operator}-${trip.adults}-${trip.children_count}-${trip.total_amount}-${trip.client_ids?.join(",")}`} onSubmit={(event) => saveTrip(event, trip)} className="mb-6 grid gap-3 sm:grid-cols-2">
               <ClientMultiSelect clients={clients} selectedIds={trip.client_ids?.length ? trip.client_ids : trip.client_id ? [trip.client_id] : []} />
               <label className="space-y-1 text-xs font-semibold text-slate-600">Estado<select name="status" defaultValue={trip.status} className={inputClass}>{tripStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label>
