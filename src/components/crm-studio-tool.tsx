@@ -32,7 +32,7 @@ function ClientMultiSelect({ clients, fieldName = "client_ids", selectedIds = []
 type ClientDocument = { id: string; client_id: string; document_type: "passport" | "identity_card" | "residence_permit" | "other"; document_number: string; expires_on: string; created_at: string; updated_at: string };
 type TripTask = { id: string; trip_id: string; title: string; due_at: string | null; completed: boolean; sort_order: number; source_service_id?: string | null };
 type TripService = { id: string; trip_id: string; service_type: "flight" | "accommodation" | "activity" | "transfer" | "insurance" | "other"; title: string; provider: string | null; reference: string | null; starts_on: string | null; ends_on: string | null; details: string | null; sort_order: number };
-type Trip = { id: string; client_id: string; client_ids: string[]; lead_id: string | null; reference: string | null; destination: string | null; departure_date: string | null; return_date: string | null; status: (typeof tripStatuses)[number]["id"]; operator: string | null; adults: number | null; children_count: number | null; total_amount: number | null; currency: string; trip_notes: string | null; services: TripService[]; tasks: TripTask[] };
+type Trip = { id: string; client_id: string | null; client_ids: string[]; lead_id: string | null; reference: string | null; destination: string | null; departure_date: string | null; return_date: string | null; status: (typeof tripStatuses)[number]["id"]; operator: string | null; adults: number | null; children_count: number | null; total_amount: number | null; currency: string; trip_notes: string | null; services: TripService[]; tasks: TripTask[] };
 type View = "dashboard" | "pipeline" | "clients" | "trips" | "calendar";
 type CrmArea = "commercial" | "operational";
 
@@ -103,6 +103,7 @@ export default function CrmStudioTool() {
   const [search, setSearch] = useState("");
   const [clientSearch, setClientSearch] = useState("");
   const [showClientForm, setShowClientForm] = useState(false);
+  const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const [showTripForm, setShowTripForm] = useState(false);
   const [showPdfImport, setShowPdfImport] = useState(false);
   const [pdfPreview, setPdfPreview] = useState<TripPdfFields | null>(null);
@@ -270,6 +271,42 @@ export default function CrmStudioTool() {
       setClients((current) => [...current, result.client as Client].sort((a, b) => a.full_name.localeCompare(b.full_name, "pt-PT")));
       setShowClientForm(false); form.reset();
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Não foi possível guardar o cliente."); }
+    finally { setSaving(false); }
+  }
+
+  async function saveClient(event: FormEvent<HTMLFormElement>, client: Client) {
+    event.preventDefault(); setSaving(true); setError("");
+    const data = new FormData(event.currentTarget);
+    try {
+      const response = await authorizedFetch(`/api/crm/clients/${client.id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ full_name: data.get("full_name"), email: data.get("email"), phone: data.get("phone"), language: data.get("language"), internal_notes: data.get("internal_notes") }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Não foi possível atualizar o cliente.");
+      setClients((current) => current.map((entry) => entry.id === client.id ? result.client as Client : entry).sort((a, b) => a.full_name.localeCompare(b.full_name, "pt-PT")));
+      setEditingClientId(null);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Não foi possível atualizar o cliente."); }
+    finally { setSaving(false); }
+  }
+
+  async function deleteClient(client: Client) {
+    const confirmed = window.confirm(`Apagar ${client.full_name}? A ficha, os documentos e os dados pessoais dos pedidos associados serão removidos. As viagens, tarefas e reservas ficam guardadas sem este cliente associado. Esta ação não pode ser anulada.`);
+    if (!confirmed) return;
+    setSaving(true); setError("");
+    try {
+      const response = await authorizedFetch(`/api/crm/clients/${client.id}`, { method: "DELETE" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Não foi possível apagar o cliente.");
+      setClients((current) => current.filter((entry) => entry.id !== client.id));
+      setDocuments((current) => current.filter((entry) => entry.client_id !== client.id));
+      setLeads((current) => current.map((lead) => lead.client_id === client.id ? { ...lead, client_id: null } : lead));
+      setTrips((current) => current.map((trip) => {
+        const clientIds = trip.client_ids.filter((id) => id !== client.id);
+        return { ...trip, client_ids: clientIds, client_id: trip.client_id === client.id ? clientIds[0] || null : trip.client_id };
+      }));
+      setEditingClientId(null);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Não foi possível apagar o cliente."); }
     finally { setSaving(false); }
   }
 
@@ -574,7 +611,30 @@ export default function CrmStudioTool() {
             <div className="sm:col-span-2 flex justify-end"><button disabled={saving} className="rounded-full bg-teal-800 px-6 py-3 font-semibold text-white hover:bg-teal-900 disabled:opacity-60">{saving ? "A guardar…" : "Guardar cliente"}</button></div>
           </form>}
           {visibleClients.length === 0 && <p className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">{clients.length ? "Não encontrei clientes com essa pesquisa." : "Ainda não há clientes. Usa “Adicionar cliente” para registar o primeiro."}</p>}
-          {visibleClients.length > 0 && <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{visibleClients.map((client) => <article key={client.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div><h3 className="text-lg font-semibold">{client.full_name}</h3><p className="mt-2 text-sm text-slate-600">{client.email || "Sem email"}</p><p className="text-sm text-slate-600">{client.phone || "Sem telefone"}</p><p className="mt-2 text-xs text-slate-400">Idioma: {client.language.toUpperCase()}</p>{client.internal_notes && <p className="mt-3 whitespace-pre-wrap text-sm text-slate-600">{client.internal_notes}</p>}</div><section className="mt-5 border-t border-slate-200 pt-4"><h4 className="text-sm font-semibold">Documentação</h4><div className="mt-3 space-y-3">{documents.filter((document) => document.client_id === client.id).map((document) => <form key={document.id} onSubmit={(event) => saveClientDocument(event, client.id, document)} className="grid gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"><label className="space-y-1 text-xs font-semibold text-slate-600">Tipo<select name="document_type" defaultValue={document.document_type} className={inputClass}>{Object.entries(documentTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="space-y-1 text-xs font-semibold text-slate-600">Número/ID<input name="document_number" required maxLength={80} defaultValue={document.document_number} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Validade<input name="expires_on" type="date" required defaultValue={document.expires_on} className={inputClass} /></label><div className="flex items-end"><button disabled={saving} className="rounded-full border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-60">Guardar</button></div></form>)}</div><form onSubmit={(event) => saveClientDocument(event, client.id)} className="mt-3 grid gap-2 rounded-xl border border-dashed border-slate-300 p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"><label className="space-y-1 text-xs font-semibold text-slate-600">Novo tipo<select name="document_type" defaultValue="passport" className={inputClass}>{Object.entries(documentTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="space-y-1 text-xs font-semibold text-slate-600">Número/ID<input name="document_number" required maxLength={80} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Data de validade<input name="expires_on" type="date" required className={inputClass} /></label><div className="flex items-end"><button disabled={saving} className="rounded-full bg-teal-800 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">Adicionar</button></div></form><p className="mt-2 text-xs text-slate-500">O número/ID é visível apenas nesta área CRM protegida.</p></section><button type="button" onClick={() => { setTripClientIds([client.id]); setShowTripForm(true); goToView("trips"); }} className="mt-5 rounded-full border border-teal-800 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50">Adicionar viagem</button></article>)}</div>}
+          {visibleClients.length > 0 && <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{visibleClients.map((client) => {
+            const clientTrips = trips.filter((trip) => trip.client_id === client.id || trip.client_ids.includes(client.id));
+            const clientLeads = leads.filter((lead) => lead.client_id === client.id);
+            return <article key={client.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0"><h3 className="text-lg font-semibold">{client.full_name}</h3><p className="mt-2 break-all text-sm text-slate-600">{client.email || "Sem email"}</p><p className="text-sm text-slate-600">{client.phone || "Sem telefone"}</p><p className="mt-2 text-xs text-slate-400">Idioma: {client.language.toUpperCase()} · Cliente desde {dateLabel(client.created_at)}</p></div>
+                {editingClientId !== client.id && <div className="flex shrink-0 gap-2"><button type="button" onClick={() => setEditingClientId(client.id)} className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Editar</button><button type="button" disabled={saving} onClick={() => void deleteClient(client)} className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Apagar</button></div>}
+              </div>
+              {editingClientId === client.id && <form onSubmit={(event) => void saveClient(event, client)} className="mt-4 grid gap-3 rounded-xl border border-teal-100 bg-teal-50/50 p-4 sm:grid-cols-2">
+                <label className="space-y-1 text-xs font-semibold">Nome completo *<input name="full_name" required minLength={2} maxLength={160} defaultValue={client.full_name} className={inputClass} /></label>
+                <label className="space-y-1 text-xs font-semibold">Email<input name="email" type="email" maxLength={254} defaultValue={client.email || ""} className={inputClass} /></label>
+                <label className="space-y-1 text-xs font-semibold">Telefone<input name="phone" type="tel" maxLength={40} defaultValue={client.phone || ""} className={inputClass} /></label>
+                <label className="space-y-1 text-xs font-semibold">Idioma<select name="language" defaultValue={client.language} className={inputClass}><option value="pt">Português</option><option value="en">English</option><option value="fr">Français</option></select></label>
+                <label className="space-y-1 text-xs font-semibold sm:col-span-2">Notas internas<textarea name="internal_notes" rows={3} maxLength={4000} defaultValue={client.internal_notes || ""} className={inputClass} /></label>
+                <div className="flex justify-end gap-2 sm:col-span-2"><button type="button" onClick={() => setEditingClientId(null)} className="rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700">Cancelar</button><button disabled={saving} className="rounded-full bg-teal-800 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60">{saving ? "A guardar…" : "Guardar alterações"}</button></div>
+              </form>}
+              {!editingClientId || editingClientId !== client.id ? <>{client.internal_notes && <p className="mt-3 whitespace-pre-wrap text-sm text-slate-600">{client.internal_notes}</p>}
+                <section className="mt-4 rounded-xl bg-slate-50 p-3"><h4 className="text-sm font-semibold">Relação com o cliente</h4><div className="mt-2 flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-white px-3 py-1.5 font-medium text-slate-700 ring-1 ring-slate-200">{clientTrips.length} {clientTrips.length === 1 ? "viagem" : "viagens"}</span><span className="rounded-full bg-white px-3 py-1.5 font-medium text-slate-700 ring-1 ring-slate-200">{clientLeads.length} {clientLeads.length === 1 ? "pedido comercial" : "pedidos comerciais"}</span></div>
+                  {(clientTrips.length > 0 || clientLeads.length > 0) && <ul className="mt-3 space-y-2">{clientTrips.slice(0, 3).map((trip) => <li key={trip.id} className="flex items-start justify-between gap-2 text-xs"><span className="font-medium text-slate-800">{trip.destination || "Destino por definir"}{trip.reference ? ` · ${trip.reference}` : ""}</span><span className="shrink-0 text-slate-500">{tripStatuses.find((status) => status.id === trip.status)?.label}</span></li>)}{clientLeads.slice(0, 2).map((lead) => <li key={lead.id} className="flex items-start justify-between gap-2 text-xs"><span className="font-medium text-slate-800">Pedido · {lead.destination || "Destino por definir"}</span><span className="shrink-0 text-slate-500">{leadStatuses.find((status) => status.id === lead.status)?.label}</span></li>)}</ul>}</section>
+              </> : null}
+              <section className="mt-5 border-t border-slate-200 pt-4"><h4 className="text-sm font-semibold">Documentação</h4><div className="mt-3 space-y-3">{documents.filter((document) => document.client_id === client.id).map((document) => <form key={document.id} onSubmit={(event) => saveClientDocument(event, client.id, document)} className="grid gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"><label className="space-y-1 text-xs font-semibold text-slate-600">Tipo<select name="document_type" defaultValue={document.document_type} className={inputClass}>{Object.entries(documentTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="space-y-1 text-xs font-semibold text-slate-600">Número/ID<input name="document_number" required maxLength={80} defaultValue={document.document_number} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Validade<input name="expires_on" type="date" required defaultValue={document.expires_on} className={inputClass} /></label><div className="flex items-end"><button disabled={saving} className="rounded-full border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-60">Guardar</button></div></form>)}</div><form onSubmit={(event) => saveClientDocument(event, client.id)} className="mt-3 grid gap-2 rounded-xl border border-dashed border-slate-300 p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"><label className="space-y-1 text-xs font-semibold text-slate-600">Novo tipo<select name="document_type" defaultValue="passport" className={inputClass}>{Object.entries(documentTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="space-y-1 text-xs font-semibold text-slate-600">Número/ID<input name="document_number" required maxLength={80} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Data de validade<input name="expires_on" type="date" required className={inputClass} /></label><div className="flex items-end"><button disabled={saving} className="rounded-full bg-teal-800 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">Adicionar</button></div></form><p className="mt-2 text-xs text-slate-500">O número/ID é visível apenas nesta área CRM protegida.</p></section>
+              <div className="mt-5 flex flex-wrap gap-2"><button type="button" onClick={() => { setTripClientIds([client.id]); setShowTripForm(true); goToView("trips"); }} className="rounded-full border border-teal-800 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50">Adicionar viagem</button>{clientLeads.length > 0 && <button type="button" onClick={() => goToView("pipeline")} className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Ver pedidos</button>}</div>
+            </article>;
+          })}</div>}
         </>}
 
         {!loading && view === "trips" && <>
@@ -600,7 +660,7 @@ export default function CrmStudioTool() {
           <div className="grid gap-5 xl:grid-cols-2">{trips.map((trip) => <article key={trip.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-5"><p className="text-xs font-semibold uppercase tracking-wide text-teal-800">{tripClientName(trip, clients, leads)}{trip.reference ? ` · ${trip.reference}` : ""}</p><h3 className="mt-1 text-xl font-bold">{trip.destination || "Destino por definir"}</h3></div>
             <form key={`${trip.id}-${trip.status}-${trip.departure_date}-${trip.destination}-${trip.operator}-${trip.adults}-${trip.children_count}-${trip.total_amount}-${trip.client_ids?.join(",")}`} onSubmit={(event) => saveTrip(event, trip)} className="mb-6 grid gap-3 sm:grid-cols-2">
-              <ClientMultiSelect clients={clients} selectedIds={trip.client_ids?.length ? trip.client_ids : [trip.client_id]} />
+              <ClientMultiSelect clients={clients} selectedIds={trip.client_ids?.length ? trip.client_ids : trip.client_id ? [trip.client_id] : []} />
               <label className="space-y-1 text-xs font-semibold text-slate-600">Estado<select name="status" defaultValue={trip.status} className={inputClass}>{tripStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label>
               <label className="space-y-1 text-xs font-semibold text-slate-600">Operador<input name="operator" defaultValue={trip.operator || ""} maxLength={160} className={inputClass} /></label>
               <label className="space-y-1 text-xs font-semibold text-slate-600">Destino<input name="destination" defaultValue={trip.destination || ""} maxLength={240} className={inputClass} /></label>
@@ -649,7 +709,7 @@ function leadName(leadId: string | null, leads: Lead[]) {
 }
 
 function tripClientName(trip: Trip, clients: Client[], leads: Lead[]) {
-  const ids = trip.client_ids?.length ? trip.client_ids : [trip.client_id];
+  const ids = trip.client_ids?.length ? trip.client_ids : trip.client_id ? [trip.client_id] : [];
   const names = ids.map((id) => clients.find((client) => client.id === id)?.full_name).filter(Boolean);
-  return names.length ? names.join(", ") : leadName(trip.lead_id, leads);
+  return names.length ? names.join(", ") : trip.lead_id ? leadName(trip.lead_id, leads) : "Cliente removido";
 }
