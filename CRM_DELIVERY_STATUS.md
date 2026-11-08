@@ -40,4 +40,6 @@ A existência de cartões, Kanban e formulários não equivale a todo o CRM plan
 
 ## Validação
 Testes isolados dos handlers com dependências de rede simuladas: apenas uma chamada RPC para guardar viagem; cliente inexistente devolve erro sem outro PATCH; remoção de documento/404; resposta 429; hash do IP; duplicado não envia email; pedido novo notifica; cron rejeita cabeçalho forjado; Drive exige sessão CRM. Sem envio real de emails nem dados reais.
-A validação SQL transacional e o build devem ser confirmados na publicação. O consentimento Google ocorre na primeira operação do utilizador; não se deve assumir que um upload real foi testado sem esse passo.
+A migração 010 foi aplicada e os testes SQL transacionais passaram: gravação atómica, associações, eliminação individual, metadados Drive, deduplicação, limite horário, lease de lembretes e reagendamento de voo. Todos os dados sintéticos foram revertidos. O build de preview do código foi concluído com estado READY. A migração 011 é aplicada após confirmar a publicação da nova rota em produção. O consentimento Google ocorre na primeira operação do utilizador; não se deve assumir que um upload real foi testado sem esse passo.
+
+Os testes de handlers podem ser repetidos com `node scripts/check-crm-operations.cjs`, com as dependências de desenvolvimento instaladas; usam rede simulada e não enviam emails reais.
