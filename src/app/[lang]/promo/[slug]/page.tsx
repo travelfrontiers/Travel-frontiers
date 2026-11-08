@@ -260,7 +260,7 @@ export default async function PromotionPage({
 
                             <div className="pt-4 space-y-4">
                                 <Link
-                                    href="https://www.icligo.com/forms/pt/contact-us/book-your-trip?utm_source=LHw8s4N4"
+                                    href={`/${lang}/pedido`}
                                     className="block w-full bg-primary hover:bg-orange-600 text-white font-black py-5 rounded-2xl transition-all shadow-xl shadow-orange-200 active:scale-[0.98] text-center"
                                 >
                                     {dict.nav.contact}

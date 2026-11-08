@@ -160,6 +160,10 @@ function changeForumLanguage(lang) {
 }
 
 function updateForumContent() {
+    document.querySelectorAll('[data-request-form-link]').forEach(link => {
+        link.href = `https://promo.travelfrontiers.pt/${currentForumLang}/pedido`;
+    });
+
     // Update data-translate elements
     const elements = document.querySelectorAll('[data-translate]');
     elements.forEach(el => {

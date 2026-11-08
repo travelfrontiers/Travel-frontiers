@@ -16,6 +16,7 @@ import { ArchiveAction } from './src/sanity/actions/ArchiveAction'
 import { ProcessExpiredAction } from './src/sanity/actions/ProcessExpiredAction'
 import CommissionCalculator from './src/components/commission-calculator'
 import { GenerateItineraryAction } from './src/sanity/actions/GenerateItineraryAction'
+import CrmStudioTool from './src/components/crm-studio-tool'
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
@@ -24,6 +25,8 @@ export default defineConfig({
     basePath: '/admin',
     projectId,
     dataset,
+    // Local CRM API calls need a bearer token; keep production's default dual-mode login.
+    auth: { loginMethod: process.env.NODE_ENV === 'development' ? 'token' : 'dual' },
     // Add and edit the content schema in the './sanity/schema' folder
     schema,
     document: {
@@ -39,9 +42,10 @@ export default defineConfig({
     },
     tools: [
         { name: 'comissoes', title: 'Calculadora de comissão', component: CommissionCalculator },
+        { name: 'crm', title: 'CRM', component: CrmStudioTool },
     ],
     plugins: [
-        structureTool(),
+        structureTool({ title: 'Promoções' }),
         // Vision is a tool that lets you query your content with GROQ in the studio
         // https://www.sanity.io/docs/the-vision-plugin
         visionTool({ defaultApiVersion: '2024-01-18' }),
