@@ -47,6 +47,11 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const config = supabaseAdminConfig();
   if (!config) return NextResponse.json({ error: "A ligação segura à base de dados não está configurada." }, { status: 503 });
   try {
+    const currentResponse = await fetch(`${config.url}/rest/v1/crm_trip_tasks?id=eq.${encodeURIComponent(id)}&select=source_service_id`, { headers: config.headers, cache: "no-store" });
+    if (!currentResponse.ok) return NextResponse.json({ error: "Não foi possível consultar a tarefa." }, { status: 502 });
+    const currentRows = await currentResponse.json();
+    if (!Array.isArray(currentRows) || !currentRows[0]) return NextResponse.json({ error: "A tarefa já não existe." }, { status: 404 });
+    if (currentRows[0].source_service_id) return NextResponse.json({ error: "O lembrete de check-in é gerido pelo voo. Edita ou remove o voo associado." }, { status: 409 });
     const response = await fetch(`${config.url}/rest/v1/crm_trip_tasks?id=eq.${encodeURIComponent(id)}`, {
       method: "DELETE", headers: config.headers, cache: "no-store",
     });
