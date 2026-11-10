@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthorizedStudioUser, supabaseAdminConfig } from "@/lib/crm-api";
 
+import {dateOnly} from "@/lib/crm-office-api";
+import {lisbonDay} from "@/lib/crm-calendar";
+
 export const runtime = "nodejs";
 const languages = ["pt", "en", "fr"] as const;
 const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
@@ -20,6 +23,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const language = typeof body.language === "string" ? body.language : "";
   const internalNotes = typeof body.internal_notes === "string" ? body.internal_notes.trim() || null : null;
 
+  const birthDate=body.birth_date===""?null:body.birth_date;
+  if (birthDate!==undefined&&birthDate!==null&&(!dateOnly(birthDate)||birthDate>lisbonDay(new Date().toISOString()))) {
+    return NextResponse.json({error:"Indica uma data de nascimento válida."},{status:400});
+  }
   if (fullName.length < 2 || fullName.length > 160 ||
       (email !== null && (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) ||
       (phone !== null && phone.length > 40) || !languages.includes(language as (typeof languages)[number]) ||
@@ -31,7 +38,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const response = await fetch(`${config.url}/rest/v1/crm_clients?id=eq.${encodeURIComponent(id)}&select=*`, {
       method: "PATCH",
       headers: { ...config.headers, Prefer: "return=representation" },
-      body: JSON.stringify({ full_name: fullName, email, phone, language, internal_notes: internalNotes, updated_at: new Date().toISOString() }),
+      body: JSON.stringify({ full_name: fullName, email, phone, language, internal_notes: internalNotes, ...(birthDate===undefined?{}:{birth_date:birthDate}), updated_at: new Date().toISOString() }),
       cache: "no-store",
     });
     if (response.status === 409) return NextResponse.json({ error: "Já existe um cliente com este email." }, { status: 409 });

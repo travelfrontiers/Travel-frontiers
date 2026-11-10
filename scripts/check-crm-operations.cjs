@@ -11,6 +11,7 @@ function load(path){
   if(name==="next/server")return {NextResponse:{json:(data,options={})=>({status:options.status||200,body:data,headers:options.headers})}};
   if(name==="@/lib/crm-api")return {isAuthorizedStudioUser:async()=>authorized,supabaseAdminConfig:()=>({url:"https://db.example.invalid",headers:{apikey:"synthetic"}})};
   if(name==="nodemailer")return {createTransport:()=>({sendMail:async()=>{mails++;}})};
+  if(name.startsWith("@/"))return load("src/"+name.slice(2)+".ts");
   return require(name);
  };
  new Function("require","module","exports","fetch","process",output)(req,mod,mod.exports,async(url,init={})=>{calls.push({url,init});return {ok:reply.ok,status:reply.status,json:async()=>reply.data};},{env});

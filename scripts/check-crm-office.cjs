@@ -33,7 +33,7 @@ const reset=(...items)=>{calls=[];replies=items;};
  reset({status:204});r=await tasks.DELETE(request(),{params:Promise.resolve({id})});assert.equal(r.status,200);assert.ok(calls[0].url.endsWith("/rpc/crm_delete_task"));
  reset({status:400,data:{message:"flight_managed_task"}});assert.equal((await tasks.DELETE(request(),{params:Promise.resolve({id})})).status,409);
  const trip={id:"33345678-1234-4123-8123-123456789abc",destination:"Synthetic",client_id:id,crm_trip_clients:[{client_id:second}]};
- reset({data:[{...trip,departure_date:"2027-04-02",return_date:null}]},{data:[{id,trip_id:trip.id,title:"Task across midnight",due_at:"2027-04-01T23:30:00Z",completed:false,crm_trips:trip}]},{data:[]},{data:[]},{data:[]});
+ reset({data:[{...trip,departure_date:"2027-04-02",return_date:null}]},{data:[{id,trip_id:trip.id,title:"Task across midnight",due_at:"2027-04-01T23:30:00Z",completed:false,crm_trips:trip}]},{data:[]},{data:[]},{data:[]},{data:[]});
  r=await agenda.GET(request({},"?from=2027-04-02&to=2027-04-02"));assert.equal(r.status,200);assert.equal(r.body.entries.length,2);assert.equal(r.body.entries[1].date,"2027-04-02");assert.ok(r.body.entries.every(e=>e.clientIds.includes(second)));
  reset({data:[],headers:{"content-range":"*/0"}});r=await activity.GET(request({},"?client_id="+id));assert.equal(r.status,200);assert.deepEqual(r.body.events,[]);assert.ok(calls[0].url.includes("client_id=eq."));
  console.log("PASS: calendar/DST/leap years; auth on five new APIs; proposal version conflict and field validation; manual merge confirmation; template IDs; task override/completion/flight protection; RPC task deletion; calendar includes all travelers; dossier history filter.");

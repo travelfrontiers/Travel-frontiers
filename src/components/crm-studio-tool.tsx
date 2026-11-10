@@ -5,8 +5,10 @@ import { useClient, useCurrentUser } from "sanity";
 import { ArrowUpRight, Moon, Sun, BellRing, CalendarDays, FileWarning, Inbox, ListTodo, Plane, Send, ShieldCheck, Users } from "lucide-react";
 import styles from "./crm-studio-tool.module.css";
 import CrmDriveDocuments from "./crm-drive-documents";
+import CrmDocumentScanner from "./crm-document-scanner";
 import CrmProposals from "./crm-proposals";
 import CrmCalendar from "./crm-calendar";
+import CrmPayments, { CrmPaymentAlerts } from "./crm-payments";
 import CrmActivity from "./crm-activity";
 import CrmDuplicates from "./crm-duplicates";
 import CrmChecklistTemplates, { CrmTripTemplatePicker } from "./crm-checklist-templates";
@@ -31,7 +33,7 @@ type Lead = {
   date_flexible: boolean; client_id: string | null; adults: number; children_ages: number[]; travel_style: string | null;
   budget: string | null; notes: string | null; status: LeadStatus; internal_notes: string | null; follow_up_date: string | null; lost_reason: string | null;
 };
-type Client = { id: string; full_name: string; email: string | null; phone: string | null; language: "pt" | "en" | "fr"; internal_notes: string | null; source: string; created_at: string; updated_at: string };
+type Client = { id: string; full_name: string; birth_date?: string | null; email: string | null; phone: string | null; language: "pt" | "en" | "fr"; internal_notes: string | null; source: string; created_at: string; updated_at: string };
 
 function ClientMultiSelect({ clients, fieldName = "client_ids", selectedIds = [], title = "Clientes *" }: { clients: Client[]; fieldName?: string; selectedIds?: string[]; title?: string }) {
   const [selected, setSelected] = useState<string[]>(selectedIds);
@@ -41,7 +43,7 @@ type ClientDocument = { id: string; client_id: string; document_type: "passport"
 type TripTask = { id: string; trip_id: string; title: string; due_at: string | null; completed: boolean; sort_order: number; source_service_id?: string | null; template_item_id?: string | null; template_override?: boolean };
 type TripService = { id: string; trip_id: string; service_type: "flight" | "accommodation" | "activity" | "transfer" | "insurance" | "other"; title: string; provider: string | null; reference: string | null; starts_on: string | null; ends_on: string | null; details: string | null; sort_order: number };
 type Trip = { travel_type: string; id: string; client_id: string | null; client_ids: string[]; lead_id: string | null; reference: string | null; destination: string | null; departure_date: string | null; return_date: string | null; status: (typeof tripStatuses)[number]["id"]; operator: string | null; adults: number | null; children_count: number | null; total_amount: number | null; currency: string; trip_notes: string | null; services: TripService[]; tasks: TripTask[] };
-type View = "dashboard" | "pipeline" | "clients" | "trips" | "calendar" | "proposals" | "templates" | "activity" | "duplicates";
+type View = "dashboard" | "pipeline" | "clients" | "trips" | "calendar" | "proposals" | "templates" | "activity" | "duplicates" | "payments";
 type CrmArea = "commercial" | "operational";
 
 const budgetLabels: Record<string, string> = {
@@ -140,6 +142,7 @@ export default function CrmStudioTool() {
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
 
+  const [financeTripId, setFinanceTripId] = useState("");
   const [proposalId, setProposalId] = useState("");
   const [proposalContext, setProposalContext] = useState<EntityContext | null>(null);
   const [activityContext, setActivityContext] = useState<EntityContext | null>(null);
@@ -161,7 +164,7 @@ export default function CrmStudioTool() {
   function goToView(nextView: View) {
     setFocused(null);
     setView(nextView);
-    setArea(nextView === "trips" || nextView === "calendar" || nextView === "templates" ? "operational" : "commercial");
+    setArea(nextView === "trips" || nextView === "calendar" || nextView === "templates" || nextView === "payments" ? "operational" : "commercial");
   }
 
   function goToArea(nextArea: CrmArea) {
@@ -254,7 +257,13 @@ export default function CrmStudioTool() {
     [trips,focused,tripQuery,tripState,tripType,tripPerson,tripFrom,tripTo,tripSort,clients,leads]);
 
   const quietRefresh = useCallback(() => refresh(true), [refresh]);
+  function openFinance(tripId: string) {
+    setFinanceTripId(tripId);
+    setError("");
+    goToView("payments");
+  }
   function openTarget(target: OpenTarget) {
+    if (target.finance && target.type === "trip") { openFinance(target.id); return; }
     setSelected(null); setError("");
     if (target.type==="lead") { const lead=leads.find(l=>l.id===target.id); if(lead){setSelected(lead);setSaved(false);} else setError("Este pedido já não existe."); return; }
     if (target.type==="proposal") { setProposalId(target.id);setProposalContext(null);goToView("proposals");return; }
@@ -356,7 +365,7 @@ export default function CrmStudioTool() {
     try {
       const response = await authorizedFetch(`/api/crm/clients/${client.id}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ full_name: data.get("full_name"), email: data.get("email"), phone: data.get("phone"), language: data.get("language"), internal_notes: data.get("internal_notes") }),
+        body: JSON.stringify({ full_name: data.get("full_name"), birth_date: data.get("birth_date"), email: data.get("email"), phone: data.get("phone"), language: data.get("language"), internal_notes: data.get("internal_notes") }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível atualizar o cliente.");
@@ -519,7 +528,7 @@ export default function CrmStudioTool() {
   }
 
   async function deleteTrip(trip: Trip) {
-    const confirmed = window.confirm(`Apagar a viagem “${trip.destination || "Destino por definir"}”? A ficha da viagem, os ${trip.services.length} serviços/reservas e as ${trip.tasks.length} tarefas da checklist serão removidos. Os clientes e o pedido comercial associado permanecem. Esta ação não pode ser anulada.`);
+    const confirmed = window.confirm(`Apagar a viagem “${trip.destination || "Destino por definir"}”? A ficha da viagem, os ${trip.services.length} serviços/reservas e as ${trip.tasks.length} tarefas da checklist serão removidos. Os clientes e o pedido comercial associado permanecem. O plano de pagamentos, os movimentos e o cálculo de comissão desta viagem também serão removidos. Esta ação não pode ser anulada.`);
     if (!confirmed) return;
     setSaving(true); setError("");
     try {
@@ -623,7 +632,7 @@ export default function CrmStudioTool() {
             {([["commercial", "Vista comercial"], ["operational", "Vista operacional"]] as [CrmArea, string][]).map(([id, label]) => <button key={id} type="button" onClick={() => goToArea(id)} aria-pressed={area === id} className={`rounded-full px-5 py-2.5 text-sm font-semibold ${area === id ? "bg-orange-950 text-white" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"}`}>{label}</button>)}
           </nav>
           <nav aria-label={area === "commercial" ? "Secções comerciais" : "Secções operacionais"} className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
-            {(area === "commercial" ? ([["dashboard", "Resumo comercial"], ["pipeline", "Kanban comercial"], ["clients", "Clientes"], ["proposals", "Propostas"], ["activity", "Histórico"], ["duplicates", "Duplicados"]] as [View, string][]) : ([["trips", "Viagens e checklist"], ["calendar", "Calendário"], ["templates", "Templates"]] as [View, string][])).map(([id, label]) => <button key={id} type="button" onClick={() => { if(id==="activity")setActivityContext(null);goToView(id); }} aria-current={view === id ? "page" : undefined} className={`rounded-full px-4 py-2 text-sm font-semibold ${view === id ? "bg-orange-800 text-white" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"}`}>{label}</button>)}
+            {(area === "commercial" ? ([["dashboard", "Resumo comercial"], ["pipeline", "Kanban comercial"], ["clients", "Clientes"], ["proposals", "Propostas"], ["activity", "Histórico"], ["duplicates", "Duplicados"]] as [View, string][]) : ([["trips", "Viagens e checklist"], ["calendar", "Calendário"], ["templates", "Templates"], ["payments", "Pagamentos e comissão"]] as [View, string][])).map(([id, label]) => <button key={id} type="button" onClick={() => { if(id==="activity")setActivityContext(null);if(id==="payments")setFinanceTripId("");goToView(id); }} aria-current={view === id ? "page" : undefined} className={`rounded-full px-4 py-2 text-sm font-semibold ${view === id ? "bg-orange-800 text-white" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"}`}>{label}</button>)}
           </nav>
         </div>
 
@@ -635,6 +644,8 @@ export default function CrmStudioTool() {
         {!loading && view === "templates" && <CrmChecklistTemplates authorizedFetch={authorizedFetch} onChanged={quietRefresh}/>}
         {!loading && view === "activity" && <CrmActivity key={activityContext?.id||"all"} authorizedFetch={authorizedFetch} context={activityContext} onOpen={openTarget}/>}
         {!loading && view === "duplicates" && <CrmDuplicates authorizedFetch={authorizedFetch} clients={clients} onChanged={quietRefresh}/>}
+        {!loading && view === "payments" && <CrmPayments authorizedFetch={authorizedFetch} tripId={financeTripId} theme={theme}
+          onOpen={openFinance} onChanged={quietRefresh} onOpenTrip={id=>openTarget({type:"trip",id})}/>}
         {!loading && view === "dashboard" && <>
           <section className="relative mb-6 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#171717] via-[#29231b] to-[#563719] px-6 py-7 text-white shadow-lg sm:px-8 sm:py-8">
             <div className="pointer-events-none absolute -right-12 -top-20 size-72 rounded-full border border-white/10" />
@@ -701,6 +712,7 @@ export default function CrmStudioTool() {
             </section>
           </div>
 
+          <div className="mb-5"><CrmPaymentAlerts authorizedFetch={authorizedFetch} onOpen={openFinance}/></div>
           <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-800">Operação de viagens</p><h3 className="mt-1 text-xl font-bold">Partidas nos próximos 30 dias</h3><p className="mt-1 text-sm text-slate-500">Viagens ativas com uma data de partida próxima.</p></div><button type="button" onClick={() => goToView("trips")} className="inline-flex items-center gap-1 text-sm font-semibold text-orange-800 hover:underline">Gerir viagens <ArrowUpRight className="size-4" /></button></div>{upcomingDepartures.length === 0 ? <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">Não há partidas marcadas para os próximos 30 dias.</p> : <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{upcomingDepartures.map((trip) => <article key={trip.id} className="rounded-2xl border border-blue-100 bg-gradient-to-br from-white to-blue-50 p-4"><p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-blue-800"><Plane className="size-4" />{dateLabel(trip.departure_date!)}</p><h4 className="mt-2 font-bold text-slate-900">{trip.destination || "Destino por definir"}</h4><p className="mt-1 text-sm text-slate-600">{tripClientName(trip, clients, leads)}</p><span className="mt-3 inline-flex rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-blue-900 ring-1 ring-blue-100">{tripStatuses.find((status) => status.id === trip.status)?.label}</span></article>)}</div>}</section>
         </>}
 
@@ -732,11 +744,12 @@ export default function CrmStudioTool() {
             const clientLeads = leads.filter((lead) => lead.client_id === client.id);
             return <article id={"client-"+client.id} tabIndex={-1} key={client.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0"><h3 className="text-lg font-semibold">{client.full_name}</h3><p className="mt-2 break-all text-sm text-slate-600">{client.email || "Sem email"}</p><p className="text-sm text-slate-600">{client.phone || "Sem telefone"}</p><p className="mt-2 text-xs text-slate-400">Idioma: {client.language.toUpperCase()} · Cliente desde {dateLabel(client.created_at)}</p></div>
+                <div className="min-w-0"><h3 className="text-lg font-semibold">{client.full_name}</h3><p className="mt-2 break-all text-sm text-slate-600">{client.email || "Sem email"}</p><p className="text-sm text-slate-600">{client.phone || "Sem telefone"}</p>{client.birth_date&&<p className="mt-1 text-sm text-slate-600">Nascimento: {dateLabel(client.birth_date)}</p>}<p className="mt-2 text-xs text-slate-400">Idioma: {client.language.toUpperCase()} · Cliente desde {dateLabel(client.created_at)}</p></div>
                 {editingClientId !== client.id && <div className="flex shrink-0 gap-2"><button type="button" onClick={() => setEditingClientId(client.id)} className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Editar</button><button type="button" disabled={saving} onClick={() => void deleteClient(client)} className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Apagar</button></div>}
               </div>
               {editingClientId === client.id && <form onSubmit={(event) => void saveClient(event, client)} className="mt-4 grid gap-3 rounded-xl border border-orange-100 bg-orange-50/50 p-4 sm:grid-cols-2">
                 <label className="space-y-1 text-xs font-semibold">Nome completo *<input name="full_name" required minLength={2} maxLength={160} defaultValue={client.full_name} className={inputClass} /></label>
+                <label className="space-y-1 text-xs font-semibold">Data de nascimento<input name="birth_date" type="date" max={localToday()} defaultValue={client.birth_date||""} className={inputClass} /></label>
                 <label className="space-y-1 text-xs font-semibold">Email<input name="email" type="email" maxLength={254} defaultValue={client.email || ""} className={inputClass} /></label>
                 <label className="space-y-1 text-xs font-semibold">Telefone<input name="phone" type="tel" maxLength={40} defaultValue={client.phone || ""} className={inputClass} /></label>
                 <label className="space-y-1 text-xs font-semibold">Idioma<select name="language" defaultValue={client.language} className={inputClass}><option value="pt">Português</option><option value="en">English</option><option value="fr">Français</option></select></label>
@@ -747,7 +760,12 @@ export default function CrmStudioTool() {
                 <section className="mt-4 rounded-xl bg-slate-50 p-3"><h4 className="text-sm font-semibold">Relação com o cliente</h4><div className="mt-2 flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-white px-3 py-1.5 font-medium text-slate-700 ring-1 ring-slate-200">{clientTrips.length} {clientTrips.length === 1 ? "viagem" : "viagens"}</span><span className="rounded-full bg-white px-3 py-1.5 font-medium text-slate-700 ring-1 ring-slate-200">{clientLeads.length} {clientLeads.length === 1 ? "pedido comercial" : "pedidos comerciais"}</span></div>
                   {(clientTrips.length > 0 || clientLeads.length > 0) && <ul className="mt-3 space-y-2">{clientTrips.slice(0, 3).map((trip) => <li key={trip.id} className="flex items-start justify-between gap-2 text-xs"><button className="text-left font-medium text-orange-800 underline" onClick={()=>openTarget({type:"trip",id:trip.id})}>{trip.destination || "Destino por definir"}{trip.reference ? ` · ${trip.reference}` : ""}</button><span className="shrink-0 text-slate-500">{tripStatuses.find((status) => status.id === trip.status)?.label}</span></li>)}{clientLeads.slice(0, 2).map((lead) => <li key={lead.id} className="flex items-start justify-between gap-2 text-xs"><button className="text-left font-medium text-orange-800 underline" onClick={()=>openTarget({type:"lead",id:lead.id})}>Pedido · {lead.destination || "Destino por definir"}</button><span className="shrink-0 text-slate-500">{leadStatuses.find((status) => status.id === lead.status)?.label}</span></li>)}</ul>}</section>
               </> : null}
-              <section className="mt-5 border-t border-slate-200 pt-4"><h4 className="text-sm font-semibold">Documentação</h4><div className="mt-3 space-y-3">{documents.filter((document) => document.client_id === client.id).map((document) => <form key={document.id} onSubmit={(event) => saveClientDocument(event, client.id, document)} className="grid gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"><label className="space-y-1 text-xs font-semibold text-slate-600">Tipo<select name="document_type" defaultValue={document.document_type} className={inputClass}>{Object.entries(documentTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="space-y-1 text-xs font-semibold text-slate-600">Número/ID<input name="document_number" required maxLength={80} defaultValue={document.document_number} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Validade<input name="expires_on" type="date" required defaultValue={document.expires_on} className={inputClass} /></label><div className="flex items-end"><button disabled={saving} className="rounded-full border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-60">Guardar</button><button type="button" disabled={saving} onClick={() => void deleteClientDocument(document)} className="ml-2 rounded-full border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 disabled:opacity-60">Apagar</button></div></form>)}</div><form onSubmit={(event) => saveClientDocument(event, client.id)} className="mt-3 grid gap-2 rounded-xl border border-dashed border-slate-300 p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"><label className="space-y-1 text-xs font-semibold text-slate-600">Novo tipo<select name="document_type" defaultValue="passport" className={inputClass}>{Object.entries(documentTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="space-y-1 text-xs font-semibold text-slate-600">Número/ID<input name="document_number" required maxLength={80} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Data de validade<input name="expires_on" type="date" required className={inputClass} /></label><div className="flex items-end"><button disabled={saving} className="rounded-full bg-orange-800 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">Adicionar</button></div></form><p className="mt-2 text-xs text-slate-500">O número/ID é visível apenas nesta área CRM protegida.</p></section><CrmDriveDocuments authorizedFetch={authorizedFetch} clientId={client.id} title={client.full_name} />
+              <section className="mt-5 border-t border-slate-200 pt-4"><h4 className="text-sm font-semibold">Documentação</h4>
+                <CrmDocumentScanner client={client} authorizedFetch={authorizedFetch} onSaved={({client:updated,document})=>{
+                  setClients(current=>current.map(entry=>entry.id===updated.id?{...entry,...updated}:entry));
+                  setDocuments(current=>[...current.filter(entry=>entry.id!==document.id),document].sort((a,b)=>a.expires_on.localeCompare(b.expires_on)));
+                }}/>
+                <div className="mt-3 space-y-3">{documents.filter((document) => document.client_id === client.id).map((document) => <form key={document.id} onSubmit={(event) => saveClientDocument(event, client.id, document)} className="grid gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"><label className="space-y-1 text-xs font-semibold text-slate-600">Tipo<select name="document_type" defaultValue={document.document_type} className={inputClass}>{Object.entries(documentTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="space-y-1 text-xs font-semibold text-slate-600">Número/ID<input name="document_number" required maxLength={80} defaultValue={document.document_number} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Validade<input name="expires_on" type="date" required defaultValue={document.expires_on} className={inputClass} /></label><div className="flex items-end"><button disabled={saving} className="rounded-full border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-60">Guardar</button><button type="button" disabled={saving} onClick={() => void deleteClientDocument(document)} className="ml-2 rounded-full border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 disabled:opacity-60">Apagar</button></div></form>)}</div><form onSubmit={(event) => saveClientDocument(event, client.id)} className="mt-3 grid gap-2 rounded-xl border border-dashed border-slate-300 p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"><label className="space-y-1 text-xs font-semibold text-slate-600">Novo tipo<select name="document_type" defaultValue="passport" className={inputClass}>{Object.entries(documentTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="space-y-1 text-xs font-semibold text-slate-600">Número/ID<input name="document_number" required maxLength={80} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Data de validade<input name="expires_on" type="date" required className={inputClass} /></label><div className="flex items-end"><button disabled={saving} className="rounded-full bg-orange-800 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">Adicionar</button></div></form><p className="mt-2 text-xs text-slate-500">O número/ID é visível apenas nesta área CRM protegida.</p></section><CrmDriveDocuments authorizedFetch={authorizedFetch} clientId={client.id} title={client.full_name} />
               <div className="mt-5 flex flex-wrap gap-2"><button type="button" className="rounded-full border border-slate-300 px-4 py-2 text-sm" onClick={()=>newProposal({type:"client",id:client.id,label:client.full_name})}>Nova proposta</button><button type="button" className="rounded-full border border-slate-300 px-4 py-2 text-sm" onClick={()=>showHistory({type:"client",id:client.id,label:client.full_name})}>Histórico</button><button type="button" onClick={() => { setTripClientIds([client.id]); setShowTripForm(true); goToView("trips"); }} className="rounded-full border border-orange-800 px-4 py-2 text-sm font-semibold text-orange-800 hover:bg-orange-50">Adicionar viagem</button>{clientLeads.length > 0 && <button type="button" onClick={() => goToView("pipeline")} className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Ver pedidos</button>}</div>
             </article>;
           })}</div>}
@@ -776,7 +794,7 @@ export default function CrmStudioTool() {
           {trips.length === 0 && <p className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">Ainda não há viagens. Podes converter um pedido ganho ou adicionar uma viagem a um cliente.</p>}
           <div className="grid gap-5 xl:grid-cols-2">{visibleTrips.map((trip) => <article id={"trip-"+trip.id} tabIndex={-1} key={trip.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-5 flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wide text-orange-800">{tripClientName(trip, clients, leads)}{trip.reference ? ` · ${trip.reference}` : ""}</p><h3 className="mt-1 text-xl font-bold">{trip.destination || "Destino por definir"}</h3></div><button type="button" disabled={saving} onClick={() => void deleteTrip(trip)} className="shrink-0 rounded-full border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Apagar viagem</button></div>
-            <div className="mb-4 flex flex-wrap gap-2"><button className="rounded-full border border-slate-300 px-4 py-2 text-sm" onClick={()=>newProposal({type:"trip",id:trip.id,label:trip.destination||"Viagem"})}>Nova proposta</button><button className="rounded-full border border-slate-300 px-4 py-2 text-sm" onClick={()=>showHistory({type:"trip",id:trip.id,label:trip.destination||"Viagem"})}>Histórico</button></div>
+            <div className="mb-4 flex flex-wrap gap-2"><button className="rounded-full border border-slate-300 px-4 py-2 text-sm" onClick={()=>newProposal({type:"trip",id:trip.id,label:trip.destination||"Viagem"})}>Nova proposta</button><button type="button" className="rounded-full border border-slate-300 px-4 py-2 text-sm" onClick={()=>openFinance(trip.id)}>Pagamentos e comissão</button><button className="rounded-full border border-slate-300 px-4 py-2 text-sm" onClick={()=>showHistory({type:"trip",id:trip.id,label:trip.destination||"Viagem"})}>Histórico</button></div>
             <form key={`${trip.id}-${trip.status}-${trip.departure_date}-${trip.return_date}-${trip.destination}-${trip.operator}-${trip.travel_type}-${trip.adults}-${trip.children_count}-${trip.total_amount}-${trip.client_ids?.join(",")}`} onSubmit={(event) => saveTrip(event, trip)} className="mb-6 grid gap-3 sm:grid-cols-2">
               <ClientMultiSelect clients={clients} selectedIds={trip.client_ids?.length ? trip.client_ids : trip.client_id ? [trip.client_id] : []} /><label className="space-y-1 text-sm font-semibold">Tipo de viagem<select name="travel_type" defaultValue={trip.travel_type||"general"} className={inputClass}>{Object.entries(travelTypeLabels).filter(([id])=>id!=="all").map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
               <label className="space-y-1 text-xs font-semibold text-slate-600">Estado<select name="status" defaultValue={trip.status} className={inputClass}>{tripStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label>

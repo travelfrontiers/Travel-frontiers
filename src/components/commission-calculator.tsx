@@ -2,78 +2,53 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-const roundEuro = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+import {calculateCommission,type CommissionInputs} from "@/lib/commission";
 const formatEuro = (value: number) => new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(Number.isFinite(value) ? value : 0);
 
 function amount(value: string) {
   return Math.max(0, Number(value) || 0);
 }
 
-export default function CommissionCalculator() {
+export function TripCommissionCalculator({initialValues,onSave,theme}:{initialValues?:CommissionInputs;onSave?:(inputs:CommissionInputs,applyToTotal:boolean)=>Promise<void>;theme?:"light"|"dark"}) {
+  const [saving,setSaving]=useState(false),[saveError,setSaveError]=useState(""),[applyToTotal,setApplyToTotal]=useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [themeReady, setThemeReady] = useState(false);
-  const [commission, setCommission] = useState("617.49");
-  const [travelerCount, setTravelerCount] = useState("4");
-  const [travelerPrice, setTravelerPrice] = useState("1286");
-  const [selfTravels, setSelfTravels] = useState(false);
-  const [costPerTraveler, setCostPerTraveler] = useState("1120.43");
-  const [shareSaving, setShareSaving] = useState(false);
-  const [cedeCommission, setCedeCommission] = useState(false);
-  const [requestedCession, setRequestedCession] = useState("0");
+  const [commission, setCommission] = useState(String(initialValues?.commission ?? 617.49));
+  const [travelerCount, setTravelerCount] = useState(String(initialValues?.travelerCount ?? 4));
+  const [travelerPrice, setTravelerPrice] = useState(String(initialValues?.travelerPrice ?? 1286));
+  const [selfTravels, setSelfTravels] = useState(initialValues?.selfTravels ?? false);
+  const [costPerTraveler, setCostPerTraveler] = useState(String(initialValues?.costPerTraveler ?? 1120.43));
+  const [shareSaving, setShareSaving] = useState(initialValues?.shareSaving ?? false);
+  const [cedeCommission, setCedeCommission] = useState(initialValues?.cedeCommission ?? false);
+  const [requestedCession, setRequestedCession] = useState(String(initialValues?.requestedCession ?? 0));
 
   useEffect(() => {
+    if(theme){setDarkMode(theme==="dark");return;}
     const savedTheme = window.localStorage.getItem("tf-commission-theme");
     setDarkMode(savedTheme ? savedTheme === "dark" : true);
     setThemeReady(true);
-  }, []);
+  }, [theme]);
 
   useEffect(() => {
-    if (themeReady) window.localStorage.setItem("tf-commission-theme", darkMode ? "dark" : "light");
-  }, [darkMode, themeReady]);
+    if (themeReady && !theme) window.localStorage.setItem("tf-commission-theme", darkMode ? "dark" : "light");
+  }, [darkMode, themeReady, theme]);
 
   const result = useMemo(() => {
-    const commissionTotal = amount(commission);
-    const people = Math.max(1, Math.floor(Number(travelerCount) || 1));
-    const price = amount(travelerPrice);
-    const cost = amount(costPerTraveler);
-    const requested = amount(requestedCession);
-    const others = selfTravels ? Math.max(0, people - 1) : people;
-    const gross = roundEuro(commissionTotal * 0.8);
-    const ownCostPlusOne = selfTravels ? roundEuro(cost * 1.01) : 0;
-    const potentialSaving = selfTravels ? Math.max(0, roundEuro(price - ownCostPlusOne)) : 0;
-    const sharing = selfTravels && shareSaving && people > 1;
-    const savingEach = sharing ? potentialSaving / people : 0;
-    const sharedPrice = sharing ? price - savingEach : price;
-    const ownPrice = selfTravels ? (sharing ? sharedPrice : ownCostPlusOne) : null;
-    const othersPriceBeforeCession = sharedPrice;
-    const cessionActive = !selfTravels || (cedeCommission && others > 0);
-    const maxCession = cessionActive ? Math.min(gross, roundEuro(othersPriceBeforeCession * others)) : 0;
-    const ceded = roundEuro(Math.min(requested, maxCession));
-    const netCommission = roundEuro(gross - ceded);
-    const cessionEach = others > 0 ? ceded / others : 0;
-    const otherFinalPrice = others > 0 ? Math.max(0, roundEuro(othersPriceBeforeCession - cessionEach)) : null;
-    const totalCollected = selfTravels
-      ? roundEuro((ownPrice ?? 0) + othersPriceBeforeCession * others - ceded)
-      : roundEuro(othersPriceBeforeCession * others - ceded);
-    return {
-      people, others, gross, ownCostPlusOne, ownPrice, potentialSaving, savingEach, sharing,
-      sharedPrice, ceded, netCommission, cessionEach, otherFinalPrice, totalCollected,
-      maxCession, cessionActive,
-    };
+    return calculateCommission({commission:amount(commission),travelerCount:Math.max(1,Math.floor(Number(travelerCount)||1)),travelerPrice:amount(travelerPrice),selfTravels,costPerTraveler:amount(costPerTraveler),shareSaving,cedeCommission,requestedCession:amount(requestedCession)});
   }, [commission, travelerCount, travelerPrice, selfTravels, costPerTraveler, shareSaving, cedeCommission, requestedCession]);
 
   const cessionVisible = !selfTravels || (cedeCommission && result.others > 0);
   const sharingVisible = selfTravels && shareSaving && result.people > 1;
 
   return (
-    <div className={`tf-calc ${darkMode ? "tf-calc-dark" : ""}`}>
+    <div className={`tf-calc ${darkMode ? "tf-calc-dark" : ""} ${onSave ? "tf-calc-embedded" : ""}`}>
       <header className="tf-calc-intro">
         <div className="tf-calc-intro-copy">
           <p className="tf-calc-eyebrow">Área de consultoria</p>
           <h1>Calculadora de comissão</h1>
           <p>Introduz os valores da viagem e define quanto da tua comissão queres ceder aos viajantes.</p>
         </div>
-        <button className="tf-calc-theme" type="button" aria-pressed={darkMode} onClick={() => setDarkMode((current) => !current)}>{darkMode ? "☀ Modo claro" : "☾ Modo escuro"}</button>
+        {!theme && <button className="tf-calc-theme" type="button" aria-pressed={darkMode} onClick={() => setDarkMode((current) => !current)}>{darkMode ? "☀ Modo claro" : "☾ Modo escuro"}</button>}
       </header>
       <div className="tf-calc-grid">
         <section className="tf-calc-card" aria-labelledby="trip-data-heading">
@@ -121,7 +96,7 @@ export default function CommissionCalculator() {
             : "Sem auto-consumo, a comissão antes da cedência corresponde a 80% da comissão total. O montante escolhido é repartido igualmente pelos passageiros."}</p>
         </aside>
       </div>
-      <p className="tf-calc-device-note">Os valores são calculados neste dispositivo e não são enviados para nenhum serviço.</p>
+      {onSave ? <div className="tf-calc-card" style={{marginTop:20}}><label className="tf-calc-toggle"><input type="checkbox" checked={applyToTotal} onChange={e=>setApplyToTotal(e.target.checked)}/><span><strong>Atualizar também o valor total da reserva para {formatEuro(result.totalCollected)}</strong><small>Confirma o preço final antes de ativar. O plano de prestações não é reescrito.</small></span></label>{saveError&&<p role="alert" className="tf-calc-warning">{saveError}</p>}<button type="button" className="tf-calc-theme" style={{marginTop:16}} disabled={saving} onClick={async()=>{setSaving(true);setSaveError("");try{await onSave({commission:Number(commission),travelerCount:Number(travelerCount),travelerPrice:Number(travelerPrice),selfTravels,costPerTraveler:Number(costPerTraveler),shareSaving,cedeCommission,requestedCession:Number(requestedCession)},applyToTotal);}catch(c){setSaveError(c instanceof Error?c.message:"Não foi possível guardar o cálculo.");}finally{setSaving(false);}}}>{saving?"A guardar…":"Guardar cálculo nesta viagem"}</button><p className="tf-calc-note">O cálculo só é enviado para o CRM quando carregas em Guardar. Não regista pagamentos nem envia dinheiro.</p></div> : <p className="tf-calc-device-note">Os valores são calculados neste dispositivo e não são enviados para nenhum serviço.</p>}
       <style jsx>{`
         .tf-calc{max-width:1120px;margin:0 auto;padding:26px 20px 64px;color:#374151}
         .tf-calc-intro{margin-bottom:26px}.tf-calc-eyebrow{margin:0;color:#ea580c;font-size:12px;font-weight:750;letter-spacing:.14em;text-transform:uppercase}
@@ -145,7 +120,11 @@ export default function CommissionCalculator() {
         .tf-calc-dark .tf-calc-section-title>span{background:#35271e;color:#ff9b57}.tf-calc-dark .tf-calc-toggle{background:#242a2d;border-color:#69462d}.tf-calc-dark .tf-calc-field input{background:#111b23;border-color:#46535e;color:#f3f6f8}.tf-calc-dark .tf-calc-field input:focus{border-color:#fb923c;box-shadow:0 0 0 4px #f9731628}.tf-calc-dark .tf-calc-field label span{color:#a9b6c2}
         .tf-calc-dark .tf-calc-theme{background:#24323d;border-color:#4a5b68;color:#f3f6f8}.tf-calc-dark .tf-calc-theme:hover{background:#35271e;border-color:#fb923c}.tf-calc-dark hr{border-top-color:#30414d}.tf-calc-dark .tf-calc-breakdown>div{border-bottom-color:#30414d}.tf-calc-dark .tf-calc-cession{background:#242a2d;border-color:#69462d}.tf-calc-dark .tf-calc-cession-result{background:#202c35}.tf-calc-dark .tf-calc-warning{color:#fdba74}
         @media(max-width:820px){.tf-calc-grid{grid-template-columns:1fr}.tf-calc-result{position:static;order:-1}}@media(max-width:520px){.tf-calc{padding:24px 14px 50px}.tf-calc-dark{padding:24px 14px 50px}.tf-calc-intro{gap:12px;align-items:center}.tf-calc-theme{padding:9px 11px;font-size:12px}.tf-calc-card{padding:19px;border-radius:17px}.tf-calc-fields-two{grid-template-columns:1fr;gap:0}.tf-calc-intro h1{font-size:32px}}
+.tf-calc.tf-calc-embedded{padding:0;min-height:0}.tf-calc-embedded .tf-calc-intro{display:none}
       `}</style>
     </div>
   );
 }
+
+
+export default function CommissionCalculator(){return <TripCommissionCalculator/>;}

@@ -54,6 +54,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     });
     if (!response.ok) {
       const failure = await response.json().catch(() => null) as { message?: string } | null;
+      if (failure?.message?.includes("payment_plan_exceeds_total")) return NextResponse.json({error:"Ajusta as prestações antes de reduzir o valor total."},{status:409});
+      if (failure?.message?.includes("finance_currency_locked")) return NextResponse.json({error:"A moeda está associada a pagamentos, prestações ou comissão já registados."},{status:409});
+      if (failure?.message?.includes("payment_total_required")) return NextResponse.json({error:"Mantém o valor total enquanto a viagem tiver pagamentos registados."},{status:409});
       if (failure?.message?.includes("trip_not_found")) return NextResponse.json({ error: "A viagem já não existe." }, { status: 404 });
       if (failure?.message?.includes("client_not_found")) return NextResponse.json({ error: "Um dos clientes selecionados já não existe. Nenhuma alteração foi guardada." }, { status: 409 });
       return NextResponse.json({ error: "Não foi possível guardar a viagem. Nenhuma alteração foi guardada." }, { status: 502 });
