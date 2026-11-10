@@ -26,7 +26,7 @@
 - Dashboard visual e alertas de documentação/checklists/seguimentos.
 - Lembretes de check-in por email diário às 09h UTC (pode executar dentro dessa hora no plano atual); apenas por concluir, voos futuros e viagens ativas. Lease evita envios simultâneos. Uma falha após aceitação pelo SMTP e antes da confirmação na base pode causar repetição.
 - Drive: PDF/JPG/PNG até 20 MB, documentos por cliente/viagem e associação à versão da proposta. Credencial temporária no navegador com consentimento Google; tokens não guardados na base. Remover ligação no CRM não apaga o original no Drive. Não foi ativada faturação.
-- Sem NAS/backups novos, OCR ou alteração do PDF existente no Git.
+- A importação de orçamentos lê a camada de texto dos PDFs.
 
 ## Validação
 - `node scripts/check-crm-office.cjs`: autorização nas cinco novas APIs; datas/mudança de hora/ano bissexto; validações e conflito entre versões; confirmação para junção; IDs dos itens; preservação de hora e automatismos ao concluir tarefas; proteção de tarefas de voo; eliminação por RPC; calendário para todos os viajantes; filtro de histórico por ficha. Rede simulada, sem emails reais.
@@ -38,7 +38,7 @@
 ## O que ainda falta no plano
 - **Ponto 3**: revisão do PDF lado a lado; indicadores de campos ausentes/ambíguos; cobertura e persistência dos campos comuns ainda em falta.
 - **Emails**: IMAP/histórico, templates editáveis aprovados, envio assistido e comunicações pré/pós-orçamento e pré/pós-viagem.
-- **Reserva/pagamentos**: parcelas, prazos e condições próprias da reserva; a validade comercial da proposta não substitui o calendário financeiro.
+- **Reserva**: condições próprias e histórico de alterações da reserva. Os pagamentos e prazos das prestações estão disponíveis na ficha financeira.
 - **Drive**: escolher ficheiros já existentes via Picker; atualmente os ficheiros entram pela ficha.
 - **Dashboard**: indicadores financeiros/comerciais avançados baseados em propostas/valores reais.
 - **Gestão de dados**: exportação, retenção, eliminação integral de informação pessoal em notas livres e paginação/agregação completa das listas antigas antes de aumentar o volume.
@@ -48,3 +48,12 @@
 - Publicação da fase concluída com estado READY em Production, domínio promo.travelfrontiers.pt, após integração do PR #19.
 - Sessão Google renovada com autorização do utilizador; dados reais do CRM voltaram a carregar sem o erro de credencial antigo.
 - Ecrãs de propostas, histórico, duplicados e templates abertos no Admin publicado. Verificação visual identificou contraste a melhorar no texto secundário do tema escuro; corrigido juntamente com a seleção conjunta de documentos do cliente e viagem na proposta.
+
+## Pagamentos, comissão e documentos — 10 de novembro de 2026
+
+- Em **Vista operacional → Pagamentos e comissão**, cada viagem tem total da reserva, sinal, prestações, movimentos confirmados e saldo. Os recebimentos líquidos de reembolsos abatem às prestações por ordem de vencimento. O dashboard avisa de atrasos e prazos nos sete dias seguintes. O calendário liga à ficha financeira.
+- Os movimentos permitem indicar quem confirmou o pagamento, o meio, a referência e o comprovativo no Drive. A comissão recebida e a estimativa têm saldos próprios. O cálculo reutiliza as regras da calculadora existente em euros. Guardar o cálculo permite confirmar expressamente a atualização do total da reserva.
+- Em **Clientes → Documentação**, a leitura de passaporte e Cartão de Cidadão aceita até duas faces ou páginas em JPG, PNG, WebP ou PDF, com limite de 15 MB por ficheiro. O navegador sugere tipo, nome completo, nascimento, validade e número quando legível. A confirmação grava o documento e a identidade da ficha. O mesmo tipo e número na ficha atualizam o registo existente.
+- O leitor corre no navegador, com bibliotecas e modelos servidos pelo próprio site. A gravação envia os campos revistos e o identificador da ficha.
+- As migrações 013 e 014 incluem validações de saldos, permissões, versões para evitar gravações concorrentes e histórico sem copiar os valores dos documentos. A bateria SQL usa dados fictícios e reverte a transação de teste.
+- Next.js 16.4.6 inclui as correções de segurança das versões anteriores. A compilação e os testes do CRM passaram com esta atualização.

@@ -19,6 +19,19 @@ export function failure(cause: unknown) { return NextResponse.json({error: cause
 export const privateJson = (body: unknown, status=200) => NextResponse.json(body,{status,headers:{"Cache-Control":"private, no-store"}});
 type Config=NonNullable<ReturnType<typeof supabaseAdminConfig>>;
 const messages: Record<string,[string,number]> = {
+ client_identity_stale:["A ficha foi alterada. Atualiza o CRM e volta a confirmar os dados do documento.",409],
+ invalid_document_identity:["Revê o nome e as datas do documento.",400],
+ finance_stale_version:["A viagem ou os pagamentos mudaram. Atualiza a ficha antes de voltar a guardar.",409],
+ finance_currency_locked:["A moeda está associada ao plano ou aos movimentos desta viagem.",409],
+ payment_plan_exceeds_total:["As prestações excedem o total da reserva. Ajusta primeiro o plano.",409],
+ payment_total_required:["Define primeiro o valor total da reserva.",400],
+ payment_not_found:["Este registo já não existe nesta viagem.",404],
+ payment_plan_exists:["Já existe um plano. Edita as prestações existentes.",409],
+ invalid_deposit:["O sinal deve estar entre zero e o valor total da reserva.",400],
+ invalid_payment_dates:["O prazo do restante valor tem de ser igual ou posterior ao prazo do sinal.",400],
+ payment_future_receipt:["A data do movimento não pode estar no futuro.",400],
+ refund_exceeds_received:["O reembolso excede o valor recebido. Revê os movimentos.",409],
+ commission_eur_only:["A calculadora usa reservas em euros.",400],
  stale_version:["Esta proposta já foi alterada. Reabre a ficha antes de guardar.",409],
  client_not_found:["O cliente já não existe.",404], lead_not_found:["O pedido já não existe.",404],
  proposal_not_found:["A proposta já não existe.",404], trip_not_found:["A viagem já não existe.",404],
