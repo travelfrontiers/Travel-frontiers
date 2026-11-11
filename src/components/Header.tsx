@@ -99,7 +99,7 @@ export default function Header({ lang, alternatePaths }: HeaderProps) {
                         </button>
                         <div id="site-languages" hidden={!languageOpen} className="absolute right-0 mt-2 w-32 rounded-xl border border-gray-100 bg-white shadow-xl z-50 overflow-hidden">
                             {(["pt", "en", "fr"] as const).map((l) => (
-                                <Link
+                                <a
                                     key={l} href={languagePath(l)} hrefLang={l} lang={l}
                                     aria-current={l === lang ? "true" : undefined}
                                     onClick={() => { setLanguageOpen(false); setMobileMenuOpen(false); }}
@@ -108,7 +108,7 @@ export default function Header({ lang, alternatePaths }: HeaderProps) {
                                     }`}
                                 >
                                     {languageNames[l]}
-                                </Link>
+                                </a>
                             ))}
                         </div>
                     </div>
@@ -154,7 +154,7 @@ export default function Header({ lang, alternatePaths }: HeaderProps) {
                         <span className="text-gray-500 font-medium">{({ pt: "Idioma", en: "Language", fr: "Langue" })[lang]}</span>
                         <div className="flex gap-2">
                             {(["pt", "en", "fr"] as const).map((l) => (
-                                <Link
+                                <a
                                     key={l} href={languagePath(l)} hrefLang={l} lang={l}
                                     aria-current={l === lang ? "true" : undefined}
                                     onClick={() => setMobileMenuOpen(false)}
@@ -165,7 +165,7 @@ export default function Header({ lang, alternatePaths }: HeaderProps) {
                                     }`}
                                 >
                                     {languageNames[l]}
-                                </Link>
+                                </a>
                             ))}
                         </div>
                     </div>
