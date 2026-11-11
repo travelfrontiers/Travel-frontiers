@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { emailAttachmentLabels, fillEmailTemplate, missingEmailFields, type EmailAttachmentRole, type EmailScope, type EmailTemplateKey } from "@/lib/crm-email-templates";
+import { emailSignatureImage, emailSignatureName, quoteBodyWithLinks, quoteDocumentItems, type QuoteDocumentLinks } from "@/lib/crm-email-signature";
 import type { EmailContext } from "@/lib/crm-email-context";
 import { officeButton as button, officeInput as input, officeSecondary as secondary, type AuthorizedFetch } from "@/lib/crm-office-types";
 import { downloadCrmDrivePdf, loadGoogle } from "@/lib/crm-drive-client";
@@ -12,7 +13,7 @@ export type CrmEmailMessage = {
   attachments: { filename: string }[]; proposal_version: number | null;
 };
 type Template = { key: EmailTemplateKey; label: string; subject: string; body: string; required: EmailAttachmentRole[] };
-type EmailData = { context: EmailContext; templates: Template[]; history: CrmEmailMessage[]; driveClientId: string | null };
+type EmailData = { context: EmailContext; templates: Template[]; history: CrmEmailMessage[]; quoteDocuments: QuoteDocumentLinks | null; driveClientId: string | null };
 type Candidate = { key: string; subject: string; date: string };
 type Draft = { template: Template; subject: string; body: string; operationId: string; reply?: CrmEmailMessage };
 const states: Record<string, string> = { sent: "Enviado", received: "Recebido", sending: "Envio pendente de confirmação", uncertain: "Confirma a entrega no Roundcube", failed: "Falhou" };
@@ -59,7 +60,7 @@ export default function CrmEmailPanel({ authorizedFetch, scope, id, version, sug
     setDraft({
       template, operationId: crypto.randomUUID(), reply,
       subject: reply ? ( /^re:/i.test(reply.subject) ? reply.subject : "Re: " + reply.subject).slice(0, 240) : fillEmailTemplate(template.subject, data.context.fields),
-      body: reply ? "" : fillEmailTemplate(template.body, data.context.fields),
+      body: reply ? "" : fillEmailTemplate(template.key === "quote" && data.quoteDocuments ? quoteBodyWithLinks(template.body, data.context.language) : template.body, data.context.fields),
     });
     setAttachments(template.key === "quote" && suggestedPdf ? { quote: [suggestedPdf] } : {});
   }
@@ -145,6 +146,14 @@ export default function CrmEmailPanel({ authorizedFetch, scope, id, version, sug
           <p className="text-sm"><strong>Para</strong> {data.context.recipient || "Email em falta"}{draft.reply && <> · Em resposta a «{draft.reply.subject}»</>}</p>
           <label className="block text-sm">Assunto<input required maxLength={240} className={input} value={draft.subject} onChange={event => setDraft({ ...draft, subject: event.target.value })} /></label>
           <label className="block text-sm">Mensagem<textarea required maxLength={16000} rows={12} className={input} value={draft.body} onChange={event => setDraft({ ...draft, body: event.target.value })} /></label>
+          <div className="space-y-2">
+            <p className="text-sm font-semibold">Assinatura</p>
+            {/* The same remote image is used by email clients. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={emailSignatureImage} alt={emailSignatureName} width={600} className="h-auto max-w-full" />
+            {draft.template.key === "quote" && quoteDocumentItems(data.context.language, data.quoteDocuments).map(({ label, url }) =>
+              <a className="block text-sm underline" key={url} href={url} target="_blank" rel="noreferrer">{label}</a>)}
+          </div>
           <fieldset className="grid gap-3 sm:grid-cols-2">
             <legend className="mb-2 text-sm font-semibold">Anexos · até 3,8 MB no total</legend>
             {roles.filter(role => role === "other" || draft.template.required.includes(role)).map(role => <div key={role}>
