@@ -1,8 +1,11 @@
 const authorizedEmail = "tf.travel.frontiers@gmail.com";
 
+export function studioBearer(request: Pick<Request, "headers">) {
+  return request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+}
+
 export async function isAuthorizedStudioUser(request: Pick<Request, "headers">): Promise<boolean> {
-  const authorization = request.headers.get("authorization");
-  const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+  const token = studioBearer(request);
   const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
   if (!token || token.length > 8192 || !projectId) return false;
 

@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
-import { isAuthorizedStudioUser } from "@/lib/crm-api";
+import { isAuthorizedStudioUser, studioBearer } from "@/lib/crm-api";
 import { promotionDay, promotionGroupId } from "@/lib/promotions";
 import { studioJson } from "@/lib/studio-request";
 import { writeClient } from "@/sanity/client";
@@ -8,8 +8,8 @@ import { writeClient } from "@/sanity/client";
 type Promotion = { _id: string; _rev: string; language: string; status?: string; validUntil?: string };
 export const runtime = "nodejs";
 
-async function archivePromotions(promotionId?: string) {
-    const client = writeClient.withConfig({ perspective: "raw" });
+async function archivePromotions(promotionId?: string, token?: string) {
+    const client = writeClient.withConfig({ perspective: "raw", ...(token ? { token } : {}) });
     try {
         const documents = await client.fetch<Promotion[]>(
             `*[_type=="promotion" && !(_id in path("versions.**"))]{_id,_rev,language,status,validUntil}`,
@@ -40,12 +40,16 @@ async function archivePromotions(promotionId?: string) {
                 }
                 await transaction.commit();
                 archived += changes.length;
-            } catch {
+            } catch (error) {
+                const status = typeof error === "object" && error && "statusCode" in error ? error.statusCode : undefined;
+                console.warn("Promotion archive mutation rejected", typeof status === "number" ? status : "unknown");
                 errors++;
             }
         }
         return NextResponse.json({ success: errors === 0, archived, errors }, { status: errors ? 502 : 200 });
-    } catch {
+    } catch (error) {
+        const status = typeof error === "object" && error && "statusCode" in error ? error.statusCode : undefined;
+        console.warn("Promotion archive query failed", typeof status === "number" ? status : "unknown");
         return NextResponse.json({ error: "Não foi possível arquivar as promoções." }, { status: 502 });
     }
 }
@@ -67,7 +71,7 @@ export async function POST(request: Request) {
     try {
         const { id } = await studioJson(request, 1024);
         if (id !== undefined && (typeof id !== "string" || !/^[\w.-]{1,128}$/.test(id))) throw new Error();
-        return archivePromotions(typeof id === "string" ? promotionGroupId(id) : undefined);
+        return archivePromotions(typeof id === "string" ? promotionGroupId(id) : undefined, studioBearer(request));
     } catch {
         return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
     }

@@ -15,7 +15,7 @@ function load(file, mocks = {}, env = {}, network = fetch) {
 }
 
 (async () => {
-    const auth = { isAuthorizedStudioUser: async request => request.headers.get("authorization") === "Bearer studio" };
+    const auth = { studioBearer: request => request.headers.get("authorization")?.slice(7), isAuthorizedStudioUser: async request => request.headers.get("authorization") === "Bearer studio" };
     const controls = load("src/lib/studio-request.ts", { "./crm-api": auth });
     const request = (path, authHeader, body) => new Request("https://site.test/" + path, {
         method: body === undefined ? "GET" : "POST",
@@ -66,7 +66,7 @@ function load(file, mocks = {}, env = {}, network = fetch) {
 
     let migrationStarted = false;
     const source = load("src/app/api/itinerary-source/route.ts", {
-        "@/lib/studio-request": controls,
+        "@/lib/crm-api": auth, "@/lib/studio-request": controls,
         "@/lib/itinerary-source": { sourceExtension: () => "pdf" },
         "@/sanity/client": { writeClient: { withConfig() { migrationStarted = true; } } },
     });
@@ -94,7 +94,7 @@ function load(file, mocks = {}, env = {}, network = fetch) {
         transaction: () => migrationTransaction,
     };
     const migration = load("src/app/api/itinerary-source/route.ts", {
-        "@/lib/studio-request": controls,
+        "@/lib/crm-api": auth, "@/lib/studio-request": controls,
         "@/lib/itinerary-source": {
             sourceExtension: () => "pdf",
             readOldSource: async () => bytes,
