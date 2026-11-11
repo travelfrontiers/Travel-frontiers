@@ -1,3 +1,4 @@
+import { normalizeTripServices } from "@/lib/crm-trip-services";
 import { NextRequest, NextResponse } from "next/server";
 import { execFile as execFileCallback } from "node:child_process";
 import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
@@ -77,28 +78,14 @@ export async function POST(request: NextRequest) {
   const tripNotes = typeof body.trip_notes === "string" ? body.trip_notes.trim() : "";
   const travelType = typeof body.travel_type === "string" ? body.travel_type : "general";
   const statuses = ["planning", "confirmed", "travelling", "completed", "cancelled"];
-  const serviceTypes = ["flight", "accommodation", "activity", "transfer", "insurance", "other"];
   const validDate = (value: unknown): value is string | null => {
   if (value === null) return true;
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const date = new Date(`${value}T00:00:00Z`);
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
 };
-  const rawServices = body.services === undefined ? [] : body.services;
-  if (!Array.isArray(rawServices) || rawServices.length > 40) return NextResponse.json({ error: "A lista de voos e hotéis é inválida." }, { status: 400 });
-  const services = rawServices.map((value) => {
-    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-    const service = value as Record<string, unknown>;
-    const title = typeof service.title === "string" ? service.title.trim() : "";
-    const provider = typeof service.provider === "string" ? service.provider.trim() : "";
-    const reference = typeof service.reference === "string" ? service.reference.trim() : "";
-    const details = typeof service.details === "string" ? service.details.trim() : "";
-    const startsOn = service.starts_on === "" || service.starts_on === undefined ? null : service.starts_on;
-    const endsOn = service.ends_on === "" || service.ends_on === undefined ? null : service.ends_on;
-    if (typeof service.service_type !== "string" || !serviceTypes.includes(service.service_type) || title.length < 1 || title.length > 240 || provider.length > 160 || reference.length > 100 || details.length > 1000 || !validDate(startsOn) || !validDate(endsOn) || typeof startsOn === "string" && typeof endsOn === "string" && endsOn < startsOn) return null;
-    return { service_type: service.service_type, title, provider: provider || null, reference: reference || null, starts_on: startsOn, ends_on: endsOn, details: details || null };
-  });
-  if (services.some((service) => service === null)) return NextResponse.json({ error: "Revê os dados dos voos e alojamentos extraídos." }, { status: 400 });
+  const services = normalizeTripServices(body.services === undefined ? [] : body.services);
+  if (!services) return NextResponse.json({ error: "Revê os dados dos voos e alojamentos extraídos." }, { status: 400 });
   if (!travelTypes.includes(travelType as (typeof travelTypes)[number]) || clientIds.length < 1 || clientIds.length > 30 || !clientIds.every(isUuid) || reference.length > 80 || destination.length > 240 || !statuses.includes(status) ||
       !validDate(departureDate) || !validDate(returnDate) ||
       typeof departureDate === "string" && typeof returnDate === "string" && returnDate < departureDate ||

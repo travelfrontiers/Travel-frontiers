@@ -7,7 +7,7 @@ type GoogleClient = { accounts: { oauth2: { initTokenClient: (options: { client_
 declare global { interface Window { google?: GoogleClient } }
 let accessToken = "", validUntil = 0;
 let loader: Promise<void> | null = null;
-function loadGoogle() {
+export function loadGoogle() {
   if (window.google?.accounts.oauth2) return Promise.resolve();
   if (!loader) loader = new Promise<void>((resolve, reject) => {
     const script = document.createElement("script"); script.src = "https://accounts.google.com/gsi/client"; script.async = true;
@@ -45,6 +45,18 @@ async function drive(token: string, path: string, init: RequestInit = {}) {
   }
   return response.json();
 }
+export async function downloadCrmDrivePdf(clientId: string, fileId: string, name: string) {
+  const token = await authorize(clientId);
+  const file = await drive(token, "files/" + encodeURIComponent(fileId) + "?fields=size,mimeType");
+  if (file.mimeType !== "application/pdf" || Number(file.size) > 3_800_000) throw new Error("Escolhe um PDF até 3,8 MB.");
+  const response = await fetch("https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(fileId) + "?alt=media", {
+    headers: { Authorization: `Bearer ${token}` }, cache: "no-store",
+  });
+  if (!response.ok) throw new Error("Não foi possível obter o PDF do Drive.");
+  const blob = await response.blob();
+  if (!blob.size || blob.size > 3_800_000) throw new Error("Escolhe um PDF até 3,8 MB.");
+  return new File([blob], name, { type: "application/pdf" });
+}
 async function folder(token: string, entity: string, name: string, parent?: string) {
   const q = `trashed = false and mimeType = 'application/vnd.google-apps.folder' and appProperties has { key='tfCrmFolder' and value='${entity}' }`;
   const result = await drive(token, "files?" + new URLSearchParams({ q, fields: "files(id)", pageSize: "1" }));
@@ -54,7 +66,7 @@ async function folder(token: string, entity: string, name: string, parent?: stri
   return created.id as string;
 }
 export default function CrmDriveDocuments({ authorizedFetch, tripId, clientId, title, initialFile, onUploaded }: {
-  authorizedFetch: (url: string, init?: RequestInit) => Promise<Response>; tripId?: string; clientId?: string; title: string; initialFile?: File | null; onUploaded?: () => void;
+  authorizedFetch: (url: string, init?: RequestInit) => Promise<Response>; tripId?: string; clientId?: string; title: string; initialFile?: File | null; onUploaded?: (file: StoredFile) => void;
 }) {
   const [files, setFiles] = useState<StoredFile[]>([]);
   const [googleClientId, setGoogleClientId] = useState<string | null>(null);
@@ -94,7 +106,7 @@ export default function CrmDriveDocuments({ authorizedFetch, tripId, clientId, t
         body: JSON.stringify({ trip_id: tripId || null, client_id: clientId || null, drive_file_id: uploaded.id, file_name: uploaded.name.slice(0,240), mime_type: uploaded.mimeType }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível associar o ficheiro.");
-      setFiles((current) => [result.file, ...current]); setPending(null); setSelected(null); setMessage("Ficheiro guardado no Drive e associado à ficha."); onUploaded?.();
+      setFiles((current) => [result.file, ...current]); setPending(null); setSelected(null); setMessage("Ficheiro guardado no Drive e associado à ficha."); onUploaded?.(result.file);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Não foi possível guardar o ficheiro."); }
     finally { setBusy(false); }
   }
