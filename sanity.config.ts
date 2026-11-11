@@ -16,7 +16,7 @@ import { ArchiveAction } from './src/sanity/actions/ArchiveAction'
 import { ProcessExpiredAction } from './src/sanity/actions/ProcessExpiredAction'
 import CommissionCalculator from './src/components/commission-calculator'
 import { GenerateItineraryAction } from './src/sanity/actions/GenerateItineraryAction'
-import { MigrateItinerarySourcesAction } from './src/sanity/actions/MigrateItinerarySourcesAction'
+import { DeleteLegacyItinerariesAction } from './src/sanity/actions/DeleteLegacyItinerariesAction'
 import CrmStudioTool from './src/components/crm-studio-tool'
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!
@@ -36,7 +36,7 @@ export default defineConfig({
                 return [...prev, TranslateAction, GenerateStoryAction, ArchiveAction, ProcessExpiredAction]
             }
             if (context.schemaType === 'roteiro') {
-                return [...prev.filter(action => !["publish", "duplicate", "discardChanges", "unpublish"].includes(action.action ?? "")), GenerateItineraryAction, MigrateItinerarySourcesAction]
+                return [...prev.filter(action => !["publish", "duplicate", "discardChanges", "unpublish"].includes(action.action ?? "")), GenerateItineraryAction, DeleteLegacyItinerariesAction]
             }
             return prev
         },
