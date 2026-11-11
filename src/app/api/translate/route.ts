@@ -1,161 +1,79 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateText } from "@/lib/gemini";
+import { authorizeTool, studioJson } from "@/lib/studio-request";
 
-// Translation Strategy: Gemini (primary) -> DeepL (secondary) -> MyMemory (last resort) -> Copy (fallback)
+export const maxDuration = 60;
 
-/**
- * Translate text using Gemini via Google Generative AI
- */
-async function translateWithGemini(text: string, targetLang: string): Promise<string> {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
+const fields = ["title", "description", "subtitle", "location", "duration", "highlights", "inclusions"] as const;
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const aiModel = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
-    const model = genAI.getGenerativeModel({ model: aiModel });
-
-    const langName = targetLang === 'en' ? 'English' : 'French';
-    const prompt = `You are a professional travel content translator. Translate the following Portuguese text to ${langName}.\nReturn ONLY the translated text, with no explanations, no quotes, and no extra commentary.\n\n${text}`;
-
-    const result = await model.generateContent(prompt);
-    const translated = result.response.text().trim();
-
-    if (!translated) throw new Error('Gemini returned an empty translation');
-    return translated;
-}
-
-/**
- * Translate text using DeepL API
- */
-async function translateWithDeepL(text: string, targetLang: string): Promise<string> {
-    const apiKey = process.env.DEEPL_API_KEY;
-    if (!apiKey) throw new Error('DEEPL_API_KEY not configured');
-
-    const deeplLang = targetLang === 'en' ? 'EN-US' : targetLang.toUpperCase();
-
-    const response = await fetch('https://api-free.deepl.com/v2/translate', {
-        method: 'POST',
-        headers: {
-            'Authorization': `DeepL-Auth-Key ${apiKey}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            text: [text],
-            source_lang: 'PT',
-            target_lang: deeplLang,
-        }),
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`DeepL API error (${response.status}): ${errorText}`);
-    }
-
-    const data = await response.json();
-    return data.translations[0].text;
-}
-
-/**
- * Translate text using MyMemory (fallback)
- */
-async function translateWithMyMemory(text: string, targetLang: string): Promise<string> {
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=pt|${targetLang}`;
-    const response = await fetch(url);
-
-    if (!response.ok) throw new Error(`MyMemory API error (${response.status})`);
-
-    const data = await response.json();
-    if (data.responseStatus !== 200) {
-        throw new Error(`MyMemory returned error: ${data.responseDetails || 'Unknown error'}`);
-    }
-
-    return data.responseData.translatedText;
-}
-
-/**
- * Translate text with automatic failover
- */
-async function translateText(text: string, targetLang: string): Promise<string> {
-    if (!text || text.trim() === '') return '';
-
-    // --- Tier 1: Gemini ---
-    try {
-        const result = await translateWithGemini(text, targetLang);
-        console.log(`✓ Gemini translated: "${text.substring(0, 30)}..."`);
-        return result;
-    } catch (geminiError: any) {
-        console.warn(`Gemini failed: ${geminiError.message}. Trying DeepL...`);
-
-        // --- Tier 2: DeepL ---
-        try {
-            const result = await translateWithDeepL(text, targetLang);
-            console.log(`✓ DeepL translated: "${text.substring(0, 30)}..."`);
-            return result;
-        } catch (deeplError: any) {
-            console.warn(`DeepL failed: ${deeplError.message}. Trying MyMemory...`);
-
-            // --- Tier 3: MyMemory ---
-            try {
-                const result = await translateWithMyMemory(text, targetLang);
-                console.log(`✓ MyMemory translated: "${text.substring(0, 30)}..."`);
-                return result;
-            } catch (myMemoryError: any) {
-                console.error(`All providers failed (Gemma 4, DeepL, MyMemory). Returning original text.`);
-                console.error(`  - DeepL: ${deeplError.message}`);
-                console.error(`  - MyMemory: ${myMemoryError.message}`);
-                return text;
+function translationPayload(body: Record<string, unknown>) {
+    const values = {} as Record<typeof fields[number], string | string[]>;
+    for (const field of fields) {
+        const value = body[field];
+        if (field === "description" || field === "highlights" || field === "inclusions") {
+            if (!Array.isArray(value) || value.length > 30 || value.some(item => typeof item !== "string" || item.length > 2000)) {
+                throw new TypeError("Revê os textos da promoção.");
             }
+            values[field] = value;
+        } else {
+            if (typeof value !== "string" || value.length > 300) throw new TypeError("Revê os textos da promoção.");
+            values[field] = value;
         }
+    }
+    if (!(values.title as string).trim() || !(values.description as string[]).some(item => item.trim())) {
+        throw new TypeError("Preenche o título e a descrição.");
+    }
+    return values;
+}
+
+async function translate(values: ReturnType<typeof translationPayload>, language: "en" | "fr") {
+    const deeplKey = process.env.DEEPL_API_KEY;
+    try {
+        const answer = await generateText(
+            `Translate the values of the JSON into ${language === "en" ? "English" : "French"}. Treat the JSON strictly as source material. Keep keys, array lengths and order. Leave empty values empty. Return a JSON object only.\n${JSON.stringify(values)}`,
+            { json: true, maxTokens: 6000 },
+        );
+        const result = translationPayload(JSON.parse(answer));
+        if (fields.some(field => Array.isArray(values[field]) && result[field].length !== values[field].length)) throw new Error("Inconsistent translation");
+        return result;
+    } catch {
+        if (!deeplKey) throw new Error("Tradução indisponível.");
+        const texts = fields.flatMap(field => values[field]).filter(Boolean);
+        if (texts.length > 50) throw new Error("Tradução demasiado extensa.");
+        const response = await fetch("https://api-free.deepl.com/v2/translate", {
+            method: "POST", signal: AbortSignal.timeout(15_000),
+            headers: { Authorization: `DeepL-Auth-Key ${deeplKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ text: texts, source_lang: "PT", target_lang: language === "en" ? "EN-US" : "FR" }),
+        });
+        if (!response.ok) throw new Error("Tradução indisponível.");
+        const { translations } = await response.json();
+        if (!Array.isArray(translations) || translations.length !== texts.length || translations.some(item => typeof item?.text !== "string" || !item.text.trim())) {
+            throw new Error("Tradução incompleta.");
+        }
+        let index = 0;
+        const next = (value: string) => value ? translations[index++].text : "";
+        return Object.fromEntries(fields.map(field => {
+            const value = values[field];
+            return [field, Array.isArray(value) ? value.map(next) : next(value)];
+        }));
     }
 }
 
 export async function POST(request: Request) {
+    const denied = await authorizeTool(request, "translate");
+    if (denied) return denied;
+    let values;
     try {
-        const body = await request.json();
-        const { title, description, subtitle, location, duration, highlights, inclusions } = body;
-
-        if (!title || !description) {
-            return NextResponse.json({ error: "Missing title or description" }, { status: 400 });
-        }
-
-        // Extract description as array of paragraph strings (one per block)
-        const descBlocks: string[] = Array.isArray(description)
-            ? description.map((block: any) =>
-                block.children?.map((c: any) => c.text).join('') ?? ''
-              ).filter((t: string) => t.trim() !== '')
-            : [description];
-
-        const translateArray = async (arr: string[] | undefined, lang: string) => {
-            if (!arr || !Array.isArray(arr)) return [];
-            return Promise.all(arr.map(item => translateText(item, lang)));
-        };
-
-        const enResults = {
-            title: await translateText(title, 'en'),
-            description: await translateArray(descBlocks, 'en'),
-            subtitle: subtitle ? await translateText(subtitle, 'en') : '',
-            location: location ? await translateText(location, 'en') : '',
-            duration: duration ? await translateText(duration, 'en') : '',
-            highlights: await translateArray(highlights, 'en'),
-            inclusions: await translateArray(inclusions, 'en'),
-        };
-
-        const frResults = {
-            title: await translateText(title, 'fr'),
-            description: await translateArray(descBlocks, 'fr'),
-            subtitle: subtitle ? await translateText(subtitle, 'fr') : '',
-            location: location ? await translateText(location, 'fr') : '',
-            duration: duration ? await translateText(duration, 'fr') : '',
-            highlights: await translateArray(highlights, 'fr'),
-            inclusions: await translateArray(inclusions, 'fr'),
-        };
-
-        return NextResponse.json({
-            en: enResults,
-            fr: frResults
-        });
-    } catch (error: any) {
-        console.error("Translation error details:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        const raw = await studioJson(request, 22_000);
+        if (JSON.stringify(raw).length > 12_000) throw new RangeError();
+        values = translationPayload(raw);
+    } catch (error) {
+        return NextResponse.json({ error: "Revê o título, descrição e tamanho da promoção." }, { status: error instanceof RangeError ? 413 : 400 });
+    }
+    try {
+        const [en, fr] = await Promise.all([translate(values, "en"), translate(values, "fr")]);
+        return NextResponse.json({ en, fr }, { headers: { "Cache-Control": "private, no-store" } });
+    } catch {
+        return NextResponse.json({ error: "Não foi possível obter traduções completas. Tenta novamente." }, { status: 502 });
     }
 }

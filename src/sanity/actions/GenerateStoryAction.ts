@@ -1,57 +1,39 @@
-import { DocumentActionComponent } from 'sanity';
-import { DownloadIcon } from '@sanity/icons';
+import { type DocumentActionComponent, useClient } from "sanity";
+import { useState } from "react";
+import { Download } from "lucide-react";
+import { studioFetch } from "../studio-fetch";
 
-export const GenerateStoryAction: DocumentActionComponent = (props) => {
-    const { draft, published } = props;
-    const doc = draft || published;
-
+export const GenerateStoryAction: DocumentActionComponent = ({ draft, published }) => {
+    const doc = draft ?? published;
+    const client = useClient({ apiVersion: "2024-01-18" });
+    const [busy, setBusy] = useState(false);
+    const asset = (doc?.heroImage as { asset?: { _ref?: string } } | undefined)?.asset?._ref;
     return {
-        label: 'Generate Instagram Story',
-        icon: DownloadIcon,
+        label: busy ? "A gerar imagem…" : "Descarregar story para Instagram",
+        icon: Download,
+        disabled: busy || !asset || !doc?.title,
         onHandle: async () => {
-            const promotion = doc as any;
-
-            // Validate required fields
-            if (!promotion?.heroImage?.asset?._ref) {
-                alert('Please add a hero image before generating a story.');
-                return;
+            setBusy(true);
+            try {
+                const response = await studioFetch(client, "/api/generate-story", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        title: doc?.title, price: doc?.price, regime: doc?.regime,
+                        lang: doc?.language, subtitle: doc?.subtitle, assetId: asset,
+                    }),
+                });
+                if (!response.ok) throw new Error("Não foi possível gerar a imagem.");
+                const url = URL.createObjectURL(await response.blob());
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = "travel-frontiers-story.png";
+                link.click();
+                window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+            } catch (error) {
+                alert(error instanceof Error ? error.message : "Não foi possível gerar a imagem.");
+            } finally {
+                setBusy(false);
             }
-
-            if (!promotion?.title) {
-                alert('Please add a title before generating a story.');
-                return;
-            }
-
-            // Build Sanity image URL
-            const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || '';
-            const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production';
-            const assetId = promotion.heroImage.asset._ref;
-
-            // Extract image ID from reference (format: image-{id}-{dimensions}-{format})
-            const imageId = assetId.replace('image-', '').replace(/-(\d+x\d+)-/, '-');
-            const parts = assetId.split('-');
-            const format = parts[parts.length - 1] || 'jpg';
-            const dimensions = parts[parts.length - 2] || '';
-            const hash = parts.slice(1, -2).join('-');
-
-            const imageUrl = `https://cdn.sanity.io/images/${projectId}/${dataset}/${hash}-${dimensions}.${format}?w=1080&h=1920&fit=crop`;
-
-            // Prepare story parameters
-            const params = new URLSearchParams({
-                title: promotion.title || '',
-                price: promotion.price || '',
-                regime: promotion.regime || '',
-                validity: promotion.validUntil || '',
-                imageUrl: imageUrl,
-                lang: promotion.language || 'pt',
-                subtitle: promotion.subtitle || '',
-            });
-
-            // Generate story URL
-            const storyUrl = `/api/generate-story?${params.toString()}`;
-
-            // Open in new tab for preview and download
-            window.open(storyUrl, '_blank');
         },
     };
 };

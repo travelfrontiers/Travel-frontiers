@@ -7,6 +7,7 @@ import { Menu, X, Globe } from "lucide-react";
 
 type HeaderProps = {
     lang: "pt" | "en" | "fr";
+    alternatePaths?: Record<string, string>;
 };
 
 const languageNames = {
@@ -15,9 +16,10 @@ const languageNames = {
     fr: "FR",
 };
 
-export default function Header({ lang }: HeaderProps) {
+export default function Header({ lang, alternatePaths }: HeaderProps) {
     const pathname = usePathname();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [languageOpen, setLanguageOpen] = useState(false);
 
     // Navigation links matching travelfrontiers.pt
     const navLinks = [
@@ -30,21 +32,12 @@ export default function Header({ lang }: HeaderProps) {
         { href: `/${lang}`, label: { pt: "Promoções", en: "Promotions", fr: "Promotions" } },
     ];
 
-    const switchLanguage = (newLang: string) => {
-        setMobileMenuOpen(false);
-        // If we are on a promotion detail page, we can't just swap the lang segment
-        // because slugs are localized. Best is to go back to the list in the new lang.
-        if (pathname.includes("/promo/")) {
-            window.location.href = `/${newLang}`;
-            return;
-        }
-
-        // For other pages (like the home/list page), we can safely swap
+    function languagePath(locale: string) {
+        if (pathname.includes("/promo/")) return alternatePaths?.[locale] ?? `/${locale}`;
         const segments = pathname.split("/");
-        segments[1] = newLang;
-        const newPath = segments.join("/");
-        window.location.href = newPath;
-    };
+        segments[1] = locale;
+        return segments.join("/");
+    }
 
     return (
         <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-white/90 border-b border-gray-100 shadow-sm">
@@ -86,26 +79,36 @@ export default function Header({ lang }: HeaderProps) {
                 {/* Right side controls: Language switcher & Mobile menu button */}
                 <div className="flex items-center gap-3">
                     {/* Desktop & Mobile Language Switcher */}
-                    <div className="relative group">
+                    <div className="relative" onBlur={event => {
+                        if (!event.currentTarget.contains(event.relatedTarget)) setLanguageOpen(false);
+                    }} onKeyDown={event => {
+                        if (event.key === "Escape" && languageOpen) {
+                            setLanguageOpen(false);
+                            event.currentTarget.querySelector("button")?.focus();
+                        }
+                    }}>
                         <button
                             type="button"
-                            aria-label="Selecionar idioma"
+                            aria-label={{ pt: "Selecionar idioma", en: "Choose language", fr: "Choisir la langue" }[lang]}
+                            aria-expanded={languageOpen} aria-controls="site-languages"
+                            onClick={() => setLanguageOpen(open => !open)}
                             className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-medium text-sm shadow-sm hover:shadow-md transition-all duration-300"
                         >
                             <Globe className="w-4 h-4" />
                             <span>{languageNames[lang]}</span>
                         </button>
-                        <div className="absolute right-0 mt-2 w-32 rounded-xl bg-white shadow-xl border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
+                        <div id="site-languages" hidden={!languageOpen} className="absolute right-0 mt-2 w-32 rounded-xl border border-gray-100 bg-white shadow-xl z-50 overflow-hidden">
                             {(["pt", "en", "fr"] as const).map((l) => (
-                                <button
-                                    key={l}
-                                    onClick={() => switchLanguage(l)}
-                                    className={`w-full px-4 py-2.5 text-left text-sm hover:bg-orange-50 hover:text-orange-600 transition-colors duration-200 ${
+                                <Link
+                                    key={l} href={languagePath(l)} hrefLang={l} lang={l}
+                                    aria-current={l === lang ? "true" : undefined}
+                                    onClick={() => { setLanguageOpen(false); setMobileMenuOpen(false); }}
+                                    className={`block w-full px-4 py-2.5 text-left text-sm hover:bg-orange-50 hover:text-orange-600 transition-colors duration-200 ${
                                         l === lang ? "bg-orange-50 text-orange-600 font-semibold" : "text-gray-700"
                                     }`}
                                 >
                                     {languageNames[l]}
-                                </button>
+                                </Link>
                             ))}
                         </div>
                     </div>
@@ -148,12 +151,13 @@ export default function Header({ lang }: HeaderProps) {
 
                     {/* Mobile language selector options */}
                     <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-sm">
-                        <span className="text-gray-500 font-medium">Idioma:</span>
+                        <span className="text-gray-500 font-medium">{({ pt: "Idioma", en: "Language", fr: "Langue" })[lang]}</span>
                         <div className="flex gap-2">
                             {(["pt", "en", "fr"] as const).map((l) => (
-                                <button
-                                    key={l}
-                                    onClick={() => switchLanguage(l)}
+                                <Link
+                                    key={l} href={languagePath(l)} hrefLang={l} lang={l}
+                                    aria-current={l === lang ? "true" : undefined}
+                                    onClick={() => setMobileMenuOpen(false)}
                                     className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
                                         l === lang
                                             ? "bg-orange-600 text-white"
@@ -161,7 +165,7 @@ export default function Header({ lang }: HeaderProps) {
                                     }`}
                                 >
                                     {languageNames[l]}
-                                </button>
+                                </Link>
                             ))}
                         </div>
                     </div>

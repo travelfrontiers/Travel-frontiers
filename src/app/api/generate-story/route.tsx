@@ -1,3 +1,4 @@
+import { authorizeTool, studioJson } from "@/lib/studio-request";
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 
@@ -17,17 +18,26 @@ function getRegimeLabel(regime: string, lang: string): string {
     return labels[regime]?.[lang] || regime?.toUpperCase() || '';
 }
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
+    const denied = await authorizeTool(request, "story");
+    if (denied) return denied;
+    let fields: Record<string, unknown>;
+    try { fields = await studioJson(request, 4096); }
+    catch { return new Response("Pedido inválido.", { status: 400 }); }
+
+    const text = (key: string, max: number) => typeof fields[key] === "string" ? fields[key].slice(0, max) : "";
+    const title = text("title", 150) || "Promoção Exclusiva";
+    let price = typeof fields.price === "number" ? String(fields.price) : text("price", 25);
+    const regime = text("regime", 32);
+    const lang = fields.lang === "en" || fields.lang === "fr" ? fields.lang : "pt";
+    const subtitle = text("subtitle", 220);
+    const asset = typeof fields.assetId === "string" && /^image-([a-f0-9]{20,64})-(\d{1,5}x\d{1,5})-(jpg|jpeg|png|webp)$/i.exec(fields.assetId);
+    const project = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
+    const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || "production";
+    if (!asset || !project) return new Response("Imagem inválida.", { status: 400 });
+    const imageUrl = `https://cdn.sanity.io/images/${project}/${dataset}/${asset[1]}-${asset[2]}.${asset[3]}?w=1080&h=1920&fit=crop`;
+
     try {
-        const { searchParams } = new URL(request.url);
-
-        const title = searchParams.get('title') || 'Promoção Exclusiva';
-        let price = searchParams.get('price') || '';
-        const regime = searchParams.get('regime') || '';
-        const imageUrl = searchParams.get('imageUrl') || '';
-        const lang = searchParams.get('lang') || 'pt';
-        const subtitle = searchParams.get('subtitle') || '';
-
         const regimeLabel = regime ? getRegimeLabel(regime, lang) : '';
 
         // Format price with currency symbol if needed
@@ -48,8 +58,6 @@ export async function GET(request: NextRequest) {
             const fromLabel = fromLabels[lang] || fromLabels['pt'];
             priceText = `${fromLabel} ${price}`;
         }
-
-        console.log('[GenerateStory] Generating for:', title);
 
         return new ImageResponse(
             (
@@ -205,8 +213,7 @@ export async function GET(request: NextRequest) {
                 height: 1920,
             }
         );
-    } catch (error: any) {
-        console.error('Story generation error:', error);
-        return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    } catch {
+        return new Response('Não foi possível gerar a imagem.', { status: 500 });
     }
 }

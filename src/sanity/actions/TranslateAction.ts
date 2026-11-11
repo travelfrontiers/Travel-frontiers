@@ -1,89 +1,59 @@
-import { DocumentActionProps, useClient } from 'sanity'
-import { useState } from 'react'
+import { type DocumentActionProps, useClient } from "sanity";
+import { useState } from "react";
+import { studioFetch } from "../studio-fetch";
+
+type TextBlock = { children?: { text?: string }[] };
 
 export function TranslateAction({ id, type, published, draft, onComplete }: DocumentActionProps) {
-    const [isTranslating, setIsTranslating] = useState(false)
-    const client = useClient({ apiVersion: '2024-01-18' })
-    const doc = draft || published
-
-    // Only show for promotions and if it's in Portuguese
-    if (type !== 'promotion' || doc?.language !== 'pt') {
-        return null
-    }
+    const [busy, setBusy] = useState(false);
+    const client = useClient({ apiVersion: "2024-01-18" });
+    const doc = draft ?? published;
+    if (type !== "promotion" || doc?.language !== "pt") return null;
 
     return {
-        label: isTranslating ? 'Translating...' : 'AI Translate to EN/FR',
-        disabled: isTranslating || !doc?.title,
+        label: busy ? "A traduzir…" : "Criar rascunhos em inglês e francês",
+        disabled: busy || !doc.title || !doc.slug,
         onHandle: async () => {
-            setIsTranslating(true)
-
+            if (!window.confirm("Criar ou atualizar os rascunhos em inglês e francês? As versões publicadas ficam disponíveis até publicares as traduções revistas.")) return;
+            setBusy(true);
             try {
-                const response = await fetch('/api/translate', {
-                    method: 'POST',
+                const description = Array.isArray(doc.description)
+                    ? (doc.description as TextBlock[]).map(block => block.children?.map(span => span.text ?? "").join("") ?? "").filter(Boolean)
+                    : typeof doc.description === "string" ? [doc.description] : [];
+                const response = await studioFetch(client, "/api/translate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        title: doc.title,
-                        description: doc.description,
-                        subtitle: doc.subtitle,
-                        location: doc.location,
-                        duration: doc.duration,
-                        highlights: doc.highlights,
-                        inclusions: doc.inclusions,
+                        title: doc.title, description, subtitle: doc.subtitle ?? "",
+                        location: doc.location ?? "", duration: doc.duration ?? "",
+                        highlights: doc.highlights ?? [], inclusions: doc.inclusions ?? [],
                     }),
-                    headers: { 'Content-Type': 'application/json' },
-                })
-
-                const translations = await response.json()
-
-                if (translations.error) throw new Error(translations.error)
-
-                // Create/Update EN version
-                await client.createOrReplace({
-                    ...doc,
-                    _id: `${id}-en`,
-                    language: 'en',
-                    title: translations.en.title,
-                    subtitle: translations.en.subtitle,
-                    location: translations.en.location,
-                    duration: translations.en.duration,
-                    highlights: translations.en.highlights,
-                    inclusions: translations.en.inclusions,
-                    description: (translations.en.description as string[]).map((para: string, i: number) => ({
-                        _key: `auto-gen-en-${i}`,
-                        _type: 'block',
-                        children: [{ _key: `auto-child-en-${i}`, _type: 'span', text: para }],
-                        style: 'normal',
-                    })),
-                    slug: { _type: 'slug', current: `${(doc as any).slug?.current}-en` },
-                })
-
-                // Create/Update FR version
-                await client.createOrReplace({
-                    ...doc,
-                    _id: `${id}-fr`,
-                    language: 'fr',
-                    title: translations.fr.title,
-                    subtitle: translations.fr.subtitle,
-                    location: translations.fr.location,
-                    duration: translations.fr.duration,
-                    highlights: translations.fr.highlights,
-                    inclusions: translations.fr.inclusions,
-                    description: (translations.fr.description as string[]).map((para: string, i: number) => ({
-                        _key: `auto-gen-fr-${i}`,
-                        _type: 'block',
-                        children: [{ _key: `auto-child-fr-${i}`, _type: 'span', text: para }],
-                        style: 'normal',
-                    })),
-                    slug: { _type: 'slug', current: `${(doc as any).slug?.current}-fr` },
-                })
-
-                alert('Translations created successfully!')
-            } catch (err: any) {
-                console.error(err)
-                alert('Translation failed: ' + err.message)
+                });
+                const translations = await response.json();
+                if (!response.ok) throw new Error(translations.error);
+                const base = id.replace(/^drafts\./, "");
+                const slug = (doc.slug as { current: string }).current;
+                const content = Object.fromEntries(Object.entries(doc).filter(([key]) => !key.startsWith("_")));
+                const transaction = client.transaction();
+                for (const language of ["en", "fr"] as const) {
+                    const translation = translations[language];
+                    transaction.createOrReplace({
+                        ...content, ...translation, _type: "promotion", _id: `drafts.${base}-${language}`, language,
+                        description: (translation.description as string[]).map((text, index) => ({
+                            _type: "block", _key: `translation-${index}`, style: "normal", markDefs: [],
+                            children: [{ _type: "span", _key: `text-${index}`, text, marks: [] }],
+                        })),
+                        slug: { _type: "slug", current: `${slug}-${language}` },
+                    });
+                }
+                await transaction.commit();
+                alert("Rascunhos em inglês e francês disponíveis para revisão no Studio.");
+                onComplete();
+            } catch (error) {
+                alert(error instanceof Error ? error.message : "Não foi possível traduzir.");
             } finally {
-                setIsTranslating(false)
-                onComplete()
+                setBusy(false);
             }
         },
-    }
+    };
 }

@@ -1,3 +1,4 @@
+import { PrivateItineraryInput } from "../PrivateItineraryInput";
 import { defineField, defineType } from 'sanity'
 
 export const roteiro = defineType({
@@ -12,14 +13,18 @@ export const roteiro = defineType({
             validation: (Rule) => Rule.required(),
         }),
         defineField({
-            name: 'sourceFile',
-            title: 'Source Itinerary File',
-            type: 'file',
-            description: 'Upload the source trip details file (PDF, TXT, DOCX) here to generate the final itinerary.',
-            options: {
-                accept: '.pdf,.txt,.doc,.docx',
-            },
-            validation: (Rule) => Rule.required(),
+            name: "privateSource",
+            title: "Ficheiro de origem privado",
+            description: "Ao gerar o roteiro, o texto necessário para a viagem é processado pelo Gemini.",
+            type: "string",
+            components: { input: PrivateItineraryInput },
+        }),
+        defineField({
+            name: "sourceFile",
+            title: "Origem antiga",
+            type: "file",
+            readOnly: true,
+            hidden: true,
         }),
         defineField({
             name: 'notes',

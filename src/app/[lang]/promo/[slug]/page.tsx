@@ -1,3 +1,5 @@
+import { getPromotionAlternates, isSiteLocale, promotionDay, visiblePromotion } from "@/lib/promotions";
+import { cache } from "react";
 import { client, urlFor } from "@/sanity/client";
 import { Locale, getDictionary } from "@/i18n/dictionaries";
 import { generateMetadata as generateSeoMetadata } from "@/lib/seo";
@@ -18,14 +20,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const { lang, slug } = await params;
     const promo = await getPromotion(slug, lang);
 
-    if (!promo) {
-        return generateSeoMetadata({
-            lang: (lang as "pt" | "en" | "fr") || "pt",
-            title: "Promoção Não Encontrada | Travel Frontiers",
-        });
-    }
+    if (!promo || !isSiteLocale(lang)) notFound();
 
-    const priceText = promo.price ? ` | Desde €${promo.price}` : "";
+    const priceText = promo.price ? ` | ${getDictionary(lang).promo.from} €${promo.price}` : "";
     const title = `${promo.title}${priceText} - Travel Frontiers`;
     const description = promo.subtitle || (
         lang === "fr"
@@ -48,7 +45,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const pageUrl = `${siteUrl}/${lang}/promo/${slug}`;
 
     return generateSeoMetadata({
-        lang: (lang as "pt" | "en" | "fr") || "pt",
+        lang,
+        alternatePaths: await getPromotionAlternates(promo._id),
         title,
         description,
         image: imageUrl,
@@ -57,11 +55,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     });
 }
 
-async function getPromotion(slug: string, lang: string) {
+const getPromotion = cache(async (slug: string, lang: string) => {
     try {
         return await client.fetch(
-            `*[_type == "promotion" && slug.current == $slug && language == $lang][0] {
-        title,
+            `*[${visiblePromotion} && slug.current == $slug && language == $lang][0] {
+        _id, title,
         subtitle,
         heroImage,
         price,
@@ -73,12 +71,12 @@ async function getPromotion(slug: string, lang: string) {
         highlights,
         inclusions
       }`,
-            { slug, lang }
+            { slug, lang, today: promotionDay() }
         );
     } catch (error) {
         return null;
     }
-}
+});
 
 // Helper to get full name of regime
 const getRegimeLabel = (regime: string, lang: string) => {

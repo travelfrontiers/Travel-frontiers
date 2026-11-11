@@ -1,8 +1,6 @@
-import type { NextRequest } from "next/server";
-
 const authorizedEmail = "tf.travel.frontiers@gmail.com";
 
-export async function isAuthorizedStudioUser(request: NextRequest): Promise<boolean> {
+export async function isAuthorizedStudioUser(request: Pick<Request, "headers">): Promise<boolean> {
   const authorization = request.headers.get("authorization");
   const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
   const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;

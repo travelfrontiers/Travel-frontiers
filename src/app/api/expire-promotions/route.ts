@@ -1,149 +1,74 @@
-import { NextResponse } from 'next/server';
-import { writeClient } from '@/sanity/client';
+import { timingSafeEqual } from "node:crypto";
+import { NextResponse } from "next/server";
+import { isAuthorizedStudioUser } from "@/lib/crm-api";
+import { promotionDay, promotionGroupId } from "@/lib/promotions";
+import { studioJson } from "@/lib/studio-request";
+import { writeClient } from "@/sanity/client";
 
-/**
- * API endpoint to expire promotions after their validUntil date
- * 
- * This endpoint:
- * 1. Finds all active promotions with validUntil < today
- * 2. Archives PT versions (sets status = 'archived')
- * 3. Deletes EN/FR versions
- * 
- * Can be called manually or via Vercel Cron
- */
-export async function GET(request: Request) {
+type Promotion = { _id: string; _rev: string; language: string; status?: string; validUntil?: string };
+export const runtime = "nodejs";
+
+async function archivePromotions(promotionId?: string) {
+    const client = writeClient.withConfig({ perspective: "raw" });
     try {
-        // Security check: Only allow requests with valid secret or from Vercel Cron
-        const authHeader = request.headers.get('authorization');
-        const isVercelCron = request.headers.get('x-vercel-cron') === '1';
-        const secret = process.env.CRON_SECRET;
-
-        // Allow if:
-        // 1. It's a Vercel Cron request
-        // 2. The secret matches (if defined)
-        // 3. We're in development and no secret is set
-        const isAuthorized =
-            isVercelCron ||
-            (secret && authHeader === `Bearer ${secret}`) ||
-            (!secret && process.env.NODE_ENV === 'development');
-
-        if (!isAuthorized) {
-            console.error('[ExpirePromotions] Unauthorized access attempt');
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const documents = await client.fetch<Promotion[]>(
+            `*[_type=="promotion" && !(_id in path("versions.**"))]{_id,_rev,language,status,validUntil}`,
+        );
+        const groups = new Map<string, Promotion[]>();
+        for (const document of documents) {
+            const id = promotionGroupId(document._id);
+            const group = groups.get(id) ?? [];
+            group.push(document);
+            groups.set(id, group);
         }
 
-        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-
-        const expiredPromotions = await writeClient.fetch<Array<{
-            _id: string;
-            title: string;
-            slug: { current: string };
-            validUntil: string;
-            language: string;
-            status: string;
-        }>>(
-            `*[_type == "promotion"] {
-                _id,
-                title,
-                slug,
-                validUntil,
-                language,
-                status
-            }`
-        );
-
-        console.log(`[ExpirePromotions] Total promotions in database: ${expiredPromotions.length}`);
-
-        // Safe operational info (no sensitive credentials/token prefixes exposed)
-        const debugInfo = {
-            today,
-            totalPromotions: expiredPromotions.length,
-            hasToken: !!process.env.SANITY_API_WRITE_TOKEN,
-        };
-
-        // Filter for truly expired ones
-        const trulyExpired = expiredPromotions.filter(promo =>
-            promo.language === 'pt' &&
-            promo.validUntil &&
-            promo.validUntil < today &&
-            (!promo.status || promo.status === 'active')
-        );
-
-        console.log(`[ExpirePromotions] Found ${trulyExpired.length} truly expired promotions after filtering`);
-
-        const results = {
-            expired: 0,
-            archived: [] as string[],
-            deleted: [] as string[],
-            errors: [] as string[],
-            debug: debugInfo
-        };
-
-        for (const promo of trulyExpired) {
+        const today = promotionDay();
+        let archived = 0;
+        let errors = 0;
+        for (const [id, group] of groups) {
+            const source = group.find(doc => doc._id === id) ?? group.find(doc => doc._id === `drafts.${id}`);
+            const expired = source
+                ? Boolean(source.validUntil && source.validUntil < today)
+                : group.some(doc => doc.validUntil && doc.validUntil < today);
+            if (promotionId ? id !== promotionId : !expired) continue;
+            const changes = group.filter(doc => doc.status !== "archived");
+            if (!changes.length) continue;
             try {
-                // 1. Archive the PT version (works for both published and drafts)
-                await writeClient.patch(promo._id).set({ status: 'archived' }).commit();
-                console.log(`  ✓ Archived PT: ${promo.title} (${promo._id})`);
-                results.archived.push(`${promo.title} (${promo._id})`);
-
-                // 2. Identify and delete EN/FR versions using IDs (more reliable than slugs)
-                // Remove 'drafts.' prefix if it exists to get the base ID
-                const baseId = promo._id.replace(/^drafts\./, '');
-
-                const translationIds = [
-                    `${baseId}-en`,
-                    `drafts.${baseId}-en`,
-                    `${baseId}-fr`,
-                    `drafts.${baseId}-fr`
-                ];
-
-                for (const transId of translationIds) {
-                    try {
-                        // Check if it exists before trying to delete (optional but cleaner)
-                        await writeClient.delete(transId);
-                        results.deleted.push(transId);
-                        console.log(`  ✓ Deleted translation: ${transId}`);
-                    } catch (e: any) {
-                        // Ignore if it doesn't exist (404)
-                        if (e.statusCode !== 404) {
-                            console.error(`  ✗ Error deleting ${transId}:`, e.message);
-                        }
-                    }
+                const transaction = client.transaction();
+                for (const doc of changes) {
+                    transaction.patch(doc._id, patch => patch.ifRevisionId(doc._rev).set({ status: "archived" }));
                 }
-
-                results.expired++;
-            } catch (error: any) {
-                console.error(`  ✗ Error processing ${promo.title}:`, error);
-                results.errors.push(`${promo.title}: ${error.message}`);
+                await transaction.commit();
+                archived += changes.length;
+            } catch {
+                errors++;
             }
         }
-
-        console.log(`[ExpirePromotions] Complete. Expired: ${results.expired}`);
-
-        return NextResponse.json({
-            success: true,
-            date: today,
-            summary: {
-                totalExpired: results.expired,
-                archivedCount: results.archived.length,
-                deletedCount: results.deleted.length,
-                errorCount: results.errors.length,
-            },
-            details: results,
-        });
-    } catch (error: any) {
-        console.error('[ExpirePromotions] Fatal error:', error);
-        return NextResponse.json(
-            {
-                success: false,
-                error: error.message,
-            },
-            { status: 500 }
-        );
+        return NextResponse.json({ success: errors === 0, archived, errors }, { status: errors ? 502 : 200 });
+    } catch {
+        return NextResponse.json({ error: "Não foi possível arquivar as promoções." }, { status: 502 });
     }
 }
 
-// Allow manual POST calls as well
+export async function GET(request: Request) {
+    const secret = process.env.CRON_SECRET;
+    const supplied = Buffer.from(request.headers.get("authorization") || "");
+    const expected = Buffer.from(`Bearer ${secret ?? ""}`);
+    if (!secret || supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
+        return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
+    }
+    return archivePromotions();
+}
+
 export async function POST(request: Request) {
-    return GET(request);
+    if (!await isAuthorizedStudioUser(request)) {
+        return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
+    }
+    try {
+        const { id } = await studioJson(request, 1024);
+        if (id !== undefined && (typeof id !== "string" || !/^[\w.-]{1,128}$/.test(id))) throw new Error();
+        return archivePromotions(typeof id === "string" ? promotionGroupId(id) : undefined);
+    } catch {
+        return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
+    }
 }

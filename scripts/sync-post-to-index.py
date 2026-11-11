@@ -1,66 +1,36 @@
 import json
-import subprocess
-import sys
 from pathlib import Path
 
 POSTS_DIR = Path("forum/posts")
 INDEX_FILE = POSTS_DIR / "index.json"
 
 FIELDS = [
-    "title",
-    "title_pt",
-    "title_fr",
-    "excerpt",
-    "excerpt_pt",
-    "excerpt_fr",
-    "readTime",
-    "readTime_pt",
-    "readTime_fr",
-    "thumbnail",
-    "tags",
-    "destination",
-    "category",
+    "title", "title_pt", "title_fr", "excerpt", "excerpt_pt", "excerpt_fr",
+    "readTime", "readTime_pt", "readTime_fr", "thumbnail", "tags",
+    "destination", "category", "date", "author", "likes",
 ]
 
-post_id = sys.argv[1]
+existing = json.loads(INDEX_FILE.read_text(encoding="utf-8"))
+sources = {}
+for path in sorted(POSTS_DIR.glob("*.json")):
+    if path == INDEX_FILE:
+        continue
+    source = json.loads(path.read_text(encoding="utf-8"))
+    if source.get("id", path.stem) != path.stem:
+        raise ValueError(f"Post ID does not match filename: {path}")
+    sources[path.stem] = source
 
-post = json.loads(
-    (POSTS_DIR / f"{post_id}.json").read_text(encoding="utf-8")
-)
+order = [entry["id"] for entry in existing if entry["id"] in sources]
+order.extend(post_id for post_id in sources if post_id not in order)
+entries = {entry["id"]: entry for entry in existing}
+result = []
+for post_id in order:
+    source = sources[post_id]
+    entry = dict(entries.get(post_id, {"id": post_id}))
+    for field in FIELDS:
+        if field in source:
+            entry[field] = source[field]
+    result.append(entry)
 
-index = json.loads(
-    INDEX_FILE.read_text(encoding="utf-8")
-)
-
-entry = next(item for item in index if item["id"] == post_id)
-
-for field in FIELDS:
-    if field in post:
-        entry[field] = post[field]
-
-INDEX_FILE.write_text(
-    json.dumps(index, ensure_ascii=False, indent=2) + "\n",
-    encoding="utf-8"
-)
-
-subprocess.run(
-    ["git", "config", "user.name", "Travel Frontiers Bot"],
-    check=True
-)
-
-subprocess.run(
-    ["git", "config", "user.email", "bot@travelfrontiers.pt"],
-    check=True
-)
-
-subprocess.run(
-    ["git", "add", "forum/posts/index.json"],
-    check=True
-)
-
-subprocess.run(
-    ["git", "commit", "-m", f"bot: sync index for {post_id}"],
-    check=True
-)
-
-subprocess.run(["git", "push"], check=True)
+if result != existing:
+    INDEX_FILE.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

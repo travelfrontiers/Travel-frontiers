@@ -370,6 +370,9 @@ a {
 }
 
 .post-card {
+    display: block;
+    color: inherit;
+    text-decoration: none;
     background: white;
     border-radius: var(--radius-lg);
     overflow: hidden;
@@ -1861,3 +1864,6 @@ a {
     }
 }
 
+
+.comment-text { white-space: pre-wrap; }
+.comment-empty { color: #9ca3af; }
