@@ -70,8 +70,11 @@ function readMrz(text: string, today: string): DocumentReading[] {
   const candidates: DocumentReading[] = [];
   for (let index = 0; index < rows.length - 1; index++) {
     const first = rows[index], second = rows[index + 1];
+    // The fields we read end at the expiry check digit. OCR noise in the
+    // optional data after that point must not discard validated fields.
+    const passportFields = second.slice(0, 28);
     if (/^P[A-Z<][A-Z]{3}[A-Z<]+$/.test(first) && first.length >= 15 && first.length <= 46 &&
-        /^[A-Z0-9<]{28,46}$/.test(second)) {
+        /^[A-Z0-9<]{10}[A-Z<]{3}[A-Z0-9]{7}[MFX<][A-Z0-9]{7}$/.test(passportFields)) {
       const birth = mrzDate(second.slice(13, 19), second[19], today, true);
       const expiry = mrzDate(second.slice(21, 27), second[27], today, false);
       const number = second.slice(0, 9);

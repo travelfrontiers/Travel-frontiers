@@ -18,12 +18,12 @@ export default function CrmNewClientForm({ saving, onSave, authorizedFetch }: {
   const [scanning, setScanning] = useState(false);
   const revision = useRef(0);
 
-  function applyReading(reading: DocumentReading) {
+  function applyReading(reading: DocumentReading | null) {
     setIdentity(current => ({
-      full_name: reading.full_name || (current.full_name === document?.reading.full_name ? "" : current.full_name),
-      birth_date: reading.birth_date || (current.birth_date === document?.reading.birth_date ? "" : current.birth_date),
+      full_name: reading?.full_name || (current.full_name === document?.reading.full_name ? "" : current.full_name),
+      birth_date: reading?.birth_date || (current.birth_date === document?.reading.birth_date ? "" : current.birth_date),
     }));
-    setDocument({ reading, revision: ++revision.current });
+    setDocument(reading ? { reading, revision: ++revision.current } : null);
   }
 
   const missing = document ? missingIdentityFields(document.reading) : [];
