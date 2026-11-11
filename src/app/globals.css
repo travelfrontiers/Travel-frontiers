@@ -1,3 +1,6 @@
+/* Sanity’s reset must run before Tailwind’s layout and component utilities. */
+@layer theme, base, sui, components, utilities;
+
 @import "tailwindcss";
 
 :root {
