@@ -67,6 +67,14 @@ export default function CrmDocumentScanner({client,authorizedFetch,onSaved}:{
     finally {setSaving(false);}
   }
 
+  const unread = reading ? [
+    !reading.document_type && "tipo",
+    !reading.document_number && "número/ID",
+    !reading.full_name && "nome completo",
+    !reading.birth_date && "data de nascimento",
+    !reading.expires_on && "validade",
+  ].filter(Boolean) : [];
+
   return <div className="my-3 space-y-3">
     <button type="button" aria-expanded={open} className={secondary} disabled={saving}
       onClick={()=>{if(open){controller.current?.abort();setReading(null);}setError("");setSaved(false);setOpen(!open);}}>
@@ -88,13 +96,14 @@ export default function CrmDocumentScanner({client,authorizedFetch,onSaved}:{
       {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
       {reading&&<form onSubmit={save} className="space-y-3 border-t border-slate-200 pt-4">
         <p className="text-sm font-semibold">Confirma os dados de {client.full_name}</p>
+        {unread.length > 0 && <p role="status" className="text-sm text-amber-800">Confirma no documento e preenche os campos por ler ({unread.join(", ")}).</p>}
         <div className="grid gap-3 sm:grid-cols-2">
           <label className={field}>Tipo<select name="document_type" defaultValue={reading.document_type||""} required className={input}>
             <option value="">Seleciona</option><option value="passport">Passaporte</option><option value="identity_card">Cartão de Cidadão</option>
           </select></label>
           <label className={field}>Número/ID<input name="document_number" maxLength={80} defaultValue={reading.document_number} required className={input}/></label>
-          <label className={field+" sm:col-span-2"}>Nome completo<input name="full_name" minLength={2} maxLength={160} defaultValue={reading.full_name||client.full_name} required className={input}/></label>
-          <label className={field}>Data de nascimento<input name="birth_date" type="date" max={lisbonDay(new Date().toISOString())} defaultValue={reading.birth_date||client.birth_date||""} required className={input}/></label>
+          <label className={field+" sm:col-span-2"}>Nome completo<input name="full_name" minLength={2} maxLength={160} defaultValue={reading.full_name} required className={input}/></label>
+          <label className={field}>Data de nascimento<input name="birth_date" type="date" max={lisbonDay(new Date().toISOString())} defaultValue={reading.birth_date} required className={input}/></label>
           <label className={field}>Validade<input name="expires_on" type="date" defaultValue={reading.expires_on} required className={input}/></label>
         </div>
         <label className="flex items-start gap-2 text-sm"><input name="reviewed" type="checkbox" required className="mt-1 accent-orange-800"/>

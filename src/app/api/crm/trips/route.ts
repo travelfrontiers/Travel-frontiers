@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { isAuthorizedStudioUser, supabaseAdminConfig } from "@/lib/crm-api";
-import { travelTypes } from "@/lib/crm-office-api";
+import { rows, travelTypes } from "@/lib/crm-office-api";
 import { extractTripFieldsFromPdfText } from "@/lib/crm-trip-pdf";
 
 export const runtime = "nodejs";
@@ -17,32 +17,27 @@ export async function GET(request: NextRequest) {
   if (!config) return NextResponse.json({ error: "A ligação segura à base de dados não está configurada." }, { status: 503 });
 
   try {
-    const [tripsResponse, tasksResponse, servicesResponse, tripClientsResponse] = await Promise.all([
-      fetch(`${config.url}/rest/v1/crm_trips?select=*&order=departure_date.asc.nullslast`, { headers: config.headers, cache: "no-store" }),
-      fetch(`${config.url}/rest/v1/crm_trip_tasks?select=*&order=sort_order.asc,created_at.asc`, { headers: config.headers, cache: "no-store" }),
-      fetch(`${config.url}/rest/v1/crm_trip_services?select=*&order=sort_order.asc,created_at.asc`, { headers: config.headers, cache: "no-store" }),
-      fetch(`${config.url}/rest/v1/crm_trip_clients?select=trip_id,client_id`, { headers: config.headers, cache: "no-store" }),
+    const [trips, tasks, services, tripClients] = await Promise.all([
+      rows<{ id: string; client_id: string | null }>(config, "crm_trips", new URLSearchParams({ select: "*", order: "departure_date.asc.nullslast,id" })),
+      rows<{ trip_id: string }>(config, "crm_trip_tasks", new URLSearchParams({ select: "*", order: "sort_order.asc,created_at.asc,id" })),
+      rows<{ trip_id: string }>(config, "crm_trip_services", new URLSearchParams({ select: "*", order: "sort_order.asc,created_at.asc,id" })),
+      rows<{ trip_id: string; client_id: string }>(config, "crm_trip_clients", new URLSearchParams({ select: "trip_id,client_id", order: "trip_id,client_id" })),
     ]);
-    if (!tripsResponse.ok || !tasksResponse.ok || !servicesResponse.ok || !tripClientsResponse.ok) {
-      console.error("CRM trips query failed", tripsResponse.status, tasksResponse.status, servicesResponse.status, tripClientsResponse.status);
-      return NextResponse.json({ error: "Não foi possível carregar as viagens." }, { status: 502 });
-    }
-    const [trips, tasks, services, tripClients] = await Promise.all([tripsResponse.json(), tasksResponse.json(), servicesResponse.json(), tripClientsResponse.json()]);
     const tasksByTrip = new Map<string, unknown[]>();
-    for (const task of tasks as { trip_id: string }[]) {
+    for (const task of tasks) {
       const existing = tasksByTrip.get(task.trip_id) || [];
       existing.push(task);
       tasksByTrip.set(task.trip_id, existing);
     }
     const servicesByTrip = new Map<string, unknown[]>();
-    for (const service of services as { trip_id: string }[]) {
+    for (const service of services) {
       const existing = servicesByTrip.get(service.trip_id) || [];
       existing.push(service);
       servicesByTrip.set(service.trip_id, existing);
     }
     const clientsByTrip = new Map<string, string[]>();
-    for (const relation of tripClients as { trip_id: string; client_id: string }[]) clientsByTrip.set(relation.trip_id, [...(clientsByTrip.get(relation.trip_id) || []), relation.client_id]);
-    const tripsWithTasks = (trips as { id: string; client_id: string }[]).map((trip) => ({ ...trip, client_ids: clientsByTrip.get(trip.id) || (trip.client_id ? [trip.client_id] : []), tasks: tasksByTrip.get(trip.id) || [], services: servicesByTrip.get(trip.id) || [] }));
+    for (const relation of tripClients) clientsByTrip.set(relation.trip_id, [...(clientsByTrip.get(relation.trip_id) || []), relation.client_id]);
+    const tripsWithTasks = trips.map((trip) => ({ ...trip, client_ids: clientsByTrip.get(trip.id) || (trip.client_id ? [trip.client_id] : []), tasks: tasksByTrip.get(trip.id) || [], services: servicesByTrip.get(trip.id) || [] }));
     return NextResponse.json({ trips: tripsWithTasks }, { headers: { "Cache-Control": "private, no-store" } });
   } catch {
     return NextResponse.json({ error: "Não foi possível ligar à base de dados." }, { status: 502 });
@@ -132,7 +127,7 @@ export async function POST(request: NextRequest) {
         children_count: childrenCount,
         total_amount: totalAmount,
         currency: currency,
-        trinotes: tripNotes || null,
+        trip_notes: tripNotes || null,
         },
         p_services: services,
       }),

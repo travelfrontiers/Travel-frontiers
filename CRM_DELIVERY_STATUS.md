@@ -41,7 +41,7 @@
 - **Reserva**: condições próprias e histórico de alterações da reserva. Os pagamentos e prazos das prestações estão disponíveis na ficha financeira.
 - **Drive**: escolher ficheiros já existentes via Picker; atualmente os ficheiros entram pela ficha.
 - **Dashboard**: indicadores financeiros/comerciais avançados baseados em propostas/valores reais.
-- **Gestão de dados**: exportação, retenção, eliminação integral de informação pessoal em notas livres e paginação/agregação completa das listas antigas antes de aumentar o volume.
+- **Gestão de dados**: exportação, retenção, eliminação integral de informação pessoal em notas livres.
 - Não considerar o CRM integralmente concluído enquanto estes blocos permanecerem pendentes.
 
 ## Verificação em Production
@@ -57,3 +57,11 @@
 - O leitor corre no navegador, com bibliotecas e modelos servidos pelo próprio site. A gravação envia os campos revistos e o identificador da ficha.
 - As migrações 013 e 014 incluem validações de saldos, permissões, versões para evitar gravações concorrentes e histórico sem copiar os valores dos documentos. A bateria SQL usa dados fictícios e reverte a transação de teste.
 - Next.js 16.4.6 inclui as correções de segurança das versões anteriores. A compilação e os testes do CRM passaram com esta atualização.
+
+## Arquivo, formulário e leitura de documentos — 11 de novembro de 2026
+
+- Os pedidos arquivados saem do Kanban, dos indicadores ativos e dos lembretes de seguimento. Podem ser restaurados na fase anterior. Apagar exige confirmação e a base bloqueia pedidos ligados a propostas ou viagens.
+- Arquivar uma viagem suspende os alertas operacionais. A ficha e os valores permanecem consultáveis em Pagamentos e comissão. Prestações, movimentos ou um cálculo de comissão impedem a eliminação da viagem.
+- O formulário PT/EN/FR requer datas completas ou um período aproximado quando há flexibilidade. O período aparece no pedido do CRM e no aviso por email.
+- A leitura de documentos analisa cada página e só combina dados quando consegue associar as duas faces. Os campos por ler aparecem vazios para revisão.
+- As listas principais e respetivas relações são lidas por páginas com ordenação estável. A dependência transitiva basic-ftp foi atualizada para 6.2.6 na cadeia do get-uri.

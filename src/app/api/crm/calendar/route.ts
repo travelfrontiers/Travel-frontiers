@@ -9,15 +9,15 @@ export async function GET(request:NextRequest){try{
  const config=await crmConfig(request),from=request.nextUrl.searchParams.get("from"),to=request.nextUrl.searchParams.get("to");
  if(!dateOnly(from)||!dateOnly(to)||to<from||(Date.parse(to)-Date.parse(from))/86400000>62)throw new CrmError("Escolhe um intervalo até 63 dias.");
  const [trips,tasks,leads,docs,proposals,payments]=await Promise.all([
- rows<TripRow>(config,"crm_trips",new URLSearchParams({select:"id,destination,client_id,departure_date,return_date,crm_trip_clients(client_id)",status:"not.in.(cancelled)",or:"(and(departure_date.gte."+from+",departure_date.lte."+to+"),and(return_date.gte."+from+",return_date.lte."+to+"))",order:"id"})),
- rows<{id:string;title:string;due_at:string;completed:boolean;crm_trips:TripRow}>(config,"crm_trip_tasks",new URLSearchParams({select:"id,title,due_at,completed,crm_trips!inner(id,destination,client_id,crm_trip_clients(client_id))","crm_trips.status":"neq.cancelled",due_at:"gte."+addDays(from,-1)+"T00:00:00Z",and:"(due_at.lt."+addDays(to,2)+"T00:00:00Z)",order:"id"})),
- rows<{id:string;full_name:string;destination:string|null;client_id:string|null;follow_up_date:string}>(config,"crm_leads",new URLSearchParams({select:"id,full_name,destination,client_id,follow_up_date",status:"not.in.(won,lost)",follow_up_date:"gte."+from,and:"(follow_up_date.lte."+to+")",order:"id"})),
+ rows<TripRow>(config,"crm_trips",new URLSearchParams({select:"id,destination,client_id,departure_date,return_date,crm_trip_clients(client_id)",status:"neq.cancelled",archived_at:"is.null",or:"(and(departure_date.gte."+from+",departure_date.lte."+to+"),and(return_date.gte."+from+",return_date.lte."+to+"))",order:"id"})),
+ rows<{id:string;title:string;due_at:string;completed:boolean;crm_trips:TripRow}>(config,"crm_trip_tasks",new URLSearchParams({select:"id,title,due_at,completed,crm_trips!inner(id,destination,client_id,crm_trip_clients(client_id))","crm_trips.status":"neq.cancelled","crm_trips.archived_at":"is.null",due_at:"gte."+addDays(from,-1)+"T00:00:00Z",and:"(due_at.lt."+addDays(to,2)+"T00:00:00Z)",order:"id"})),
+ rows<{id:string;full_name:string;destination:string|null;client_id:string|null;follow_up_date:string}>(config,"crm_leads",new URLSearchParams({select:"id,full_name,destination,client_id,follow_up_date",status:"not.in.(won,lost)",archived_at:"is.null",follow_up_date:"gte."+from,and:"(follow_up_date.lte."+to+")",order:"id"})),
  rows<{id:string;client_id:string;document_type:string;expires_on:string;crm_clients:{full_name:string}}>(config,"crm_client_documents",new URLSearchParams({select:"id,client_id,document_type,expires_on,crm_clients(full_name)",expires_on:"gte."+from,and:"(expires_on.lte."+to+")",order:"id"})),
  rows<{id:string;title:string;client_id:string|null;client_name:string|null;valid_until:string}>(config,"crm_proposals_overview",new URLSearchParams({select:"id,title,client_id,client_name,valid_until",status:"in.(draft,sent)",valid_until:"gte."+from,and:"(valid_until.lte."+to+")",order:"id"}))
 ,
  rows<PaymentSchedule>(config,"crm_payment_deadlines",new URLSearchParams({
   select:"id,trip_id,label,due_on,amount_remaining,currency,destination,client_id,client_ids",
-  due_on:"gte."+from,and:"(due_on.lte."+to+")",status:"neq.cancelled",amount_remaining:"gt.0",order:"id"
+  due_on:"gte."+from,and:"(due_on.lte."+to+")",status:"neq.cancelled",archived_at:"is.null",amount_remaining:"gt.0",order:"id"
  }))
  ]);
  const entries:CalendarEntry[]=[];

@@ -1,3 +1,4 @@
+import { crmConfig, CrmError, failure, privateJson, setArchived, uuid } from "@/lib/crm-office-api";
 import { NextRequest, NextResponse } from "next/server";
 import { CRM_LEAD_STATUSES, isAuthorizedStudioUser, supabaseAdminConfig } from "@/lib/crm-api";
 
@@ -19,6 +20,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
+  }
+  if (typeof body.archived === "boolean") {
+    try { return await setArchived(config, "crm_leads", id, body.archived); }
+    catch (cause) { return failure(cause); }
   }
   const status = body.status;
   const internalNotes = body.internal_notes;
@@ -47,4 +52,25 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   } catch {
     return NextResponse.json({ error: "Não foi possível ligar à base de dados." }, { status: 502 });
   }
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const config = await crmConfig(request);
+    const { id } = await params;
+    if (!uuid(id)) throw new CrmError("Pedido inválido.");
+    const query = new URLSearchParams({ id: "eq." + id, select: "id" });
+    const response = await fetch(config.url + "/rest/v1/crm_leads?" + query, {
+      method: "DELETE", headers: { ...config.headers, Prefer: "return=representation" }, cache: "no-store",
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => null) as { message?: string; code?: string } | null;
+      if (error?.message?.includes("lead_has_links") || error?.code === "23503") {
+        throw new CrmError("Este pedido tem uma proposta ou viagem associada. Podes arquivá-lo para conservar o histórico.", 409);
+      }
+      throw new CrmError("Não foi possível apagar o pedido.", 502);
+    }
+    if (!(await response.json() as { id: string }[]).length) throw new CrmError("O pedido já não existe.", 404);
+    return privateJson({ ok: true });
+  } catch (cause) { return failure(cause); }
 }

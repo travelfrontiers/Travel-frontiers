@@ -1,3 +1,4 @@
+import { failure, setArchived } from "@/lib/crm-office-api";
 import { NextRequest, NextResponse } from "next/server";
 import { travelTypes } from "@/lib/crm-office-api";
 import { isAuthorizedStudioUser, supabaseAdminConfig } from "@/lib/crm-api";
@@ -15,6 +16,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Pedido inválido." }, { status: 400 }); }
+  if (typeof body.archived === "boolean") {
+    try { return await setArchived(config, "crm_trips", id, body.archived); }
+    catch (cause) { return failure(cause); }
+  }
   const travelType = typeof body.travel_type === "string" ? body.travel_type : "general";
   const { status, destination, departure_date, return_date } = body;
   const clientIds = body.client_ids;
@@ -81,6 +86,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       cache: "no-store",
     });
     if (!response.ok) {
+      const error = await response.json().catch(() => null) as { message?: string } | null;
+      if (error?.message?.includes("trip_has_finance")) {
+        return NextResponse.json({ error: "Esta viagem tem dados financeiros. Usa Arquivar viagem para a retirar da lista e conservar os registos." }, { status: 409 });
+      }
       console.error("CRM trip delete failed", response.status);
       return NextResponse.json({ error: "Não foi possível apagar a viagem." }, { status: 502 });
     }

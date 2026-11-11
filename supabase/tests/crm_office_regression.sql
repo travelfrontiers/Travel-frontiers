@@ -2,7 +2,7 @@
 begin;
 do $$
 declare c1 uuid:=gen_random_uuid(); c2 uuid:=gen_random_uuid(); lead uuid:=gen_random_uuid();
- proposal jsonb; pid uuid; tid uuid; tid2 uuid; template uuid; item uuid; task uuid; completed_task uuid;
+ unlinked uuid:=gen_random_uuid(); proposal jsonb; pid uuid; tid uuid; tid2 uuid; template uuid; item uuid; task uuid; completed_task uuid;
  doc uuid:=gen_random_uuid(); drive uuid:=gen_random_uuid(); before_due timestamptz; n integer; failed boolean;
  snapshot jsonb; name text:='Synthetic Office Test '||gen_random_uuid()::text;
 begin
@@ -15,6 +15,17 @@ begin
  proposal:=public.crm_save_proposal(null,c1,lead,null,0,snapshot);pid:=(proposal->>'id')::uuid;
  proposal:=public.crm_save_proposal(pid,c1,lead,null,1,snapshot||jsonb_build_object('title','Synthetic quote v2','total_amount',1500));
  assert (proposal->>'current_version')::integer=2,'version increment';
+ failed:=false;
+ begin
+   delete from public.crm_leads where id=lead;
+ exception when others then failed:=sqlerrm='lead_has_links';end;
+ assert failed,'proposal link prevents lead deletion';
+ update public.crm_leads set archived_at=now() where id=lead;
+ assert (select archived_at is not null and status='new' from public.crm_leads where id=lead),'archive preserves phase';
+ update public.crm_leads set archived_at=null where id=lead;
+ insert into public.crm_leads(id,full_name,email) values(unlinked,'Synthetic unlinked','archive-'||unlinked||'@example.invalid');
+ delete from public.crm_leads where id=unlinked;
+ assert not exists(select 1 from public.crm_leads where id=unlinked),'unlinked lead can be deleted';
  assert (select total_amount=1234.56 from public.crm_proposal_versions where proposal_id=pid and version=1),'v1 immutable';
  failed:=false;begin perform public.crm_save_proposal(pid,c1,lead,null,1,snapshot);exception when others then failed:=sqlerrm='stale_version';end;
  assert failed,'reject stale version';assert (select count(*)=2 from public.crm_proposal_versions where proposal_id=pid),'no partial version';
