@@ -16,5 +16,17 @@ export function calculateCommission(input:CommissionInputs){
  const ceded=roundEuro(Math.min(requested,maxCession)),netCommission=roundEuro(gross-ceded),cessionEach=others>0?ceded/others:0;
  const otherFinalPrice=others>0?Math.max(0,roundEuro(sharedPrice-cessionEach)):null;
  const totalCollected=input.selfTravels?roundEuro((ownPrice??0)+sharedPrice*others-ceded):roundEuro(sharedPrice*others-ceded);
- return{people,others,gross,ownCostPlusOne,ownPrice,potentialSaving,savingEach,sharing,sharedPrice,ceded,netCommission,cessionEach,otherFinalPrice,totalCollected,maxCession,cessionActive};
+ const totalCents = Math.round(totalCollected * 100);
+ const ownCents = ownPrice === null ? 0 : Math.min(totalCents, Math.round(ownPrice * 100));
+ const otherPriceGroups: { count: number; price: number }[] = [];
+ if (others) {
+  const passengerCents = totalCents - ownCents;
+  const baseCents = Math.floor(passengerCents / others);
+  const extraCents = passengerCents % others;
+  if (extraCents) otherPriceGroups.push({ count: extraCents, price: (baseCents + 1) / 100 });
+  otherPriceGroups.push({ count: others - extraCents, price: baseCents / 100 });
+ }
+ return { people, others, gross, ownCostPlusOne, ownPrice: ownPrice === null ? null : ownCents / 100,
+  potentialSaving, savingEach, sharing, sharedPrice, ceded, netCommission, cessionEach,
+  otherFinalPrice, otherPriceGroups, totalCollected, maxCession, cessionActive };
 }

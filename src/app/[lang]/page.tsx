@@ -1,3 +1,4 @@
+import { promotionDay, visiblePromotion } from "@/lib/promotions";
 import { client, urlFor } from "@/sanity/client";
 import { Locale, getDictionary } from "@/i18n/dictionaries";
 import Image from "next/image";
@@ -7,14 +8,14 @@ import { Flame, ArrowRight } from "lucide-react";
 async function getPromotions(lang: string) {
   try {
     return await client.fetch(
-      `*[_type == "promotion" && language == $lang && (!defined(status) || status == "active")] | order(_createdAt desc) {
+      `*[${visiblePromotion} && language == $lang && defined(slug.current)] | order(_createdAt desc) {
         title,
         "slug": slug.current,
         heroImage,
         price,
         description
       }`,
-      { lang }
+      { lang, today: promotionDay() }
     );
   } catch (error) {
     console.error("Sanity fetch failed:", error);

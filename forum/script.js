@@ -341,6 +341,33 @@ const filterBtns = document.querySelectorAll('.filter-btn');
 // DETECT CURRENT PAGE
 // ============================================
 
+function forumElement(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = String(text);
+    return node;
+}
+
+function safeForumUrl(value) {
+    if (typeof value !== 'string' || !value.trim()) return '';
+    try {
+        const url = new URL(value, window.location.href);
+        return (url.protocol === 'https:' || url.protocol === 'http:') && !url.username && !url.password ? url.href : '';
+    } catch { return ''; }
+}
+
+function forumPostLink(id) {
+    return './post.html?' + new URLSearchParams({ id, lang: currentForumLang }).toString();
+}
+
+function forumImage(source, title, className) {
+    const image = forumElement('img', className);
+    image.src = safeForumUrl(source) || './img/default.png';
+    image.alt = title || '';
+    image.addEventListener('error', () => { image.hidden = true; }, { once: true });
+    return image;
+}
+
 const currentPage = window.location.pathname.endsWith('/post.html') || window.location.pathname.includes('post.html') ? 'post' : 'forum';
 
 // ============================================
@@ -365,33 +392,26 @@ if (currentPage === 'forum' && postsContainer) {
         }
 
         noResults.classList.add('hidden');
-        postsContainer.innerHTML = posts.map(post => {
+        postsContainer.replaceChildren(...posts.map(post => {
             const title = getLocalizedField(post, 'title');
-            const excerpt = getLocalizedField(post, 'excerpt');
-            const readTime = getLocalizedField(post, 'readTime');
-            const catLabel = getLocalizedCategory(post.category);
-            const dateLabel = formatRelativeDate(post.date);
-            const firstName = (post.author || '').split(' ')[0];
-
-            return `
-            <div class="post-card" onclick="openPost('${post.id}')">
-                <div class="post-card-image-wrapper">
-                    <img src="${post.thumbnail || './img/default.png'}" alt="${title}" class="post-card-image" onerror="this.style.display='none'">
-                    <span class="post-card-category">${catLabel}</span>
-                </div>
-                <div class="post-card-content">
-                    <div class="post-card-destination">📍 ${post.destination}</div>
-                    <h3 class="post-card-title">${title}</h3>
-                    <p class="post-card-excerpt">${excerpt}</p>
-                    <div class="post-card-meta">
-                        <span class="post-card-author">✍ ${firstName}</span>
-                        <span class="post-card-date">${dateLabel}</span>
-                        <span class="post-card-likes">♥ ${post.likes || 0}</span>
-                    </div>
-                </div>
-            </div>
-        `;
-        }).join('');
+            const card = forumElement('a', 'post-card');
+            card.href = forumPostLink(post.id);
+            const image = forumElement('div', 'post-card-image-wrapper');
+            image.append(forumImage(post.thumbnail, title, 'post-card-image'),
+                forumElement('span', 'post-card-category', getLocalizedCategory(post.category)));
+            const content = forumElement('div', 'post-card-content');
+            const meta = forumElement('div', 'post-card-meta');
+            meta.append(
+                forumElement('span', 'post-card-author', '✍ ' + (post.author || '').split(' ')[0]),
+                forumElement('span', 'post-card-date', formatRelativeDate(post.date)),
+                forumElement('span', 'post-card-likes', '♥ ' + (post.likes || 0))
+            );
+            content.append(forumElement('div', 'post-card-destination', '📍 ' + post.destination),
+                forumElement('h3', 'post-card-title', title),
+                forumElement('p', 'post-card-excerpt', getLocalizedField(post, 'excerpt')), meta);
+            card.append(image, content);
+            return card;
+        }));
     };
 
     // Filter by category
@@ -468,7 +488,7 @@ if (currentPage === 'post' && postContent) {
         const post = await forum.loadPost(postId);
         if (!post) {
             const notFoundText = getForumTranslation('post.notFound') || 'Post não encontrado.';
-            postLoading.innerHTML = `<p>${notFoundText}</p>`;
+            postLoading.replaceChildren(forumElement('p', '', notFoundText));
             return;
         }
 
@@ -645,7 +665,7 @@ if (currentPage === 'post' && postContent) {
         document.getElementById('postReadTime').textContent = readTime || '5 min read';
         // FIX: CSS ::before already adds 📍 — only set the text
         document.getElementById('postDestination').textContent = post.destination;
-        document.getElementById('postImage').src = post.thumbnail || './img/default.png';
+        document.getElementById('postImage').src = safeForumUrl(post.thumbnail) || './img/default.png';
         document.getElementById('postImage').alt = title;
 
         document.getElementById('postBody').innerHTML =
@@ -654,7 +674,7 @@ if (currentPage === 'post' && postContent) {
         // Tags
         const postTagsEl = document.getElementById('postTags');
         if (postTagsEl && post.tags && post.tags.length > 0) {
-            postTagsEl.innerHTML = post.tags.map(tag => `<span class="tag">#${tag}</span>`).join('');
+            postTagsEl.replaceChildren(...post.tags.map(tag => forumElement('span', 'tag', '#' + tag)));
             postTagsEl.classList.remove('hidden');
         } else if (postTagsEl) {
             postTagsEl.classList.add('hidden');
@@ -665,9 +685,9 @@ if (currentPage === 'post' && postContent) {
         if (breadcrumb) breadcrumb.href = `./?lang=${currentForumLang}`;
 
         // Affiliate link
-        if (post.affiliateLink) {
+        if (post.affiliateLink && safeForumUrl(post.affiliateLink.url)) {
             const affiliateText = getLocalizedField(post.affiliateLink, 'text');
-            document.getElementById('affiliateLink').href = post.affiliateLink.url;
+            document.getElementById('affiliateLink').href = safeForumUrl(post.affiliateLink.url);
             document.getElementById('affiliateText').textContent = affiliateText;
             document.getElementById('affiliateSection').classList.remove('hidden');
         }
@@ -675,9 +695,11 @@ if (currentPage === 'post' && postContent) {
         // CTA
         const ctaText = getLocalizedField(post.cta, 'text');
         const ctaButton = getLocalizedField(post.cta, 'button');
-        const ctaLink = getLocalizedField(post.cta, 'link') || post.cta.link;
+        const ctaLink = safeForumUrl(getLocalizedField(post.cta, 'link') || post.cta?.link);
         document.getElementById('ctaTitle').textContent = ctaText;
-        document.getElementById('ctaButton').href = ctaLink;
+        const cta = document.getElementById('ctaButton');
+        if (ctaLink) cta.href = ctaLink;
+        else cta.removeAttribute('href');
         document.getElementById('ctaButton').textContent = ctaButton;
         if (ctaLink && ctaLink.startsWith('https://wa.me/')) {
             document.getElementById('ctaButton').target = '_blank';
@@ -751,18 +773,15 @@ if (currentPage === 'post' && postContent) {
         }
 
         relatedSection.classList.remove('hidden');
-        relatedContainer.innerHTML = related.map(rp => {
-            const rpTitle = getLocalizedField(rp, 'title');
-            return `
-                <a class="related-item" href="./post.html?id=${rp.id}&lang=${currentForumLang}">
-                    <img class="related-item-img" src="${rp.thumbnail || './img/default.png'}" alt="${rpTitle}" onerror="this.style.display='none'">
-                    <div class="related-item-body">
-                        <span class="related-item-dest">${rp.destination}</span>
-                        <h4>${rpTitle}</h4>
-                    </div>
-                </a>
-            `;
-        }).join('');
+        relatedContainer.replaceChildren(...related.map(post => {
+            const title = getLocalizedField(post, 'title');
+            const link = forumElement('a', 'related-item');
+            link.href = forumPostLink(post.id);
+            const body = forumElement('div', 'related-item-body');
+            body.append(forumElement('span', 'related-item-dest', post.destination), forumElement('h4', '', title));
+            link.append(forumImage(post.thumbnail, title, 'related-item-img'), body);
+            return link;
+        }));
     };
 
     window.displayComments = function(postId) {
@@ -772,19 +791,18 @@ if (currentPage === 'post' && postContent) {
         const locale = localeMap[currentForumLang] || 'pt-PT';
 
         if (approvedComments.length === 0) {
-            commentsList.innerHTML = `<p style="color: #9ca3af;">${noCommentsText}</p>`;
+            commentsList.replaceChildren(forumElement('p', 'comment-empty', noCommentsText));
             return;
         }
 
-        commentsList.innerHTML = approvedComments.map(comment => `
-            <div class="comment">
-                <div class="comment-header">
-                    <span class="comment-author">${comment.name}</span>
-                    <span class="comment-date">${new Date(comment.date).toLocaleDateString(locale)}</span>
-                </div>
-                <div class="comment-text">${comment.text}</div>
-            </div>
-        `).join('');
+        commentsList.replaceChildren(...approvedComments.map(comment => {
+            const item = forumElement('div', 'comment');
+            const header = forumElement('div', 'comment-header');
+            header.append(forumElement('span', 'comment-author', comment.name),
+                forumElement('span', 'comment-date', new Date(comment.date).toLocaleDateString(locale)));
+            item.append(header, forumElement('div', 'comment-text', comment.text));
+            return item;
+        }));
     };
 
     function setupCommentForm(postId) {

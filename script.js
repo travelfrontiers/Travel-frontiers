@@ -110,7 +110,7 @@ const translations = {
                 title: 'Pedir Orçamento Personalizado',
                 subtitle: 'Clique no botão abaixo para ser redirecionado para o nosso formulário de pedido de orçamento especializado.',
                 ready: 'Pronto para a aventura?',
-                description: 'Preencha o nosso formulário detalhado e receberá uma proposta personalizada em 24-48h.',
+                description: 'Preencha o formulário e respondemos por email em até 24 horas.',
                 redirect: 'Será redirecionado para um formulário seguro'
             },
             whyChoose: {
@@ -250,7 +250,7 @@ const translations = {
                 title: 'Request Personalized Quote',
                 subtitle: 'Click the button below to be redirected to our specialized quote request form.',
                 ready: 'Ready for the adventure?',
-                description: 'Fill out our detailed form and you will receive a personalized proposal within 24-48h.',
+                description: 'Fill in the form and we’ll reply by email within 24 hours.',
                 redirect: 'You will be redirected to a secure form'
             },
             whyChoose: {
@@ -390,7 +390,7 @@ const translations = {
                 title: 'Demander un Devis Personnalisé',
                 subtitle: 'Cliquez sur le bouton ci-dessous pour être redirigé vers notre formulaire spécialisé de demande de devis.',
                 ready: 'Prêt pour l\'aventure?',
-                description: 'Remplissez notre formulaire détaillé et vous recevrez une proposition personnalisée dans les 24-48h.',
+                description: 'Remplissez le formulaire et nous vous répondrons par e-mail sous 24 heures.',
                 redirect: 'Vous serez redirigé vers un formulaire sécurisé'
             },
             whyChoose: {

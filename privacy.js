@@ -1,3 +1,12 @@
+window.dataLayer = window.dataLayer || [];
+window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+window.gtag('consent', 'default', {
+    analytics_storage: 'denied',
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied'
+});
+
 // Gestor de Cookies RGPD - Travel Frontiers
 class CookieManager {
     constructor() {
@@ -133,7 +142,7 @@ class CookieManager {
     }
 
     saveConsent(consent) {
-        const consentString = JSON.stringify(consent);
+        const consentString = encodeURIComponent(JSON.stringify(consent));
         const expiry = new Date();
         expiry.setTime(expiry.getTime() + (this.cookieExpiry * 24 * 60 * 60 * 1000));
 
@@ -164,29 +173,22 @@ class CookieManager {
         const consent = this.getConsent();
         if (!consent) return;
 
-        // Carregar Google Analytics se consentido
-        if (consent.analytics && typeof gtag !== 'undefined') {
-            gtag('consent', 'update', {
-                'analytics_storage': 'granted'
-            });
-        }
+        window.gtag('consent', 'update', {
+            analytics_storage: consent.analytics ? 'granted' : 'denied',
+            ad_storage: consent.marketing ? 'granted' : 'denied',
+            ad_user_data: consent.marketing ? 'granted' : 'denied',
+            ad_personalization: consent.marketing ? 'granted' : 'denied'
+        });
 
-        // Carregar cookies de marketing se consentido
-        if (consent.marketing && typeof gtag !== 'undefined') {
-            gtag('consent', 'update', {
-                'ad_storage': 'granted',
-                'ad_user_data': 'granted',
-                'ad_personalization': 'granted'
-            });
+        if ((consent.analytics || consent.marketing) && !window.gtmLoaded) {
+            window.gtmLoaded = true;
+            window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+            const script = document.createElement('script');
+            script.async = true;
+            script.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-57MRLGPN';
+            document.head.append(script);
         }
-
-        // Trigger GTM events baseado no consentimento
-        if (typeof dataLayer !== 'undefined') {
-            dataLayer.push({
-                'event': 'cookie_consent_loaded',
-                'cookie_consent': consent
-            });
-        }
+        this.triggerGTMEvent('cookie_consent_loaded', consent);
     }
 
     triggerGTMEvent(eventName, consentData = null) {
@@ -260,13 +262,3 @@ class CookieManager {
 document.addEventListener('DOMContentLoaded', function() {
     window.cookieManager = new CookieManager();
 });
-
-// Configuração inicial do Google Analytics com consentimento negado por padrão
-if (typeof gtag !== 'undefined') {
-    gtag('consent', 'default', {
-        'analytics_storage': 'denied',
-        'ad_storage': 'denied',
-        'ad_user_data': 'denied',
-        'ad_personalization': 'denied'
-    });
-}

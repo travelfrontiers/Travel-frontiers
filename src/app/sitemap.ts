@@ -1,3 +1,4 @@
+import { isSiteLocale, promotionDay, visiblePromotion } from "@/lib/promotions";
 import { MetadataRoute } from "next";
 import { client } from "@/sanity/client";
 
@@ -33,17 +34,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             language: string;
             _updatedAt?: string;
         }>>(
-            `*[_type == "promotion" && (!defined(status) || status == "active")] {
+            `*[${visiblePromotion} && defined(slug.current)] {
                 "slug": slug.current,
                 language,
                 _updatedAt
-            }`
+            }`,
+            { today: promotionDay() },
         );
 
         for (const promo of promotions) {
-            if (promo.slug && promo.language) {
+            if (promo.slug && isSiteLocale(promo.language)) {
                 routes.push({
-                    url: `${siteUrl}/${promo.language}/promo/${promo.slug}`,
+                    url: `${siteUrl}/${promo.language}/promo/${encodeURIComponent(promo.slug)}`,
                     lastModified: promo._updatedAt ? new Date(promo._updatedAt) : new Date(),
                     changeFrequency: "weekly",
                     priority: 0.8,

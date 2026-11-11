@@ -5,6 +5,7 @@ type SeoMetadataProps = {
     image?: string;
     url?: string;
     type?: "website" | "article";
+    alternatePaths?: Record<string, string>;
 };
 
 export function generateMetadata({
@@ -14,6 +15,7 @@ export function generateMetadata({
     image,
     url,
     type = "website",
+    alternatePaths,
 }: SeoMetadataProps) {
     const defaultTitles = {
         pt: "Promoções Exclusivas | Travel Frontiers",
@@ -22,9 +24,9 @@ export function generateMetadata({
     };
 
     const defaultDescriptions = {
-        pt: "Descubra as nossas promoções exclusivas de viagens. Planeamento 100% personalizado com proposta em 24-48h. 15+ anos de experiência, 40+ países explorados.",
-        en: "Discover our exclusive travel promotions. 100% personalized planning with proposal in 24-48h. 15+ years of experience, 40+ countries explored.",
-        fr: "Découvrez nos promotions de voyage exclusives. Planification 100% personnalisée avec proposition en 24-48h. 15+ ans d'expérience, 40+ pays explorés.",
+        pt: "Descubra as nossas promoções exclusivas de viagens. Planeamento 100% personalizado com resposta por email em 24 horas. 15+ anos de experiência, 40+ países explorados.",
+        en: "Discover our exclusive travel promotions. 100% personalized planning with an email reply within 24 hours. 15+ years of experience, 40+ countries explored.",
+        fr: "Découvrez nos promotions de voyage exclusives. Planification 100% personnalisée avec une réponse par e-mail sous 24 heures. 15+ ans d'expérience, 40+ pays explorés.",
     };
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://promo.travelfrontiers.pt";
@@ -61,7 +63,7 @@ export function generateMetadata({
         },
         alternates: {
             canonical: fullUrl,
-            languages: {
+            languages: alternatePaths ? Object.fromEntries(Object.entries(alternatePaths).map(([locale, path]) => [locale, new URL(path, siteUrl).href])) : {
                 pt: `${siteUrl}/pt`,
                 en: `${siteUrl}/en`,
                 fr: `${siteUrl}/fr`,

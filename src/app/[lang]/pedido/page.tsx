@@ -1,3 +1,7 @@
+import type { Metadata } from "next";
+import { generateMetadata as generateSeoMetadata } from "@/lib/seo";
+import { isSiteLocale } from "@/lib/promotions";
+import { notFound } from "next/navigation";
 import Image from "next/image";
 import TripRequestForm from "@/components/trip-request-form";
 
@@ -15,6 +19,17 @@ const pageCopy = {
     intro: "Partagez quelques informations pour que je puisse préparer une proposition sur mesure. Les champs marqués d’un * sont obligatoires.",
   },
 };
+
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params;
+  if (!isSiteLocale(lang)) notFound();
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://promo.travelfrontiers.pt";
+  return generateSeoMetadata({
+    lang, title: pageCopy[lang].title,
+    url: new URL(`/${lang}/pedido`, site).href,
+    alternatePaths: { pt: "/pt/pedido", en: "/en/pedido", fr: "/fr/pedido" },
+  });
+}
 
 export default async function TripRequestPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;

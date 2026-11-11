@@ -72,7 +72,7 @@ export function TripCommissionCalculator({initialValues,onSave,theme}:{initialVa
           <div className="tf-calc-section-title"><span>02</span><h2>Cedência da comissão</h2></div>
           {selfTravels && <label className="tf-calc-toggle tf-calc-toggle-spaced"><input type="checkbox" checked={cedeCommission} disabled={result.others === 0} onChange={(event) => setCedeCommission(event.target.checked)} /><span><strong>Queres ceder parte da comissão aos outros passageiros?</strong><small>Esta decisão não altera a partilha da poupança de auto-consumo.</small></span></label>}
           {cessionVisible && <div className="tf-calc-cession">
-            <div className="tf-calc-field"><label htmlFor="commission-cession">Montante total a ceder <span>euros</span></label><div className="tf-calc-amount"><input id="commission-cession" type="number" min="0" max={result.maxCession} step="0.01" value={requestedCession} onChange={(event) => setRequestedCession(event.target.value)} /><span>€</span></div><small>Este valor será dividido igualmente pelos {selfTravels ? "restantes " : ""}viajantes.</small>{amount(requestedCession) > result.maxCession && <p className="tf-calc-warning" role="status">A cedência foi limitada ao máximo disponível: {formatEuro(result.maxCession)}.</p>}</div>
+            <div className="tf-calc-field"><label htmlFor="commission-cession">Montante total a ceder <span>euros</span></label><div className="tf-calc-amount"><input id="commission-cession" type="number" min="0" max={result.maxCession} step="0.01" value={requestedCession} onChange={(event) => setRequestedCession(event.target.value)} /><span>€</span></div><small>Este valor será repartido ao cêntimo pelos {selfTravels ? "restantes " : ""}viajantes.</small>{amount(requestedCession) > result.maxCession && <p className="tf-calc-warning" role="status">A cedência foi limitada ao máximo disponível: {formatEuro(result.maxCession)}.</p>}</div>
           </div>}
           {!cessionVisible && selfTravels && result.others > 0 && <p className="tf-calc-muted">A comissão não será cedida. Podes ativar essa decisão sem alterar a partilha do benefício de auto-consumo.</p>}
         </section>
@@ -85,7 +85,9 @@ export function TripCommissionCalculator({initialValues,onSave,theme}:{initialVa
             <div><span>Comissão cedida</span><strong>{formatEuro(result.ceded)}</strong></div>
             {selfTravels && <div><span>{sharingVisible ? "O teu preço com partilha" : "Preço da tua viagem"}</span><strong>{formatEuro(result.ownPrice ?? 0)}</strong></div>}
             {sharingVisible && <><div><span>Poupança de auto-consumo por passageiro</span><strong>{formatEuro(result.savingEach)}</strong></div><div><span>Preço por passageiro após partilha</span><strong>{formatEuro(result.sharedPrice)}</strong></div></>}
-            <div><span>Preço de cada outro passageiro</span><strong>{result.otherFinalPrice === null ? "—" : formatEuro(result.otherFinalPrice)}</strong></div>
+            {result.otherPriceGroups.length === 1
+              ? <div><span>Preço por {selfTravels ? "outro passageiro" : "passageiro"}</span><strong>{formatEuro(result.otherPriceGroups[0].price)}</strong></div>
+              : result.otherPriceGroups.map(group => <div key={group.price}><span>{group.count} {group.count === 1 ? "passageiro" : "passageiros"} · cada</span><strong>{formatEuro(group.price)}</strong></div>)}
             <div className="tf-calc-total"><span>Total cobrado na viagem</span><strong>{formatEuro(result.totalCollected)}</strong></div>
           </div>
           <div className="tf-calc-cession-result"><span>Cedência da comissão por passageiro</span><strong>{result.others ? formatEuro(result.cessionEach) : "Sem passageiros restantes"}</strong></div>
