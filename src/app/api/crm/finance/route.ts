@@ -49,6 +49,7 @@ export async function GET(request:NextRequest) {
     const params=new URLSearchParams({select:"*",order:"next_due_on.asc.nullslast,trip_id"});
     if(request.nextUrl.searchParams.get("alerts")==="true") {
       params.set("status","neq.cancelled");
+      params.set("archived_at","is.null");
       params.set("or","(overdue_amount.gt.0,due_soon_amount.gt.0)");
     }
     return privateJson({trips:await rows<FinanceSummary>(config,"crm_trip_finance_overview",params)});

@@ -1,5 +1,5 @@
 import {lisbonDay} from "./crm-calendar";
-import {readIdentityDocument} from "./crm-document-ocr";
+import {combineIdentityPages, readIdentityPage, type DocumentReading} from "./crm-document-ocr";
 import type {Worker as OcrWorker} from "tesseract.js";
 
 const assets="/ocr-assets";
@@ -84,14 +84,17 @@ export async function scanClientDocument(files:File[],signal:AbortSignal,onProgr
     });
     void initialization.then(instance=>{if(signal.aborted)void instance.terminate();},()=>{});
     worker=await abortable(initialization,signal);
-    const scans:string[]=[];
+    const readings: DocumentReading[] = [];
     const today=lisbonDay(new Date().toISOString());
     for(let index=0;index<pages.length;index++) {
       onProgress("A ler página "+(index+1)+" de "+pages.length+"…");
       await worker.setParameters({tessedit_pageseg_mode:PSM.SPARSE_TEXT,tessedit_char_whitelist:""});
-      scans.push((await abortable(worker.recognize(pages[index]),signal)).data.text);
-      const reading=readIdentityDocument(scans,today);
-      if(reading.document_type&&reading.full_name&&reading.birth_date&&reading.expires_on&&reading.document_number) continue;
+      const scans = [(await abortable(worker.recognize(pages[index]),signal)).data.text];
+      const reading = readIdentityPage(scans, today);
+      if (reading.document_type && reading.full_name && reading.birth_date && reading.expires_on && reading.document_number) {
+        readings.push(reading);
+        continue;
+      }
       const page=pages[index],top=Math.floor(page.height*0.55);
       const {result,context}=canvas(page.width,page.height-top);
       context.drawImage(page,0,top,page.width,page.height-top,0,0,result.width,result.height);
@@ -99,8 +102,9 @@ export async function scanClientDocument(files:File[],signal:AbortSignal,onProgr
         await worker.setParameters({tessedit_pageseg_mode:PSM.SINGLE_BLOCK,tessedit_char_whitelist:"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<"});
         scans.push((await abortable(worker.recognize(result),signal)).data.text);
       } finally {result.width=0;result.height=0;}
+      readings.push(readIdentityPage(scans, today));
     }
-    return readIdentityDocument(scans,today);
+    return combineIdentityPages(readings);
   } finally {
     if(worker) await worker.terminate().catch(()=>{});
     for(const page of pages) {page.width=0;page.height=0;}

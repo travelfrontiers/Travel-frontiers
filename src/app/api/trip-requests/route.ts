@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
   const departure_date = clean(body.departure_date, 10);
   const return_date = clean(body.return_date, 10);
   const date_flexible = body.date_flexible === true;
+  const travel_period = date_flexible && typeof body.travel_period === "string" ? body.travel_period.trim() || null : null;
   const consent_privacy = body.consent_privacy === true;
 
   if (!full_name || full_name.length < 2 || !email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
@@ -82,7 +83,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "invalid_request", field: "privacy" }, { status: 400 });
   }
   if ((departure_date && !validDate(departure_date)) || (return_date && !validDate(return_date)) ||
-      !date_flexible && (!departure_date || !return_date) ||
+      travel_period !== null && (travel_period.length < 3 || travel_period.length > 120) ||
+      (!departure_date || !return_date) && !travel_period ||
       departure_date && return_date && return_date <= departure_date) {
     console.warn("Trip request rejected: invalid dates");
     return NextResponse.json({ error: "invalid_request", field: "dates" }, { status: 400 });
@@ -92,7 +94,7 @@ export async function POST(request: NextRequest) {
   const hashSecret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!config || !hashSecret) return NextResponse.json({ error: "service_unavailable" }, { status: 503 });
   const lead = { full_name, email, language, phone, destination, departure_date, return_date,
-    date_flexible, adults, children_ages, travel_style, budget, notes, consent_privacy };
+    date_flexible, travel_period, adults, children_ages, travel_style, budget, notes, consent_privacy };
   const hash = (value: string) => createHmac("sha256", hashSecret).update(value).digest("hex");
   const address = (request.headers.get("x-vercel-forwarded-for") || request.headers.get("x-forwarded-for") || "unknown").split(",")[0].trim();
   try {
@@ -133,6 +135,7 @@ export async function POST(request: NextRequest) {
         phone ? `Telefone: ${phone}` : null,
         destination ? `Destino: ${destination}` : null,
         `Flexibilidade nas datas: ${date_flexible ? "Sim" : "Não"}`,
+        travel_period ? `Período aproximado: ${travel_period}` : null,
         departure_date ? `Partida: ${departure_date}` : null,
         return_date ? `Regresso: ${return_date}` : null,
         `Adultos: ${adults}`,

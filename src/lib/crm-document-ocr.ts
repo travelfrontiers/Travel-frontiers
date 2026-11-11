@@ -127,7 +127,7 @@ function labelledName(lines: string[], label: RegExp) {
   return "";
 }
 
-export function readIdentityDocument(scans: string[], today: string): DocumentReading {
+export function readIdentityPage(scans: string[], today: string): DocumentReading {
   const verified = scans.flatMap(scan => readMrz(scan, today));
   const fingerprints = new Set(verified.filter(reading => reading.document_number).map(reading => reading.document_type + ":" + reading.document_number));
   if (fingerprints.size > 1) throw new Error("Foram lidos documentos diferentes. Escolhe apenas as páginas ou faces do mesmo documento.");
@@ -140,6 +140,9 @@ export function readIdentityDocument(scans: string[], today: string): DocumentRe
     result.birth_date ||= candidate.birth_date;
     result.expires_on ||= candidate.expires_on;
     result.document_number ||= candidate.document_number;
+  }
+  if (/\bCARTAO\s+DE\s+CIDADAO\b/.test(normalized) && /\b(PASSAPORTE|PASSPORT|PASSEPORT)\b/.test(normalized)) {
+    throw new Error("Foram encontrados tipos de documento diferentes. Lê um documento de cada vez.");
   }
   if (!result.document_type) {
     if (/\bCARTAO\s+DE\s+CIDADAO\b/.test(normalized)) result.document_type = "identity_card";
@@ -157,4 +160,27 @@ export function readIdentityDocument(scans: string[], today: string): DocumentRe
   if (visibleName && (!result.full_name || nameKey(visibleName) === nameKey(result.full_name))) result.full_name = visibleName;
   if (result.birth_date && result.expires_on && result.expires_on < result.birth_date) result.expires_on = "";
   return result;
+}
+
+const identityFields = ["document_type", "document_number", "full_name", "birth_date", "expires_on"] as const;
+
+export function combineIdentityPages(pages: DocumentReading[]): DocumentReading {
+  const [first, second] = [...pages].sort((a, b) =>
+    identityFields.filter(field => b[field]).length - identityFields.filter(field => a[field]).length);
+  if (!first) return { ...emptyReading };
+  if (!second?.document_type) return first;
+  const namesMatch = Boolean(first.full_name && second.full_name && nameKey(first.full_name) === nameKey(second.full_name));
+  const numbersMatch = Boolean(first.document_number && first.document_number === second.document_number);
+  const conflicts = identityFields.some(field =>
+    first[field] && second[field] && (field === "full_name" ? !namesMatch : first[field] !== second[field]));
+  if (conflicts) throw new Error("As páginas têm dados diferentes. Escolhe apenas as faces do mesmo documento.");
+  // Without evidence that the pages match, keep the most complete reading on its own.
+  if (!numbersMatch) return first;
+  return {
+    document_type: first.document_type || second.document_type,
+    document_number: first.document_number || second.document_number,
+    full_name: first.full_name || second.full_name,
+    birth_date: first.birth_date || second.birth_date,
+    expires_on: first.expires_on || second.expires_on,
+  };
 }

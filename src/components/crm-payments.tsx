@@ -67,8 +67,8 @@ function FinanceOverview({authorizedFetch,onOpen}:{authorizedFetch:AuthorizedFet
   const visible=trips.filter(trip=>{
     const text=tripLabel(trip).toLocaleLowerCase("pt-PT");
     if(!text.includes(query.trim().toLocaleLowerCase("pt-PT"))) return false;
-    if(filter==="overdue") return trip.status!=="cancelled"&&trip.overdue_amount>0;
-    if(filter==="upcoming") return trip.status!=="cancelled"&&trip.due_soon_amount>0;
+    if(filter==="overdue") return !trip.archived_at&&trip.status!=="cancelled"&&trip.overdue_amount>0;
+    if(filter==="upcoming") return !trip.archived_at&&trip.status!=="cancelled"&&trip.due_soon_amount>0;
     if(filter==="pending") return trip.status!=="cancelled"&&Number(trip.balance)>0;
     return true;
   });
@@ -82,7 +82,7 @@ function FinanceOverview({authorizedFetch,onOpen}:{authorizedFetch:AuthorizedFet
       return <div key={currency} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MoneyCard label="Recebido de clientes" value={total(trip=>trip.customer_net)}/>
         <MoneyCard label="Saldo de clientes em falta" value={total(trip=>Math.max(0,trip.balance??0))}/>
-        <MoneyCard label="Prestações em atraso" value={total(trip=>trip.overdue_amount)} warning={group.some(trip=>trip.overdue_amount>0)}/>
+        <MoneyCard label="Prestações em atraso" value={total(trip=>trip.archived_at?0:trip.overdue_amount)} warning={group.some(trip=>!trip.archived_at&&trip.overdue_amount>0)}/>
         <MoneyCard label="Comissão recebida" value={total(trip=>trip.commission_net)}/>
       </div>;
     })}
@@ -97,9 +97,9 @@ function FinanceOverview({authorizedFetch,onOpen}:{authorizedFetch:AuthorizedFet
         {visible.map(trip=><li key={trip.trip_id}>
           <button className={panel+" w-full text-left hover:border-orange-300"} onClick={()=>onOpen(trip.trip_id)}>
             <span className="block font-semibold">{tripLabel(trip)}</span>
-            <span className="mt-2 block text-sm text-slate-500">{trip.status==="cancelled"?"Cancelada · ":""}Reserva {formatMoney(trip.total_amount,trip.currency)}</span>
+            <span className="mt-2 block text-sm text-slate-500">{trip.archived_at?"Arquivada · ":trip.status==="cancelled"?"Cancelada · ":""}Reserva {formatMoney(trip.total_amount,trip.currency)}</span>
             <span className="mt-2 block font-semibold text-orange-800">{trip.balance!==null&&trip.balance<0?"Excedente "+formatMoney(-trip.balance,trip.currency):"Em falta "+formatMoney(trip.balance,trip.currency)}</span>
-            {trip.overdue_amount>0&&trip.status!=="cancelled"&&<span className="text-sm text-red-700">{formatMoney(trip.overdue_amount,trip.currency)} em atraso</span>}
+            {!trip.archived_at&&trip.overdue_amount>0&&trip.status!=="cancelled"&&<span className="text-sm text-red-700">{formatMoney(trip.overdue_amount,trip.currency)} em atraso</span>}
           </button>
         </li>)}
       </ul>}
@@ -213,7 +213,7 @@ function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpenTrip}:
   const receiptGroups=([false,true] as const).map(commission=>({commission,items:detail.receipts.filter(item=>item.kind.startsWith("commission_")===commission)}));
   return <section className="space-y-5">
     {back}
-    <div><h2 className="text-2xl font-bold">{tripLabel(summary)}</h2><p className="text-sm text-slate-500">Ficha financeira · {currency}{summary.status==="cancelled"?" · Viagem cancelada":""}</p></div>
+    <div><h2 className="text-2xl font-bold">{tripLabel(summary)}</h2><p className="text-sm text-slate-500">Ficha financeira · {currency}{summary.archived_at?" · Viagem arquivada":summary.status==="cancelled"?" · Viagem cancelada":""}</p></div>
     {error&&<p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
     {message&&<p role="status" className="text-sm text-orange-800">{message}</p>}
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

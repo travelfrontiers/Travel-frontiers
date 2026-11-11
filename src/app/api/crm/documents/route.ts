@@ -1,3 +1,4 @@
+import { rows } from "@/lib/crm-office-api";
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthorizedStudioUser, supabaseAdminConfig } from "@/lib/crm-api";
 
@@ -15,9 +16,8 @@ export async function GET(request: NextRequest) {
   const config = supabaseAdminConfig();
   if (!config) return NextResponse.json({ error: "A ligação segura à base de dados não está configurada." }, { status: 503 });
   try {
-    const response = await fetch(`${config.url}/rest/v1/crm_client_documents?select=*&order=expires_on.asc`, { headers: config.headers, cache: "no-store" });
-    if (!response.ok) return NextResponse.json({ error: "Não foi possível carregar os documentos." }, { status: 502 });
-    return NextResponse.json({ documents: await response.json() }, { headers: { "Cache-Control": "private, no-store" } });
+    const documents = await rows(config, "crm_client_documents", new URLSearchParams({ select: "*", order: "expires_on.asc,id" }));
+    return NextResponse.json({ documents }, { headers: { "Cache-Control": "private, no-store" } });
   } catch {
     return NextResponse.json({ error: "Não foi possível ligar à base de dados." }, { status: 502 });
   }

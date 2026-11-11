@@ -86,8 +86,16 @@ begin
   assert not has_table_privilege('anon','public.crm_payment_deadlines','select'),'finance views private';
   assert not has_function_privilege('authenticated','public.crm_save_scanned_document(uuid,timestamptz,text,text,date,text,date)','execute'),'scan save private';
   assert not has_table_privilege('service_role','public.crm_payment_receipts','insert'),'ledger writes restricted to RPC';
-  delete from public.crm_trips where id=trip;
-  assert not exists(select 1 from public.crm_payment_receipts where trip_id=trip),'trip cascade succeeds with finance audit';
+  failed:=false;
+  begin
+    delete from public.crm_trips where id=trip;
+  exception when others then failed:=sqlerrm='trip_has_finance';end;
+  assert failed,'financial history prevents trip deletion';
+  update public.crm_trips set archived_at=now() where id=trip;
+  assert (select archived_at is not null and customer_net=400 from public.crm_trip_finance_overview where trip_id=trip),'archive preserves financial records';
+  assert (select bool_and(archived_at is not null) from public.crm_payment_deadlines where trip_id=trip),'archived deadlines can be filtered';
+  update public.crm_trips set archived_at=null where id=trip;
+  assert (select archived_at is null from public.crm_trips where id=trip),'trip restored';
 end; $$;
 rollback;
 select 'PASS: prestações, recebimentos, reembolsos, comissão, concorrência, OCR e permissões. Dados fictícios revertidos.' as result;

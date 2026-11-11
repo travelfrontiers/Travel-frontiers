@@ -9,7 +9,7 @@ export const receiptKinds = {
 export const receiptMethods = {transfer:"Transferência",card:"Cartão",cash:"Numerário",other:"Outro"} as const;
 export const receiptParties = {agency:"GupiTravel",consultant:"Consultor"} as const;
 export type FinanceSummary = {
-  trip_id:string;destination:string|null;reference:string|null;client_name:string|null;status:string;currency:string;
+  trip_id:string;destination:string|null;reference:string|null;client_name:string|null;status:string;currency:string;archived_at:string|null;
   total_amount:number|null;customer_received:number;customer_refunded:number;customer_net:number;balance:number|null;
   scheduled_total:number;unscheduled_amount:number|null;overdue_amount:number;overdue_count:number;
   due_soon_amount:number;next_due_on:string|null;commission_expected:number|null;commission_net:number;
