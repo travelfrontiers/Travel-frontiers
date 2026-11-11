@@ -1,3 +1,4 @@
+import { studioBearer } from "@/lib/crm-api";
 import { createHash, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { authorizeTool, readBounded } from "@/lib/studio-request";
@@ -26,8 +27,8 @@ type OldRoteiro = {
     asset?: { _id: string; url: string; extension: string };
 };
 
-async function migrateSources() {
-    const client = writeClient.withConfig({ perspective: "raw" });
+async function migrateSources(token: string | undefined) {
+    const client = writeClient.withConfig({ perspective: "raw", ...(token ? { token } : {}) });
     const { projectId, dataset } = client.config();
     if (!projectId || !dataset) throw new Error("Sanity indisponível.");
     const docs = await client.fetch<OldRoteiro[]>(
@@ -88,8 +89,12 @@ export async function POST(request: Request) {
     if (denied) return denied;
     const query = new URL(request.url).searchParams;
     if (query.get("action") === "migrate") {
-        try { return NextResponse.json(await migrateSources(), { headers: privateHeaders }); }
-        catch { return NextResponse.json({ error: "Não foi possível concluir a migração. A remoção no Sanity só avança depois de confirmar as cópias privadas." }, { status: 502 }); }
+        try { return NextResponse.json(await migrateSources(studioBearer(request)), { headers: privateHeaders }); }
+        catch (error) {
+            const status = typeof error === "object" && error && "statusCode" in error ? error.statusCode : undefined;
+            console.warn("Private itinerary migration rejected", typeof status === "number" ? status : error instanceof Error ? error.name : "unknown");
+            return NextResponse.json({ error: "Não foi possível concluir a migração. A remoção no Sanity só avança depois de confirmar as cópias privadas." }, { status: 502 });
+        }
     }
     const extension = query.get("extension");
     if (!extension || !["pdf", "docx", "txt"].includes(extension)) {
