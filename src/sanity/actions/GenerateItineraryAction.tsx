@@ -14,7 +14,7 @@ export function GenerateItineraryAction({ type, published, draft, onComplete }: 
         dialog: busy ? {
             type: "dialog" as const,
             header: "A gerar roteiro",
-            content: <p role="status" className="p-4">A preparar o documento. Pode demorar até um minuto.</p>,
+            content: <p role="status" className="p-4">A preparar o documento. Roteiros longos podem demorar alguns minutos.</p>,
             onClose: () => {},
         } : null,
         onHandle: async () => {
@@ -31,9 +31,11 @@ export function GenerateItineraryAction({ type, published, draft, onComplete }: 
                 const url = URL.createObjectURL(await response.blob());
                 const link = document.createElement("a");
                 link.href = url;
-                link.download = `Itinerario_${String(doc.title ?? "viagem").replace(/[^\\p{L}\\p{N} _-]/gu, "").slice(0, 80)}.docx`;
+                link.download = `Itinerario_${String(doc.title ?? "viagem").replace(/[^\p{L}\p{N} _-]/gu, "").slice(0, 80)}.docx`;
+                document.body.appendChild(link);
                 link.click();
-                window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+                link.remove();
+                window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
                 onComplete();
             } catch (error) {
                 alert(error instanceof Error ? error.message : "Não foi possível gerar o roteiro.");
