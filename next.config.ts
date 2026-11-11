@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  outputFileTracingIncludes: {
+    "/api/generate-itinerary": [
+      // PDF.js loads these at runtime, outside the static import graph.
+      "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+      "./node_modules/@napi-rs/canvas/**/*",
+      "./node_modules/@napi-rs/canvas-*/**/*",
+    ],
+  },
   serverExternalPackages: ["pdf-parse", "pdfjs-dist"],
 };
 

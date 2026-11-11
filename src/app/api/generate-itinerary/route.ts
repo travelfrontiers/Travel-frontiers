@@ -166,7 +166,9 @@ export async function POST(request: Request) {
     let stage = "source";
     const startedAt = Date.now();
     try {
-        const extractedText = (await documentText(await loadPrivateSource(key), extension))
+        const source = await loadPrivateSource(key);
+        stage = "read";
+        const extractedText = (await documentText(source, extension))
             .replace(/[^\s@]+@[^\s@]+\.[^\s@]+/g, "[email omitido]")
             .replace(/(?:passaporte|cartão de cidadão|nif|tax id|passport number)\s*[:#]\s*[a-z0-9-]{5,}/gi, "[identificador omitido]");
         if (!extractedText.trim()) return NextResponse.json({ error: "O ficheiro não contém texto legível." }, { status: 422 });
@@ -383,12 +385,13 @@ ${notes || "Nenhuma"}
         const timedOut = name === "AbortError" || name === "TimeoutError";
         const providerStatus = error && typeof error === "object" && "status" in error ? error.status : undefined;
         console.warn("itinerary_generation_failed", {
-            stage, elapsedMs: Date.now() - startedAt, timedOut,
+            stage, name, elapsedMs: Date.now() - startedAt, timedOut,
             providerStatus: typeof providerStatus === "number" ? providerStatus : undefined,
         });
         if (timedOut) return NextResponse.json({ error: "O gerador excedeu o tempo de espera. Podes tentar novamente com o mesmo ficheiro." }, { status: 504 });
         if (providerStatus === 429) return NextResponse.json({ error: "O serviço de geração atingiu o limite temporário. Tenta novamente mais tarde." }, { status: 429 });
-        if (stage === "source") return NextResponse.json({ error: "Não foi possível ler o ficheiro. Confirma se abre e se tem texto selecionável." }, { status: 422 });
+        if (stage === "source") return NextResponse.json({ error: "Não foi possível obter o ficheiro privado. Tenta descarregá-lo no Studio e, se necessário, volta a anexá-lo." }, { status: 502 });
+        if (stage === "read") return NextResponse.json({ error: "Não foi possível extrair texto do ficheiro. Confirma se abre, se tem texto selecionável e se não está protegido por palavra-passe." }, { status: 422 });
         const message = stage === "word"
             ? "O roteiro foi gerado, mas não foi possível preparar o ficheiro Word. Tenta novamente."
             : "Não foi possível completar a geração do roteiro. Tenta novamente com o mesmo ficheiro.";
