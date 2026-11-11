@@ -27,6 +27,8 @@ async function imagePage(file:File) {
   } finally { image.close(); }
 }
 
+type ScanPage = { image: HTMLCanvasElement; text: string };
+
 async function pdfPages(file:File,available:number) {
   const {getDocument,GlobalWorkerOptions}=await import("pdfjs-dist");
   GlobalWorkerOptions.workerSrc=assets+"/pdf/pdf.worker.min.mjs";
@@ -38,14 +40,23 @@ async function pdfPages(file:File,available:number) {
   try {
     const pdf=await task.promise;
     if(pdf.numPages>available) throw new Error("Seleciona até duas páginas ou faces do mesmo documento.");
-    const pages:HTMLCanvasElement[]=[];
+    const pages:ScanPage[]=[];
     for(let number=1;number<=pdf.numPages;number++) {
       const page=await pdf.getPage(number);
       const size=page.getViewport({scale:1});
       const viewport=page.getViewport({scale:2400/Math.max(size.width,size.height)});
       const {result,context}=canvas(viewport.width,viewport.height);
       await page.render({canvas:result,canvasContext:context,viewport}).promise;
-      pages.push(result);
+      const content = await page.getTextContent().catch(() => null);
+      let lineY: number | undefined;
+      const text = content?.items.map(item => {
+        if (!("str" in item)) return "";
+        const nextY = item.transform[5];
+        const separator = lineY !== undefined && Math.abs(nextY - lineY) > 2 ? "\n" : "";
+        lineY = item.hasEOL ? undefined : nextY;
+        return separator + item.str + (item.hasEOL ? "\n" : " ");
+      }).join("") ?? "";
+      pages.push({ image: result, text });
       page.cleanup();
     }
     return pages;
@@ -65,7 +76,7 @@ export async function scanClientDocument(files:File[],signal:AbortSignal,onProgr
   if(files.length<1||files.length>2||files.some(file=>!file.size||file.size>identityFileLimit||!identityFileTypes.includes(file.type))) {
     throw new Error("Escolhe até dois ficheiros JPG, PNG, WebP ou PDF, até 15 MB cada.");
   }
-  const pages:HTMLCanvasElement[]=[];
+  const pages:ScanPage[]=[];
   let worker:OcrWorker|undefined;
   try {
     onProgress("A preparar o documento…");
@@ -73,7 +84,7 @@ export async function scanClientDocument(files:File[],signal:AbortSignal,onProgr
       signal.throwIfAborted();
       if(pages.length>=2) throw new Error("Seleciona até duas páginas ou faces do mesmo documento.");
       if(file.type==="application/pdf") pages.push(...await pdfPages(file,2-pages.length));
-      else pages.push(await imagePage(file));
+      else pages.push({ image: await imagePage(file), text: "" });
     }
     signal.throwIfAborted();
     onProgress("A carregar o leitor de documentos…");
@@ -89,13 +100,14 @@ export async function scanClientDocument(files:File[],signal:AbortSignal,onProgr
     for(let index=0;index<pages.length;index++) {
       onProgress("A ler página "+(index+1)+" de "+pages.length+"…");
       await worker.setParameters({tessedit_pageseg_mode:PSM.SPARSE_TEXT,tessedit_char_whitelist:""});
-      const scans = [(await abortable(worker.recognize(pages[index]),signal)).data.text];
+      const { image: page, text } = pages[index];
+      const scans = [text, (await abortable(worker.recognize(page),signal)).data.text].filter(Boolean);
       const reading = readIdentityPage(scans, today);
       if (reading.document_type && reading.full_name && reading.birth_date && reading.expires_on && reading.document_number) {
         readings.push(reading);
         continue;
       }
-      const page=pages[index],top=Math.floor(page.height*0.55);
+      const top=Math.floor(page.height*0.55);
       const {result,context}=canvas(page.width,page.height-top);
       context.drawImage(page,0,top,page.width,page.height-top,0,0,result.width,result.height);
       try {
@@ -107,6 +119,6 @@ export async function scanClientDocument(files:File[],signal:AbortSignal,onProgr
     return combineIdentityPages(readings);
   } finally {
     if(worker) await worker.terminate().catch(()=>{});
-    for(const page of pages) {page.width=0;page.height=0;}
+    for(const { image } of pages) {image.width=0;image.height=0;}
   }
 }

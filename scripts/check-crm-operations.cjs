@@ -79,6 +79,13 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  const combined=combineIdentityPages([{...passport,document_number:"AB123456"},matching]);
  assert.equal(combined.expires_on,"2031-04-06");assert.equal(combined.full_name,"Ana Silva");
 
+ const partial=read("NOME COMPLETO: ANA SILVA\nDATA DE NASCIMENTO: 06/04/1990\nN.º DO DOCUMENTO: AB123456");
+ assert.equal(partial.document_type,null);assert.equal(partial.full_name,"Ana Silva");assert.equal(partial.birth_date,"1990-04-06");assert.equal(partial.document_number,"AB123456");
+ assert.equal(read("PASSPORT\nPASSPORT NO. AB123456\nPASSPORT NO. CD123456").document_number,"");
+ assert.equal(read("PASSPORT\nPASSPORT NO.\n2031-04-06").document_number,"");
+ assert.equal(combineIdentityPages([passport,{...passport,expires_on:"2031-04-06"}]).expires_on,"2031-04-06");
+ assert.deepEqual(read("SEM DADOS"),{document_type:null,full_name:"",birth_date:"",expires_on:"",document_number:""});
+
  const form=load("src/app/api/trip-requests/route.ts");
  const lead={full_name:"Synthetic Test",email:"synthetic@example.invalid",destination:"Synthetic",adults:2,children_count:2,children_ages:[1,7],budget:"1500_2000",date_flexible:true,travel_period:"Segunda quinzena de abril",consent_privacy:true};
  calls=[];
