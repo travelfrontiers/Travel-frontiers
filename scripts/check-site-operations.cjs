@@ -102,13 +102,59 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     });
     const links = signature.configuredQuoteDocuments();
     assert.equal(Object.keys(links).length, 2);
-    const signed = signature.formatCrmEmail("Olá <cliente>\nTudo bem?", "pt", links);
+    const signatureCid = "signature@example.invalid";
+    const signed = signature.formatCrmEmail("Olá <cliente>\nTudo bem?", "pt", links, signatureCid);
     assert.match(signed.html, /Olá &lt;cliente&gt;<br>Tudo bem/);
-    assert.match(signed.html, /https:\/\/promo\.travelfrontiers\.pt\/email-signature\.png/);
+    assert.match(signed.html, /src="cid:signature@example\.invalid"/);
     assert.match(signed.html, /fin\?test=1&amp;other=2/);
     assert.match(signed.text, /FIN .*https:\/\/example\.invalid\/fin/);
-    assert.doesNotMatch(signature.formatCrmEmail("Olá", "pt", null).html, /example\.invalid/);
+    assert.doesNotMatch(signature.formatCrmEmail("Olá", "pt", null, signatureCid).html, /example\.invalid\/(?:fin|terms)/);
     assert.equal(load(signatureModule, {}, { CRM_QUOTE_FIN_URL: "https://example.invalid/fin" }).configuredQuoteDocuments(), null);
+
+    let composedMail;
+    const email = load("src/app/api/crm/email/route.ts", {
+        "@/lib/crm-office-api": {
+            crmConfig: async () => ({}), uuid: () => true,
+            privateJson: (body, status = 200) => Response.json(body, { status }),
+            failure: cause => { throw cause; },
+            rpc: async () => true,
+        },
+        "@/lib/crm-email-context": {
+            isEmailScope: () => true, emailRest: async () => [],
+            loadEmailContext: async () => ({ scope: "proposal", language: "pt", recipient: "client@example.invalid" }),
+        },
+        "@/lib/crm-mailbox": {
+            mailBodyLimit: 24000,
+            archiveSentMessage: async () => true,
+            smtpTransport: () => ({ user: "sender@example.invalid", smtp: {
+                sendMail: async ({ raw }) => {
+                    composedMail = await require("mailparser").simpleParser(raw, { skipImageLinks: true });
+                    return { accepted: ["client@example.invalid"] };
+                },
+                close() {},
+            } }),
+        },
+        "@/lib/crm-email-templates": load("src/lib/crm-email-templates.ts"),
+        "@/lib/crm-email-signature": signature,
+        "@/lib/studio-request": controls,
+    });
+    const quoteForm = new FormData();
+    quoteForm.set("operation_id", "example-operation");
+    quoteForm.set("scope", "proposal");
+    quoteForm.set("id", "example-proposal");
+    quoteForm.set("template", "quote");
+    quoteForm.set("subject", "Proposta fictícia");
+    quoteForm.set("body", "Segue a proposta.");
+    quoteForm.set("file_quote", new File(["%PDF-1.4"], "proposta.pdf", { type: "application/pdf" }));
+    const quoteResult = await email.POST(new Request("https://site.test/api/crm/email", { method: "POST", body: quoteForm }));
+    assert.equal(quoteResult.status, 200);
+    const banner = composedMail.attachments.find(file => file.contentDisposition === "inline");
+    assert.ok(banner && banner.contentType === "image/jpeg" && banner.size < 70_000);
+    assert.match(composedMail.html, /src="cid:tf-signature-example-operation@travelfrontiers\.pt"/);
+    assert.equal(banner.cid, "tf-signature-example-operation@travelfrontiers.pt");
+    assert.match(composedMail.text, /example\.invalid\/fin/);
+    assert.match(composedMail.html, /example\.invalid\/terms/);
+    assert.deepEqual(composedMail.attachments.filter(file => file.contentDisposition !== "inline").map(file => file.filename), ["proposta.pdf"]);
 
     const operations = [];
     let deletionStarted = false;

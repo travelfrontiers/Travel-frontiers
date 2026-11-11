@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { type NextRequest } from "next/server";
 import nodemailer from "nodemailer";
 import { crmConfig, CrmError, failure, payload, privateJson, rpc, uuid } from "@/lib/crm-office-api";
@@ -140,8 +142,12 @@ async function send(config: EmailConfig, request: Request, type: string) {
     }
   }
 
-  const message = formatCrmEmail(quoteDocuments ? quoteBodyWithLinks(body, context.language) : body, context.language, quoteDocuments);
+  const signatureCid = `tf-signature-${id}@travelfrontiers.pt`;
+  const message = formatCrmEmail(quoteDocuments ? quoteBodyWithLinks(body, context.language) : body, context.language, quoteDocuments, signatureCid);
   if ([...message.text].length > mailBodyLimit) throw new CrmError("Encurta a mensagem para incluir a assinatura e os links.");
+  const signature = await readFile(join(process.cwd(), "public", "email-signature-inline.jpg")).catch(() => {
+    throw new CrmError("Não foi possível incluir a assinatura. Tenta novamente.", 503);
+  });
   const { user, smtp } = smtpTransport();
   const messageId = `<tf-${id}@${user.split("@").at(-1)}>`;
   const composer = nodemailer.createTransport({ streamTransport: true, buffer: true, disableFileAccess: true, disableUrlAccess: true });
@@ -149,7 +155,11 @@ async function send(config: EmailConfig, request: Request, type: string) {
     from: { name: "Tiago Ferreira · Travel Frontiers", address: user },
     to: recipient, subject, ...message, messageId,
     ...(reply ? { inReplyTo: reply.internet_message_id, references: [reply.internet_message_id] } : {}),
-    attachments: attachments.map(({ filename, content, contentType }) => ({ filename, content, contentType })),
+    attachments: [
+      { filename: "assinatura-travel-frontiers.jpg", content: signature, contentType: "image/jpeg",
+        contentDisposition: "inline", cid: signatureCid },
+      ...attachments.map(({ filename, content, contentType }) => ({ filename, content, contentType })),
+    ],
   });
 
   const started = await rpc<boolean>(config, "crm_begin_email_send", { p_message: {
