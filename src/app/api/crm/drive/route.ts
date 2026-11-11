@@ -12,7 +12,10 @@ export async function GET(request: NextRequest) {
     const field = tripId ? "trip_id" : "client_id";
     const response = await fetch(`${config.url}/rest/v1/crm_drive_files?${field}=eq.${encodeURIComponent(tripId || clientId!)}&select=*&order=created_at.desc`, { headers: config.headers, cache: "no-store" });
     if (!response.ok) throw new Error("query_failed");
-    return NextResponse.json({ files: await response.json(), clientId: process.env.GOOGLE_DRIVE_CLIENT_ID || null }, { headers: { "Cache-Control": "private, no-store" } });
+    const apiKey = process.env.GOOGLE_DRIVE_PICKER_API_KEY;
+    const appId = process.env.GOOGLE_DRIVE_PICKER_APP_ID;
+    const picker = apiKey && appId && /^\d+$/.test(appId) ? { apiKey, appId } : null;
+    return NextResponse.json({ files: await response.json(), clientId: process.env.GOOGLE_DRIVE_CLIENT_ID || null, picker }, { headers: { "Cache-Control": "private, no-store" } });
   } catch { return NextResponse.json({ error: "Não foi possível carregar os ficheiros do Drive." }, { status: 502 }); }
 }
 export async function POST(request: NextRequest) {
