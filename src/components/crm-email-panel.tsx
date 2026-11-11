@@ -11,10 +11,10 @@ export type CrmEmailMessage = {
   sender: string; recipient: string; cc: string | null; subject: string; body: string;
   attachments: { filename: string }[]; proposal_version: number | null;
 };
-type Template = { key: EmailTemplateKey; label: string; subject: string; body: string; cc: string; required: EmailAttachmentRole[] };
+type Template = { key: EmailTemplateKey; label: string; subject: string; body: string; required: EmailAttachmentRole[] };
 type EmailData = { context: EmailContext; templates: Template[]; history: CrmEmailMessage[]; driveClientId: string | null };
 type Candidate = { key: string; subject: string; date: string };
-type Draft = { template: Template; subject: string; body: string; cc: boolean; operationId: string; reply?: CrmEmailMessage };
+type Draft = { template: Template; subject: string; body: string; operationId: string; reply?: CrmEmailMessage };
 const states: Record<string, string> = { sent: "Enviado", received: "Recebido", sending: "Envio pendente de confirmação", uncertain: "Confirma a entrega no Roundcube", failed: "Falhou" };
 const languageNames = { pt: "Português", en: "Inglês", fr: "Francês" };
 const roles = Object.keys(emailAttachmentLabels) as EmailAttachmentRole[];
@@ -57,7 +57,7 @@ export default function CrmEmailPanel({ authorizedFetch, scope, id, version, sug
     setModel(null);
     setError("");
     setDraft({
-      template, operationId: crypto.randomUUID(), cc: Boolean(template.cc), reply,
+      template, operationId: crypto.randomUUID(), reply,
       subject: reply ? ( /^re:/i.test(reply.subject) ? reply.subject : "Re: " + reply.subject).slice(0, 240) : fillEmailTemplate(template.subject, data.context.fields),
       body: reply ? "" : fillEmailTemplate(template.body, data.context.fields),
     });
@@ -89,14 +89,13 @@ export default function CrmEmailPanel({ authorizedFetch, scope, id, version, sug
       const form = new FormData();
       for (const [key, value] of Object.entries({
         id, scope, version: version ? String(version) : "", template: draft.template.key, operation_id: draft.operationId,
-        subject: draft.subject, body: draft.body, cc: draft.cc ? "geral@gupitravel.pt" : "", reply_id: draft.reply?.id || "",
+        subject: draft.subject, body: draft.body, reply_id: draft.reply?.id || "",
       })) form.set(key, value);
       for (const role of roles) for (const file of attachments[role] ?? []) form.append("file_" + role, file);
       const result = await request(form).catch(async cause => { await load().catch(() => {}); throw cause; });
       setDraft(null);
       setAttachments({});
-      const sentNotice = result.copyRejected ? "Email enviado ao cliente. O servidor não aceitou a cópia para a agência."
-        : result.archived ? "Email enviado e guardado na pasta de enviados do Roundcube."
+      const sentNotice = result.archived ? "Email enviado e guardado na pasta de enviados do Roundcube."
           : "Email enviado. O histórico está no CRM. Não foi possível guardar uma cópia na pasta de enviados do Roundcube.";
       setNotice(sentNotice);
       try { await load(); await onSent?.(result.quoteSent === true); }
@@ -146,7 +145,6 @@ export default function CrmEmailPanel({ authorizedFetch, scope, id, version, sug
           <p className="text-sm"><strong>Para</strong> {data.context.recipient || "Email em falta"}{draft.reply && <> · Em resposta a «{draft.reply.subject}»</>}</p>
           <label className="block text-sm">Assunto<input required maxLength={240} className={input} value={draft.subject} onChange={event => setDraft({ ...draft, subject: event.target.value })} /></label>
           <label className="block text-sm">Mensagem<textarea required maxLength={16000} rows={12} className={input} value={draft.body} onChange={event => setDraft({ ...draft, body: event.target.value })} /></label>
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={draft.cc} onChange={event => setDraft({ ...draft, cc: event.target.checked })} /> Enviar cópia para geral@gupitravel.pt</label>
           <fieldset className="grid gap-3 sm:grid-cols-2">
             <legend className="mb-2 text-sm font-semibold">Anexos · até 3,8 MB no total</legend>
             {roles.filter(role => role === "other" || draft.template.required.includes(role)).map(role => <div key={role}>

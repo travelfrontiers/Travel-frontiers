@@ -11,7 +11,6 @@ export const maxDuration = 60;
 
 const maxUploadBytes = 4 * 1024 * 1024;
 const maxAttachmentBytes = 3_800_000;
-const agencyEmail = "geral@gupitravel.pt";
 const roles = Object.keys(emailAttachmentLabels) as EmailAttachmentRole[];
 const columns = "id,direction,state,template_key,occurred_at,subject,body,sender,recipient,cc,attachments,archive_state,proposal_version,internet_message_id";
 
@@ -73,7 +72,7 @@ export async function GET(request: NextRequest) {
       if (!template.scopes.includes(context.scope) || key === "quote" && (context.currentVersion !== context.proposal_version || context.proposalStatus !== "draft" && context.proposalStatus !== "sent")) return [];
       const edited = stored.find(entry => entry.template_key === key);
       const copy = edited ?? baseEmailTemplate(key as EmailTemplateKey, context.language);
-      return [{ key, label: template.label, required: template.required ?? [], cc: template.agencyCopy ? agencyEmail : "", subject: copy.subject, body: copy.body }];
+      return [{ key, label: template.label, required: template.required ?? [], subject: copy.subject, body: copy.body }];
     });
     return privateJson({ context, templates, history, driveClientId: process.env.GOOGLE_DRIVE_CLIENT_ID || null });
   } catch (error) { return failure(error); }
@@ -107,6 +106,9 @@ async function send(config: EmailConfig, request: Request, type: string) {
   } catch (error) {
     throw new CrmError("Não foi possível ler a mensagem. O pedido tem um limite de 4 MB.", error instanceof RangeError ? 413 : 400);
   }
+  if (form.getAll("cc").some(value => String(value).trim()) || form.getAll("bcc").some(value => String(value).trim())) {
+    throw new CrmError("O envio de cópias está desativado. Atualiza a página.");
+  }
   const id = form.get("operation_id");
   if (!uuid(id)) throw new CrmError("Pedido de envio inválido.");
   const context = await contextFor(config, form.get("scope"), form.get("id"), form.get("version") ? Number(form.get("version")) : undefined);
@@ -114,8 +116,6 @@ async function send(config: EmailConfig, request: Request, type: string) {
   if (context.archived) throw new CrmError("Restaura a ficha antes de enviar.");
   if (!context.recipient) throw new CrmError("Adiciona um email válido à ficha antes de enviar.");
   const recipient = context.recipient;
-  const cc = String(form.get("cc") || "").trim().toLowerCase();
-  if (cc && cc !== agencyEmail) throw new CrmError("A cópia pode ser enviada apenas para a agência.");
   const { subject, body } = verifyText(form.get("subject"), form.get("body"));
   if (missingEmailFields(subject + "\n" + body).length) throw new CrmError("Preenche os campos pendentes do modelo antes de enviar.");
   const attachments = await attachmentsFrom(form);
@@ -139,24 +139,22 @@ async function send(config: EmailConfig, request: Request, type: string) {
   const composer = nodemailer.createTransport({ streamTransport: true, buffer: true, disableFileAccess: true, disableUrlAccess: true });
   const { message: raw } = await composer.sendMail({
     from: { name: "Tiago Ferreira · Travel Frontiers", address: user },
-    to: recipient, ...(cc ? { cc } : {}), subject, text: body, messageId,
+    to: recipient, subject, text: body, messageId,
     ...(reply ? { inReplyTo: reply.internet_message_id, references: [reply.internet_message_id] } : {}),
     attachments: attachments.map(({ filename, content, contentType }) => ({ filename, content, contentType })),
   });
 
   const started = await rpc<boolean>(config, "crm_begin_email_send", { p_message: {
     ...associations(context), id, template_key: key, internet_message_id: messageId,
-    sender: user.toLowerCase(), recipient: recipient.toLowerCase(), cc: cc || null, subject, body,
+    sender: user.toLowerCase(), recipient: recipient.toLowerCase(), subject, body,
     attachments: attachments.map(({ filename, role }) => ({ filename, role })),
   } });
   if (!started) throw new CrmError("Este envio já foi registado. Atualiza o histórico e confirma o estado no Roundcube.", 409);
 
   let state: "sent" | "failed" | "uncertain" = "uncertain";
-  let copyRejected = false;
   try {
-    const result = await smtp.sendMail({ raw, envelope: { from: user, to: cc && cc !== recipient.toLowerCase() ? [recipient, cc] : [recipient] } });
+    const result = await smtp.sendMail({ raw, envelope: { from: user, to: [recipient] } });
     state = result.accepted.some(address => String(address).toLowerCase() === recipient.toLowerCase()) ? "sent" : "uncertain";
-    copyRejected = Boolean(cc && !result.accepted.some(address => String(address).toLowerCase() === cc));
   } catch (error) {
     const code = (error as { code?: string }).code;
     state = code === "EAUTH" || code === "EENVELOPE" ? "failed" : "uncertain";
@@ -174,7 +172,7 @@ async function send(config: EmailConfig, request: Request, type: string) {
   await emailRest(config, "crm_emails", { id: "eq." + id }, {
     method: "PATCH", body: JSON.stringify({ archive_state: archived ? "saved" : "unavailable" }),
   }).catch(() => {});
-  return privateJson({ sent: true, archived, copyRejected, quoteSent: key === "quote" });
+  return privateJson({ sent: true, archived, quoteSent: key === "quote" });
 }
 
 function sameDossier(message: EmailRow, context: EmailContext) {
