@@ -64,4 +64,4 @@
 - Arquivar uma viagem suspende os alertas operacionais. A ficha e os valores permanecem consultáveis em Pagamentos e comissão. Prestações, movimentos ou um cálculo de comissão impedem a eliminação da viagem.
 - O formulário PT/EN/FR requer datas completas ou um período aproximado quando há flexibilidade. O período aparece no pedido do CRM e no aviso por email.
 - A leitura de documentos analisa cada página e só combina dados quando consegue associar as duas faces. Os campos por ler aparecem vazios para revisão.
-- As listas principais e respetivas relações são lidas por páginas com ordenação estável. A dependência transitiva basic-ftp foi atualizada para 5.3.1.
+- As listas principais e respetivas relações são lidas por páginas com ordenação estável. A dependência transitiva basic-ftp foi atualizada para 6.2.6 na cadeia do get-uri.
