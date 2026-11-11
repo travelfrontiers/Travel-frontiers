@@ -2,7 +2,7 @@
 
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useClient, useCurrentUser } from "sanity";
-import { ArrowUpRight, Moon, Sun, BellRing, CalendarDays, FileWarning, Inbox, ListTodo, Plane, Send, ShieldCheck, Users } from "lucide-react";
+import { ArrowUpRight, Check, Copy, Moon, Sun, BellRing, CalendarDays, FileWarning, Inbox, ListTodo, Plane, Send, ShieldCheck, Users } from "lucide-react";
 import styles from "./crm-studio-tool.module.css";
 import CrmDriveDocuments from "./crm-drive-documents";
 import CrmDocumentScanner from "./crm-document-scanner";
@@ -80,6 +80,58 @@ function localDateInput(value: string) {
   const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Lisbon", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(value));
   const part = (type: string) => parts.find((entry) => entry.type === type)?.value || "";
   return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function CopyClientField({ label, value }: { label: string; value: string }) {
+  const [status, setStatus] = useState<"copied" | "failed" | null>(null);
+  useEffect(() => {
+    if (!status) return;
+    const timer = window.setTimeout(() => setStatus(null), 2500);
+    return () => window.clearTimeout(timer);
+  }, [status]);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value);
+      setStatus("copied");
+    } catch {
+      setStatus("failed");
+    }
+  }
+
+  const Icon = status === "copied" ? Check : Copy;
+  return <span className="inline-flex min-w-0 flex-wrap items-center gap-2">
+    <button type="button" onClick={() => void copy()} aria-label={"Copiar " + label}
+      className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100">
+      <Icon className="size-3.5" aria-hidden="true" />{status === "copied" ? "Copiado" : "Copiar"}
+    </button>
+    <span role="status" className={status === "failed" ? "text-xs text-red-700" : "sr-only"}>
+      {status === "failed" ? "Não foi possível copiar." : status === "copied" ? label + " copiado." : ""}
+    </span>
+  </span>;
+}
+
+function ClientDocumentForm({ document, saving, onSubmit, onDelete }: {
+  document?: ClientDocument; saving: boolean; onSubmit: (event: FormEvent<HTMLFormElement>) => void; onDelete?: () => void;
+}) {
+  const field = "block min-w-0 space-y-1 text-xs font-semibold text-slate-600";
+  return <form onSubmit={onSubmit} className="grid min-w-0 gap-3">
+    <label className={field}>{document ? "Tipo" : "Novo tipo"}
+      <select name="document_type" defaultValue={document?.document_type || "passport"} className={inputClass}>
+        {Object.entries(documentTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+      </select>
+    </label>
+    <label className={field}>Número/ID
+      <input name="document_number" required maxLength={80} defaultValue={document?.document_number || ""} className={inputClass} />
+    </label>
+    <label className={field}>Data de validade
+      <input name="expires_on" type="date" required defaultValue={document?.expires_on || ""} className={inputClass} />
+    </label>
+    <div className="flex flex-wrap gap-2">
+      <button disabled={saving} className="rounded-full bg-orange-800 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">{document ? "Guardar" : "Adicionar"}</button>
+      {onDelete && <button type="button" disabled={saving} onClick={onDelete} className="rounded-full border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Apagar</button>}
+    </div>
+  </form>;
 }
 
 function localToday() {
@@ -786,9 +838,19 @@ export default function CrmStudioTool() {
           {visibleClients.length > 0 && <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{visibleClients.map((client) => {
             const clientTrips = trips.filter((trip) => trip.client_id === client.id || trip.client_ids.includes(client.id));
             const clientLeads = leads.filter((lead) => lead.client_id === client.id);
-            return <article id={"client-"+client.id} tabIndex={-1} key={client.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0"><h3 className="text-lg font-semibold">{client.full_name}</h3><p className="mt-2 break-all text-sm text-slate-600">{client.email || "Sem email"}</p><p className="text-sm text-slate-600">{client.phone || "Sem telefone"}</p>{client.birth_date&&<p className="mt-1 text-sm text-slate-600">Nascimento: {dateLabel(client.birth_date)}</p>}<p className="mt-2 text-xs text-slate-400">Idioma: {client.language.toUpperCase()} · Cliente desde {dateLabel(client.created_at)}</p></div>
+            const birthDate = client.birth_date ? localDateInput(client.birth_date).split("-").reverse().join("/") : "";
+            return <article id={"client-"+client.id} tabIndex={-1} key={client.id} className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2"><h3 className="min-w-0 break-words text-lg font-semibold">{client.full_name}</h3><CopyClientField label="nome" value={client.full_name} /></div>
+                  <p className="mt-2 break-all text-sm text-slate-600">{client.email || "Sem email"}</p>
+                  <p className="text-sm text-slate-600">{client.phone || "Sem telefone"}</p>
+                  {client.birth_date && <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                    <span>Nascimento: <time dateTime={client.birth_date}>{birthDate}</time></span>
+                    <CopyClientField label="data de nascimento" value={birthDate} />
+                  </div>}
+                  <p className="mt-2 text-xs text-slate-400">Idioma: {client.language.toUpperCase()} · Cliente desde {dateLabel(client.created_at)}</p>
+                </div>
                 {editingClientId !== client.id && <div className="flex shrink-0 gap-2"><button type="button" onClick={() => setEditingClientId(client.id)} className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Editar</button><button type="button" disabled={saving} onClick={() => void deleteClient(client)} className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Apagar</button></div>}
               </div>
               {editingClientId === client.id && <form onSubmit={(event) => void saveClient(event, client)} className="mt-4 grid gap-3 rounded-xl border border-orange-100 bg-orange-50/50 p-4 sm:grid-cols-2">
@@ -809,7 +871,39 @@ export default function CrmStudioTool() {
                   setClients(current=>current.map(entry=>entry.id===updated.id?{...entry,...updated}:entry));
                   setDocuments(current=>[...current.filter(entry=>entry.id!==document.id),document].sort((a,b)=>a.expires_on.localeCompare(b.expires_on)));
                 }}/>
-                <div className="mt-3 space-y-3">{documents.filter((document) => document.client_id === client.id).map((document) => <form key={document.id + ":" + document.updated_at} onSubmit={(event) => saveClientDocument(event, client.id, document)} className="grid gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"><label className="space-y-1 text-xs font-semibold text-slate-600">Tipo<select name="document_type" defaultValue={document.document_type} className={inputClass}>{Object.entries(documentTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="space-y-1 text-xs font-semibold text-slate-600">Número/ID<input name="document_number" required maxLength={80} defaultValue={document.document_number} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Validade<input name="expires_on" type="date" required defaultValue={document.expires_on} className={inputClass} /></label><div className="flex items-end"><button disabled={saving} className="rounded-full border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-60">Guardar</button><button type="button" disabled={saving} onClick={() => void deleteClientDocument(document)} className="ml-2 rounded-full border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 disabled:opacity-60">Apagar</button></div></form>)}</div><form onSubmit={(event) => saveClientDocument(event, client.id)} className="mt-3 grid gap-2 rounded-xl border border-dashed border-slate-300 p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"><label className="space-y-1 text-xs font-semibold text-slate-600">Novo tipo<select name="document_type" defaultValue="passport" className={inputClass}>{Object.entries(documentTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="space-y-1 text-xs font-semibold text-slate-600">Número/ID<input name="document_number" required maxLength={80} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Data de validade<input name="expires_on" type="date" required className={inputClass} /></label><div className="flex items-end"><button disabled={saving} className="rounded-full bg-orange-800 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">Adicionar</button></div></form><p className="mt-2 text-xs text-slate-500">O número/ID é visível apenas nesta área CRM protegida.</p></section><CrmDriveDocuments authorizedFetch={authorizedFetch} clientId={client.id} title={client.full_name} />
+                <div className="mt-3 space-y-3">
+                  {documents.filter(document => document.client_id === client.id).map(document => {
+                    const expiry = localDateInput(document.expires_on).split("-").reverse().join("/");
+                    return <div key={document.id + ":" + document.updated_at} className="min-w-0 space-y-3 rounded-xl bg-slate-50 p-3">
+                      <dl className="space-y-2">
+                        <div><dt className="text-xs font-semibold text-slate-600">Tipo</dt><dd className="text-sm font-semibold">{documentTypeLabels[document.document_type]}</dd></div>
+                        <div><dt className="text-xs font-semibold text-slate-600">Número/ID</dt><dd className="flex flex-wrap items-center gap-2 text-sm">
+                          <span className="min-w-0 break-all font-semibold">{document.document_number}</span>
+                          <CopyClientField label="número do documento" value={document.document_number} />
+                        </dd></div>
+                        <div><dt className="text-xs font-semibold text-slate-600">Validade</dt><dd className="flex flex-wrap items-center gap-2 text-sm">
+                          <time dateTime={document.expires_on} className="font-semibold">{expiry}</time>
+                          <CopyClientField label="data de validade" value={expiry} />
+                        </dd></div>
+                      </dl>
+                      <details className="border-t border-slate-200 pt-2">
+                        <summary className="cursor-pointer text-sm font-semibold text-orange-800">Editar documento</summary>
+                        <div className="mt-3">
+                          <ClientDocumentForm document={document} saving={saving}
+                            onSubmit={event => void saveClientDocument(event, client.id, document)}
+                            onDelete={() => void deleteClientDocument(document)} />
+                        </div>
+                      </details>
+                    </div>;
+                  })}
+                </div>
+                <details className="mt-3 rounded-xl border border-dashed border-slate-300 p-3">
+                  <summary className="cursor-pointer text-sm font-semibold text-orange-800">Adicionar documento manualmente</summary>
+                  <div className="mt-3"><ClientDocumentForm saving={saving} onSubmit={event => void saveClientDocument(event, client.id)} /></div>
+                </details>
+                <p className="mt-2 text-xs text-slate-500">O número/ID é visível apenas nesta área CRM protegida.</p>
+              </section>
+              <CrmDriveDocuments authorizedFetch={authorizedFetch} clientId={client.id} title={client.full_name} />
               <div className="mt-5 flex flex-wrap gap-2"><button type="button" className="rounded-full border border-slate-300 px-4 py-2 text-sm" onClick={()=>newProposal({type:"client",id:client.id,label:client.full_name})}>Nova proposta</button><button type="button" className="rounded-full border border-slate-300 px-4 py-2 text-sm" onClick={()=>showHistory({type:"client",id:client.id,label:client.full_name})}>Histórico</button><button type="button" onClick={() => { setTripClientIds([client.id]); setShowTripForm(true); goToView("trips"); }} className="rounded-full border border-orange-800 px-4 py-2 text-sm font-semibold text-orange-800 hover:bg-orange-50">Adicionar viagem</button>{clientLeads.length > 0 && <button type="button" onClick={() => goToView("pipeline")} className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Ver pedidos</button>}</div>
             </article>;
           })}</div>}
