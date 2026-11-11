@@ -141,9 +141,30 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     assert.deepEqual(operations, [["patch", "old"], ["delete", "old"], ["patch", "drafts.old2"], ["delete", "drafts.old2"], ["delete", "old-asset"]]);
 
     const { calculateCommission } = load("src/lib/commission.ts");
-    const base = { commission: 100, travelerCount: 3, travelerPrice: 100, selfTravels: false, costPerTraveler: 80, shareSaving: false, cedeCommission: true, requestedCession: 0.01 };
+    const base = { commission: 100, travelerCount: 3, travelerPrice: 100, selfTravels: false, shareSaving: false, cedeCommission: true, requestedCession: 0.01 };
     assert.deepEqual(calculateCommission(base).otherPriceGroups, [{ count: 2, price: 100 }, { count: 1, price: 99.99 }]);
-    for (const selfTravels of [false, true]) for (const shareSaving of [false, true]) for (let count = 1; count <= 20; count++) {
+    const workbook = { ...base, commission: 617.49, travelerCount: 4, travelerPrice: 1286, selfTravels: true, cedeCommission: false, requestedCession: 0 };
+    const personal = calculateCommission(workbook);
+    assert.equal(personal.commissionPerTraveler, 154.3725);
+    assert.equal(personal.ownPrice, 1120.31);
+    assert.equal(personal.netCommission, 370.49);
+    assert.equal(personal.totalCollected, 4978.31);
+    assert.deepEqual(personal.otherPriceGroups, [{ count: 3, price: 1286 }]);
+    const shared = calculateCommission({ ...workbook, shareSaving: true });
+    assert.equal(shared.ownPrice, 1244.58);
+    assert.deepEqual(shared.otherPriceGroups, [{ count: 2, price: 1244.58 }, { count: 1, price: 1244.57 }]);
+    assert.equal(shared.totalCollected, personal.totalCollected);
+    const cession = calculateCommission({ ...workbook, cedeCommission: true, requestedCession: 30 });
+    assert.equal(cession.netCommission, 340.49);
+    assert.equal(cession.totalCollected, 4948.31);
+    const absent = calculateCommission({ ...workbook, selfTravels: false });
+    assert.equal(absent.netCommission, 493.99);
+    assert.equal(absent.totalCollected, 5144);
+    const solo = calculateCommission({ ...workbook, travelerCount: 1, cedeCommission: true, requestedCession: 50 });
+    assert.equal(solo.netCommission, 0);
+    assert.equal(solo.ownPrice, 661.82);
+    assert.equal(solo.ceded, 0);
+    for (const selfTravels of [false, true]) for (const shareSaving of [false, true]) for (let count = 1; count <= 50; count++) {
         const result = calculateCommission({ ...base, travelerCount: count, selfTravels, shareSaving });
         const sum = (result.ownPrice ?? 0) + result.otherPriceGroups.reduce((total, group) => total + group.count * group.price, 0);
         assert.equal(Math.round(sum * 100), Math.round(result.totalCollected * 100));

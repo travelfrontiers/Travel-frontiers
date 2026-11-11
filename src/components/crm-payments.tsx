@@ -2,7 +2,7 @@
 
 import {useCallback,useEffect,useRef,useState,type FormEvent} from "react";
 import {addDays,lisbonDay} from "@/lib/crm-calendar";
-import {roundEuro,type CommissionInputs} from "@/lib/commission";
+import {commissionRulesVersion,roundEuro,type CommissionInputs} from "@/lib/commission";
 import {formatMoney,formatFinanceDate,receiptKinds,receiptMethods,receiptParties,type FinanceDetail,type FinanceSummary,type PaymentSchedule,type Receipt} from "@/lib/crm-finance";
 import {officeInput as input,officeButton as primary,officeSecondary as secondary,type AuthorizedFetch} from "@/lib/crm-office-types";
 import {TripCommissionCalculator} from "./commission-calculator";
@@ -207,7 +207,7 @@ function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpenTrip}:
   const today=todayInLisbon(),soon=addDays(today,7);
   const people=(detail.adults??0)+(detail.children_count??0)||detail.traveler_count||1;
   const initialValues:CommissionInputs=detail.commission?.inputs||{commission:0,travelerCount:people,
-    travelerPrice:roundEuro((summary.total_amount??0)/people),selfTravels:false,costPerTraveler:0,shareSaving:false,cedeCommission:false,requestedCession:0};
+    travelerPrice:roundEuro((summary.total_amount??0)/people),selfTravels:false,shareSaving:false,cedeCommission:false,requestedCession:0};
   const previous=detail.commission?.source;
   const stale=Boolean(previous&&(previous.total_amount!==summary.total_amount||previous.adults!==detail.adults||previous.children_count!==detail.children_count));
   const receiptGroups=([false,true] as const).map(commission=>({commission,items:detail.receipts.filter(item=>item.kind.startsWith("commission_")===commission)}));
@@ -263,6 +263,7 @@ function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpenTrip}:
       </div>
       {editor?.type==="commission"&&<TripCommissionCalculator initialValues={initialValues} theme={theme}
         onSave={(inputs,apply_to_total)=>mutate("commission_save",{inputs,apply_to_total})}/>}
+      {detail.commission && detail.commission.rules_version !== commissionRulesVersion && <p className="text-sm text-amber-800">A comissão guardada foi calculada com a fórmula anterior. Abre a calculadora e guarda o cálculo revisto para atualizar a estimativa.</p>}
       {detail.commission&&<button className={secondary} disabled={busy} onClick={()=>remove("commission_clear")}>Remover cálculo guardado</button>}
     </section>
     {receiptGroups.map(({commission,items})=><section key={String(commission)} className={panel}>
