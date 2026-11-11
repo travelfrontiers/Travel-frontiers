@@ -111,9 +111,9 @@ function printedDate(line: string) {
   return named ? realDate(Number(named[4]), months[named[2]] || months[named[3]], Number(named[1])) : "";
 }
 
-const birthLabel = /\b(?:DATA DE NASCIMENTO|DATE OF BIRTH|NASCIMENTO|NAISSANCE|BIRTH)\b/;
-const expiryLabel = /\b(?:DATA DE VALIDADE|VALIDADE|DATE OF EXPIRY|EXPIRY DATE|EXPIRATION DATE|VALIDO ATE|VALID UNTIL|EXPIRY|EXPIRATION|VALIDITE)\b/;
-const fieldLabel = /\b(?:NOME|NAME|NAMES|APELIDOS|SURNAME|SURNAMES|NOM|SEXO|SEX|ISSUE|EMISSAO|VALIDADE|EXPIRY|NASCIMENTO|BIRTH|NACIONALIDADE|NATIONALITY|DOCUMENTO|DOCUMENT)\b/;
+const birthLabel = /\b(?:DATA DE NASCIMENTO|DATE OF BIRTH|D[. ]?O[. ]?B|NASCIMENTO|NAISSANCE|BIRTH)\b/;
+const expiryLabel = /\b(?:DATA DE VALIDADE|VALIDADE|DATE OF EXPIRY|DATE OF EXPIRATION|EXPIRY DATE|EXPIRATION DATE|VALIDO ATE|VALID UNTIL|VALID THRU|EXPIRY|EXPIRATION|VALIDITE)\b/;
+const fieldLabel = /\b(?:NOME|NAME|NAMES|APELIDOS|SOBRENOME|SOBRENOMES|SURNAME|SURNAMES|NOM|SEXO|SEX|ISSUE|EMISSAO|EXPEDICAO|VALIDADE|EXPIRY|NASCIMENTO|BIRTH|NACIONALIDADE|NATIONALITY|DOCUMENTO|DOCUMENT)\b/;
 function labelledDate(lines: string[], label: RegExp) {
   for (let index = 0; index < lines.length; index++) {
     if (!label.test(fold(lines[index]))) continue;
@@ -183,8 +183,8 @@ export function readIdentityPage(scans: string[], today: string): DocumentReadin
   // A matching full printed year resolves the century ambiguity in the MRZ.
   if (printedBirth && printedBirth <= today && (!result.birth_date || printedBirth.slice(2) === result.birth_date.slice(2))) result.birth_date = printedBirth;
   if (printedExpiry && (!result.expires_on || printedExpiry.slice(2) === result.expires_on.slice(2))) result.expires_on = printedExpiry;
-  const surname = labelledName(lines, /\b(?:APELIDOS?|SURNAMES?|NOM DE FAMILLE)\b/);
-  const given = labelledName(lines, /\b(?:NOME\(S\)|NOMES?|GIVEN NAMES?|PRENOMS?)\b/);
+  const surname = labelledName(lines, /\b(?:APELIDOS?|SOBRENOMES?|SURNAMES?|FAMILY NAMES?|NOM DE FAMILLE)\b/);
+  const given = labelledName(lines, /\b(?:NOME\(S\)|NOMES?|GIVEN NAME(?:S|\(S\))?|FIRST NAMES?|PRENOMS?)(?=\W|$)/);
   const printedName = labelledName(lines, /\b(?:NOME COMPLETO|FULL NAME|NOM COMPLET)\b/) || (given && surname ? given + " " + surname : "");
   const coverSurname = result.document_type === "passport" ? labelledName(lines, /^\[01\]/) : "";
   const coverGiven = coverSurname ? labelledName(lines, /^\[02\]/) : "";

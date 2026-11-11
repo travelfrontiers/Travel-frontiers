@@ -98,6 +98,8 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  assert.equal(noisyPassport.birth_date,"1990-02-15");
  assert.equal(noisyPassport.expires_on,"2032-05-01");
  assert.equal(read("PASSAPORTE\nVálido até 05.06.2031").expires_on,"2031-06-05");
+ const alternative=read("PASSAPORTE\nSobrenome / Surname\nCOSTA TESTE\nGiven name(s): MARTA JOANA\nPassport No.\nXY123456\nD.O.B. 12/09/1990\nDate of expiration 25/09/2035");
+ assert.deepEqual(alternative,{document_type:"passport",full_name:"Marta Joana Costa Teste",birth_date:"1990-09-12",expires_on:"2035-09-25",document_number:"XY123456"});
 
  const form=load("src/app/api/trip-requests/route.ts");
  const lead={full_name:"Synthetic Test",email:"synthetic@example.invalid",destination:"Synthetic",adults:2,children_count:2,children_ages:[1,7],budget:"1500_2000",date_flexible:true,travel_period:"Segunda quinzena de abril",consent_privacy:true};
