@@ -72,6 +72,10 @@ function abortable<T>(work:Promise<T>,signal:AbortSignal):Promise<T> {
   });
 }
 
+function isCompleteReading(reading: DocumentReading) {
+  return Boolean(reading.document_type && reading.full_name && reading.birth_date && reading.expires_on && reading.document_number);
+}
+
 export async function scanClientDocument(files:File[],signal:AbortSignal,onProgress:(message:string)=>void) {
   if(files.length<1||files.length>2||files.some(file=>!file.size||file.size>identityFileLimit||!identityFileTypes.includes(file.type))) {
     throw new Error("Escolhe até dois ficheiros JPG, PNG, WebP ou PDF, até 15 MB cada.");
@@ -103,18 +107,35 @@ export async function scanClientDocument(files:File[],signal:AbortSignal,onProgr
       const { image: page, text } = pages[index];
       const scans = [text, (await abortable(worker.recognize(page),signal)).data.text].filter(Boolean);
       const reading = readIdentityPage(scans, today);
-      if (reading.document_type && reading.full_name && reading.birth_date && reading.expires_on && reading.document_number) {
+      if (isCompleteReading(reading)) {
         readings.push(reading);
         continue;
       }
-      const top=Math.floor(page.height*0.55);
-      const {result,context}=canvas(page.width,page.height-top);
-      context.drawImage(page,0,top,page.width,page.height-top,0,0,result.width,result.height);
-      try {
-        await worker.setParameters({tessedit_pageseg_mode:PSM.SINGLE_BLOCK,tessedit_char_whitelist:"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<"});
-        scans.push((await abortable(worker.recognize(result),signal)).data.text);
-      } finally {result.width=0;result.height=0;}
-      readings.push(readIdentityPage(scans, today));
+      let best = reading;
+      // Start with the MRZ itself so the printed fields above it do not interfere.
+      // The wider crop also covers photos with extra space beneath the document.
+      await worker.setParameters({tessedit_pageseg_mode:PSM.SINGLE_BLOCK,tessedit_char_whitelist:"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<"});
+      const zoom = Math.min(2, 2400 / page.width);
+      const crops = [
+        { start: 0.85, scale: zoom },
+        { start: 0.85, scale: 1 },
+        { start: 0.88, scale: zoom },
+        { start: 0.82, scale: zoom, contrast: true },
+        { start: 0.55, scale: 1 },
+      ];
+      for (const { start, scale, contrast } of crops) {
+        const top = Math.floor(page.height * start);
+        const height = page.height - top;
+        const {result,context} = canvas(page.width * scale, height * scale);
+        try {
+          if (contrast) context.filter = "grayscale(1) contrast(1.6)";
+          context.drawImage(page,0,top,page.width,height,0,0,result.width,result.height);
+          scans.push((await abortable(worker.recognize(result),signal)).data.text);
+          best = readIdentityPage(scans, today);
+        } finally {result.width=0;result.height=0;}
+        if (isCompleteReading(best)) break;
+      }
+      readings.push(best);
     }
     return combineIdentityPages(readings);
   } finally {

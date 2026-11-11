@@ -109,7 +109,7 @@ function printedDate(line: string) {
 }
 
 const birthLabel = /\b(?:DATA DE NASCIMENTO|DATE OF BIRTH|NASCIMENTO|NAISSANCE|BIRTH)\b/;
-const expiryLabel = /\b(?:DATA DE VALIDADE|VALIDADE|DATE OF EXPIRY|EXPIRY DATE|EXPIRATION DATE|VALID UNTIL|EXPIRY|EXPIRATION|VALIDITE)\b/;
+const expiryLabel = /\b(?:DATA DE VALIDADE|VALIDADE|DATE OF EXPIRY|EXPIRY DATE|EXPIRATION DATE|VALIDO ATE|VALID UNTIL|EXPIRY|EXPIRATION|VALIDITE)\b/;
 const fieldLabel = /\b(?:NOME|NAME|NAMES|APELIDOS|SURNAME|SURNAMES|NOM|SEXO|SEX|ISSUE|EMISSAO|VALIDADE|EXPIRY|NASCIMENTO|BIRTH|NACIONALIDADE|NATIONALITY|DOCUMENTO|DOCUMENT)\b/;
 function labelledDate(lines: string[], label: RegExp) {
   for (let index = 0; index < lines.length; index++) {
@@ -182,7 +182,11 @@ export function readIdentityPage(scans: string[], today: string): DocumentReadin
   if (printedExpiry && (!result.expires_on || printedExpiry.slice(2) === result.expires_on.slice(2))) result.expires_on = printedExpiry;
   const surname = labelledName(lines, /\b(?:APELIDOS?|SURNAMES?|NOM DE FAMILLE)\b/);
   const given = labelledName(lines, /\b(?:NOME\(S\)|NOMES?|GIVEN NAMES?|PRENOMS?)\b/);
-  const visibleName = labelledName(lines, /\b(?:NOME COMPLETO|FULL NAME|NOM COMPLET)\b/) || (given && surname ? given + " " + surname : "");
+  const printedName = labelledName(lines, /\b(?:NOME COMPLETO|FULL NAME|NOM COMPLET)\b/) || (given && surname ? given + " " + surname : "");
+  const coverSurname = result.document_type === "passport" ? labelledName(lines, /^\[01\]/) : "";
+  const coverGiven = coverSurname ? labelledName(lines, /^\[02\]/) : "";
+  const coverName = coverGiven ? coverGiven + " " + coverSurname : "";
+  const visibleName = coverName && result.full_name && nameKey(coverName) === nameKey(result.full_name) ? coverName : printedName;
   if (visibleName && (!result.full_name || nameKey(visibleName) === nameKey(result.full_name))) result.full_name = visibleName;
   if (result.birth_date && result.expires_on && result.expires_on < result.birth_date) result.expires_on = "";
   return result;
