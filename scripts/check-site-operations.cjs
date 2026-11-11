@@ -9,7 +9,7 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     const module = { exports: {} };
     const imports = name => name in mocks ? mocks[name] : require(name);
     new Function("module", "exports", "require", "process", "fetch", outputText)(
-        module, module.exports, imports, { env }, network,
+        module, module.exports, imports, { env, cwd: process.cwd }, network,
     );
     return module.exports;
 }
@@ -64,6 +64,37 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     assert.equal(providerCalls, 2);
     assert.equal((await translate.POST(request("translate", "Bearer studio", { ...promotion, description: ["x".repeat(25_000)] }))).status, 413);
 
+    const emptyMeal = { nome: "", porque: "", morada: "", preco: "", maps: "" };
+    const days = Array.from({ length: 15 }, (_, i) => ({
+        data: `2030-04-${String(i + 6).padStart(2, "0")}`, titulo_dia: "Visita",
+        atividades: ["Passeio de teste"], sugestao_jantar: emptyMeal,
+        sugestao_almoco: { ...emptyMeal, nome: "Restaurante", maps: "endereço inválido" },
+        imagem_nome_ingles: "",
+    }));
+    let planMode = "complete";
+    const itinerary = load("src/app/api/generate-itinerary/route.ts", {
+        "@/lib/studio-request": controls,
+        "@/lib/itinerary-source": { sourceExtension: () => "txt", loadPrivateSource: async () => Buffer.from("Viagem fictícia") },
+        "@/lib/gemini": { generateText: async (prompt, options) => {
+            if (options.schema.properties.resumo) {
+                return JSON.stringify({ partida: "2030-04-06", regresso: "2030-04-20", resumo: "Viagem fictícia" });
+            }
+            assert.ok(options.timeoutMs > 20_000);
+            assert.match(prompt, /2030-04-06.*2030-04-20/);
+            if (planMode === "timeout") throw new DOMException("timeout", "AbortError");
+            return JSON.stringify({ introducao: "Roteiro", dicas: [], dias: planMode === "partial" ? days.slice(0, -1) : days });
+        } },
+    }, {}, async () => Response.json({}));
+    const generate = () => itinerary.POST(request("generate-itinerary", "Bearer studio", { key: "test.txt", title: "Teste" }));
+    const generated = await generate();
+    assert.equal(generated.status, 200);
+    assert.match(generated.headers.get("content-type"), /wordprocessingml/);
+    assert.equal(Buffer.from(await generated.arrayBuffer()).subarray(0, 2).toString(), "PK");
+    planMode = "partial";
+    assert.equal((await generate()).status, 502);
+    planMode = "timeout";
+    assert.equal((await generate()).status, 504);
+
     const operations = [];
     let deletionStarted = false;
     const deletionTransaction = {
@@ -102,5 +133,5 @@ function load(file, mocks = {}, env = {}, network = fetch) {
         const sum = (result.ownPrice ?? 0) + result.otherPriceGroups.reduce((total, group) => total + group.count * group.price, 0);
         assert.equal(Math.round(sum * 100), Math.round(result.totalCollected * 100));
     }
-    console.log("PASS: Studio authorization, cron secret, reversible promotion archiving, translation errors and limits, legacy itinerary deletion authorization and shared asset protection, commission cents.");
+    console.log("PASS: Studio authorization, cron secret, reversible promotion archiving, translation errors and limits, complete itinerary Word output and timeout, legacy itinerary deletion authorization and shared asset protection, commission cents.");
 })().catch(error => { console.error(error); process.exitCode = 1; });
