@@ -17,7 +17,6 @@ export function TripCommissionCalculator({initialValues,onSave,theme}:{initialVa
   const [travelerCount, setTravelerCount] = useState(String(initialValues?.travelerCount ?? 4));
   const [travelerPrice, setTravelerPrice] = useState(String(initialValues?.travelerPrice ?? 1286));
   const [selfTravels, setSelfTravels] = useState(initialValues?.selfTravels ?? false);
-  const [costPerTraveler, setCostPerTraveler] = useState(String(initialValues?.costPerTraveler ?? 1120.43));
   const [shareSaving, setShareSaving] = useState(initialValues?.shareSaving ?? false);
   const [cedeCommission, setCedeCommission] = useState(initialValues?.cedeCommission ?? false);
   const [requestedCession, setRequestedCession] = useState(String(initialValues?.requestedCession ?? 0));
@@ -34,11 +33,12 @@ export function TripCommissionCalculator({initialValues,onSave,theme}:{initialVa
   }, [darkMode, themeReady, theme]);
 
   const result = useMemo(() => {
-    return calculateCommission({commission:amount(commission),travelerCount:Math.max(1,Math.floor(Number(travelerCount)||1)),travelerPrice:amount(travelerPrice),selfTravels,costPerTraveler:amount(costPerTraveler),shareSaving,cedeCommission,requestedCession:amount(requestedCession)});
-  }, [commission, travelerCount, travelerPrice, selfTravels, costPerTraveler, shareSaving, cedeCommission, requestedCession]);
+    return calculateCommission({commission:amount(commission),travelerCount:Math.max(1,Math.floor(Number(travelerCount)||1)),travelerPrice:amount(travelerPrice),selfTravels,shareSaving,cedeCommission,requestedCession:amount(requestedCession)});
+  }, [commission, travelerCount, travelerPrice, selfTravels, shareSaving, cedeCommission, requestedCession]);
 
-  const cessionVisible = !selfTravels || (cedeCommission && result.others > 0);
-  const sharingVisible = selfTravels && shareSaving && result.people > 1;
+  const cessionVisible = result.cessionActive;
+  const sharingVisible = result.sharing;
+  const travelerCountValid = Number.isInteger(Number(travelerCount)) && Number(travelerCount) >= 1 && Number(travelerCount) <= 50;
 
   return (
     <div className={`tf-calc ${darkMode ? "tf-calc-dark" : ""} ${onSave ? "tf-calc-embedded" : ""}`}>
@@ -59,13 +59,12 @@ export function TripCommissionCalculator({initialValues,onSave,theme}:{initialVa
             <small>Soma das comissões dos elementos vendidos.</small>
           </div>
           <div className="tf-calc-fields-two">
-            <div className="tf-calc-field"><label htmlFor="traveler-count">Número de viajantes</label><input id="traveler-count" type="number" min="1" step="1" value={travelerCount} onChange={(event) => setTravelerCount(event.target.value)} /></div>
+            <div className="tf-calc-field"><label htmlFor="traveler-count">Número de viajantes</label><input id="traveler-count" type="number" min="1" max="50" step="1" value={travelerCount} onChange={(event) => setTravelerCount(event.target.value)} />{!travelerCountValid && <small>Indica um número inteiro entre 1 e 50.</small>}</div>
             <div className="tf-calc-field"><label htmlFor="traveler-price">Preço por viajante <span>euros</span></label><input id="traveler-price" type="number" min="0" step="0.01" value={travelerPrice} onChange={(event) => setTravelerPrice(event.target.value)} /></div>
           </div>
-          <label className="tf-calc-toggle"><input type="checkbox" checked={selfTravels} onChange={(event) => setSelfTravels(event.target.checked)} /><span><strong>Também vou nesta viagem</strong><small>Ativa o auto-consumo e indica o teu custo por viajante.</small></span></label>
+          <label className="tf-calc-toggle"><input type="checkbox" checked={selfTravels} onChange={(event) => setSelfTravels(event.target.checked)} /><span><strong>Também vou nesta viagem</strong><small>Inclui-te no número total de viajantes. O teu preço é calculado automaticamente.</small></span></label>
           {selfTravels && <div className="tf-calc-nested">
-            <div className="tf-calc-field"><label htmlFor="cost-per-traveler">Custo por viajante <span>euros</span></label><input id="cost-per-traveler" type="number" min="0" step="0.01" value={costPerTraveler} onChange={(event) => setCostPerTraveler(event.target.value)} /><small>O teu preço é o custo acrescido de 1%.</small></div>
-            <label className="tf-calc-toggle"><input type="checkbox" checked={shareSaving} onChange={(event) => setShareSaving(event.target.checked)} /><span><strong>Distribuir a poupança de auto-consumo por todos?</strong><small>Divide a poupança igualmente pelo grupo. Esta opção é independente da cedência da comissão.</small></span></label>
+            <label className="tf-calc-toggle"><input type="checkbox" checked={shareSaving} disabled={result.people === 1} onChange={(event) => setShareSaving(event.target.checked)} /><span><strong>Distribuir a poupança de auto-consumo por todos?</strong><small>Divide a poupança igualmente pelo grupo. Esta opção é independente da cedência da comissão.</small></span></label>
             {result.people === 1 && <small className="tf-calc-help">És a única pessoa viajante, por isso não há poupança a repartir pelo grupo.</small>}
           </div>}
           <hr />
@@ -81,10 +80,11 @@ export function TripCommissionCalculator({initialValues,onSave,theme}:{initialVa
           <div className="tf-calc-summary-head"><div className="tf-calc-section-title"><span>03</span><h2 id="trip-summary-heading">Resumo da viagem</h2></div><p>{selfTravels ? "Auto-consumo · também viajas" : "Sem auto-consumo"}</p></div>
           <div className="tf-calc-hero"><span>A tua comissão depois da cedência</span><output>{formatEuro(result.netCommission)}</output><small>Valor líquido estimado</small></div>
           <div className="tf-calc-breakdown">
+            <div><span>Comissão bruta por viajante</span><strong>{formatEuro(result.commissionPerTraveler)}</strong></div>
             <div><span>Comissão antes da cedência</span><strong>{formatEuro(result.gross)}</strong></div>
             <div><span>Comissão cedida</span><strong>{formatEuro(result.ceded)}</strong></div>
             {selfTravels && <div><span>{sharingVisible ? "O teu preço com partilha" : "Preço da tua viagem"}</span><strong>{formatEuro(result.ownPrice ?? 0)}</strong></div>}
-            {sharingVisible && <><div><span>Poupança de auto-consumo por passageiro</span><strong>{formatEuro(result.savingEach)}</strong></div><div><span>Preço por passageiro após partilha</span><strong>{formatEuro(result.sharedPrice)}</strong></div></>}
+            {sharingVisible && <><div><span>O teu preço antes da partilha</span><strong>{formatEuro(result.ownBasePrice ?? 0)}</strong></div><div><span>Poupança de auto-consumo por passageiro</span><strong>{formatEuro(result.savingEach)}</strong></div><div><span>Preço médio após partilha</span><strong>{formatEuro(result.sharedPrice)}</strong></div></>}
             {result.otherPriceGroups.length === 1
               ? <div><span>Preço por {selfTravels ? "outro passageiro" : "passageiro"}</span><strong>{formatEuro(result.otherPriceGroups[0].price)}</strong></div>
               : result.otherPriceGroups.map(group => <div key={group.price}><span>{group.count} {group.count === 1 ? "passageiro" : "passageiros"} · cada</span><strong>{formatEuro(group.price)}</strong></div>)}
@@ -94,11 +94,11 @@ export function TripCommissionCalculator({initialValues,onSave,theme}:{initialVa
           <p className="tf-calc-note">{selfTravels
             ? (sharingVisible
               ? `A tua poupança de auto-consumo (${formatEuro(result.potentialSaving)}) é repartida igualmente pelos ${result.people} passageiros. A cedência da comissão é calculada à parte.`
-              : "O teu preço é custo + 1%. Os outros passageiros mantêm o preço completo, salvo qualquer cedência da comissão que escolhas.")
+              : "O teu preço é o preço por viajante menos a comissão por viajante, com 1% de desconto sobre esse valor. Recebes 80% da comissão dos restantes viajantes, antes de qualquer cedência.")
             : "Sem auto-consumo, a comissão antes da cedência corresponde a 80% da comissão total. O montante escolhido é repartido igualmente pelos passageiros."}</p>
         </aside>
       </div>
-      {onSave ? <div className="tf-calc-card" style={{marginTop:20}}><label className="tf-calc-toggle"><input type="checkbox" checked={applyToTotal} onChange={e=>setApplyToTotal(e.target.checked)}/><span><strong>Atualizar também o valor total da reserva para {formatEuro(result.totalCollected)}</strong><small>Confirma o preço final antes de ativar. O plano de prestações não é reescrito.</small></span></label>{saveError&&<p role="alert" className="tf-calc-warning">{saveError}</p>}<button type="button" className="tf-calc-theme" style={{marginTop:16}} disabled={saving} onClick={async()=>{setSaving(true);setSaveError("");try{await onSave({commission:Number(commission),travelerCount:Number(travelerCount),travelerPrice:Number(travelerPrice),selfTravels,costPerTraveler:Number(costPerTraveler),shareSaving,cedeCommission,requestedCession:Number(requestedCession)},applyToTotal);}catch(c){setSaveError(c instanceof Error?c.message:"Não foi possível guardar o cálculo.");}finally{setSaving(false);}}}>{saving?"A guardar…":"Guardar cálculo nesta viagem"}</button><p className="tf-calc-note">O cálculo só é enviado para o CRM quando carregas em Guardar. Não regista pagamentos nem envia dinheiro.</p></div> : <p className="tf-calc-device-note">Os valores são calculados neste dispositivo e não são enviados para nenhum serviço.</p>}
+      {onSave ? <div className="tf-calc-card" style={{marginTop:20}}><label className="tf-calc-toggle"><input type="checkbox" checked={applyToTotal} onChange={e=>setApplyToTotal(e.target.checked)}/><span><strong>Atualizar também o valor total da reserva para {formatEuro(result.totalCollected)}</strong><small>Confirma o preço final antes de ativar. O plano de prestações não é reescrito.</small></span></label>{saveError&&<p role="alert" className="tf-calc-warning">{saveError}</p>}<button type="button" className="tf-calc-theme" style={{marginTop:16}} disabled={saving || !travelerCountValid} onClick={async()=>{setSaving(true);setSaveError("");try{await onSave({commission:Number(commission),travelerCount:Number(travelerCount),travelerPrice:Number(travelerPrice),selfTravels,shareSaving,cedeCommission,requestedCession:Number(requestedCession)},applyToTotal);}catch(c){setSaveError(c instanceof Error?c.message:"Não foi possível guardar o cálculo.");}finally{setSaving(false);}}}>{saving?"A guardar…":"Guardar cálculo nesta viagem"}</button><p className="tf-calc-note">O cálculo só é enviado para o CRM quando carregas em Guardar. Não regista pagamentos nem envia dinheiro.</p></div> : <p className="tf-calc-device-note">Os valores são calculados neste dispositivo e não são enviados para nenhum serviço.</p>}
       <style jsx>{`
         .tf-calc{max-width:1120px;margin:0 auto;padding:26px 20px 64px;color:#374151}
         .tf-calc-intro{margin-bottom:26px}.tf-calc-eyebrow{margin:0;color:#ea580c;font-size:12px;font-weight:750;letter-spacing:.14em;text-transform:uppercase}
@@ -108,7 +108,7 @@ export function TripCommissionCalculator({initialValues,onSave,theme}:{initialVa
         .tf-calc-section-title{display:flex;align-items:center;gap:12px;margin-bottom:20px}.tf-calc-section-title>span{width:31px;height:31px;display:grid;place-items:center;border-radius:10px;background:#fff7ed;color:#ea580c;font-size:14px;font-weight:800}.tf-calc-section-title h2{margin:0;color:#1a1a1a;font-size:18px;letter-spacing:-.02em}
         .tf-calc-field{margin:0 0 17px}.tf-calc-field label{display:flex;justify-content:space-between;gap:10px;margin-bottom:7px;color:#1a1a1a;font-size:14px;font-weight:700}.tf-calc-field label span{color:#6b7280;font-size:12px;font-weight:500}
         .tf-calc-field input{width:100%;height:48px;border:1px solid #d1d5db;border-radius:11px;background:#fff;padding:0 13px;color:#1a1a1a;font:inherit;font-variant-numeric:tabular-nums}.tf-calc-field input:focus{outline:none;border-color:#f97316;box-shadow:0 0 0 4px #f973161c}.tf-calc-field small,.tf-calc-help{display:block;margin-top:5px;color:#6b7280;font-size:12px;line-height:1.45}
-        .tf-calc-fields-two{display:grid;grid-template-columns:1fr 1fr;gap:13px}.tf-calc-toggle{display:flex;align-items:center;gap:12px;padding:14px 15px;background:#fffaf5;border:1px solid #fed7aa;border-radius:13px;cursor:pointer}.tf-calc-toggle input{width:19px;height:19px;margin:0;accent-color:#f97316;flex:none}.tf-calc-toggle strong{display:block;color:#1a1a1a;font-size:14px}.tf-calc-toggle small{display:block;margin-top:2px;color:#6b7280;font-size:12px;line-height:1.4}.tf-calc-toggle input:disabled{cursor:not-allowed}.tf-calc-nested{margin-top:15px}.tf-calc-nested .tf-calc-field{margin-bottom:14px}
+        .tf-calc-fields-two{display:grid;grid-template-columns:1fr 1fr;gap:13px}.tf-calc-toggle{display:flex;align-items:center;gap:12px;padding:14px 15px;background:#fffaf5;border:1px solid #fed7aa;border-radius:13px;cursor:pointer}.tf-calc-toggle input{appearance:auto;width:19px;height:19px;margin:0;accent-color:#f97316;flex:none}.tf-calc-toggle strong{display:block;color:#1a1a1a;font-size:14px}.tf-calc-toggle small{display:block;margin-top:2px;color:#6b7280;font-size:12px;line-height:1.4}.tf-calc-toggle input:disabled{cursor:not-allowed}.tf-calc-nested{margin-top:15px}.tf-calc-nested .tf-calc-field{margin-bottom:14px}
         .tf-calc hr{border:0;border-top:1px solid #f0f1f2;margin:20px 0}.tf-calc-toggle-spaced{margin-bottom:14px}.tf-calc-cession{padding:16px;background:#fff7ed;border:1px solid #fed7aa;border-radius:15px}.tf-calc-cession .tf-calc-field{margin:0}.tf-calc-amount{position:relative}.tf-calc-amount input{padding-right:48px}.tf-calc-amount>span{position:absolute;right:15px;top:12px;color:#6b7280;font-weight:700}.tf-calc-warning{margin:8px 2px 0;color:#9a3412;font-size:12px}.tf-calc-muted{color:#6b7280;font-size:13px;line-height:1.5}
         .tf-calc-result{position:sticky;top:20px;overflow:hidden}.tf-calc-summary-head{margin-bottom:15px}.tf-calc-summary-head .tf-calc-section-title{margin-bottom:0}.tf-calc-summary-head>p{margin:4px 0 0;color:#6b7280;font-size:13px}
         .tf-calc-hero{border-radius:17px;padding:19px 20px;color:#fff;background:linear-gradient(125deg,#f97316,#f59e0b);box-shadow:0 12px 26px #f973162b}.tf-calc-hero>span,.tf-calc-hero small{display:block;color:#fff5e9;font-size:12px}.tf-calc-hero output{display:block;margin-top:4px;font-size:clamp(32px,4vw,42px);line-height:1.12;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums}.tf-calc-hero small{margin-top:5px}

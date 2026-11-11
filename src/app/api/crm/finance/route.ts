@@ -32,7 +32,7 @@ function commissionInputs(raw:unknown):CommissionInputs {
   }
   return {
     commission:money(input.commission,0,1e8),travelerCount:input.travelerCount,travelerPrice:money(input.travelerPrice,0,1e8),
-    selfTravels:input.selfTravels,costPerTraveler:money(input.costPerTraveler,0,1e8),shareSaving:input.shareSaving,
+    selfTravels:input.selfTravels,shareSaving:input.shareSaving,
     cedeCommission:input.cedeCommission,requestedCession:money(input.requestedCession,0,1e8),
   };
 }

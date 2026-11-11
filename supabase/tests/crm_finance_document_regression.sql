@@ -39,7 +39,7 @@ begin
   assert failed,'receipt belongs to the trip or its clients';
 
   saved:=public.crm_finance_mutate(trip,revision,'commission_save',jsonb_build_object('apply_to_total',false,'snapshot',
-    jsonb_build_object('rules_version','tf-commission-v1','inputs','{}'::jsonb,'result',jsonb_build_object('netCommission',188,'totalCollected',2900))));
+    jsonb_build_object('rules_version','tf-commission-v2','inputs','{}'::jsonb,'result',jsonb_build_object('netCommission',188,'totalCollected',2900))));
   revision:=(saved->>'version')::integer;
   saved:=public.crm_finance_mutate(trip,revision,'receipt_save',jsonb_build_object('kind','commission_payment','amount',100,'paid_on',today,'received_by','agency','method','transfer'));
   revision:=(saved->>'version')::integer;
