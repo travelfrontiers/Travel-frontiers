@@ -1,3 +1,4 @@
+import { normalizeTripServices } from "@/lib/crm-trip-services";
 import { NextRequest } from "next/server";
 import { crmConfig,payload,failure,privateJson,rpc,uuid,nullableId,optionalDate,CrmError } from "@/lib/crm-office-api";
 export const runtime="nodejs";
@@ -37,6 +38,15 @@ export async function POST(request:NextRequest) { try {
   for(const key of ["valid_until","departure_date","return_date"]){if(!optionalDate(data[key]))throw new CrmError("Indica datas válidas.");clean[key]=data[key]||null;}
   if(clean.departure_date&&clean.return_date&&String(clean.return_date)<String(clean.departure_date))throw new CrmError("O regresso não pode ser anterior à partida.");
   if(!nullableId(data.document_id))throw new CrmError("Documento inválido.");
+  if (data.imported != null) {
+   const imported = data.imported as Record<string, unknown>;
+   const services = normalizeTripServices(imported.services);
+   const reference = typeof imported.reference === "string" ? imported.reference.trim() : "";
+   const adults = String(imported.adults ?? "");
+   const children = String(imported.children_count ?? "");
+   if (!services || reference.length > 80 || !/^(|[1-9]|1[0-9]|20)$/.test(adults) || !/^(|[0-9]|[12][0-9]|30)$/.test(children)) throw new CrmError("Revê os dados extraídos do PDF.");
+   clean.imported = { reference, adults, children_count: children, services };
+  }
   Object.assign(clean,{total_amount:amount,currency,document_id:data.document_id||null});
   const proposal=await rpc(config,"crm_save_proposal",{p_id:body.id||null,p_client_id:body.client_id,p_lead_id:body.lead_id||null,p_trip_id:body.trip_id||null,p_expected_version:body.expected_version,p_data:clean});
   return privateJson({proposal},body.id?200:201);
