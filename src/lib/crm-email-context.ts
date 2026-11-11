@@ -21,7 +21,8 @@ export async function emailRest<T>(config: EmailConfig, table: string, query: Re
     ...init, headers: { ...config.headers, ...init?.headers }, cache: "no-store",
   });
   if (!response.ok) throw new CrmError("Não foi possível consultar ou guardar o histórico de email.", 502);
-  return (response.status === 204 ? undefined : await response.json()) as T;
+  const body = await response.text();
+  return (body ? JSON.parse(body) : undefined) as T;
 }
 
 async function row<T>(config: EmailConfig, table: string, id: string, select = "*") {
