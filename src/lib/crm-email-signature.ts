@@ -45,7 +45,7 @@ export function quoteBodyWithLinks(body: string, language: EmailLanguage) {
 const escapes: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, character => escapes[character]);
 
-export function formatCrmEmail(body: string, language: EmailLanguage, links: QuoteDocumentLinks | null) {
+export function formatCrmEmail(body: string, language: EmailLanguage, links: QuoteDocumentLinks | null, signatureCid: string) {
   const documents = quoteDocumentItems(language, links);
   const textSignature = /Tiago Ferreira\s+Travel Frontiers\s*$/i.test(body) ? emailSignatureSite : emailSignatureName + "\n" + emailSignatureSite;
   const text = [body, textSignature,
@@ -53,7 +53,7 @@ export function formatCrmEmail(body: string, language: EmailLanguage, links: Quo
   const html = `<!doctype html><html lang="${language}"><body>
 <div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.55">${escapeHtml(body).replace(/\r\n|\r|\n/g, "<br>")}</div>
 <div style="margin-top:20px">
-  <a href="${emailSignatureSite}"><img src="${emailSignatureImage}" alt="${emailSignatureName}" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0"></a>
+  <a href="${emailSignatureSite}"><img src="cid:${escapeHtml(signatureCid)}" alt="${emailSignatureName}" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0"></a>
   ${documents.map(({ label, url }) => `<div style="font-family:Arial,sans-serif;font-size:14px;margin-top:6px"><a href="${escapeHtml(url)}">${escapeHtml(label)}</a></div>`).join("")}
 </div></body></html>`;
   return { text, html };
