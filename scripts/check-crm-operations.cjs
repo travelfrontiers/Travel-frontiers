@@ -86,6 +86,15 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  assert.equal(combineIdentityPages([passport,{...passport,expires_on:"2031-04-06"}]).expires_on,"2031-04-06");
  assert.deepEqual(read("SEM DADOS"),{document_type:null,full_name:"",birth_date:"",expires_on:"",document_number:""});
 
+ const accentedPassport=readIdentityPage([
+  "PASSAPORTE\n[01] PINTO EXEMPLO\n[02] JOÃO",
+  "PPPRTPINTO<EXEMPLO<<JOAO<<<<<<<<<<<<<<<<<<<<<<\nL898902C36UTO7408122F1204159ZE184226B<<<<<10",
+ ],"2026-11-11");
+ assert.equal(accentedPassport.full_name,"João Pinto Exemplo");
+ assert.equal(accentedPassport.document_number,"L898902C3");
+ assert.equal(accentedPassport.expires_on,"2012-04-15");
+ assert.equal(read("PASSAPORTE\nVálido até 05.06.2031").expires_on,"2031-06-05");
+
  const form=load("src/app/api/trip-requests/route.ts");
  const lead={full_name:"Synthetic Test",email:"synthetic@example.invalid",destination:"Synthetic",adults:2,children_count:2,children_ages:[1,7],budget:"1500_2000",date_flexible:true,travel_period:"Segunda quinzena de abril",consent_privacy:true};
  calls=[];
