@@ -49,7 +49,12 @@ export default function CrmNewClientForm({ saving, onSave, authorizedFetch }: {
           <label className={field}>Número/ID *<input name="document_number" required maxLength={80} defaultValue={document.reading.document_number} className={officeInput} /></label>
           <label className={field}>Validade *<input name="expires_on" required type="date" defaultValue={document.reading.expires_on} className={officeInput} /></label>
         </div>
-        <label className="flex items-start gap-2 text-sm"><input name="reviewed" type="checkbox" required className="mt-1" /> Confirmei os dados da ficha e do documento.</label>
+        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm">
+          <input name="reviewed" type="checkbox" required className="mt-0.5 size-[18px] shrink-0 appearance-auto accent-orange-800"
+            onInvalid={event => event.currentTarget.setCustomValidity("Assinala esta caixa para confirmar os dados antes de guardar.")}
+            onChange={event => event.currentTarget.setCustomValidity("")}/>
+          <span>Confirmei os dados da ficha e do documento. *</span>
+        </label>
         <button type="button" className={officeSecondary} onClick={() => setDocument(null)}>Retirar documento da ficha</button>
       </fieldset>}
       <div className="flex justify-end sm:col-span-2">

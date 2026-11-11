@@ -159,8 +159,12 @@ export default function CrmDocumentScanner(props: ScannerProps) {
           <label className={field}>Data de nascimento<input name="birth_date" type="date" max={lisbonDay(new Date().toISOString())} defaultValue={reading.birth_date} required className={input}/></label>
           <label className={field}>Validade<input name="expires_on" type="date" defaultValue={reading.expires_on} required className={input}/></label>
         </div>
-        <label className="flex items-start gap-2 text-sm"><input name="reviewed" type="checkbox" required className="mt-1 accent-orange-800"/>
-          Confirmei que o documento pertence a este cliente e que os dados estão certos.</label>
+        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm">
+          <input name="reviewed" type="checkbox" required className="mt-0.5 size-[18px] shrink-0 appearance-auto accent-orange-800"
+            onInvalid={event => event.currentTarget.setCustomValidity("Assinala esta caixa para confirmar os dados antes de guardar.")}
+            onChange={event => event.currentTarget.setCustomValidity("")}/>
+          <span>Confirmei que o documento pertence a este cliente e que os dados estão certos. *</span>
+        </label>
         <p className="text-xs text-slate-500">Ao guardar, o nome e a data de nascimento são atualizados na ficha. Se o documento já existir, é atualizada a validade.</p>
         <button className={primary} disabled={saving}>{saving?"A guardar…":"Guardar documento e ficha"}</button>
       </form>}
