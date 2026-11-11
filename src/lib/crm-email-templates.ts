@@ -12,7 +12,6 @@ export const emailAttachmentLabels: Record<EmailAttachmentRole, string> = {
 type Template = {
   label: string;
   scopes: readonly EmailScope[];
-  agencyCopy?: boolean;
   required?: readonly EmailAttachmentRole[];
   copy: Record<EmailLanguage, readonly [subject: string, body: string]>;
 };
@@ -35,7 +34,7 @@ export const emailTemplates: Record<EmailTemplateKey, Template> = {
     },
   },
   quote: {
-    label: "Antes da reserva · enviar orçamento", scopes: ["proposal"], agencyCopy: true,
+    label: "Antes da reserva · enviar orçamento", scopes: ["proposal"],
     required: ["quote", "fin", "terms"],
     copy: {
       pt: ["Proposta de viagem para {{destino}} · versão {{versao}}", "Segue em anexo a proposta para {{destino}}, no período {{periodo}}.\n\nValor total: {{valor}}. Desconto: {{desconto}}.\nValidade: {{validade}}.\nPagamento: {{condicoes_pagamento}}.\nCancelamento: {{cancelamento}}.\nSeguro incluído e opção de seguro adicional: {{seguro}}.\nAlojamento e regime: {{hotel_regime}}.\nDocumentação necessária: {{documentacao}}.\nComparência no aeroporto: {{aeroporto}}.\nProteção de dados: {{privacidade}}.\n\nJunto envio a FIN e as condições gerais de venda. Para aceitares, responde a este email a indicar que leste e aceitas a proposta desta versão e os documentos anexos."],
@@ -52,7 +51,7 @@ export const emailTemplates: Record<EmailTemplateKey, Template> = {
     },
   },
   booking: {
-    label: "Após a reserva · confirmação", scopes: ["trip"], agencyCopy: true,
+    label: "Após a reserva · confirmação", scopes: ["trip"],
     copy: {
       pt: ["Confirmação da reserva · {{destino}}", "A tua reserva para {{destino}}, no período {{periodo}}, está confirmada.\nReferência: {{referencia}}.\nValor total: {{valor}}. Desconto: {{desconto}}.\nRecebido: {{pago}}. Saldo: {{saldo}}. Prazo: {{prazo}}.\nCancelamento: {{cancelamento}}.\nSeguro contratado: {{seguro}}.\nHotel e regime: {{hotel_regime}}.\nProteção de dados: {{privacidade}}.\n\nA previsão para o envio da documentação final é cerca de sete dias antes da partida. Responde a este email a confirmar que recebeste e verificaste os dados e a informação da reserva."],
       en: ["Booking confirmation · {{destino}}", "Your booking for {{destino}}, for {{periodo}}, is confirmed.\nReference: {{referencia}}.\nTotal: {{valor}}. Discount: {{desconto}}.\nReceived: {{pago}}. Balance: {{saldo}}. Due date: {{prazo}}.\nCancellation: {{cancelamento}}.\nInsurance booked: {{seguro}}.\nHotel and board: {{hotel_regime}}.\nData protection: {{privacidade}}.\n\nI expect to send the final travel documents around seven days before departure. Please reply to confirm that you received and checked the booking information."],
