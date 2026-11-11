@@ -7,6 +7,16 @@ export type DocumentReading = {
   document_number: string;
 };
 
+export const identityFieldLabels = {
+  document_type: "tipo", document_number: "número/ID", full_name: "nome completo",
+  birth_date: "data de nascimento", expires_on: "validade",
+} satisfies Record<keyof DocumentReading, string>;
+const identityFields = Object.keys(identityFieldLabels) as (keyof DocumentReading)[];
+
+export function missingIdentityFields(reading: DocumentReading) {
+  return identityFields.filter(field => !reading[field]).map(field => identityFieldLabels[field]);
+}
+
 const emptyReading: DocumentReading = {
   document_type: null, full_name: "", birth_date: "", expires_on: "", document_number: "",
 };
@@ -127,6 +137,22 @@ function labelledName(lines: string[], label: RegExp) {
   return "";
 }
 
+const numberLabel = /(?:\b(?:NUMERO|N(?:\.?\s*[º°O])?)\.?\s*(?:D[EO]\s+)?(?:DOCUMENTO|PASSAPORTE|CARTAO)\b|\b(?:DOCUMENT|PASSPORT)\s+(?:NUMBER|NO\.?|N[°º]|#))/g;
+function printedDocumentNumber(lines: string[]) {
+  const found = new Set<string>();
+  for (let index = 0; index < lines.length; index++) {
+    const line = fold(lines[index]);
+    const label = [...line.matchAll(numberLabel)].at(-1);
+    if (!label || label.index === undefined) continue;
+    const tail = line.slice(label.index + label[0].length).replace(/^[\s:|/–-]+/, "");
+    const value = tail || fold(lines[index + 1] || "");
+    if (printedDate(value) || !/^[A-Z0-9]+(?:[ -][A-Z0-9]+){0,3}$/.test(value)) continue;
+    const number = value.replace(/ /g, "");
+    if (/^(?=[A-Z0-9-]*\d)[A-Z0-9][A-Z0-9-]{4,19}$/.test(number)) found.add(number);
+  }
+  return found.size === 1 ? [...found][0] : "";
+}
+
 export function readIdentityPage(scans: string[], today: string): DocumentReading {
   const verified = scans.flatMap(scan => readMrz(scan, today));
   const fingerprints = new Set(verified.filter(reading => reading.document_number).map(reading => reading.document_type + ":" + reading.document_number));
@@ -148,7 +174,7 @@ export function readIdentityPage(scans: string[], today: string): DocumentReadin
     if (/\bCARTAO\s+DE\s+CIDADAO\b/.test(normalized)) result.document_type = "identity_card";
     else if (/\b(PASSAPORTE|PASSPORT|PASSEPORT)\b/.test(normalized)) result.document_type = "passport";
   }
-  if (!result.document_type) return result;
+  result.document_number ||= printedDocumentNumber(lines);
   const printedBirth = labelledDate(lines, birthLabel);
   const printedExpiry = labelledDate(lines, expiryLabel);
   // A matching full printed year resolves the century ambiguity in the MRZ.
@@ -162,20 +188,18 @@ export function readIdentityPage(scans: string[], today: string): DocumentReadin
   return result;
 }
 
-const identityFields = ["document_type", "document_number", "full_name", "birth_date", "expires_on"] as const;
-
 export function combineIdentityPages(pages: DocumentReading[]): DocumentReading {
   const [first, second] = [...pages].sort((a, b) =>
     identityFields.filter(field => b[field]).length - identityFields.filter(field => a[field]).length);
   if (!first) return { ...emptyReading };
-  if (!second?.document_type) return first;
+  if (!second || identityFields.every(field => !second[field])) return first;
   const namesMatch = Boolean(first.full_name && second.full_name && nameKey(first.full_name) === nameKey(second.full_name));
   const numbersMatch = Boolean(first.document_number && first.document_number === second.document_number);
   const conflicts = identityFields.some(field =>
     first[field] && second[field] && (field === "full_name" ? !namesMatch : first[field] !== second[field]));
   if (conflicts) throw new Error("As páginas têm dados diferentes. Escolhe apenas as faces do mesmo documento.");
   // Without evidence that the pages match, keep the most complete reading on its own.
-  if (!numbersMatch) return first;
+  if (!numbersMatch && !(namesMatch && first.birth_date && first.birth_date === second.birth_date)) return first;
   return {
     document_type: first.document_type || second.document_type,
     document_number: first.document_number || second.document_number,
