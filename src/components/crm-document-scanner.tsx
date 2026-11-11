@@ -10,9 +10,13 @@ type SavedScan={client:ClientIdentity;document:{id:string;client_id:string;docum
 const nameKey=(name:string)=>name.normalize("NFD").replace(/\p{M}/gu,"").toLowerCase().replace(/[^a-z]/g,"");
 const field="block space-y-1 text-sm font-medium";
 
-export default function CrmDocumentScanner({client,authorizedFetch,onSaved}:{
-  client:ClientIdentity;authorizedFetch:AuthorizedFetch;onSaved:(result:SavedScan)=>void;
-}) {
+type ScannerProps =
+  | { client: ClientIdentity; authorizedFetch: AuthorizedFetch; onSaved: (result: SavedScan) => void }
+  | { onRead: (reading: DocumentReading) => void; onScanning: (scanning: boolean) => void; disabled?: boolean };
+
+export default function CrmDocumentScanner(props: ScannerProps) {
+  const client = "client" in props ? props.client : null;
+  const disabled = "disabled" in props && props.disabled;
   const [open,setOpen]=useState(false);
   const [reading,setReading]=useState<DocumentReading|null>(null);
   const [progress,setProgress]=useState("");
@@ -29,7 +33,8 @@ export default function CrmDocumentScanner({client,authorizedFetch,onSaved}:{
     event.preventDefault();
     const files=Array.from(fileInput.current?.files||[]);
     setSaved(false);setError("");setReading(null);setScanning(true);
-    reviewedRevision.current=client.updated_at;
+    reviewedRevision.current=client?.updated_at ?? "";
+    if ("onScanning" in props) props.onScanning(true);
     const request=new AbortController();
     controller.current=request;
     const timer=window.setTimeout(()=>request.abort(),120000);
@@ -38,8 +43,12 @@ export default function CrmDocumentScanner({client,authorizedFetch,onSaved}:{
       const result=await scanClientDocument(files,request.signal,setProgress);
       if(request.signal.aborted) return;
       if(!result.document_type) setError("Não consegui identificar o documento. Podes tentar uma fotografia mais nítida ou completar os campos.");
-      if(result.full_name&&nameKey(result.full_name)===nameKey(client.full_name)) result.full_name=client.full_name;
-      setReading(result);
+      if (client && result.full_name && nameKey(result.full_name) === nameKey(client.full_name)) result.full_name = client.full_name;
+      if ("onRead" in props) {
+        props.onRead(result);
+        setOpen(false);
+        setSaved(true);
+      } else setReading(result);
     } catch(cause) {
       setError(request.signal.aborted?"A leitura foi interrompida.":cause instanceof Error?cause.message:"Não foi possível ler o documento.");
     } finally {
@@ -47,11 +56,14 @@ export default function CrmDocumentScanner({client,authorizedFetch,onSaved}:{
       if(fileInput.current) fileInput.current.value="";
       controller.current=null;
       setScanning(false);setProgress("");
+      if ("onScanning" in props) props.onScanning(false);
     }
   }
 
   async function save(event:FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!("client" in props)) return;
+    const { client, authorizedFetch, onSaved } = props;
     const form=new FormData(event.currentTarget);
     setSaving(true);setError("");
     try {
@@ -76,25 +88,25 @@ export default function CrmDocumentScanner({client,authorizedFetch,onSaved}:{
   ].filter(Boolean) : [];
 
   return <div className="my-3 space-y-3">
-    <button type="button" aria-expanded={open} className={secondary} disabled={saving}
+    <button type="button" aria-expanded={open} className={secondary} disabled={disabled || saving || scanning}
       onClick={()=>{if(open){controller.current?.abort();setReading(null);}setError("");setSaved(false);setOpen(!open);}}>
       {open?"Fechar leitura":"Ler passaporte ou Cartão de Cidadão"}
     </button>
-    {saved&&<p role="status" className="text-sm text-orange-800">Documento e ficha do cliente guardados.</p>}
+    {saved&&<p role="status" className="text-sm text-orange-800">{client ? "Documento e ficha do cliente guardados." : "Leitura concluída. Confirma os campos no formulário."}</p>}
     {open&&<div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
       <form onSubmit={scan} className="space-y-3">
         <label className={field}>Fotografias ou PDF do documento
-          <input ref={fileInput} type="file" required multiple disabled={scanning||saving} accept="image/jpeg,image/png,image/webp,application/pdf" className={input}/>
+          <input ref={fileInput} type="file" required multiple disabled={disabled||scanning||saving} accept="image/jpeg,image/png,image/webp,application/pdf" className={input}/>
         </label>
         <p className="text-xs text-slate-500">Até duas faces ou páginas, 15 MB por ficheiro. A leitura é feita neste navegador.</p>
         <div className="flex flex-wrap gap-2">
-          <button className={primary} disabled={scanning||saving}>Ler documento</button>
+          <button className={primary} disabled={disabled||scanning||saving}>Ler documento</button>
           {scanning&&<button type="button" className={secondary} onClick={()=>controller.current?.abort()}>Interromper</button>}
         </div>
       </form>
       {progress&&<p role="status" className="text-sm">{progress}</p>}
       {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
-      {reading&&<form onSubmit={save} className="space-y-3 border-t border-slate-200 pt-4">
+      {reading&&client&&<form onSubmit={save} className="space-y-3 border-t border-slate-200 pt-4">
         <p className="text-sm font-semibold">Confirma os dados de {client.full_name}</p>
         {unread.length > 0 && <p role="status" className="text-sm text-amber-800">Confirma no documento e preenche os campos por ler ({unread.join(", ")}).</p>}
         <div className="grid gap-3 sm:grid-cols-2">

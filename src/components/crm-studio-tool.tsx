@@ -6,6 +6,7 @@ import { ArrowUpRight, Moon, Sun, BellRing, CalendarDays, FileWarning, Inbox, Li
 import styles from "./crm-studio-tool.module.css";
 import CrmDriveDocuments from "./crm-drive-documents";
 import CrmDocumentScanner from "./crm-document-scanner";
+import CrmNewClientForm from "./crm-new-client-form";
 import CrmProposals from "./crm-proposals";
 import CrmEmailPanel from "./crm-email-panel";
 import CrmCalendar from "./crm-calendar";
@@ -353,11 +354,14 @@ export default function CrmStudioTool() {
     try {
       const response = await authorizedFetch("/api/crm/clients", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ full_name: data.get("full_name"), email: data.get("email"), phone: data.get("phone"), language: data.get("language"), internal_notes: data.get("internal_notes") }),
+        body: JSON.stringify({ full_name: data.get("full_name"), email: data.get("email"), phone: data.get("phone"), language: data.get("language"), internal_notes: data.get("internal_notes"), birth_date: data.get("birth_date"),
+          document: data.has("document_type") ? { document_type: data.get("document_type"), document_number: data.get("document_number"),
+            expires_on: data.get("expires_on"), reviewed: data.get("reviewed") === "on" } : undefined }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível guardar o cliente.");
       setClients((current) => [...current, result.client as Client].sort((a, b) => a.full_name.localeCompare(b.full_name, "pt-PT")));
+      if (result.document) setDocuments(current => [...current, result.document as ClientDocument]);
       setShowClientForm(false); form.reset();
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Não foi possível guardar o cliente."); }
     finally { setSaving(false); }
@@ -777,14 +781,7 @@ export default function CrmStudioTool() {
         {!loading && view === "clients" && <>
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-lg font-semibold">Clientes</h2><p className="text-sm text-slate-500">Regista clientes manualmente e associa-lhes várias viagens.</p></div><div className="flex w-full flex-wrap gap-3 sm:w-auto"><label className="min-w-52 flex-1 sm:flex-none"><span className="sr-only">Pesquisar clientes</span><input value={clientSearch} onChange={(event) => setClientSearch(event.target.value)} placeholder="Pesquisar cliente" className={inputClass} /></label><button type="button" onClick={() => setShowClientForm((open) => !open)} className="rounded-full bg-orange-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-900">{showClientForm ? "Fechar formulário" : "Adicionar cliente"}</button></div></div>
           <div className="mb-5 grid gap-3 sm:grid-cols-3"><label className="text-sm">Idioma<select value={clientLanguage} onChange={e=>setClientLanguage(e.target.value)} className={inputClass}><option value="">Todos</option><option value="pt">Português</option><option value="en">English</option><option value="fr">Français</option></select></label><label className="text-sm">Situação<select value={clientFilter} onChange={e=>setClientFilter(e.target.value)} className={inputClass}><option value="">Todos</option><option value="travelled">Com viagens associadas</option><option value="expiring">Documentos vencidos ou a vencer em 30 dias</option></select></label><label className="text-sm">Ordenar<select value={clientSort} onChange={e=>setClientSort(e.target.value)} className={inputClass}><option value="name">Nome</option><option value="newest">Mais recentes</option></select></label></div>
-          {showClientForm && <form onSubmit={createClient} className="mb-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2">
-            <label className="space-y-1 text-sm font-semibold">Nome completo *<input name="full_name" required minLength={2} maxLength={160} autoComplete="name" className={inputClass} /></label>
-            <label className="space-y-1 text-sm font-semibold">Email<input name="email" type="email" maxLength={254} autoComplete="email" className={inputClass} /></label>
-            <label className="space-y-1 text-sm font-semibold">Telefone<input name="phone" type="tel" maxLength={40} autoComplete="tel" className={inputClass} /></label>
-            <label className="space-y-1 text-sm font-semibold">Idioma<select name="language" defaultValue="pt" className={inputClass}><option value="pt">Português</option><option value="en">English</option><option value="fr">Français</option></select></label>
-            <label className="space-y-1 text-sm font-semibold sm:col-span-2">Notas internas<textarea name="internal_notes" rows={3} maxLength={4000} className={inputClass} placeholder="Preferências ou notas úteis sobre o cliente" /></label>
-            <div className="sm:col-span-2 flex justify-end"><button disabled={saving} className="rounded-full bg-orange-800 px-6 py-3 font-semibold text-white hover:bg-orange-900 disabled:opacity-60">{saving ? "A guardar…" : "Guardar cliente"}</button></div>
-          </form>}
+          {showClientForm && <CrmNewClientForm saving={saving} onSave={createClient} />}
           {visibleClients.length === 0 && <p className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">{clients.length ? "Não encontrei clientes com essa pesquisa." : "Ainda não há clientes. Usa “Adicionar cliente” para registar o primeiro."}</p>}
           {visibleClients.length > 0 && <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{visibleClients.map((client) => {
             const clientTrips = trips.filter((trip) => trip.client_id === client.id || trip.client_ids.includes(client.id));
