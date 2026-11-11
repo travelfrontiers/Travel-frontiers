@@ -5,7 +5,7 @@ import {authorizeDrive, downloadDriveFile, loadGoogle} from "@/lib/crm-drive-cli
 import {chooseDriveFiles, type DrivePickerConfig} from "@/lib/crm-drive-picker";
 import {identityFileLimit, identityFileTypes, scanClientDocument} from "@/lib/crm-document-scan";
 import {lisbonDay} from "@/lib/crm-calendar";
-import {identityFieldLabels, missingIdentityFields, type DocumentReading} from "@/lib/crm-document-ocr";
+import {missingIdentityFields, type DocumentReading} from "@/lib/crm-document-ocr";
 import {officeInput as input,officeButton as primary,officeSecondary as secondary,type AuthorizedFetch} from "@/lib/crm-office-types";
 
 type ClientIdentity={id:string;full_name:string;birth_date?:string|null;updated_at:string};
@@ -64,8 +64,10 @@ export default function CrmDocumentScanner(props: ScannerProps) {
       timer=window.setTimeout(()=>request.abort(),120000);
       const result=await scanClientDocument(files,request.signal,setProgress);
       if(request.signal.aborted) return;
-      if (missingIdentityFields(result).length === Object.keys(identityFieldLabels).length) {
-        setError("A leitura terminou sem encontrar dados. Tenta uma imagem mais nítida ou inclui a face com os dados do documento.");
+      if (!result.full_name && !result.document_number && !result.birth_date && !result.expires_on) {
+        setError(result.document_type
+          ? "Só foi possível reconhecer o tipo de documento. Tenta uma imagem mais nítida da página com os dados e as linhas no rodapé."
+          : "A leitura terminou sem encontrar dados. Tenta uma imagem mais nítida ou inclui a face com os dados do documento.");
         return;
       }
       if (client && result.full_name && nameKey(result.full_name) === nameKey(client.full_name)) result.full_name = client.full_name;

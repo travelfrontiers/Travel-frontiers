@@ -25,6 +25,39 @@ function rotatePage(page: HTMLCanvasElement, angle: 90 | -90 | 180) {
   return result;
 }
 
+function trimPageMargins(page: HTMLCanvasElement) {
+  const scale = 256 / Math.max(page.width,page.height);
+  const {result: thumbnail,context: preview} = canvas(page.width * scale,page.height * scale);
+  const {width,height} = thumbnail;
+  preview.drawImage(page,0,0,width,height);
+  const {data} = preview.getImageData(0,0,width,height);
+  const rows = new Uint16Array(height);
+  const columns = new Uint16Array(width);
+  for (let y=0; y<height; y++) for (let x=0; x<width; x++) {
+    const pixel = (y * width + x) * 4;
+    if (Math.min(data[pixel],data[pixel+1],data[pixel+2]) >= 175) continue;
+    rows[y]++;
+    columns[x]++;
+  }
+  thumbnail.width = 0;
+  thumbnail.height = 0;
+  const rowMin = Math.max(3, Math.ceil(width * .014));
+  const columnMin = Math.max(3, Math.ceil(height * .014));
+  const left = Math.max(0, columns.findIndex(count => count >= columnMin) / width - .025);
+  const right = Math.min(1, (columns.findLastIndex(count => count >= columnMin) + 1) / width + .025);
+  const top = Math.max(0, rows.findIndex(count => count >= rowMin) / height - .025);
+  const bottom = Math.min(1, (rows.findLastIndex(count => count >= rowMin) + 1) / height + .025);
+  const widthRatio = right - left;
+  const heightRatio = bottom - top;
+  if (widthRatio < .28 || heightRatio < .25 || widthRatio * heightRatio > .82) return null;
+  const cropWidth = page.width * widthRatio;
+  const cropHeight = page.height * heightRatio;
+  const zoom = Math.min(2, 2400 / Math.max(cropWidth,cropHeight));
+  const {result,context} = canvas(cropWidth * zoom,cropHeight * zoom);
+  context.drawImage(page,page.width * left,page.height * top,cropWidth,cropHeight,0,0,result.width,result.height);
+  return result;
+}
+
 async function imagePage(file:File) {
   const image=await createImageBitmap(file);
   try {
@@ -137,7 +170,16 @@ export async function scanClientDocument(files:File[],signal:AbortSignal,onProgr
         }
         if (!isCompleteReading(best)) {
           onProgress("A verificar os campos do documento…");
-          best = await readMachineZone(worker,PSM.SINGLE_BLOCK,orientedPage,scans,best,today,signal);
+          const cropped = trimPageMargins(orientedPage);
+          if (cropped) {
+            try {
+              const cropText = (await abortable(worker.recognize(cropped),signal)).data.text;
+              scans.push(cropText);
+              best = readIdentityPage(scans,today);
+              if (!isCompleteReading(best)) best = await readMachineZone(worker,PSM.SINGLE_BLOCK,cropped,scans,best,today,signal);
+            } finally { cropped.width=0; cropped.height=0; }
+          }
+          if (!isCompleteReading(best)) best = await readMachineZone(worker,PSM.SINGLE_BLOCK,orientedPage,scans,best,today,signal);
         }
         readings.push(best);
       } finally {
@@ -159,6 +201,7 @@ async function readMachineZone(worker: OcrWorker, mode: OcrPageMode, page: HTMLC
   const zoom = Math.min(2, 2400 / page.width);
   const crops = [
     { start: 0.85, scale: zoom },
+    { start: 0.85, scale: zoom, contrast: true },
     { start: 0.85, scale: 1 },
     { start: 0.88, scale: zoom },
     { start: 0.82, scale: zoom, contrast: true },
