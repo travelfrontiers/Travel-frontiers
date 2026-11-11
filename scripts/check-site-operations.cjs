@@ -64,54 +64,35 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     assert.equal(providerCalls, 2);
     assert.equal((await translate.POST(request("translate", "Bearer studio", { ...promotion, description: ["x".repeat(25_000)] }))).status, 413);
 
-    let migrationStarted = false;
-    const source = load("src/app/api/itinerary-source/route.ts", {
-        "@/lib/crm-api": auth, "@/lib/studio-request": controls,
-        "@/lib/itinerary-source": { sourceExtension: () => "pdf" },
-        "@/sanity/client": { writeClient: { withConfig() { migrationStarted = true; } } },
-    });
-    assert.equal((await source.POST(request("itinerary-source?action=migrate", null, {}))).status, 401);
-    assert.equal(migrationStarted, false);
-
-    const bytes = Buffer.from("%PDF-synthetic-only");
-    const migrationOperations = [];
-    let brokenBackup = true;
-    let committed = false;
-    const migrationTransaction = {
-        create(document) { migrationOperations.push(["draft", document]); return this; },
+    const operations = [];
+    let deletionStarted = false;
+    const deletionTransaction = {
         patch(id, builder) {
             builder({ ifRevisionId() { return this; }, unset() { return this; } });
-            migrationOperations.push(["patch", id]); return this;
+            operations.push(["patch", id]); return this;
         },
-        delete(id) { migrationOperations.push(["delete", id]); return this; },
-        toJSON: () => migrationOperations,
-        async commit() { committed = true; },
+        delete(id) { operations.push(["delete", id]); return this; },
+        async commit() {},
     };
-    const migrationClient = {
-        withConfig() { return this; },
-        config: () => ({ projectId: "test", dataset: "production" }),
-        fetch: async () => [{ _id: "old", _rev: "v1", title: "Synthetic", asset: { _id: "old-asset", url: "https://cdn.sanity.io/files/test/production/fake.pdf", extension: "pdf" } }],
-        transaction: () => migrationTransaction,
+    const deletionClient = {
+        withConfig({ token }) { assert.equal(token, "studio"); deletionStarted = true; return this; },
+        fetch: async (query) => query.includes("sanity.fileAsset")
+            ? [{ _id: "old-asset", shared: 0 }, { _id: "shared-asset", shared: 1 }]
+            : [{ _id: "old", _rev: "v1", assetId: "old-asset" }, { _id: "drafts.old2", _rev: "v2", assetId: "shared-asset" }],
+        transaction: () => deletionTransaction,
     };
-    const migration = load("src/app/api/itinerary-source/route.ts", {
+    const source = load("src/app/api/itinerary-source/route.ts", {
         "@/lib/crm-api": auth, "@/lib/studio-request": controls,
-        "@/lib/itinerary-source": {
-            sourceExtension: () => "pdf",
-            readOldSource: async () => bytes,
-            savePrivateSource: async (key, uploaded) => { assert.match(key, /^[a-f0-9]{64}\.pdf$/); assert.deepEqual(uploaded, bytes); },
-            loadPrivateSource: async () => brokenBackup ? Buffer.from("invalid") : bytes,
-        },
-        "@/sanity/client": { writeClient: migrationClient },
+        "@/lib/itinerary-source": {},
+        "@/sanity/client": { writeClient: deletionClient },
     });
-    assert.equal((await migration.POST(request("itinerary-source?action=migrate", "Bearer studio", {}))).status, 502);
-    assert.deepEqual(migrationOperations, []);
-    assert.equal(committed, false);
-    brokenBackup = false;
-    const moved = await migration.POST(request("itinerary-source?action=migrate", "Bearer studio", {}));
-    assert.deepEqual(await moved.json(), { documents: 1, files: 1 });
-    assert.equal(committed, true);
-    assert.equal(migrationOperations[0][1]._id, "drafts.old");
-    assert.deepEqual(migrationOperations.slice(-2), [["delete", "old"], ["delete", "old-asset"]]);
+    const path = "itinerary-source?action=delete-legacy";
+    assert.equal((await source.POST(request(path, null, { confirmed: true }))).status, 401);
+    assert.equal((await source.POST(request(path, "Bearer studio", {}))).status, 400);
+    assert.equal(deletionStarted, false);
+    const removed = await source.POST(request(path, "Bearer studio", { confirmed: true }));
+    assert.deepEqual(await removed.json(), { documents: 2, files: 1, retainedFiles: 1 });
+    assert.deepEqual(operations, [["patch", "old"], ["delete", "old"], ["patch", "drafts.old2"], ["delete", "drafts.old2"], ["delete", "old-asset"]]);
 
     const { calculateCommission } = load("src/lib/commission.ts");
     const base = { commission: 100, travelerCount: 3, travelerPrice: 100, selfTravels: false, costPerTraveler: 80, shareSaving: false, cedeCommission: true, requestedCession: 0.01 };
@@ -121,5 +102,5 @@ function load(file, mocks = {}, env = {}, network = fetch) {
         const sum = (result.ownPrice ?? 0) + result.otherPriceGroups.reduce((total, group) => total + group.count * group.price, 0);
         assert.equal(Math.round(sum * 100), Math.round(result.totalCollected * 100));
     }
-    console.log("PASS: Studio authorization, cron secret, reversible promotion archiving, translation errors and limits, itinerary migration authorization, commission cents.");
+    console.log("PASS: Studio authorization, cron secret, reversible promotion archiving, translation errors and limits, legacy itinerary deletion authorization and shared asset protection, commission cents.");
 })().catch(error => { console.error(error); process.exitCode = 1; });

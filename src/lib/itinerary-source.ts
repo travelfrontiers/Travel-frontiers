@@ -71,13 +71,3 @@ export function isRecognizedSource(bytes: Buffer, extension: string) {
     try { new TextDecoder("utf-8", { fatal: true }).decode(bytes); return true; }
     catch { return false; }
 }
-
-export async function readOldSource(rawUrl: string, project: string, dataset: string) {
-    const url = new URL(rawUrl);
-    if (url.origin !== "https://cdn.sanity.io" || !url.pathname.startsWith(`/files/${project}/${dataset}/`)) {
-        throw new Error("Origem do ficheiro inválida.");
-    }
-    const response = await fetch(url, { redirect: "error", cache: "no-store", signal: AbortSignal.timeout(20_000) });
-    if (!response.ok) throw new Error("Ficheiro de origem indisponível.");
-    return readBounded(response.body, migrationLimit);
-}
