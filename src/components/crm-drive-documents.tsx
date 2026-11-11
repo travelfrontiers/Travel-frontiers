@@ -19,25 +19,45 @@ export function loadGoogle() {
   });
   return loader;
 }
-function authorize(clientId: string): Promise<string> {
+function authorize(clientId: string, signal?: AbortSignal): Promise<string> {
   if (accessToken && Date.now() < validUntil) return Promise.resolve(accessToken);
   return new Promise((resolve, reject) => {
     if (!window.google) { reject(new Error("A ligação Google ainda não carregou. Tenta novamente.")); return; }
-    window.google.accounts.oauth2.initTokenClient({ client_id: clientId,
-      scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email",
-      hint: "tf.travel.frontiers@gmail.com",
-      error_callback: () => reject(new Error("A ligação ao Google foi cancelada ou bloqueada pelo navegador.")),
-      callback: async (reply) => {
-        if (!reply.access_token || reply.error) { reject(new Error("Não foi possível autorizar o Google Drive.")); return; }
-        try {
-          const response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", { headers: { Authorization: `Bearer ${reply.access_token}` } });
-          const identity = await response.json();
-          if (!response.ok || identity.email !== "tf.travel.frontiers@gmail.com") throw new Error("Escolhe a conta tf.travel.frontiers@gmail.com para ligar o Drive.");
-          accessToken = reply.access_token; validUntil = Date.now() + Math.max(0, Number(reply.expires_in || 3600) - 60) * 1000;
-          resolve(accessToken);
-        } catch (cause) { reject(cause); }
-      },
-    }).requestAccessToken({ prompt: "" });
+    if (signal?.aborted) { reject(new DOMException("Autorização cancelada.", "AbortError")); return; }
+    let finished = false;
+    const finish = (error?: unknown, token?: string) => {
+      if (finished) return;
+      finished = true;
+      window.clearTimeout(timer);
+      signal?.removeEventListener("abort", abort);
+      if (token) resolve(token);
+      else reject(error);
+    };
+    const abort = () => finish(new DOMException("Autorização cancelada.", "AbortError"));
+    const timer = window.setTimeout(() => finish(new Error("A autorização Google ficou pendente. Permite a janela da Google e tenta novamente.")), 60_000);
+    signal?.addEventListener("abort", abort, { once: true });
+    try {
+      window.google.accounts.oauth2.initTokenClient({
+        client_id: clientId, scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email",
+        hint: "tf.travel.frontiers@gmail.com",
+        error_callback: () => finish(new Error("A ligação ao Google foi cancelada ou bloqueada pelo navegador.")),
+        callback: async (reply) => {
+          if (finished) return;
+          if (!reply.access_token || reply.error) { finish(new Error("Não foi possível autorizar o Google Drive.")); return; }
+          try {
+            const response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+              headers: { Authorization: `Bearer ${reply.access_token}` }, signal,
+            });
+            const identity = await response.json();
+            if (finished) return;
+            if (!response.ok || identity.email !== "tf.travel.frontiers@gmail.com") throw new Error("Escolhe a conta tf.travel.frontiers@gmail.com para ligar o Drive.");
+            accessToken = reply.access_token;
+            validUntil = Date.now() + Math.max(0, Number(reply.expires_in || 3600) - 60) * 1000;
+            finish(undefined, accessToken);
+          } catch (error) { finish(error); }
+        },
+      }).requestAccessToken({ prompt: "" });
+    } catch (error) { finish(error); }
   });
 }
 async function drive(token: string, path: string, init: RequestInit = {}) {
@@ -73,6 +93,7 @@ export default function CrmDriveDocuments({ authorizedFetch, tripId, clientId, t
 }) {
   const [files, setFiles] = useState<StoredFile[]>([]);
   const [googleClientId, setGoogleClientId] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
   const [picker, setPicker] = useState<DrivePickerConfig | null>(null);
   const pickerRequest = useRef<AbortController | null>(null);
   const [ready, setReady] = useState(false), [busy, setBusy] = useState(false);
@@ -138,21 +159,24 @@ export default function CrmDriveDocuments({ authorizedFetch, tripId, clientId, t
     if (!picker || !googleClientId || pickerRequest.current) return;
     const request = new AbortController();
     pickerRequest.current = request;
+    setPicking(true);
     setBusy(true); setError(""); setMessage("");
     try {
-      const selectedFile = await chooseDriveFile(picker, authorize(googleClientId), request.signal);
+      const selectedFile = await chooseDriveFile(picker, authorize(googleClientId, request.signal), request.signal);
       if (!selectedFile) return;
       const result = await drive(selectedFile.token, "files/" + encodeURIComponent(selectedFile.id) +
-        "?supportsAllDrives=true&fields=id,name,mimeType,trashed");
+        "?supportsAllDrives=true&fields=id,name,mimeType,trashed", { signal: request.signal });
       if (request.signal.aborted) return;
       if (result.trashed || typeof result.name !== "string" || !result.name.trim() || !driveDocumentTypes.includes(result.mimeType)) {
         throw new Error("Escolhe um PDF, JPG ou PNG disponível no Drive.");
       }
+      setPicking(false);
       await associate({ id: selectedFile.id, name: result.name, mimeType: result.mimeType, source: "picker" });
     } catch (cause) {
       if (!request.signal.aborted) setError(cause instanceof Error ? cause.message : "Não foi possível escolher o ficheiro do Drive.");
     } finally {
       pickerRequest.current = null;
+      setPicking(false);
       setBusy(false);
     }
   }
@@ -172,6 +196,7 @@ export default function CrmDriveDocuments({ authorizedFetch, tripId, clientId, t
     {message && <p role="status" className="mt-2 text-sm text-emerald-700">{message}</p>}
     <ul className="mt-3 space-y-2">{files.map((file) => <li key={file.id} className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 p-3 text-sm"><a className="min-w-0 break-all font-medium text-orange-800 underline" href={`https://drive.google.com/file/d/${file.drive_file_id}/view`} target="_blank" rel="noreferrer">{file.file_name}</a><button type="button" disabled={busy} onClick={() => void unlink(file)} className="shrink-0 text-xs text-slate-600 underline">Retirar ligação</button></li>)}</ul>
     {picker && <button type="button" className={"mt-3 " + officeSecondary} disabled={!ready || busy || Boolean(pending)} onClick={() => void pick()}>Escolher do Google Drive</button>}
+    {picking && <button type="button" className={"ml-2 mt-3 " + officeSecondary} onClick={() => pickerRequest.current?.abort()}>Cancelar seleção</button>}
     {pending && <p className="mt-2 text-xs text-slate-600">Por associar: {pending.name} <button type="button" disabled={busy} className="underline" onClick={() => { setPending(null); setError(""); }}>Cancelar associação</button></p>}
     {selected && <p className="mt-2 text-xs text-slate-600">Pronto a guardar: {selected.name}</p>}
     {!googleClientId ? <p className="mt-3 text-xs text-amber-800">A ligação ao Google Drive precisa de ser concluída na configuração do CRM.</p> :
