@@ -19,10 +19,10 @@ Abre o [CRM](https://promo.travelfrontiers.pt/admin/crm) e entra com a conta Goo
 
 1. Abre **Novo cliente** no Resumo comercial ou **Clientes → Adicionar cliente**.
 2. Clica em **Ler passaporte ou Cartão de Cidadão**. Seleciona um PDF ou até duas imagens nítidas, por exemplo a frente e o verso do Cartão de Cidadão. São aceites JPG, PNG, WebP e PDF, até 15 MB por ficheiro e duas faces ou páginas no total.
-3. Carrega em **Ler documento**. Confirma o nome completo, a data de nascimento, o tipo, o número e a validade. Preenche os campos que ficaram vazios e acrescenta o email, o telefone e o idioma.
+3. Carrega em **Ler documento** para um ficheiro do dispositivo. Se o documento já estiver no Drive, usa **Escolher do Google Drive** dentro do leitor. A leitura começa depois da seleção. Confirma o nome completo, a data de nascimento, o tipo, o número e a validade. Preenche os campos que ficaram vazios e acrescenta o email, o telefone e o idioma.
 4. Assinala **Confirmei os dados da ficha e do documento** e carrega em **Guardar cliente e documento**. Podes usar **Retirar documento da ficha** para guardar apenas os dados do cliente.
 
-A leitura é feita no navegador. O CRM guarda os campos revistos. Para guardar também o ficheiro original, usa a secção Google Drive da ficha. Para um cliente existente, abre **Clientes → Documentação → Ler passaporte ou Cartão de Cidadão**. Na mesma secção podes editar ou remover documentos individuais. O resumo mostra documentos vencidos e a vencer nos próximos 30 dias.
+A leitura é feita no navegador. O CRM guarda os campos revistos. Para guardar também o ficheiro original, usa a secção Google Drive da ficha. Para um cliente existente, abre **Clientes → Documentação → Ler passaporte ou Cartão de Cidadão**. O mesmo botão do Drive está disponível no leitor dos clientes existentes. Na secção Documentação também podes editar ou remover documentos individuais. O resumo mostra documentos vencidos e a vencer nos próximos 30 dias.
 
 ## 4. Enviar uma proposta e transformar a aceitação em viagem
 

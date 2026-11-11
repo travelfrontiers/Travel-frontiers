@@ -3,8 +3,8 @@ import {combineIdentityPages, readIdentityPage, type DocumentReading} from "./cr
 import type {Worker as OcrWorker} from "tesseract.js";
 
 const assets="/ocr-assets";
-const maxFileBytes=15*1024*1024;
-const imageTypes=new Set(["image/jpeg","image/png","image/webp"]);
+export const identityFileLimit=15*1024*1024;
+export const identityFileTypes=["image/jpeg","image/png","image/webp","application/pdf"];
 
 function canvas(width:number,height:number) {
   const result=document.createElement("canvas");
@@ -62,7 +62,7 @@ function abortable<T>(work:Promise<T>,signal:AbortSignal):Promise<T> {
 }
 
 export async function scanClientDocument(files:File[],signal:AbortSignal,onProgress:(message:string)=>void) {
-  if(files.length<1||files.length>2||files.some(file=>!file.size||file.size>maxFileBytes||(!imageTypes.has(file.type)&&file.type!=="application/pdf"))) {
+  if(files.length<1||files.length>2||files.some(file=>!file.size||file.size>identityFileLimit||!identityFileTypes.includes(file.type))) {
     throw new Error("Escolhe até dois ficheiros JPG, PNG, WebP ou PDF, até 15 MB cada.");
   }
   const pages:HTMLCanvasElement[]=[];

@@ -3,13 +3,14 @@
 import { useRef, useState, type FormEvent } from "react";
 import { lisbonDay } from "@/lib/crm-calendar";
 import type { DocumentReading } from "@/lib/crm-document-ocr";
-import { officeButton, officeInput, officeSecondary } from "@/lib/crm-office-types";
+import { officeButton, officeInput, officeSecondary, type AuthorizedFetch } from "@/lib/crm-office-types";
 import CrmDocumentScanner from "./crm-document-scanner";
 
 const field = "block space-y-1 text-sm font-semibold";
 
-export default function CrmNewClientForm({ saving, onSave }: {
+export default function CrmNewClientForm({ saving, onSave, authorizedFetch }: {
   saving: boolean;
+  authorizedFetch: AuthorizedFetch;
   onSave: (event: FormEvent<HTMLFormElement>) => Promise<void>;
 }) {
   const form = useRef<HTMLFormElement>(null);
@@ -28,7 +29,7 @@ export default function CrmNewClientForm({ saving, onSave }: {
 
   return <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
     <h3 className="text-lg font-semibold">Novo cliente</h3>
-    <CrmDocumentScanner onRead={applyReading} onScanning={setScanning} disabled={saving} />
+    <CrmDocumentScanner authorizedFetch={authorizedFetch} onRead={applyReading} onScanning={setScanning} disabled={saving} />
     <form ref={form} onSubmit={event => { if (scanning) event.preventDefault(); else void onSave(event); }}
       className="grid gap-4 sm:grid-cols-2">
       <label className={field}>Nome completo *<input name="full_name" required minLength={2} maxLength={160} autoComplete="name" className={officeInput} /></label>
