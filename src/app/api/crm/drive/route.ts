@@ -2,8 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAuthorizedStudioUser, supabaseAdminConfig } from "@/lib/crm-api";
 export const runtime = "nodejs";
 const uuid = (value: unknown): value is string => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+function driveConfig() {
+  const apiKey = process.env.GOOGLE_DRIVE_PICKER_API_KEY;
+  const appId = process.env.GOOGLE_DRIVE_PICKER_APP_ID;
+  const picker = apiKey && appId && /^\d+$/.test(appId) ? { apiKey, appId } : null;
+  return { clientId: process.env.GOOGLE_DRIVE_CLIENT_ID || null, picker };
+}
 export async function GET(request: NextRequest) {
   if (!await isAuthorizedStudioUser(request)) return NextResponse.json({ error: "Acesso não autorizado." }, { status: 401 });
+  if (request.nextUrl.searchParams.get("picker") === "1") {
+    return NextResponse.json(driveConfig(), { headers: { "Cache-Control": "private, no-store" } });
+  }
   const tripId = request.nextUrl.searchParams.get("trip_id"), clientId = request.nextUrl.searchParams.get("client_id");
   if (Boolean(tripId) === Boolean(clientId) || !uuid(tripId || clientId)) return NextResponse.json({ error: "Ficha inválida." }, { status: 400 });
   const config = supabaseAdminConfig();
@@ -12,10 +21,7 @@ export async function GET(request: NextRequest) {
     const field = tripId ? "trip_id" : "client_id";
     const response = await fetch(`${config.url}/rest/v1/crm_drive_files?${field}=eq.${encodeURIComponent(tripId || clientId!)}&select=*&order=created_at.desc`, { headers: config.headers, cache: "no-store" });
     if (!response.ok) throw new Error("query_failed");
-    const apiKey = process.env.GOOGLE_DRIVE_PICKER_API_KEY;
-    const appId = process.env.GOOGLE_DRIVE_PICKER_APP_ID;
-    const picker = apiKey && appId && /^\d+$/.test(appId) ? { apiKey, appId } : null;
-    return NextResponse.json({ files: await response.json(), clientId: process.env.GOOGLE_DRIVE_CLIENT_ID || null, picker }, { headers: { "Cache-Control": "private, no-store" } });
+    return NextResponse.json({ files: await response.json(), ...driveConfig() }, { headers: { "Cache-Control": "private, no-store" } });
   } catch { return NextResponse.json({ error: "Não foi possível carregar os ficheiros do Drive." }, { status: 502 }); }
 }
 export async function POST(request: NextRequest) {

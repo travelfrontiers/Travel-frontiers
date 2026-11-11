@@ -1,6 +1,9 @@
 "use client";
 
 import {useEffect,useRef,useState,type FormEvent} from "react";
+import {authorizeDrive, downloadDriveFile, loadGoogle} from "@/lib/crm-drive-client";
+import {chooseDriveFiles, type DrivePickerConfig} from "@/lib/crm-drive-picker";
+import {identityFileLimit, identityFileTypes, scanClientDocument} from "@/lib/crm-document-scan";
 import {lisbonDay} from "@/lib/crm-calendar";
 import type {DocumentReading} from "@/lib/crm-document-ocr";
 import {officeInput as input,officeButton as primary,officeSecondary as secondary,type AuthorizedFetch} from "@/lib/crm-office-types";
@@ -12,7 +15,7 @@ const field="block space-y-1 text-sm font-medium";
 
 type ScannerProps =
   | { client: ClientIdentity; authorizedFetch: AuthorizedFetch; onSaved: (result: SavedScan) => void }
-  | { onRead: (reading: DocumentReading) => void; onScanning: (scanning: boolean) => void; disabled?: boolean };
+  | { authorizedFetch: AuthorizedFetch; onRead: (reading: DocumentReading) => void; onScanning: (scanning: boolean) => void; disabled?: boolean };
 
 export default function CrmDocumentScanner(props: ScannerProps) {
   const client = "client" in props ? props.client : null;
@@ -24,22 +27,40 @@ export default function CrmDocumentScanner(props: ScannerProps) {
   const [saved,setSaved]=useState(false);
   const [saving,setSaving]=useState(false);
   const [scanning,setScanning]=useState(false);
+  const [driveConfig, setDriveConfig] = useState<{clientId: string; picker: DrivePickerConfig} | null>(null);
+  const [driveError, setDriveError] = useState("");
+  const { authorizedFetch } = props;
   const fileInput=useRef<HTMLInputElement>(null);
   const controller=useRef<AbortController|null>(null);
   const reviewedRevision=useRef("");
   useEffect(()=>()=>controller.current?.abort(),[]);
 
-  async function scan(event:FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const files=Array.from(fileInput.current?.files||[]);
-    setSaved(false);setError("");setReading(null);setScanning(true);
-    reviewedRevision.current=client?.updated_at ?? "";
+  useEffect(() => {
+    if (!open || driveConfig) return;
+    let active = true;
+    authorizedFetch("/api/crm/drive?picker=1").then(async response => {
+      if (!response.ok) throw new Error("Não foi possível carregar o seletor do Drive.");
+      const config = await response.json();
+      if (!config.clientId || !config.picker) throw new Error("A seleção do Drive está indisponível.");
+      await loadGoogle();
+      if (active) setDriveConfig(config);
+    }).catch(cause => { if (active) setDriveError(cause.message); });
+    return () => { active = false; };
+  }, [open, driveConfig, authorizedFetch]);
+
+  async function scan(getFiles: (signal: AbortSignal) => File[] | null | Promise<File[] | null>) {
+    if (controller.current || saving || disabled) return;
+    setSaved(false);setError("");setScanning(true);
     if ("onScanning" in props) props.onScanning(true);
     const request=new AbortController();
     controller.current=request;
-    const timer=window.setTimeout(()=>request.abort(),120000);
+    let timer: number | undefined;
     try {
-      const {scanClientDocument}=await import("@/lib/crm-document-scan");
+      const files = await getFiles(request.signal);
+      if (!files || request.signal.aborted) return;
+      setReading(null);
+      reviewedRevision.current=client?.updated_at ?? "";
+      timer=window.setTimeout(()=>request.abort(),120000);
       const result=await scanClientDocument(files,request.signal,setProgress);
       if(request.signal.aborted) return;
       if(!result.document_type) setError("Não consegui identificar o documento. Podes tentar uma fotografia mais nítida ou completar os campos.");
@@ -53,11 +74,32 @@ export default function CrmDocumentScanner(props: ScannerProps) {
       setError(request.signal.aborted?"A leitura foi interrompida.":cause instanceof Error?cause.message:"Não foi possível ler o documento.");
     } finally {
       window.clearTimeout(timer);
-      if(fileInput.current) fileInput.current.value="";
+      request.abort();
       controller.current=null;
       setScanning(false);setProgress("");
       if ("onScanning" in props) props.onScanning(false);
     }
+  }
+
+  function scanLocal(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const files = Array.from(fileInput.current?.files || []);
+    if (fileInput.current) fileInput.current.value = "";
+    void scan(() => files);
+  }
+
+  function scanDrive() {
+    if (!driveConfig) return;
+    const { clientId, picker } = driveConfig;
+    void scan(async signal => {
+      setProgress("A abrir o Google Drive…");
+      const selection = await chooseDriveFiles(picker, authorizeDrive(clientId, signal), signal, {
+        multiple: true, mimeTypes: identityFileTypes,
+      });
+      if (!selection) return null;
+      setProgress("A preparar os ficheiros do Drive para leitura…");
+      return Promise.all(selection.ids.map(id => downloadDriveFile(selection.token, id, identityFileTypes, identityFileLimit, signal)));
+    });
   }
 
   async function save(event:FormEvent<HTMLFormElement>) {
@@ -89,21 +131,23 @@ export default function CrmDocumentScanner(props: ScannerProps) {
 
   return <div className="my-3 space-y-3">
     <button type="button" aria-expanded={open} className={secondary} disabled={disabled || saving || scanning}
-      onClick={()=>{if(open){controller.current?.abort();setReading(null);}setError("");setSaved(false);setOpen(!open);}}>
+      onClick={()=>{if(open){controller.current?.abort();setReading(null);}setError("");setDriveError("");setSaved(false);setOpen(!open);}}>
       {open?"Fechar leitura":"Ler passaporte ou Cartão de Cidadão"}
     </button>
     {saved&&<p role="status" className="text-sm text-orange-800">{client ? "Documento e ficha do cliente guardados." : "Leitura concluída. Confirma os campos no formulário."}</p>}
     {open&&<div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-      <form onSubmit={scan} className="space-y-3">
+      <form onSubmit={scanLocal} className="space-y-3">
         <label className={field}>Fotografias ou PDF do documento
-          <input ref={fileInput} type="file" required multiple disabled={disabled||scanning||saving} accept="image/jpeg,image/png,image/webp,application/pdf" className={input}/>
+          <input ref={fileInput} type="file" required multiple disabled={disabled||scanning||saving} accept={identityFileTypes.join(",")} className={input}/>
         </label>
         <p className="text-xs text-slate-500">Até duas faces ou páginas, 15 MB por ficheiro. A leitura é feita neste navegador.</p>
         <div className="flex flex-wrap gap-2">
           <button className={primary} disabled={disabled||scanning||saving}>Ler documento</button>
+          <button type="button" className={secondary} disabled={disabled || scanning || saving || !driveConfig} onClick={scanDrive}>Escolher do Google Drive</button>
           {scanning&&<button type="button" className={secondary} onClick={()=>controller.current?.abort()}>Interromper</button>}
         </div>
       </form>
+      {driveError && <p className="text-xs text-slate-600">{driveError} Podes usar um ficheiro do dispositivo.</p>}
       {progress&&<p role="status" className="text-sm">{progress}</p>}
       {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
       {reading&&client&&<form onSubmit={save} className="space-y-3 border-t border-slate-200 pt-4">

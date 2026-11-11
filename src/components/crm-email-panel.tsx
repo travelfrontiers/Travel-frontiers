@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { emailAttachmentLabels, fillEmailTemplate, missingEmailFields, type EmailAttachmentRole, type EmailScope, type EmailTemplateKey } from "@/lib/crm-email-templates";
 import type { EmailContext } from "@/lib/crm-email-context";
 import { officeButton as button, officeInput as input, officeSecondary as secondary, type AuthorizedFetch } from "@/lib/crm-office-types";
-import { downloadCrmDrivePdf, loadGoogle } from "./crm-drive-documents";
+import { downloadCrmDrivePdf, loadGoogle } from "@/lib/crm-drive-client";
 
 export type CrmEmailMessage = {
   id: string; direction: "in" | "out"; state: string; occurred_at: string;

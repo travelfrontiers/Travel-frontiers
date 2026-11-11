@@ -7,6 +7,7 @@ type PickerResponse = { action: string; docs?: { id?: string }[] };
 type PickerDialog = { setVisible: (visible: boolean) => void; dispose: () => void };
 type PickerBuilder = {
   addView: (view: PickerView) => PickerBuilder;
+  enableFeature: (feature: string) => PickerBuilder;
   setOAuthToken: (token: string) => PickerBuilder;
   setDeveloperKey: (key: string) => PickerBuilder;
   setAppId: (id: string) => PickerBuilder;
@@ -19,6 +20,7 @@ type PickerApi = {
   DocsView: new (view: string) => PickerView;
   DocsViewMode: { LIST: string };
   ViewId: { DOCS: string };
+  Feature: { MULTISELECT_ENABLED: string };
   Action: { PICKED: string; CANCEL: string; ERROR: string };
   PickerBuilder: new () => PickerBuilder;
 };
@@ -57,12 +59,15 @@ function loadPicker(): Promise<PickerApi> {
   return loading;
 }
 
-export async function chooseDriveFile(config: DrivePickerConfig, authorization: Promise<string>, signal: AbortSignal) {
+export async function chooseDriveFiles(
+  config: DrivePickerConfig, authorization: Promise<string>, signal: AbortSignal,
+  { multiple = false, mimeTypes = driveDocumentTypes }: { multiple?: boolean; mimeTypes?: string[] } = {},
+) {
   const [api, token] = await Promise.all([loadPicker(), authorization]);
   if (signal.aborted) return null;
   const view = new api.DocsView(api.ViewId.DOCS).setIncludeFolders(true)
-    .setMode(api.DocsViewMode.LIST).setMimeTypes(driveDocumentTypes.join(","));
-  return new Promise<{ id: string; token: string } | null>((resolve, reject) => {
+    .setMode(api.DocsViewMode.LIST).setMimeTypes(mimeTypes.join(","));
+  return new Promise<{ ids: string[]; token: string } | null>((resolve, reject) => {
     let dialog: PickerDialog | undefined;
     function close() {
       signal.removeEventListener("abort", abort);
@@ -72,21 +77,24 @@ export async function chooseDriveFile(config: DrivePickerConfig, authorization: 
       close();
       resolve(null);
     }
-    dialog = new api.PickerBuilder().addView(view)
+    const builder = new api.PickerBuilder().addView(view)
       .setOAuthToken(token).setDeveloperKey(config.apiKey).setAppId(config.appId)
       .setOrigin(window.location.origin).setTitle("Escolher do Google Drive")
       .setCallback(response => {
         if (response.action === api.Action.CANCEL) return abort();
         if (response.action === api.Action.PICKED) {
           close();
-          const id = response.docs?.[0]?.id;
-          if (id && /^[A-Za-z0-9_-]{10,200}$/.test(id)) resolve({ id, token });
+          const ids = response.docs?.map(file => file.id) ?? [];
+          if (ids.length > (multiple ? 2 : 1)) reject(new Error("Escolhe até dois ficheiros do mesmo documento."));
+          else if (ids.length && ids.every((id): id is string => typeof id === "string" && /^[A-Za-z0-9_-]{10,200}$/.test(id))) resolve({ ids, token });
           else reject(new Error("O Drive não devolveu um ficheiro válido."));
         } else if (response.action === api.Action.ERROR) {
           close();
           reject(new Error("Não foi possível abrir o seletor do Google Drive."));
         }
-      }).build();
+      });
+    if (multiple) builder.enableFeature(api.Feature.MULTISELECT_ENABLED);
+    dialog = builder.build();
     signal.addEventListener("abort", abort, { once: true });
     try { dialog.setVisible(true); }
     catch (error) { close(); reject(error); }
