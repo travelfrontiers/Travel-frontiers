@@ -4,6 +4,7 @@ import { crmConfig, CrmError, failure, payload, privateJson, rpc, uuid } from "@
 import { emailRest, emailScopeFilter, isEmailScope, loadEmailContext, validEmail, type EmailConfig, type EmailContext } from "@/lib/crm-email-context";
 import { archiveSentMessage, mailboxSettings, mailBodyLimit, smtpTransport, verifyMailbox, withInbox } from "@/lib/crm-mailbox";
 import { baseEmailTemplate, emailAttachmentLabels, emailTemplates, missingEmailFields, type EmailAttachmentRole, type EmailTemplateKey } from "@/lib/crm-email-templates";
+import { configuredQuoteDocuments, formatCrmEmail, quoteBodyWithLinks } from "@/lib/crm-email-signature";
 import { readBounded } from "@/lib/studio-request";
 
 export const runtime = "nodejs";
@@ -68,13 +69,16 @@ export async function GET(request: NextRequest) {
         language: "eq." + context.language, select: "template_key,subject,body",
       }),
     ]);
+    const quoteDocuments = configuredQuoteDocuments();
     const templates = Object.entries(emailTemplates).flatMap(([key, template]) => {
       if (!template.scopes.includes(context.scope) || key === "quote" && (context.currentVersion !== context.proposal_version || context.proposalStatus !== "draft" && context.proposalStatus !== "sent")) return [];
       const edited = stored.find(entry => entry.template_key === key);
       const copy = edited ?? baseEmailTemplate(key as EmailTemplateKey, context.language);
-      return [{ key, label: template.label, required: template.required ?? [], subject: copy.subject, body: copy.body }];
+      const linkedQuote = key === "quote" && quoteDocuments;
+      return [{ key, label: template.label, required: linkedQuote ? ["quote"] : template.required ?? [], subject: copy.subject,
+        body: copy.body }];
     });
-    return privateJson({ context, templates, history, driveClientId: process.env.GOOGLE_DRIVE_CLIENT_ID || null });
+    return privateJson({ context, templates, history, quoteDocuments, driveClientId: process.env.GOOGLE_DRIVE_CLIENT_ID || null });
   } catch (error) { return failure(error); }
 }
 
@@ -119,7 +123,9 @@ async function send(config: EmailConfig, request: Request, type: string) {
   const { subject, body } = verifyText(form.get("subject"), form.get("body"));
   if (missingEmailFields(subject + "\n" + body).length) throw new CrmError("Preenche os campos pendentes do modelo antes de enviar.");
   const attachments = await attachmentsFrom(form);
-  const missing = emailTemplates[key].required?.filter(role => !attachments.some(file => file.role === role));
+  const quoteDocuments = key === "quote" ? configuredQuoteDocuments() : null;
+  const required = quoteDocuments ? ["quote" as const] : emailTemplates[key].required;
+  const missing = required?.filter(role => !attachments.some(file => file.role === role));
   if (missing?.length) throw new CrmError("Faltam anexos: " + missing.map(role => emailAttachmentLabels[role]).join(", ") + ".");
   const replyId = form.get("reply_id");
   let reply: EmailRow | undefined;
@@ -134,19 +140,21 @@ async function send(config: EmailConfig, request: Request, type: string) {
     }
   }
 
+  const message = formatCrmEmail(quoteDocuments ? quoteBodyWithLinks(body, context.language) : body, context.language, quoteDocuments);
+  if ([...message.text].length > mailBodyLimit) throw new CrmError("Encurta a mensagem para incluir a assinatura e os links.");
   const { user, smtp } = smtpTransport();
   const messageId = `<tf-${id}@${user.split("@").at(-1)}>`;
   const composer = nodemailer.createTransport({ streamTransport: true, buffer: true, disableFileAccess: true, disableUrlAccess: true });
   const { message: raw } = await composer.sendMail({
     from: { name: "Tiago Ferreira · Travel Frontiers", address: user },
-    to: recipient, subject, text: body, messageId,
+    to: recipient, subject, ...message, messageId,
     ...(reply ? { inReplyTo: reply.internet_message_id, references: [reply.internet_message_id] } : {}),
     attachments: attachments.map(({ filename, content, contentType }) => ({ filename, content, contentType })),
   });
 
   const started = await rpc<boolean>(config, "crm_begin_email_send", { p_message: {
     ...associations(context), id, template_key: key, internet_message_id: messageId,
-    sender: user.toLowerCase(), recipient: recipient.toLowerCase(), subject, body,
+    sender: user.toLowerCase(), recipient: recipient.toLowerCase(), subject, body: message.text,
     attachments: attachments.map(({ filename, role }) => ({ filename, role })),
   } });
   if (!started) throw new CrmError("Este envio já foi registado. Atualiza o histórico e confirma o estado no Roundcube.", 409);

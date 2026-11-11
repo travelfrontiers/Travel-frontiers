@@ -95,6 +95,21 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     planMode = "timeout";
     assert.equal((await generate()).status, 504);
 
+    const signatureModule = "src/lib/crm-email-signature.ts";
+    const signature = load(signatureModule, {}, {
+        CRM_QUOTE_FIN_URL: "https://example.invalid/fin?test=1&other=2",
+        CRM_QUOTE_TERMS_URL: "https://example.invalid/terms",
+    });
+    const links = signature.configuredQuoteDocuments();
+    assert.equal(Object.keys(links).length, 2);
+    const signed = signature.formatCrmEmail("Olá <cliente>\nTudo bem?", "pt", links);
+    assert.match(signed.html, /Olá &lt;cliente&gt;<br>Tudo bem/);
+    assert.match(signed.html, /https:\/\/promo\.travelfrontiers\.pt\/email-signature\.png/);
+    assert.match(signed.html, /fin\?test=1&amp;other=2/);
+    assert.match(signed.text, /FIN .*https:\/\/example\.invalid\/fin/);
+    assert.doesNotMatch(signature.formatCrmEmail("Olá", "pt", null).html, /example\.invalid/);
+    assert.equal(load(signatureModule, {}, { CRM_QUOTE_FIN_URL: "https://example.invalid/fin" }).configuredQuoteDocuments(), null);
+
     const operations = [];
     let deletionStarted = false;
     const deletionTransaction = {
