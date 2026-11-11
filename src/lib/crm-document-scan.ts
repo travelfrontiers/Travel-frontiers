@@ -1,6 +1,6 @@
 import {lisbonDay} from "./crm-calendar";
-import {combineIdentityPages, readIdentityPage, type DocumentReading} from "./crm-document-ocr";
-import type {Worker as OcrWorker} from "tesseract.js";
+import {combineIdentityPages, missingIdentityFields, readIdentityPage, type DocumentReading} from "./crm-document-ocr";
+import type {PSM as OcrPageMode, Worker as OcrWorker} from "tesseract.js";
 
 const assets="/ocr-assets";
 export const identityFileLimit=15*1024*1024;
@@ -15,6 +15,14 @@ function canvas(width:number,height:number) {
   context.fillStyle="#fff";
   context.fillRect(0,0,result.width,result.height);
   return {result,context};
+}
+
+function rotatePage(page: HTMLCanvasElement, angle: 90 | -90 | 180) {
+  const {result,context} = angle === 180 ? canvas(page.width,page.height) : canvas(page.height,page.width);
+  context.translate(result.width / 2,result.height / 2);
+  context.rotate(angle * Math.PI / 180);
+  context.drawImage(page,-page.width / 2,-page.height / 2);
+  return result;
 }
 
 async function imagePage(file:File) {
@@ -106,40 +114,67 @@ export async function scanClientDocument(files:File[],signal:AbortSignal,onProgr
       await worker.setParameters({tessedit_pageseg_mode:PSM.SPARSE_TEXT,tessedit_char_whitelist:""});
       const { image: page, text } = pages[index];
       const scans = [text, (await abortable(worker.recognize(page),signal)).data.text].filter(Boolean);
-      const reading = readIdentityPage(scans, today);
-      if (isCompleteReading(reading)) {
-        readings.push(reading);
-        continue;
+      let best = readIdentityPage(scans, today);
+      let orientedPage = page;
+      try {
+        if (!best.full_name && !best.document_number && (!best.birth_date || !best.expires_on)) {
+          for (const angle of [90, -90, 180] as const) {
+            onProgress("A verificar a orientação do documento…");
+            const rotated = rotatePage(page,angle);
+            try {
+              const rotatedText = (await abortable(worker.recognize(rotated),signal)).data.text;
+              const reading = readIdentityPage([text,rotatedText],today);
+              if (missingIdentityFields(reading).length >= missingIdentityFields(best).length) continue;
+              if (orientedPage !== page) {orientedPage.width=0;orientedPage.height=0;}
+              orientedPage = rotated;
+              best = reading;
+              scans.splice(0,scans.length,...[text,rotatedText].filter(Boolean));
+              if (isCompleteReading(best)) break;
+            } finally {
+              if (orientedPage !== rotated) {rotated.width=0;rotated.height=0;}
+            }
+          }
+        }
+        if (!isCompleteReading(best)) {
+          onProgress("A verificar os campos do documento…");
+          best = await readMachineZone(worker,PSM.SINGLE_BLOCK,orientedPage,scans,best,today,signal);
+        }
+        readings.push(best);
+      } finally {
+        if (orientedPage !== page) {orientedPage.width=0;orientedPage.height=0;}
       }
-      let best = reading;
-      // Start with the MRZ itself so the printed fields above it do not interfere.
-      // The wider crop also covers photos with extra space beneath the document.
-      await worker.setParameters({tessedit_pageseg_mode:PSM.SINGLE_BLOCK,tessedit_char_whitelist:"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<"});
-      const zoom = Math.min(2, 2400 / page.width);
-      const crops = [
-        { start: 0.85, scale: zoom },
-        { start: 0.85, scale: 1 },
-        { start: 0.88, scale: zoom },
-        { start: 0.82, scale: zoom, contrast: true },
-        { start: 0.55, scale: 1 },
-      ];
-      for (const { start, scale, contrast } of crops) {
-        const top = Math.floor(page.height * start);
-        const height = page.height - top;
-        const {result,context} = canvas(page.width * scale, height * scale);
-        try {
-          if (contrast) context.filter = "grayscale(1) contrast(1.6)";
-          context.drawImage(page,0,top,page.width,height,0,0,result.width,result.height);
-          scans.push((await abortable(worker.recognize(result),signal)).data.text);
-          best = readIdentityPage(scans, today);
-        } finally {result.width=0;result.height=0;}
-        if (isCompleteReading(best)) break;
-      }
-      readings.push(best);
     }
     return combineIdentityPages(readings);
   } finally {
     if(worker) await worker.terminate().catch(()=>{});
     for(const { image } of pages) {image.width=0;image.height=0;}
   }
+}
+
+async function readMachineZone(worker: OcrWorker, mode: OcrPageMode, page: HTMLCanvasElement, scans: string[], reading: DocumentReading, today: string, signal: AbortSignal) {
+  let best = reading;
+  // Start with the MRZ itself so the printed fields above it do not interfere.
+  // The wider crop also covers photos with extra space beneath the document.
+  await worker.setParameters({tessedit_pageseg_mode:mode,tessedit_char_whitelist:"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<"});
+  const zoom = Math.min(2, 2400 / page.width);
+  const crops = [
+    { start: 0.85, scale: zoom },
+    { start: 0.85, scale: 1 },
+    { start: 0.88, scale: zoom },
+    { start: 0.82, scale: zoom, contrast: true },
+    { start: 0.55, scale: 1 },
+  ];
+  for (const { start, scale, contrast } of crops) {
+    const top = Math.floor(page.height * start);
+    const height = page.height - top;
+    const {result,context} = canvas(page.width * scale, height * scale);
+    try {
+      if (contrast) context.filter = "grayscale(1) contrast(1.6)";
+      context.drawImage(page,0,top,page.width,height,0,0,result.width,result.height);
+      scans.push((await abortable(worker.recognize(result),signal)).data.text);
+      best = readIdentityPage(scans, today);
+    } finally {result.width=0;result.height=0;}
+    if (isCompleteReading(best)) break;
+  }
+  return best;
 }

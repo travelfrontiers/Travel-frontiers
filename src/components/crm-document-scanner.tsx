@@ -15,7 +15,7 @@ const field="block space-y-1 text-sm font-medium";
 
 type ScannerProps =
   | { client: ClientIdentity; authorizedFetch: AuthorizedFetch; onSaved: (result: SavedScan) => void }
-  | { authorizedFetch: AuthorizedFetch; onRead: (reading: DocumentReading) => void; onScanning: (scanning: boolean) => void; disabled?: boolean };
+  | { authorizedFetch: AuthorizedFetch; onRead: (reading: DocumentReading | null) => void; onScanning: (scanning: boolean) => void; disabled?: boolean };
 
 export default function CrmDocumentScanner(props: ScannerProps) {
   const client = "client" in props ? props.client : null;
@@ -59,6 +59,7 @@ export default function CrmDocumentScanner(props: ScannerProps) {
       const files = await getFiles(request.signal);
       if (!files || request.signal.aborted) return;
       setReading(null);
+      if ("onRead" in props) props.onRead(null);
       reviewedRevision.current=client?.updated_at ?? "";
       timer=window.setTimeout(()=>request.abort(),120000);
       const result=await scanClientDocument(files,request.signal,setProgress);
@@ -68,11 +69,12 @@ export default function CrmDocumentScanner(props: ScannerProps) {
         return;
       }
       if (client && result.full_name && nameKey(result.full_name) === nameKey(client.full_name)) result.full_name = client.full_name;
+      setReading(result);
       if ("onRead" in props) {
         props.onRead(result);
         setOpen(false);
         setSaved(true);
-      } else setReading(result);
+      }
     } catch(cause) {
       setError(request.signal.aborted?"A leitura foi interrompida.":cause instanceof Error?cause.message:"Não foi possível ler o documento.");
     } finally {
@@ -131,7 +133,7 @@ export default function CrmDocumentScanner(props: ScannerProps) {
       onClick={()=>{if(open){controller.current?.abort();setReading(null);}setError("");setDriveError("");setSaved(false);setOpen(!open);}}>
       {open?"Fechar leitura":"Ler passaporte ou Cartão de Cidadão"}
     </button>
-    {saved&&<p role="status" className="text-sm text-orange-800">{client ? "Documento e ficha do cliente guardados." : "Leitura concluída. Confirma os campos no formulário."}</p>}
+    {saved&&<p role="status" className="text-sm text-orange-800">{client ? "Documento e ficha do cliente guardados." : unread.length ? "Leitura parcial. Confirma os campos preenchidos e completa os que faltam." : "Leitura concluída. Confirma os campos no formulário."}</p>}
     {open&&<div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
       <form onSubmit={scanLocal} className="space-y-3">
         <label className={field}>Fotografias ou PDF do documento

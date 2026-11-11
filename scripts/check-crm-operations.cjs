@@ -93,6 +93,10 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  assert.equal(accentedPassport.full_name,"João Pinto Exemplo");
  assert.equal(accentedPassport.document_number,"L898902C3");
  assert.equal(accentedPassport.expires_on,"2012-04-15");
+ const noisyPassport=read("P<PRTEXEMPLO<<ANA<MARIA<<<<<<<<<<<<<<<<<<<<<<\nAB12345671PRT9002155F3205013<<<<<<<<<<<<<<Q@Q");
+ assert.equal(noisyPassport.document_number,"AB1234567");
+ assert.equal(noisyPassport.birth_date,"1990-02-15");
+ assert.equal(noisyPassport.expires_on,"2032-05-01");
  assert.equal(read("PASSAPORTE\nVálido até 05.06.2031").expires_on,"2031-06-05");
 
  const form=load("src/app/api/trip-requests/route.ts");
