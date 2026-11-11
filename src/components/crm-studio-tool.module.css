@@ -31,20 +31,25 @@
 .root[data-theme="dark"] [class~="from-white"] { background-image: linear-gradient(135deg, var(--crm-surface), var(--crm-raised)); }
 .root[data-theme="dark"] [class~="text-slate-50"] { color: var(--crm-muted); }
 .root[data-theme="dark"] [class~="border-slate-300"] { border-color: var(--crm-border); }
-.root[data-theme="dark"] [class~="bg-slate-50"] { background-color: var(--crm-raised); }
+.root[data-theme="dark"] [class~="bg-slate-50"],
+.root[data-theme="dark"] [class~="hover:bg-slate-50"]:hover,
+.root[data-theme="dark"] :is([class~="hover:bg-slate-100"], [class~="hover:bg-white"]):hover { background-color: var(--crm-raised); }
 .root[data-theme="dark"] [class~="border-sky-100"] { border-color: color-mix(in srgb, #9dd9fb 35%, var(--crm-surface)); }
 .root[data-theme="dark"] [class~="border-sky-300"] { border-color: color-mix(in srgb, #9dd9fb 35%, var(--crm-surface)); }
-.root[data-theme="dark"] [class~="bg-sky-100"] { background-color: #142c3b; }
+.root[data-theme="dark"] [class~="bg-sky-100"],
+.root[data-theme="dark"] [class~="hover:bg-sky-100"]:hover { background-color: #142c3b; }
 .root[data-theme="dark"] [class~="text-sky-800"] { color: #9dd9fb; }
 .root[data-theme="dark"] [class~="text-sky-950"] { color: #9dd9fb; }
 .root[data-theme="dark"] [class~="border-orange-100"] { border-color: color-mix(in srgb, #ffbf80 35%, var(--crm-surface)); }
 .root[data-theme="dark"] [class~="border-orange-300"] { border-color: color-mix(in srgb, #ffbf80 35%, var(--crm-surface)); }
 .root[data-theme="dark"] [class~="bg-orange-100"] { background-color: #442719; }
-.root[data-theme="dark"] [class~="text-orange-800"] { color: #ffbf80; }
+.root[data-theme="dark"] [class~="text-orange-800"],
+.root[data-theme="dark"] [class~="hover:text-orange-800"]:hover { color: #ffbf80; }
 .root[data-theme="dark"] [class~="text-orange-950"] { color: #ffbf80; }
 .root[data-theme="dark"] [class~="border-violet-100"] { border-color: color-mix(in srgb, #d4bcff 35%, var(--crm-surface)); }
 .root[data-theme="dark"] [class~="border-violet-300"] { border-color: color-mix(in srgb, #d4bcff 35%, var(--crm-surface)); }
-.root[data-theme="dark"] [class~="bg-violet-100"] { background-color: #2e2546; }
+.root[data-theme="dark"] [class~="bg-violet-100"],
+.root[data-theme="dark"] [class~="hover:bg-violet-100"]:hover { background-color: #2e2546; }
 .root[data-theme="dark"] [class~="text-violet-800"] { color: #d4bcff; }
 .root[data-theme="dark"] [class~="text-violet-950"] { color: #d4bcff; }
 .root[data-theme="dark"] [class~="border-blue-100"] { border-color: color-mix(in srgb, #a4c8ff 35%, var(--crm-surface)); }
@@ -59,7 +64,8 @@
 .root[data-theme="dark"] [class~="text-rose-950"] { color: #ffb5c6; }
 .root[data-theme="dark"] [class~="border-amber-100"] { border-color: color-mix(in srgb, #f8d78b 35%, var(--crm-surface)); }
 .root[data-theme="dark"] [class~="border-amber-300"] { border-color: color-mix(in srgb, #f8d78b 35%, var(--crm-surface)); }
-.root[data-theme="dark"] [class~="bg-amber-100"] { background-color: #392d17; }
+.root[data-theme="dark"] [class~="bg-amber-100"],
+.root[data-theme="dark"] [class~="hover:bg-amber-100"]:hover { background-color: #392d17; }
 .root[data-theme="dark"] [class~="text-amber-800"] { color: #f8d78b; }
 .root[data-theme="dark"] [class~="text-amber-950"] { color: #f8d78b; }
 .root[data-theme="dark"] [class~="border-slate-200"] { border-color: var(--crm-border); }
@@ -75,11 +81,14 @@
 .root[data-theme="dark"] [class~="border-orange-700"] { border-color: color-mix(in srgb, #ffbf80 35%, var(--crm-surface)); }
 .root[data-theme="dark"] [class~="text-slate-900"] { color: var(--crm-text); }
 .root[data-theme="dark"] [class~="border-red-200"] { border-color: color-mix(in srgb, #ffb9b9 35%, var(--crm-surface)); }
-.root[data-theme="dark"] [class~="bg-red-50"] { background-color: #40232a; }
+.root[data-theme="dark"] [class~="bg-red-50"],
+.root[data-theme="dark"] [class~="hover:bg-red-50"]:hover { background-color: #40232a; }
 .root[data-theme="dark"] [class~="text-red-800"] { color: #ffb9b9; }
-.root[data-theme="dark"] [class~="bg-orange-50"] { background-color: #442719; }
+.root[data-theme="dark"] [class~="bg-orange-50"],
+.root[data-theme="dark"] [class~="hover:bg-orange-50"]:hover { background-color: #442719; }
 .root[data-theme="dark"] [class~="text-slate-300"] { color: var(--crm-muted); }
-.root[data-theme="dark"] [class~="text-slate-600"] { color: var(--crm-muted); }
+.root[data-theme="dark"] [class~="text-slate-600"],
+.root[data-theme="dark"] [class~="hover:text-slate-600"]:hover { color: var(--crm-muted); }
 .root[data-theme="dark"] [class~="text-slate-800"] { color: var(--crm-text); }
 .root[data-theme="dark"] [class~="bg-slate-50/80"] { background-color: var(--crm-raised); }
 .root[data-theme="dark"] [class~="bg-slate-200"] { background-color: var(--crm-border); }
