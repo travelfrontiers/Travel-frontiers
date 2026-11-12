@@ -111,13 +111,24 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     assert.doesNotMatch(signature.formatCrmEmail("Olá", "pt", null, signatureCid).html, /example\.invalid\/(?:fin|terms)/);
     assert.equal(load(signatureModule, {}, { CRM_QUOTE_FIN_URL: "https://example.invalid/fin" }).configuredQuoteDocuments(), null);
 
-    let composedMail;
+    const recipientHelpers = load("src/lib/crm-email-recipients.ts");
+    assert.deepEqual(recipientHelpers.parseEmailRecipients(" A@example.invalid; b@example.invalid\na@example.invalid "), {
+        addresses: ["a@example.invalid", "b@example.invalid"], invalid: false,
+    });
+    assert.equal(recipientHelpers.parseEmailRecipients("a@example.invalid,Nome <b@example.invalid>").invalid, true);
+    let composedMail, envelopeSent, loggedMail, finalState;
+    let partialDelivery = false;
     const email = load("src/app/api/crm/email/route.ts", {
         "@/lib/crm-office-api": {
             crmConfig: async () => ({}), uuid: () => true,
             privateJson: (body, status = 200) => Response.json(body, { status }),
-            failure: cause => { throw cause; },
-            rpc: async () => true,
+            failure: cause => Response.json({ error: cause.message }, { status: cause.status ?? 400 }),
+            CrmError: class extends Error { constructor(message, status) { super(message); this.status = status; } },
+            rpc: async (_config, name, payload) => {
+                if (name === "crm_begin_email_send") loggedMail = payload.p_message;
+                if (name === "crm_finish_email_send") finalState = payload.p_state;
+                return true;
+            },
         },
         "@/lib/crm-email-context": {
             isEmailScope: () => true, emailRest: async () => [],
@@ -127,15 +138,17 @@ function load(file, mocks = {}, env = {}, network = fetch) {
             mailBodyLimit: 24000,
             archiveSentMessage: async () => true,
             smtpTransport: () => ({ user: "sender@example.invalid", smtp: {
-                sendMail: async ({ raw }) => {
+                sendMail: async ({ raw, envelope }) => {
+                    envelopeSent = envelope.to;
                     composedMail = await require("mailparser").simpleParser(raw, { skipImageLinks: true });
-                    return { accepted: ["client@example.invalid"] };
+                    return { accepted: partialDelivery ? envelope.to.slice(0, 1) : envelope.to };
                 },
                 close() {},
             } }),
         },
         "@/lib/crm-email-templates": load("src/lib/crm-email-templates.ts"),
         "@/lib/crm-email-signature": signature,
+        "@/lib/crm-email-recipients": recipientHelpers,
         "@/lib/studio-request": controls,
     });
     const quoteForm = new FormData();
@@ -146,8 +159,15 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     quoteForm.set("subject", "Proposta fictícia");
     quoteForm.set("body", "Segue a proposta.");
     quoteForm.set("file_quote", new File(["%PDF-1.4"], "proposta.pdf", { type: "application/pdf" }));
-    const quoteResult = await email.POST(new Request("https://site.test/api/crm/email", { method: "POST", body: quoteForm }));
+    quoteForm.set("to", "First@example.invalid, second@example.invalid; first@example.invalid");
+    const sendQuote = () => email.POST(new Request("https://site.test/api/crm/email", { method: "POST", body: quoteForm }));
+    const quoteResult = await sendQuote();
     assert.equal(quoteResult.status, 200);
+    assert.deepEqual(envelopeSent, ["first@example.invalid", "second@example.invalid"]);
+    assert.deepEqual(composedMail.to.value.map(entry => entry.address), envelopeSent);
+    assert.equal(composedMail.cc, undefined);
+    assert.equal(loggedMail.recipient, "first@example.invalid, second@example.invalid");
+    assert.equal(loggedMail.cc, null);
     const banner = composedMail.attachments.find(file => file.contentDisposition === "inline");
     assert.ok(banner && banner.contentType === "image/jpeg" && banner.size < 70_000);
     assert.match(composedMail.html, /src="cid:tf-signature-example-operation@travelfrontiers\.pt"/);
@@ -155,6 +175,21 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     assert.match(composedMail.text, /example\.invalid\/fin/);
     assert.match(composedMail.html, /example\.invalid\/terms/);
     assert.deepEqual(composedMail.attachments.filter(file => file.contentDisposition !== "inline").map(file => file.filename), ["proposta.pdf"]);
+    quoteForm.set("copy_agency", "true");
+    assert.equal((await sendQuote()).status, 200);
+    assert.deepEqual(envelopeSent, ["first@example.invalid", "second@example.invalid", "geral@gupitravel.pt"]);
+    assert.equal(composedMail.cc.value[0].address, "geral@gupitravel.pt");
+    assert.equal(loggedMail.cc, "geral@gupitravel.pt");
+    partialDelivery = true;
+    assert.equal((await sendQuote()).status, 502);
+    assert.equal(finalState, "uncertain");
+    quoteForm.set("to", "");
+    assert.equal((await sendQuote()).status, 400);
+    quoteForm.set("to", "invalid");
+    assert.equal((await sendQuote()).status, 400);
+    quoteForm.delete("to");
+    assert.equal((await sendQuote()).status, 400);
+
 
     const operations = [];
     let deletionStarted = false;

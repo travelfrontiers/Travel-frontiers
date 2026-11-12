@@ -82,10 +82,10 @@ export type MailCandidate = {
   subject: string; date: string; references: string[]; size: number;
 };
 
-function envelope(message: FetchMessageObject, validity: string, customer: string): MailCandidate | null {
+function envelope(message: FetchMessageObject, validity: string, customers: Set<string>): MailCandidate | null {
   const from = message.envelope?.from;
   const sender = from?.length === 1 ? from[0]?.address?.toLowerCase() : null;
-  if (!sender || sender !== customer.toLowerCase()) return null;
+  if (!sender || !customers.has(sender)) return null;
   const key = "inbox:" + validity + ":" + message.uid;
   const date = message.envelope?.date || message.internalDate;
   const size = message.size ?? 0;
@@ -100,15 +100,17 @@ function envelope(message: FetchMessageObject, validity: string, customer: strin
 
 const envelopeQuery = { envelope: true, internalDate: true, size: true, headers: ["references"] };
 
-export async function withInbox<T>(customer: string, operation: (candidates: MailCandidate[], read: (candidate: MailCandidate) => Promise<{ body: string; attachments: { filename: string }[] }>) => Promise<T>) {
+export async function withInbox<T>(customers: string[], operation: (candidates: MailCandidate[], read: (candidate: MailCandidate) => Promise<{ body: string; attachments: { filename: string }[] }>) => Promise<T>) {
   return withMailbox(async imap => {
     const mailbox = await imap.mailboxOpen("INBOX", { readOnly: true });
     const validity = String(mailbox.uidValidity);
     const since = new Date(Date.now() - scanDays * 24 * 60 * 60 * 1000);
-    const found = await imap.search({ from: customer, since }, { uid: true });
+    const senders = customers.map(address => ({ from: address }));
+    const found = await imap.search({ since, ...(senders.length === 1 ? senders[0] : { or: senders }) }, { uid: true });
     const ids = Array.isArray(found) ? found.slice(-scanCount) : [];
     const messages = ids.length ? await imap.fetchAll(ids, envelopeQuery, { uid: true }) : [];
-    const candidates = messages.flatMap(message => envelope(message, validity, customer) || []).reverse();
+    const allowed = new Set(customers);
+    const candidates = messages.flatMap(message => envelope(message, validity, allowed) || []).reverse();
     return operation(candidates, async candidate => {
       if (!candidate.size || candidate.size > maxIncomingBytes) return {
         body: "Mensagem demasiado grande para copiar para o CRM. Consulta-a no Roundcube.", attachments: [],

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { emailAttachmentLabels, fillEmailTemplate, missingEmailFields, type EmailAttachmentRole, type EmailScope, type EmailTemplateKey } from "@/lib/crm-email-templates";
 import { emailSignatureImage, emailSignatureName, quoteBodyWithLinks, quoteDocumentItems, type QuoteDocumentLinks } from "@/lib/crm-email-signature";
+import { agencyCopyAddress, parseEmailRecipients } from "@/lib/crm-email-recipients";
 import type { EmailContext } from "@/lib/crm-email-context";
 import { officeButton as button, officeInput as input, officeSecondary as secondary, type AuthorizedFetch } from "@/lib/crm-office-types";
 import { downloadCrmDrivePdf, loadGoogle } from "@/lib/crm-drive-client";
@@ -15,14 +16,14 @@ export type CrmEmailMessage = {
 type Template = { key: EmailTemplateKey; label: string; subject: string; body: string; required: EmailAttachmentRole[] };
 type EmailData = { context: EmailContext; templates: Template[]; history: CrmEmailMessage[]; quoteDocuments: QuoteDocumentLinks | null; driveClientId: string | null };
 type Candidate = { key: string; subject: string; date: string };
-type Draft = { template: Template; subject: string; body: string; operationId: string; reply?: CrmEmailMessage };
+type Draft = { template: Template; subject: string; body: string; operationId: string; to: string; copyAgency: boolean; reply?: CrmEmailMessage };
 const states: Record<string, string> = { sent: "Enviado", received: "Recebido", sending: "Envio pendente de confirmação", uncertain: "Confirma a entrega no Roundcube", failed: "Falhou" };
 const languageNames = { pt: "Português", en: "Inglês", fr: "Francês" };
 const roles = Object.keys(emailAttachmentLabels) as EmailAttachmentRole[];
 const formatDate = (date: string) => new Date(date).toLocaleString("pt-PT");
 
-export default function CrmEmailPanel({ authorizedFetch, scope, id, version, suggestedPdf, onSent, onAcceptReply }: {
-  authorizedFetch: AuthorizedFetch; scope: EmailScope; id: string; version?: number; suggestedPdf?: File | null;
+export default function CrmEmailPanel({ authorizedFetch, scope, id, version, suggestedPdf, recipientRevision, onSent, onAcceptReply }: {
+  authorizedFetch: AuthorizedFetch; scope: EmailScope; id: string; version?: number; suggestedPdf?: File | null; recipientRevision?: string;
   onSent?: (quoteSent: boolean) => Promise<void>; onAcceptReply?: (message: CrmEmailMessage) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -45,20 +46,23 @@ export default function CrmEmailPanel({ authorizedFetch, scope, id, version, sug
   }, [authorizedFetch, scope, id, version]);
 
   useEffect(() => {
-    if (!open || data) return;
-    void load().catch(cause => setError(cause.message));
-  }, [open, data, load]);
+    if (open) void load().catch(cause => setError(cause.message));
+  }, [open, load, recipientRevision]);
   const canDownload = Boolean(data?.driveClientId && data?.context.driveId);
   useEffect(() => {
     if (canDownload) void loadGoogle().then(() => setDriveReady(true), () => setDriveReady(false));
   }, [canDownload]);
 
-  function compose(template: Template, reply?: CrmEmailMessage) {
+  const suggestedRecipients = [...new Set(data?.context.contacts.flatMap(contact => contact.email ? [contact.email] : []) ?? [])].join(", ");
+
+  function compose(template: Template, reply?: CrmEmailMessage, recipients?: Pick<Draft, "to" | "copyAgency">) {
     if (!data) return;
     setModel(null);
     setError("");
     setDraft({
       template, operationId: crypto.randomUUID(), reply,
+      copyAgency: recipients?.copyAgency ?? false,
+      to: recipients?.to ?? (reply ? reply.sender : suggestedRecipients),
       subject: reply ? ( /^re:/i.test(reply.subject) ? reply.subject : "Re: " + reply.subject).slice(0, 240) : fillEmailTemplate(template.subject, data.context.fields),
       body: reply ? "" : fillEmailTemplate(template.key === "quote" && data.quoteDocuments ? quoteBodyWithLinks(template.body, data.context.language) : template.body, data.context.fields),
     });
@@ -85,12 +89,12 @@ export default function CrmEmailPanel({ authorizedFetch, scope, id, version, sug
   }
   async function send(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!draft || !data?.context.recipient) return;
+    if (!draft || !selectedRecipients.addresses.length || selectedRecipients.invalid) return;
     await run(async () => {
       const form = new FormData();
       for (const [key, value] of Object.entries({
         id, scope, version: version ? String(version) : "", template: draft.template.key, operation_id: draft.operationId,
-        subject: draft.subject, body: draft.body, reply_id: draft.reply?.id || "",
+        subject: draft.subject, body: draft.body, reply_id: draft.reply?.id || "", to: draft.to, copy_agency: String(draft.copyAgency),
       })) form.set(key, value);
       for (const role of roles) for (const file of attachments[role] ?? []) form.append("file_" + role, file);
       const result = await request(form).catch(async cause => { await load().catch(() => {}); throw cause; });
@@ -111,6 +115,8 @@ export default function CrmEmailPanel({ authorizedFetch, scope, id, version, sug
       setNotice(result.imported ? `${result.imported} email(s) associado(s) à ficha.` : "Sem novas respostas associadas.");
     });
   }
+  const selectedRecipients = parseEmailRecipients(draft?.to ?? "");
+  const canSync = Boolean(data?.context.recipient || data?.history.some(message => message.direction === "out"));
   const missing = draft ? missingEmailFields(draft.subject + "\n" + draft.body) : [];
   const missingAttachments = draft?.template.required.filter(role => !attachments[role]?.length) ?? [];
   const allFiles = Object.values(attachments).flat();
@@ -135,15 +141,44 @@ export default function CrmEmailPanel({ authorizedFetch, scope, id, version, sug
               {data.templates.map(template => <option key={template.key} value={template.key}>{template.label}</option>)}
             </select>
           </label>
-          <button type="button" className={secondary} disabled={busy || !data.context.recipient} onClick={() => void sync()}>Sincronizar respostas</button>
+          <button type="button" className={secondary} disabled={busy || !canSync} onClick={() => void sync()}>Sincronizar respostas</button>
         </div>
         <button type="button" className="text-xs text-slate-600 underline" disabled={busy} onClick={() => void run(async () => {
           const { smtp, imap } = await request({ action: "verify" });
           setNotice(`Envio SMTP: ${smtp ? "ligado" : "indisponível"}. Receção IMAP: ${imap ? "ligada" : "indisponível"}.`);
         })}>Verificar ligação ao Roundcube</button>
-        {!data.context.recipient && <p className="text-sm text-slate-600">Adiciona um email válido à ficha para enviar ou sincronizar.</p>}
+        {!data.context.recipient && <p className="text-sm text-slate-600">Podes indicar os destinatários manualmente no rascunho.</p>}
         {draft && !model && <form className="space-y-3" onSubmit={send}>
-          <p className="text-sm"><strong>Para</strong> {data.context.recipient || "Email em falta"}{draft.reply && <> · Em resposta a «{draft.reply.subject}»</>}</p>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-semibold">Destinatários</legend>
+            {!draft.reply && data.context.contacts.map(contact => <label key={contact.id} className="flex items-center gap-2 text-sm">
+              <input type="checkbox" className="size-4 shrink-0 appearance-auto" disabled={busy || !contact.email}
+                checked={Boolean(contact.email && selectedRecipients.addresses.includes(contact.email))}
+                onChange={event => {
+                  if (!contact.email) return;
+                  const entries = draft.to.split(/[,;\n]+/).map(value => value.trim()).filter(Boolean);
+                  const to = event.currentTarget.checked ? [...entries, contact.email] : entries.filter(address => address.toLowerCase() !== contact.email);
+                  setDraft({ ...draft, to: to.join(", ") });
+                }} />
+              <span>{contact.name || contact.email} {contact.email ? <span className="text-slate-600">· {contact.email}</span> : <span className="text-slate-600">· sem email na ficha</span>}</span>
+            </label>)}
+            {draft.reply && <p className="text-sm">Em resposta a «{draft.reply.subject}»</p>}
+            <label className="block text-sm">Para
+              <textarea required rows={2} maxLength={7680} className={input} value={draft.to} disabled={busy}
+                onChange={event => setDraft({ ...draft, to: event.currentTarget.value })} />
+            </label>
+            <p className="text-xs text-slate-600">Podes acrescentar ou retirar endereços. Separa-os por vírgulas ou por linhas.</p>
+            {!draft.reply && suggestedRecipients && draft.to !== suggestedRecipients &&
+              <button type="button" className="text-sm underline" disabled={busy} onClick={() => setDraft({ ...draft, to: suggestedRecipients })}>
+                Usar emails dos clientes associados
+              </button>}
+            {selectedRecipients.invalid && <p role="alert" className="text-sm text-red-700">Revê os endereços. O limite é de 30 destinatários.</p>}
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" className="size-4 shrink-0 appearance-auto" checked={draft.copyAgency} disabled={busy}
+                onChange={event => setDraft({ ...draft, copyAgency: event.currentTarget.checked })} />
+              Enviar cópia para {agencyCopyAddress}
+            </label>
+          </fieldset>
           <label className="block text-sm">Assunto<input required maxLength={240} className={input} value={draft.subject} onChange={event => setDraft({ ...draft, subject: event.target.value })} /></label>
           <label className="block text-sm">Mensagem<textarea required maxLength={16000} rows={12} className={input} value={draft.body} onChange={event => setDraft({ ...draft, body: event.target.value })} /></label>
           <div className="space-y-2">
@@ -171,7 +206,7 @@ export default function CrmEmailPanel({ authorizedFetch, scope, id, version, sug
           {missing.length > 0 && <p className="text-sm text-orange-800">Completa no texto os campos assinalados: {missing.map(field => field.replaceAll("_", " ")).join(", ")}.</p>}
           {oversized && <p className="text-sm text-red-700">O limite é de 10 ficheiros e 3,8 MB no total.</p>}
           <div className="flex flex-wrap gap-2">
-            <button className={button} disabled={busy || oversized || data.context.archived || !data.context.recipient || Boolean(missing.length || missingAttachments.length)}>Enviar email</button>
+            <button className={button} disabled={busy || oversized || data.context.archived || !selectedRecipients.addresses.length || selectedRecipients.invalid || Boolean(missing.length || missingAttachments.length)}>Enviar email</button>
             <button type="button" className={secondary} disabled={busy} onClick={() => setModel(draft.template)}>Editar modelo</button>
             <button type="button" className={secondary} disabled={busy} onClick={() => setDraft(null)}>Fechar rascunho</button>
           </div>
@@ -185,7 +220,7 @@ export default function CrmEmailPanel({ authorizedFetch, scope, id, version, sug
             if (saved) {
               const reply = draft?.reply;
               const draftFiles = attachments;
-              compose(saved, reply);
+              compose(saved, reply, draft ?? undefined);
               setAttachments(draftFiles);
             }
             setNotice("Modelo guardado para futuras mensagens neste idioma.");
@@ -210,7 +245,7 @@ export default function CrmEmailPanel({ authorizedFetch, scope, id, version, sug
             <p className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words">{message.body}</p>
             {!!message.attachments.length && <p className="mt-2 break-all text-xs">Anexos: {message.attachments.map(file => file.filename).join(", ")}</p>}
             {message.direction === "in" && (scope !== "proposal" || message.proposal_version === version) && <div className="mt-2 flex flex-wrap gap-2">
-              <button type="button" className={secondary} disabled={busy || Boolean(draft) || !data.context.recipient} onClick={() => {
+              <button type="button" className={secondary} disabled={busy || Boolean(draft)} onClick={() => {
                 const template = data.templates.find(item => !item.required.length);
                 if (template) compose(template, message);
               }}>Responder</button>

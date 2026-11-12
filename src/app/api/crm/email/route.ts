@@ -7,6 +7,7 @@ import { emailRest, emailScopeFilter, isEmailScope, loadEmailContext, validEmail
 import { archiveSentMessage, mailboxSettings, mailBodyLimit, smtpTransport, verifyMailbox, withInbox } from "@/lib/crm-mailbox";
 import { baseEmailTemplate, emailAttachmentLabels, emailTemplates, missingEmailFields, type EmailAttachmentRole, type EmailTemplateKey } from "@/lib/crm-email-templates";
 import { configuredQuoteDocuments, formatCrmEmail, quoteBodyWithLinks } from "@/lib/crm-email-signature";
+import { agencyCopyAddress, maxEmailRecipients, parseEmailRecipients } from "@/lib/crm-email-recipients";
 import { readBounded } from "@/lib/studio-request";
 
 export const runtime = "nodejs";
@@ -112,16 +113,17 @@ async function send(config: EmailConfig, request: Request, type: string) {
   } catch (error) {
     throw new CrmError("Não foi possível ler a mensagem. O pedido tem um limite de 4 MB.", error instanceof RangeError ? 413 : 400);
   }
-  if (form.getAll("cc").some(value => String(value).trim()) || form.getAll("bcc").some(value => String(value).trim())) {
-    throw new CrmError("O envio de cópias está desativado. Atualiza a página.");
-  }
+  if (form.has("cc") || form.has("bcc")) throw new CrmError("Usa a opção de cópia para a GupiTravel.");
+  const to = form.get("to");
+  if (typeof to !== "string") throw new CrmError("Atualiza o CRM e confirma os destinatários antes de enviar.");
+  const { addresses: recipients, invalid } = parseEmailRecipients(to);
+  if (invalid || !recipients.length) throw new CrmError("Indica entre 1 e 30 destinatários com emails válidos.");
+  const cc = form.get("copy_agency") === "true" && !recipients.includes(agencyCopyAddress) ? agencyCopyAddress : null;
   const id = form.get("operation_id");
   if (!uuid(id)) throw new CrmError("Pedido de envio inválido.");
   const context = await contextFor(config, form.get("scope"), form.get("id"), form.get("version") ? Number(form.get("version")) : undefined);
   const key = templateFor(context, form.get("template"));
   if (context.archived) throw new CrmError("Restaura a ficha antes de enviar.");
-  if (!context.recipient) throw new CrmError("Adiciona um email válido à ficha antes de enviar.");
-  const recipient = context.recipient;
   const { subject, body } = verifyText(form.get("subject"), form.get("body"));
   if (missingEmailFields(subject + "\n" + body).length) throw new CrmError("Preenche os campos pendentes do modelo antes de enviar.");
   const attachments = await attachmentsFrom(form);
@@ -136,7 +138,8 @@ async function send(config: EmailConfig, request: Request, type: string) {
     [reply] = await emailRest<EmailRow[]>(config, "crm_emails", {
       ...emailScopeFilter(context), id: "eq." + replyId, select: "id,internet_message_id,sender,recipient,direction,state,proposal_version",
     });
-    if (!reply || (reply.direction === "in" ? reply.sender : reply.recipient) !== recipient.toLowerCase() ||
+    const replyAddresses = reply?.direction === "in" ? [reply.sender] : parseEmailRecipients(reply?.recipient ?? "").addresses;
+    if (!reply || !replyAddresses.some(address => recipients.includes(address)) ||
       context.scope === "proposal" && reply.proposal_version !== context.proposal_version) {
       throw new CrmError("O email de referência não pertence a esta versão ou destinatário.");
     }
@@ -153,7 +156,7 @@ async function send(config: EmailConfig, request: Request, type: string) {
   const composer = nodemailer.createTransport({ streamTransport: true, buffer: true, disableFileAccess: true, disableUrlAccess: true });
   const { message: raw } = await composer.sendMail({
     from: { name: "Tiago Ferreira · Travel Frontiers", address: user },
-    to: recipient, subject, ...message, messageId,
+    to: recipients, ...(cc ? { cc } : {}), subject, ...message, messageId,
     ...(reply ? { inReplyTo: reply.internet_message_id, references: [reply.internet_message_id] } : {}),
     attachments: [
       { filename: "assinatura-travel-frontiers.jpg", content: signature, contentType: "image/jpeg",
@@ -164,15 +167,17 @@ async function send(config: EmailConfig, request: Request, type: string) {
 
   const started = await rpc<boolean>(config, "crm_begin_email_send", { p_message: {
     ...associations(context), id, template_key: key, internet_message_id: messageId,
-    sender: user.toLowerCase(), recipient: recipient.toLowerCase(), subject, body: message.text,
+    sender: user.toLowerCase(), recipient: recipients.join(", "), cc, subject, body: message.text,
     attachments: attachments.map(({ filename, role }) => ({ filename, role })),
   } });
   if (!started) throw new CrmError("Este envio já foi registado. Atualiza o histórico e confirma o estado no Roundcube.", 409);
 
   let state: "sent" | "failed" | "uncertain" = "uncertain";
   try {
-    const result = await smtp.sendMail({ raw, envelope: { from: user, to: [recipient] } });
-    state = result.accepted.some(address => String(address).toLowerCase() === recipient.toLowerCase()) ? "sent" : "uncertain";
+    const envelopeRecipients = cc ? [...recipients, cc] : recipients;
+    const result = await smtp.sendMail({ raw, envelope: { from: user, to: envelopeRecipients } });
+    const accepted = new Set(result.accepted.map(address => String(address).toLowerCase()));
+    state = envelopeRecipients.every(address => accepted.has(address)) ? "sent" : "uncertain";
   } catch (error) {
     const code = (error as { code?: string }).code;
     state = code === "EAUTH" || code === "EENVELOPE" ? "failed" : "uncertain";
@@ -184,7 +189,7 @@ async function send(config: EmailConfig, request: Request, type: string) {
   }
   if (state !== "sent") throw new CrmError(state === "failed"
     ? "O servidor recusou o envio. Confirma a configuração da caixa de correio."
-    : "O servidor não confirmou a entrega ao destinatário. Verifica a pasta Enviados no Roundcube antes de repetir.", 502);
+    : "O servidor não confirmou o envio para todos os destinatários. Verifica a pasta Enviados no Roundcube antes de repetir.", 502);
 
   const archived = await archiveSentMessage(raw as Buffer).catch(() => false);
   await emailRest(config, "crm_emails", { id: "eq." + id }, {
@@ -198,19 +203,23 @@ function sameDossier(message: EmailRow, context: EmailContext) {
 }
 
 async function sync(config: EmailConfig, context: EmailContext, selected: unknown) {
-  if (!context.recipient) throw new CrmError("Adiciona um email válido à ficha antes de sincronizar.");
-  const recipient = context.recipient.toLowerCase();
-  const select = "id,direction,state,internet_message_id,client_id,lead_id,proposal_id,proposal_version,trip_id";
+  const select = "id,direction,state,internet_message_id,client_id,lead_id,proposal_id,proposal_version,trip_id,recipient";
   const query = { select, order: "occurred_at.desc,id", limit: "500" };
+  const dossierOutbound = await emailRest<EmailRow[]>(config, "crm_emails", { ...query, ...emailScopeFilter(context), direction: "eq.out" });
+  const contactEmails = context.contacts.flatMap(contact => contact.email ? [contact.email] : []);
+  const historicEmails = dossierOutbound.flatMap(message => parseEmailRecipients(message.recipient).addresses);
+  const recipients = [...new Set([...contactEmails, ...historicEmails])].slice(0, maxEmailRecipients);
+  if (!recipients.length) throw new CrmError("Adiciona um email válido à ficha ou envia uma mensagem antes de sincronizar.");
+  const quoted = recipients.map(address => JSON.stringify(address)).join(",");
   const [outbound, inbound] = await Promise.all([
-    emailRest<EmailRow[]>(config, "crm_emails", { ...query, direction: "eq.out", recipient: "eq." + recipient }),
-    emailRest<EmailRow[]>(config, "crm_emails", { ...query, direction: "eq.in", sender: "eq." + recipient }),
+    emailRest<EmailRow[]>(config, "crm_emails", { ...query, direction: "eq.out", recipient_addresses: "ov.{" + quoted + "}" }),
+    emailRest<EmailRow[]>(config, "crm_emails", { ...query, direction: "eq.in", sender: "in.(" + quoted + ")" }),
   ]);
-  const known = new Map([...outbound, ...inbound].map(message => [message.internet_message_id, message]));
+  const known = new Map([...dossierOutbound, ...outbound, ...inbound].map(message => [message.internet_message_id, message]));
   const selectedKey = typeof selected === "string" && /^inbox:\d+:\d+$/.test(selected) ? selected : null;
   if (selected !== undefined && !selectedKey) throw new CrmError("Mensagem inválida.");
   const to = mailboxSettings().auth.user;
-  return withInbox(recipient, async (candidates, read) => {
+  return withInbox(recipients, async (candidates, read) => {
     const unmatched: { key: string; subject: string; date: string }[] = [];
     let imported = 0;
     let linkedSelection = false;

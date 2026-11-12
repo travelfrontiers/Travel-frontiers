@@ -13,7 +13,7 @@ begin
  q:=(public.crm_save_proposal(null,c,l,null,0,snapshot)->>'id')::uuid;
  perform public.crm_save_proposal(q,c,l,null,1,snapshot);
  message:=jsonb_build_object('id',m,'client_id',c,'lead_id',l,'proposal_id',q,'proposal_version',1,'template_key','quote',
-   'internet_message_id','<tf-test@example.invalid>','sender','smtp@example.invalid','recipient',recipient,
+   'internet_message_id','<tf-test@example.invalid>','sender','smtp@example.invalid','recipient',recipient||', second@example.invalid','cc','geral@gupitravel.pt',
    'subject','Test message','body','Only synthetic content','attachments','[]'::jsonb);
  begin perform public.crm_begin_email_send(message);
  exception when others then rejected:=sqlerrm='stale_version'; end;
@@ -21,6 +21,7 @@ begin
  message:=jsonb_set(message,'{proposal_version}','2');
  assert public.crm_begin_email_send(message),'first send reserves an operation';
  assert not public.crm_begin_email_send(message),'duplicate operation suppressed';
+ assert (select recipient_addresses=array['crm-email-test@example.invalid','second@example.invalid'] and cc='geral@gupitravel.pt' from public.crm_emails as email where email.id=m),'all recipients and agency copy retained';
  perform public.crm_finish_email_send(m,'sent');
  assert (select status='sent' from public.crm_proposals where id=q),'SMTP confirmation marks quote as sent';
  assert (select status='quote_sent' from public.crm_leads where id=l),'commercial pipeline updated';
