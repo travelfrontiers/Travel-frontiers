@@ -42,16 +42,20 @@ function textList(value: unknown, length: number, max: number) {
     return value.map(item => textField(item, max));
 }
 
-function meal(value: unknown) {
+function meal(value: unknown, base: string) {
     if (!value || typeof value !== "object") throw new TypeError("Resposta inválida.");
     const data = value as Record<string, unknown>;
-    const name = textField(data.nome, 200);
+    const name = textField(data.nome, 200).trim();
     if (!name) return null;
-    const url = typeof data.maps === "string" && data.maps.length <= 500 ? URL.parse(data.maps) : null;
+    const address = textField(data.morada, 250).trim();
+    const locality = textField(data.localidade ?? "", 100).trim() || base.trim();
+    const query = [name, address, locality && !address.toLowerCase().includes(locality.toLowerCase()) ? locality : ""]
+        .filter(Boolean).join(", ");
+    const maps = new URL("https://www.google.com/maps/search/");
+    maps.search = new URLSearchParams({ api: "1", query }).toString();
     return {
         nome: name, porque: textField(data.porque, 600),
-        morada: textField(data.morada, 250), preco: textField(data.preco, 60),
-        maps: url?.origin === "https://www.google.com" && url.pathname.startsWith("/maps") ? url.href : "",
+        morada: address, preco: textField(data.preco, 60), maps: maps.href,
     };
 }
 
@@ -62,16 +66,20 @@ const travelFactsSchema = {
     required: ["partida", "regresso", "resumo"],
 };
 const mealProperties = {
-    nome: stringSchema, porque: stringSchema, morada: stringSchema, preco: stringSchema, maps: stringSchema,
+    nome: stringSchema, porque: stringSchema, morada: stringSchema, localidade: stringSchema, preco: stringSchema,
 };
 const mealSchema = { type: "object", properties: mealProperties, required: Object.keys(mealProperties) };
+const activitySchema = { type: "array", items: stringSchema };
 const dayProperties = {
     data: stringSchema,
     titulo_dia: stringSchema,
     local: stringSchema,
     destaque: stringSchema,
     logistica: stringSchema,
-    atividades: { type: "array", items: stringSchema },
+    manha: activitySchema,
+    tarde: activitySchema,
+    noite: activitySchema,
+    alternativas: activitySchema,
     sugestao_almoco: mealSchema,
     sugestao_jantar: mealSchema,
     imagem_nome_ingles: stringSchema,
@@ -117,14 +125,21 @@ function validatedItinerary(value: unknown, dates: string[]) {
         dias: data.dias.map((day, index) => {
             if (!day || typeof day !== "object") throw new TypeError("Resposta inválida.");
             if (dates.length > 0 && day.data !== dates[index]) throw new TypeError("Datas do roteiro inválidas.");
+            const base = textField(day.local ?? "", 90);
+            const morning = textList(day.manha, 4, 500);
+            const afternoon = textList(day.tarde, 4, 500);
+            const evening = textList(day.noite, 3, 500);
+            const alternatives = textList(day.alternativas, 3, 500);
+            const logistics = textField(day.logistica ?? "", 420);
+            if (![...morning, ...afternoon, ...evening, logistics].some(activity => activity.trim())) throw new TypeError("Dia sem plano.");
             return {
                 number: index + 1, date: tripDates(day.data, day.data)?.[0] ?? "",
                 title: textField(day.titulo_dia, 180),
-                base: textField(day.local ?? "", 90),
+                base,
                 highlight: textField(day.destaque ?? "", 420),
-                logistics: textField(day.logistica ?? "", 420),
-                activities: textList(day.atividades, 8, 500),
-                lunch: meal(day.sugestao_almoco), dinner: meal(day.sugestao_jantar),
+                logistics,
+                morning, afternoon, evening, alternatives,
+                lunch: meal(day.sugestao_almoco, base), dinner: meal(day.sugestao_jantar, base),
                 imagem_nome_ingles: textField(day.imagem_nome_ingles, 150),
             };
         }),
@@ -174,8 +189,10 @@ ${extractedText.substring(0, 30000)}
 Escreve uma introdução com duas ou três frases específicas sobre o que distingue esta viagem, dicas práticas e um plano cronológico com uma entrada por dia, incluindo a ida e o regresso. Em percurso, lista até oito localidades principais, por ordem e sem repetir, para a capa. Usa os nomes das cidades, incluindo excursões, sem nomes de aeroportos, atrações ou ligações entre cidades.
 Em cada dia, preenche local com a base de estadia ou o percurso do dia, destaque com uma ou duas frases concretas sobre o que vale a pena ver ou fazer, e logistica com o que convém organizar ou reservar. Usa cadeias vazias quando não fizer sentido preencher um campo. Mantém cada campo destaque e logistica abaixo de 330 caracteres.
 ${dates.length ? `Usa exatamente estas datas, na mesma ordem: ${dates.join(", ")}.` : "Usa as datas conhecidas em AAAA-MM-DD. Deixa data vazia quando for desconhecida."}
-Cada titulo_dia deve indicar o local ou tema, sem número de dia nem data. Propõe normalmente três a cinco atividades realistas, com indicações como Manhã, Tarde e Noite e uma frase sobre o que fazer em cada paragem. Deixa margem para transferências, check-in, refeições e descanso. Usa menos atividades nos dias de viagem. Inclui opções para chuva ou cansaço quando forem úteis. Respeita as datas dos voos, as estadias e os pedidos nas notas. Encaixa os passeios de um dia durante a estadia na respetiva cidade base. Em logistica, distingue serviços que constam da proposta de sugestões e transportes por reservar. Nos dias de voo, inclui a companhia, o número de voo e horas locais de partida e chegada quando constarem dos dados. Nos dias com mudança de alojamento, indica o nome e a data de check-in ou check-out quando constarem dos dados. Evita inventar horários de voos, reservas, moradas ou horários de abertura.
-Deixa os campos da refeição vazios quando não houver sugestão útil, por exemplo em dias inteiros de voo. Deixa morada e maps vazios se incertos. Usa capa_nome_ingles e imagem_nome_ingles como pesquisas curtas em inglês com o nome exato de um ponto turístico público e respetiva cidade. Escolhe locais distintos sempre que possível. Deixa em branco nos dias em trânsito. Nunca uses nomes de pessoas, hotéis privados, códigos de reserva ou contactos nas pesquisas de imagem. Inclui dicas específicas para os destinos, com o que convém confirmar perto da partida. Evita afirmar requisitos de entrada ou horários atuais sem confirmação.
+Cada titulo_dia deve indicar o local ou tema, sem número de dia nem data.
+Nos dias completos de visita, inclui cinco a sete atividades principais: duas ou três de manhã, duas ou três à tarde e uma à noite. Usa as listas manha, tarde e noite, sem repetir o nome do período em cada item. Inclui uma ou duas alternativas opcionais para quem tiver mais tempo, quiser um ritmo mais calmo ou apanhar chuva. Não contes refeições como atividades.
+Dá um nome concreto a cada paragem e explica em uma ou duas frases o que fazer, o que merece atenção e como a visita encaixa na zona ou no percurso. Agrupa paragens próximas. Nos dias de natureza, usa troços, miradouros ou experiências dentro da mesma área em vez de forçar deslocações adicionais. Nos dias de trânsito ou em que as notas peçam tempo livre, reduz o plano aos compromissos reais e a opções plausíveis, com listas vazias nos períodos sem programa. Inclui pelo menos um passo concreto do percurso nesses dias, mesmo se for só embarque, escala ou chegada; se não souberes o período, indica-o em logistica. Quando a chegada permitir, acrescenta uma opção leve perto do alojamento. Respeita as datas dos voos, as estadias e os pedidos nas notas. Encaixa os passeios de um dia durante a estadia na respetiva cidade base. Em logistica, distingue serviços que constam da proposta de sugestões e transportes por reservar. Nos dias de voo, inclui a companhia, o número de voo e horas locais de partida e chegada quando constarem dos dados. Nos dias com mudança de alojamento, indica o nome e a data de check-in ou check-out quando constarem dos dados. Evita inventar horários de voos, reservas, moradas ou horários de abertura.
+Para almoço e jantar, quando fizer sentido, indica um restaurante concreto e identificável perto do percurso do dia. Preenche localidade com a cidade onde fica o restaurante, mesmo que seja diferente da base de estadia. Indica a morada apenas quando conhecida com confiança e explica em poucas palavras o que experimentar. Para cadeias, identifica a zona ou filial apropriada. Se não tiveres confiança num nome real, deixa os campos dessa refeição vazios. Não inventes nomes, endereços, preços exatos nem links. Usa capa_nome_ingles e imagem_nome_ingles como pesquisas curtas em inglês com o nome exato de um ponto turístico público e respetiva cidade. Escolhe locais distintos sempre que possível. Deixa em branco nos dias em trânsito. Nunca uses nomes de pessoas, hotéis privados, códigos de reserva ou contactos nas pesquisas de imagem. Inclui dicas específicas para os destinos, com o que convém confirmar perto da partida. Evita afirmar requisitos de entrada ou horários atuais sem confirmação.
 
 <TRAVEL_DATA>
 ${textField(facts.resumo, 5000)}
