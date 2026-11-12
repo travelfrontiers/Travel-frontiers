@@ -204,8 +204,8 @@ ${notes || "Nenhuma"}
 
     } catch (error) {
         const name = error instanceof Error ? error.name : "";
-        const timedOut = name === "AbortError" || name === "TimeoutError";
         const providerStatus = error && typeof error === "object" && "status" in error ? error.status : undefined;
+        const timedOut = name === "AbortError" || name === "TimeoutError" || providerStatus === 504;
         console.warn("itinerary_generation_failed", {
             stage, name, elapsedMs: Date.now() - startedAt, timedOut,
             providerStatus: typeof providerStatus === "number" ? providerStatus : undefined,
