@@ -64,19 +64,22 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     assert.equal(providerCalls, 2);
     assert.equal((await translate.POST(request("translate", "Bearer studio", { ...promotion, description: ["x".repeat(25_000)] }))).status, 413);
 
-    const emptyMeal = { nome: "", porque: "", morada: "", preco: "", maps: "" };
+    const emptyMeal = { nome: "", porque: "", morada: "", preco: "", localidade: "" };
     const days = Array.from({ length: 15 }, (_, i) => ({
         data: `2030-04-${String(i + 6).padStart(2, "0")}`, titulo_dia: "Visita",
-        atividades: ["Passeio de teste"], sugestao_jantar: emptyMeal,
-        sugestao_almoco: { ...emptyMeal, nome: "Restaurante", maps: "endereço inválido" },
+        manha: ["Passeio de teste", "Miradouro"], tarde: ["Mercado", "Museu"], noite: ["Passeio noturno"], alternativas: ["Jardim"], sugestao_jantar: emptyMeal,
+        sugestao_almoco: { ...emptyMeal, nome: "Café de Teste", morada: "Rua do Exemplo 14", localidade: "Macau" },
         imagem_nome_ingles: "",
     }));
+    days[14] = { ...days[14], manha: [], tarde: [], noite: [], alternativas: [], logistica: "Chegada e recolha de bagagem." };
     let planMode = "complete";
+    const word = load("src/lib/itinerary-word.ts");
+    let itineraryForWord;
     const itinerary = load("src/app/api/generate-itinerary/route.ts", {
         "@/lib/studio-request": controls,
         "@/lib/itinerary-source": { sourceExtension: () => "txt", loadPrivateSource: async () => Buffer.from("Viagem fictícia") },
         "@/lib/itinerary-images": { loadItineraryPhotos: async () => [] },
-        "@/lib/itinerary-word": load("src/lib/itinerary-word.ts"),
+        "@/lib/itinerary-word": { createItineraryWord: (value, ...args) => { itineraryForWord = value; return word.createItineraryWord(value, ...args); } },
         "@/lib/gemini": { generateText: async (prompt, options) => {
             if (options.schema.properties.resumo) {
                 return JSON.stringify({ partida: "2030-04-06", regresso: "2030-04-20", resumo: "Viagem fictícia" });
@@ -90,6 +93,12 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     const generate = () => itinerary.POST(request("generate-itinerary", "Bearer studio", { key: "test.txt", title: "Teste" }));
     const generated = await generate();
     assert.equal(generated.status, 200);
+    assert.equal(itineraryForWord.days[0].morning.length, 2);
+    assert.equal(itineraryForWord.days[0].alternatives.length, 1);
+    const mapsLink = new URL(itineraryForWord.days[0].lunch.maps);
+    assert.equal(mapsLink.origin + mapsLink.pathname, "https://www.google.com/maps/search/");
+    assert.equal(mapsLink.searchParams.get("api"), "1");
+    assert.equal(mapsLink.searchParams.get("query"), "Café de Teste, Rua do Exemplo 14, Macau");
     assert.match(generated.headers.get("content-type"), /wordprocessingml/);
     assert.equal(Buffer.from(await generated.arrayBuffer()).subarray(0, 2).toString(), "PK");
     planMode = "partial";

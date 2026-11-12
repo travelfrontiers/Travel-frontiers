@@ -7,7 +7,7 @@ import type { ItineraryPhoto } from "./itinerary-images";
 type Meal = { nome: string; porque: string; morada: string; preco: string; maps: string };
 type Day = {
     number: number; date: string; title: string; base: string; highlight: string; logistics: string;
-    activities: string[]; lunch: Meal | null; dinner: Meal | null;
+    morning: string[]; afternoon: string[]; evening: string[]; alternatives: string[]; lunch: Meal | null; dinner: Meal | null;
 };
 type Itinerary = { title: string; introduction: string; route: string[]; tips: string[]; days: Day[] };
 
@@ -61,14 +61,18 @@ function meal(caption: string, value: Meal | null) {
         text(caption + " · ", { bold: true, color: accent, size: 20 }),
         text(value.nome, { bold: true, size: 20 }),
         ...(details.length ? [text("  " + details.join(" · "), { size: 20 })] : []),
-        ...(value.maps ? [text("  "), link("Ver no mapa", value.maps)] : []),
+        ...(value.maps ? [text("  "), link("Abrir no Google Maps", value.maps)] : []),
     ] })];
 }
 
 function bullet(value: string) {
-    const parts = value.match(/^(Manhã|Tarde|Noite|Ao fim da tarde|\d{1,2}[:h]\d{2})\s*[:·–—-]\s*(.+)$/i);
     return new Paragraph({ bullet: { level: 0 }, keepLines: true, spacing: { after: 100, line: 290 },
-        children: parts ? [text(parts[1] + " · ", { bold: true }), text(parts[2])] : [text(value)] });
+        children: [text(value)] });
+}
+
+function period(title: string, items: string[]) {
+    const entries = items.filter(item => item.trim());
+    return entries.length ? [label(title, 90), ...entries.map(bullet)] : [];
 }
 
 export async function createItineraryWord(itinerary: Itinerary, images: (ItineraryPhoto | null)[], logo: Buffer | null) {
@@ -105,11 +109,12 @@ export async function createItineraryWord(itinerary: Itinerary, images: (Itinera
         if (day.highlight) children.push(new Paragraph({ keepLines: true, keepNext: Boolean(image),
             spacing: { after: 170, line: 295 }, children: [text(day.highlight, { color: muted })] }));
         if (image) children.push(...photo(image, 242));
-        children.push(...day.activities.map(bullet));
+        children.push(...period("Manhã", day.morning), ...period("Tarde", day.afternoon), ...period("Noite", day.evening));
+        if (day.lunch || day.dinner) children.push(label("Onde comer", 90), ...meal("Almoço", day.lunch), ...meal("Jantar", day.dinner));
+        children.push(...period("Alternativas", day.alternatives));
         if (day.logistics) children.push(new Paragraph({ keepLines: true, spacing: { before: 130, after: 160, line: 285 },
             shading: { type: ShadingType.CLEAR, fill: "F4F0E8" }, indent: { left: 160, right: 160 },
             children: [text("A ter em conta · ", { bold: true, color: accent, size: 20 }), text(day.logistics, { size: 20 })] }));
-        children.push(...meal("Almoço", day.lunch), ...meal("Jantar", day.dinner));
     }
     if (itinerary.tips.length) children.push(
         new Paragraph({ heading: HeadingLevel.HEADING_1, keepNext: true, spacing: { before: 350, after: 160 },
