@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { authorizeTool, readBounded, studioJson } from "@/lib/studio-request";
+import { authorizeTool, studioJson } from "@/lib/studio-request";
 import { loadPrivateSource, sourceExtension } from "@/lib/itinerary-source";
 import { generateText } from "@/lib/gemini";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { Document, Packer, Paragraph, TextRun, AlignmentType, ImageRun, Footer, BorderStyle, PageBreak, ShadingType, ExternalHyperlink } from 'docx';
+import { loadItineraryPhotos } from "@/lib/itinerary-images";
+import { createItineraryWord } from "@/lib/itinerary-word";
 import mammoth from 'mammoth';
 
 export const maxDuration = 150;
@@ -29,33 +30,6 @@ async function documentText(buffer: Buffer, extension: string) {
         }
         return pages.join("\n");
     } finally { await task.destroy(); }
-}
-
-async function fetchFreeTravelImage(query: string): Promise<{ buffer: Buffer; type: 'jpg' | 'png' } | null> {
-    if (!query.trim()) return null;
-    try {
-        const cleanQuery = query.replace(/professional travel photo of/i, '').trim();
-        const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=pageimages&generator=search&gsrsearch=${encodeURIComponent(cleanQuery + " landmark")}&gsrlimit=1&pithumbsize=960`;
-        
-        const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
-        const data = await response.json();
-        
-        if (data?.query?.pages) {
-            const pages = Object.values(data.query.pages) as any[];
-            if (pages.length > 0 && pages[0].thumbnail) {
-                const imgUrl = new URL(pages[0].thumbnail.source);
-                if (imgUrl.origin !== "https://upload.wikimedia.org") return null;
-                const imgResponse = await fetch(imgUrl, { redirect: "error", signal: AbortSignal.timeout(5000) });
-                const contentType = imgResponse.headers.get("content-type");
-                if (imgResponse.ok && (contentType === "image/png" || contentType === "image/jpeg")) {
-                    return { buffer: await readBounded(imgResponse.body, 400 * 1024), type: contentType === "image/png" ? "png" : "jpg" };
-                }
-            }
-        }
-        return null;
-    } catch {
-        return null;
-    }
 }
 
 function textField(value: unknown, max: number) {
@@ -94,6 +68,9 @@ const mealSchema = { type: "object", properties: mealProperties, required: Objec
 const dayProperties = {
     data: stringSchema,
     titulo_dia: stringSchema,
+    local: stringSchema,
+    destaque: stringSchema,
+    logistica: stringSchema,
     atividades: { type: "array", items: stringSchema },
     sugestao_almoco: mealSchema,
     sugestao_jantar: mealSchema,
@@ -120,10 +97,12 @@ const itinerarySchema = {
     type: "object",
     properties: {
         introducao: stringSchema,
+        capa_nome_ingles: stringSchema,
+        percurso: { type: "array", items: stringSchema },
         dicas: { type: "array", items: stringSchema },
         dias: { type: "array", items: { type: "object", properties: dayProperties, required: Object.keys(dayProperties) } },
     },
-    required: ["introducao", "dicas", "dias"],
+    required: ["introducao", "capa_nome_ingles", "percurso", "dicas", "dias"],
 };
 
 function validatedItinerary(value: unknown, dates: string[]) {
@@ -131,17 +110,21 @@ function validatedItinerary(value: unknown, dates: string[]) {
     const data = value as Record<string, unknown>;
     if (!Array.isArray(data.dias) || !data.dias.length || data.dias.length > maxTripDays || (dates.length > 0 && data.dias.length !== dates.length)) throw new TypeError("Resposta inválida.");
     return {
-        introducao: textField(data.introducao, 2000),
+        introducao: textField(data.introducao, 1200),
+        capa_nome_ingles: textField(data.capa_nome_ingles ?? "", 150),
+        percurso: textList(data.percurso ?? [], 10, 80),
         dicas: textList(data.dicas, 12, 600),
         dias: data.dias.map((day, index) => {
             if (!day || typeof day !== "object") throw new TypeError("Resposta inválida.");
             if (dates.length > 0 && day.data !== dates[index]) throw new TypeError("Datas do roteiro inválidas.");
-            const date = tripDates(day.data, day.data)?.[0];
-            const formatted = date ? ` · ${date.split("-").reverse().join("/")}` : "";
             return {
-                titulo_dia: `Dia ${index + 1}${formatted} — ${textField(day.titulo_dia, 180)}`,
-                atividades: textList(day.atividades, 8, 500),
-                sugestao_almoco: meal(day.sugestao_almoco), sugestao_jantar: meal(day.sugestao_jantar),
+                number: index + 1, date: tripDates(day.data, day.data)?.[0] ?? "",
+                title: textField(day.titulo_dia, 180),
+                base: textField(day.local ?? "", 90),
+                highlight: textField(day.destaque ?? "", 420),
+                logistics: textField(day.logistica ?? "", 420),
+                activities: textList(day.atividades, 8, 500),
+                lunch: meal(day.sugestao_almoco), dinner: meal(day.sugestao_jantar),
                 imagem_nome_ingles: textField(day.imagem_nome_ingles, 150),
             };
         }),
@@ -188,10 +171,11 @@ ${extractedText.substring(0, 30000)}
 
         stage = "plan";
         const itineraryPrompt = `Prepara um roteiro detalhado da Travel Frontiers em português de Portugal.
-Escreve uma introdução breve, dicas práticas e um plano cronológico com uma entrada por dia, incluindo a ida e o regresso.
+Escreve uma introdução com duas ou três frases específicas sobre o que distingue esta viagem, dicas práticas e um plano cronológico com uma entrada por dia, incluindo a ida e o regresso. Em percurso, lista até oito localidades principais, por ordem e sem repetir, para a capa. Usa os nomes das cidades, incluindo excursões, sem nomes de aeroportos, atrações ou ligações entre cidades.
+Em cada dia, preenche local com a base de estadia ou o percurso do dia, destaque com uma ou duas frases concretas sobre o que vale a pena ver ou fazer, e logistica com o que convém organizar ou reservar. Usa cadeias vazias quando não fizer sentido preencher um campo. Mantém cada campo destaque e logistica abaixo de 330 caracteres.
 ${dates.length ? `Usa exatamente estas datas, na mesma ordem: ${dates.join(", ")}.` : "Usa as datas conhecidas em AAAA-MM-DD. Deixa data vazia quando for desconhecida."}
-Cada titulo_dia deve indicar o local ou tema, sem número de dia nem data. Inclui até oito atividades realistas por dia, organizadas por hora ou período, com tempo para transferências, check-in e descanso. Respeita as datas dos voos, as estadias e os pedidos nas notas. Encaixa os passeios de um dia durante a estadia na respetiva cidade base. Identifica transportes por reservar e atividades sugeridas como tal. Evita inventar horários de voos, reservas, moradas ou horários de abertura.
-Deixa os campos da refeição vazios quando não houver sugestão útil, por exemplo em dias inteiros de voo. Deixa morada e maps vazios se incertos. Usa imagem_nome_ingles apenas para um ponto turístico público identificável, ou deixa vazio.
+Cada titulo_dia deve indicar o local ou tema, sem número de dia nem data. Propõe normalmente três a cinco atividades realistas, com indicações como Manhã, Tarde e Noite e uma frase sobre o que fazer em cada paragem. Deixa margem para transferências, check-in, refeições e descanso. Usa menos atividades nos dias de viagem. Inclui opções para chuva ou cansaço quando forem úteis. Respeita as datas dos voos, as estadias e os pedidos nas notas. Encaixa os passeios de um dia durante a estadia na respetiva cidade base. Em logistica, distingue serviços que constam da proposta de sugestões e transportes por reservar. Nos dias de voo, inclui a companhia, o número de voo e horas locais de partida e chegada quando constarem dos dados. Nos dias com mudança de alojamento, indica o nome e a data de check-in ou check-out quando constarem dos dados. Evita inventar horários de voos, reservas, moradas ou horários de abertura.
+Deixa os campos da refeição vazios quando não houver sugestão útil, por exemplo em dias inteiros de voo. Deixa morada e maps vazios se incertos. Usa capa_nome_ingles e imagem_nome_ingles como pesquisas curtas em inglês com o nome exato de um ponto turístico público e respetiva cidade. Escolhe locais distintos sempre que possível. Deixa em branco nos dias em trânsito. Nunca uses nomes de pessoas, hotéis privados, códigos de reserva ou contactos nas pesquisas de imagem. Inclui dicas específicas para os destinos, com o que convém confirmar perto da partida. Evita afirmar requisitos de entrada ou horários atuais sem confirmação.
 
 <TRAVEL_DATA>
 ${textField(facts.resumo, 5000)}
@@ -204,173 +188,11 @@ ${notes || "Nenhuma"}
             schema: itinerarySchema, maxTokens: 16_000, timeoutMs: 90_000,
         })), dates);
         stage = "word";
-        const imageTags = itineraryData.dias.map(day => day.imagem_nome_ingles);
-
-        const destinationFromTitle = title ? (title.split(/[-–—|,]/)[1] || title).trim() : 'Europe';
-        const coverQuery = destinationFromTitle;
-
-        const allImageQueries = [coverQuery, ...imageTags];
-        const allImageResults = await Promise.all(
-            allImageQueries.map(query => fetchFreeTravelImage(query))
-        );
-
-        // Leave room for the Word package and logo within the response size limit.
-        let remainingImageBytes = 3 * 1024 * 1024;
-        const [coverResult, ...dailyResults] = allImageResults.map(image => {
-            if (!image || image.buffer.length > remainingImageBytes) return null;
-            remainingImageBytes -= image.buffer.length;
-            return image;
-        });
-        const logoBuffer = await readFile(join(process.cwd(), "public", "logo.png")).catch(() => null);
-
-        // 6. Build DOCX with professional layout
-        const GOLD = 'B8963E';
-        const DARK = '1A1A2E';
-        const GRAY = '6B7280';
-        const children: any[] = [];
-
-        // ── COVER PAGE ──
-        if (coverResult?.buffer) {
-            children.push(new Paragraph({
-                alignment: AlignmentType.CENTER,
-                spacing: { before: 0, after: 0 },
-                children: [new ImageRun({ data: coverResult.buffer, transformation: { width: 620, height: 380 }, type: coverResult.type })]
-            }));
-        }
-        children.push(new Paragraph({ border: { top: { style: BorderStyle.SINGLE, size: 18, color: GOLD } }, spacing: { before: 160, after: 200 }, children: [] }));
-        if (logoBuffer) {
-            children.push(new Paragraph({
-                alignment: AlignmentType.CENTER,
-                spacing: { before: 0, after: 140 },
-                children: [new ImageRun({ data: logoBuffer, transformation: { width: 100, height: 100 }, type: 'png' })]
-            }));
-        }
-        children.push(new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 0, after: 60 },
-            children: [new TextRun({ text: (title || 'Itinerário de Viagem').toUpperCase(), bold: true, size: 52, color: DARK, font: 'Georgia' })]
-        }));
-        children.push(new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 0, after: 160 },
-            children: [new TextRun({ text: 'Travel Frontiers  ·  Viagens de Luxo', italics: true, size: 22, color: GRAY, font: 'Calibri' })]
-        }));
-        children.push(new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 18, color: GOLD } }, spacing: { before: 0, after: 0 }, children: [] }));
-        children.push(new Paragraph({ spacing: { before: 400 }, children: [new PageBreak()] }));
-
-        // ── BODY: Programmatic Rendering ──
-
-        // Introdução
-        if (itineraryData.introducao) {
-            children.push(new Paragraph({
-                spacing: { before: 60, after: 120 },
-                children: [new TextRun({ text: itineraryData.introducao, size: 22, font: 'Calibri', color: DARK, italics: true })]
-            }));
-        }
-
-        // Dicas
-        if (Array.isArray(itineraryData.dicas) && itineraryData.dicas.length > 0) {
-            children.push(new Paragraph({
-                spacing: { before: 240, after: 120 },
-                children: [new TextRun({ text: "DICAS PRÁTICAS:", bold: true, size: 22, color: GOLD, font: 'Calibri' })]
-            }));
-            itineraryData.dicas.forEach((dica: string) => {
-                children.push(new Paragraph({
-                    spacing: { before: 60, after: 60 },
-                    children: [new TextRun({ text: dica, size: 21, font: 'Calibri', color: DARK })]
-                }));
-            });
-        }
-
-        // Dias
-        if (Array.isArray(itineraryData.dias)) {
-            itineraryData.dias.forEach((dia, dayIndex) => {
-                // Título
-                if (dia.titulo_dia) {
-                    children.push(new Paragraph({
-                        spacing: { before: 520, after: 160 },
-                        shading: { type: ShadingType.SOLID, color: DARK, fill: DARK },
-                        children: [new TextRun({ text: '  ' + dia.titulo_dia.toUpperCase() + '  ', bold: true, size: 26, color: 'FFFFFF', font: 'Calibri' })]
-                    }));
-                }
-
-                // Atividades
-                if (Array.isArray(dia.atividades)) {
-                    dia.atividades.forEach((ativ: string) => {
-                        children.push(new Paragraph({
-                            spacing: { before: 80, after: 80 },
-                            indent: { left: 360 },
-                            children: [new TextRun({ text: `• ${ativ}`, size: 21, font: 'Calibri', color: DARK })]
-                        }));
-                    });
-                }
-
-                // Restaurantes helper function
-                const renderRestaurant = (mealType: string, s: any) => {
-                    if (!s) return;
-                    children.push(new Paragraph({
-                        spacing: { before: 200, after: 80 },
-                        children: [new TextRun({ text: mealType, bold: true, size: 22, color: GOLD, font: 'Calibri' })]
-                    }));
-                    if (s.nome) children.push(new Paragraph({ spacing: { before: 40, after: 40 }, indent: { left: 720 }, children: [new TextRun({ text: `o Sugestão: ${s.nome}`, size: 20, font: 'Calibri', color: GRAY })] }));
-                    if (s.porque) children.push(new Paragraph({ spacing: { before: 40, after: 40 }, indent: { left: 720 }, children: [new TextRun({ text: `o Porquê: ${s.porque}`, size: 20, italics: true, font: 'Calibri', color: GRAY })] }));
-                    if (s.morada) children.push(new Paragraph({ spacing: { before: 40, after: 40 }, indent: { left: 720 }, children: [new TextRun({ text: `o Morada: ${s.morada}`, size: 20, font: 'Calibri', color: GRAY })] }));
-                    if (s.maps) children.push(new Paragraph({
-                        spacing: { before: 40, after: 40 },
-                        indent: { left: 720 },
-                        children: [
-                            new TextRun({ text: 'o  ', size: 20, font: 'Calibri', color: GRAY }),
-                            new ExternalHyperlink({ link: s.maps, children: [new TextRun({ text: '📍 Ver no Google Maps', size: 20, color: '1155CC', underline: {}, font: 'Calibri' })] })
-                        ]
-                    }));
-                    if (s.preco) children.push(new Paragraph({ spacing: { before: 40, after: 40 }, indent: { left: 720 }, children: [new TextRun({ text: `o Preço: ${s.preco}`, size: 20, font: 'Calibri', color: GRAY })] }));
-                };
-
-                renderRestaurant("Sugestão para Almoço:", dia.sugestao_almoco);
-                renderRestaurant("Sugestão para Jantar:", dia.sugestao_jantar);
-
-                // Imagem
-                if (dia.imagem_nome_ingles) {
-                    const imgRes = dailyResults[dayIndex];
-                    if (imgRes?.buffer) {
-                        children.push(new Paragraph({
-                            alignment: AlignmentType.CENTER,
-                            spacing: { before: 300, after: 300 },
-                            children: [new ImageRun({ data: imgRes.buffer, transformation: { width: 520, height: 290 }, type: imgRes.type })]
-                        }));
-                    }
-                }
-            });
-        }
-
-        const doc = new Document({
-            sections: [{
-                properties: {
-                    page: {
-                        margin: { top: 1000, right: 900, bottom: 1000, left: 900 }
-                    }
-                },
-                children,
-                footers: {
-                    default: new Footer({
-                        children: [
-                            new Paragraph({
-                                border: { top: { style: BorderStyle.SINGLE, size: 4, color: GOLD } },
-                                alignment: AlignmentType.CENTER,
-                                spacing: { before: 120, after: 60 },
-                                children: [
-                                    ...(logoBuffer ? [new ImageRun({ data: logoBuffer, transformation: { width: 30, height: 30 }, type: 'png' })] : []),
-                                    new TextRun({ text: '  Travel Frontiers', bold: true, size: 20, color: GOLD, font: 'Calibri' }),
-                                    new TextRun({ text: '   |   www.travelfrontiers.pt   |   @tf.travel.frontiers', size: 18, color: GRAY, font: 'Calibri' }),
-                                ]
-                            })
-                        ]
-                    })
-                }
-            }]
-        });
-
-        const docxBuffer = await Packer.toBuffer(doc);
+        const photos = await loadItineraryPhotos(itineraryData.capa_nome_ingles, itineraryData.dias.map(day => day.imagem_nome_ingles));
+        const logo = await readFile(join(process.cwd(), "public", "logo.png")).catch(() => null);
+        const docxBuffer = await createItineraryWord({
+            title: title.trim(), introduction: itineraryData.introducao, route: itineraryData.percurso, tips: itineraryData.dicas, days: itineraryData.dias,
+        }, photos, logo);
         return new NextResponse(new Uint8Array(docxBuffer) as any, {
             status: 200,
             headers: {
@@ -382,8 +204,8 @@ ${notes || "Nenhuma"}
 
     } catch (error) {
         const name = error instanceof Error ? error.name : "";
-        const timedOut = name === "AbortError" || name === "TimeoutError";
         const providerStatus = error && typeof error === "object" && "status" in error ? error.status : undefined;
+        const timedOut = name === "AbortError" || name === "TimeoutError" || providerStatus === 504;
         console.warn("itinerary_generation_failed", {
             stage, name, elapsedMs: Date.now() - startedAt, timedOut,
             providerStatus: typeof providerStatus === "number" ? providerStatus : undefined,
