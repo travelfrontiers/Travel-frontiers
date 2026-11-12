@@ -75,6 +75,8 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     const itinerary = load("src/app/api/generate-itinerary/route.ts", {
         "@/lib/studio-request": controls,
         "@/lib/itinerary-source": { sourceExtension: () => "txt", loadPrivateSource: async () => Buffer.from("Viagem fictícia") },
+        "@/lib/itinerary-images": { loadItineraryPhotos: async () => [] },
+        "@/lib/itinerary-word": load("src/lib/itinerary-word.ts"),
         "@/lib/gemini": { generateText: async (prompt, options) => {
             if (options.schema.properties.resumo) {
                 return JSON.stringify({ partida: "2030-04-06", regresso: "2030-04-20", resumo: "Viagem fictícia" });
@@ -94,6 +96,29 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     assert.equal((await generate()).status, 502);
     planMode = "timeout";
     assert.equal((await generate()).status, 504);
+
+    let photoRequests = 0;
+    const commons = load("src/lib/itinerary-images.ts", { "./studio-request": controls }, {}, async (url, options) => {
+        assert.match(options.headers["User-Agent"], /TravelFrontiersItinerary/);
+        if (String(url).startsWith("https://thumb.wikimedia.org/")) {
+            photoRequests++;
+            return new Response(new Uint8Array([255, 216, 255, 0]), { headers: { "Content-Type": "image/jpeg" } });
+        }
+        assert.ok(String(url).startsWith("https://commons.wikimedia.org/"));
+        return Response.json({ query: { pages: [{ index: 1, imageinfo: [{
+            thumburl: "https://thumb.wikimedia.org/landmark.jpg", thumbwidth: 960, thumbheight: 540,
+            descriptionurl: "https://commons.wikimedia.org/wiki/File:Landmark.jpg",
+            extmetadata: {
+                Artist: { value: "<b>Example Author</b>" }, LicenseShortName: { value: "CC BY-SA 4.0" },
+                LicenseUrl: { value: "https://creativecommons.org/licenses/by-sa/4.0/" },
+            },
+        }] }] } });
+    });
+    const photos = await commons.loadItineraryPhotos("Victoria Harbour", ["Victoria Harbour", "Lisbon Airport", "private@example.invalid"]);
+    assert.equal(photos[0].author, "Example Author");
+    assert.equal(photos[0].license, "CC BY-SA 4.0");
+    assert.deepEqual(photos.slice(1), [null, null, null]);
+    assert.equal(photoRequests, 1);
 
     const signatureModule = "src/lib/crm-email-signature.ts";
     const signature = load(signatureModule, {}, {
