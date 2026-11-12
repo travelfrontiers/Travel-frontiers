@@ -1,12 +1,14 @@
 import { CrmError, type crmConfig } from "./crm-office-api";
 import { emailScopes, type EmailLanguage, type EmailScope } from "./crm-email-templates";
+import { emailAddress } from "./crm-email-recipients";
 import type { OfficeClient, Proposal, ProposalVersion } from "./crm-office-types";
 
 export type EmailConfig = Awaited<ReturnType<typeof crmConfig>>;
+export type EmailContact = { id: string; name: string; email: string | null };
 export type EmailContext = {
   scope: EmailScope; id: string;
   client_id: string | null; lead_id: string | null; proposal_id: string | null; proposal_version: number | null; trip_id: string | null;
-  recipient: string | null; language: EmailLanguage; fields: Record<string, string>;
+  recipient: string | null; contacts: EmailContact[]; language: EmailLanguage; fields: Record<string, string>;
   archived: boolean; driveId: string | null; driveFileName: string | null; currentVersion: number | null; proposalStatus: Proposal["status"] | null;
 };
 export const validEmail = (value: unknown): value is string =>
@@ -58,7 +60,7 @@ export async function loadEmailContext(config: EmailConfig, scope: EmailScope, i
   }
 
   const tripId = scope === "trip" ? id : proposal?.trip_id ?? null;
-  const [client, finance, hotels, driveFile] = await Promise.all([
+  const [client, finance, hotels, driveFile, travelers] = await Promise.all([
     source.client_id ? row<OfficeClient>(config, "crm_clients", source.client_id, "id,full_name,email,language") : null,
     tripId ? emailRest<Finance[]>(config, "crm_trip_finance_overview", {
       trip_id: "eq." + tripId, select: "customer_net,balance,next_due_on,currency", limit: "1",
@@ -67,6 +69,9 @@ export async function loadEmailContext(config: EmailConfig, scope: EmailScope, i
       trip_id: "eq." + tripId, service_type: "eq.accommodation", select: "title", order: "sort_order.asc,id", limit: "5",
     }) : [],
     document?.document_id ? row<DriveFile>(config, "crm_drive_files", document.document_id, "drive_file_id,file_name") : null,
+    tripId ? emailRest<{ client: Pick<OfficeClient, "id" | "full_name" | "email"> | null }[]>(config, "crm_trip_clients", {
+      trip_id: "eq." + tripId, select: "client:crm_clients(id,full_name,email)", order: "client_id", limit: "30",
+    }) : [],
   ]);
   const language = client?.language ?? source.language ?? "pt";
   const locale = { pt: "pt-PT", en: "en-GB", fr: "fr-FR" }[language];
@@ -74,11 +79,19 @@ export async function loadEmailContext(config: EmailConfig, scope: EmailScope, i
   const money = (value?: number | null) => value == null ? "" : new Intl.NumberFormat(locale, { style: "currency", currency: source.currency || finance?.currency || "EUR" }).format(Number(value));
   const departure = dates(source.departure_date);
   const returning = dates(source.return_date);
-  const recipient = client?.email || source.email || null;
+  const primaryEmail = [client?.email, source.email].find(emailAddress) ?? null;
+  const contacts: EmailContact[] = travelers.flatMap(({ client: traveler }) => traveler ? [{
+    id: traveler.id, name: traveler.full_name, email: emailAddress(traveler.email) ? traveler.email.toLowerCase() : null,
+  }] : []);
+  if (!contacts.length && (client || source.full_name || primaryEmail)) {
+    contacts.push({ id: client?.id ?? id, name: client?.full_name || source.full_name || "", email: primaryEmail?.toLowerCase() ?? null });
+  }
+  const recipient = contacts.find(contact => contact.email === primaryEmail?.toLowerCase())?.email
+    ?? contacts.find(contact => contact.email)?.email ?? null;
   const context: EmailContext = {
     scope, id, client_id: source.client_id, lead_id: scope === "lead" ? id : source.lead_id ?? null,
     proposal_id: proposal?.id ?? null, proposal_version: document?.version ?? null, trip_id: tripId,
-    archived: Boolean(source.archived_at || proposal?.status === "archived"), recipient: validEmail(recipient) ? recipient : null, language,
+    archived: Boolean(source.archived_at || proposal?.status === "archived"), recipient, contacts, language,
     driveId: driveFile?.drive_file_id ?? null, driveFileName: driveFile?.file_name ?? null, currentVersion: proposal?.current_version ?? null,
     proposalStatus: proposal?.status ?? null,
     fields: {
