@@ -97,6 +97,20 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  assert.equal(noisyPassport.document_number,"AB1234567");
  assert.equal(noisyPassport.birth_date,"1990-02-15");
  assert.equal(noisyPassport.expires_on,"2032-05-01");
+ const passportCover = "PASSAPORTE\n[01] SILVA EXEMPLO\n[02] ANA MARIA\n[05] 12.09.1990\n[11] 25.09.2035\nDATE OF BIRTH: 12.09.2022\nDATE OF EXPIRY: 27.08.2035";
+ const checkDigit = value => String([...value].reduce((sum, character, index) =>
+  sum + Math.max(0, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(character)) * [7, 3, 1][index % 3], 0) % 10);
+ const validNumber = "XY123456";
+ const numberCheck = checkDigit(validNumber + "<");
+ const dateTail = "F350925" + checkDigit("350925");
+ const birthCheck = checkDigit("900912");
+ const foldedRows = ["PRT900912", birthCheck + dateTail].join("\n");
+ const damagedRow = numberCheck + "PRTOAO912" + birthCheck + dateTail;
+ const recoveredPassport = readIdentityPage([passportCover, foldedRows, damagedRow], "2026-11-13", [validNumber]);
+ assert.deepEqual(recoveredPassport, {document_type:"passport",full_name:"Ana Maria Silva Exemplo",birth_date:"1990-09-12",expires_on:"2035-09-25",document_number:validNumber});
+ assert.equal(readIdentityPage([passportCover, foldedRows, damagedRow], "2026-11-13", ["XY123457"]).document_number, "");
+ assert.equal(readIdentityPage([passportCover, damagedRow], "2026-11-13", [validNumber]).document_number, "");
+ assert.equal(readIdentityPage([passportCover, foldedRows, damagedRow], "2026-11-13", [validNumber, "XY223356"]).document_number, "");
  assert.equal(read("PASSAPORTE\nVálido até 05.06.2031").expires_on,"2031-06-05");
  const alternative=read("PASSAPORTE\nSobrenome / Surname\nCOSTA TESTE\nGiven name(s): MARTA JOANA\nPassport No.\nXY123456\nD.O.B. 12/09/1990\nDate of expiration 25/09/2035");
  assert.deepEqual(alternative,{document_type:"passport",full_name:"Marta Joana Costa Teste",birth_date:"1990-09-12",expires_on:"2035-09-25",document_number:"XY123456"});

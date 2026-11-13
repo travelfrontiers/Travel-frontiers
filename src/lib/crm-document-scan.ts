@@ -1,5 +1,5 @@
 import {lisbonDay} from "./crm-calendar";
-import {combineIdentityPages, missingIdentityFields, readIdentityPage, type DocumentReading} from "./crm-document-ocr";
+import {combineIdentityPages, missingIdentityFields, readIdentityPage, readPortuguesePassportCover, type DocumentReading} from "./crm-document-ocr";
 import type {PSM as OcrPageMode, Worker as OcrWorker} from "tesseract.js";
 
 const assets="/ocr-assets";
@@ -56,6 +56,51 @@ function trimPageMargins(page: HTMLCanvasElement) {
   const {result,context} = canvas(cropWidth * zoom,cropHeight * zoom);
   context.drawImage(page,page.width * left,page.height * top,cropWidth,cropHeight,0,0,result.width,result.height);
   return result;
+}
+
+function cropRegion(page: HTMLCanvasElement, left: number, top: number, right: number, bottom: number, zoom = 1) {
+  const x = Math.max(0, Math.floor(left)), y = Math.max(0, Math.floor(top));
+  const width = Math.min(page.width, Math.ceil(right)) - x;
+  const height = Math.min(page.height, Math.ceil(bottom)) - y;
+  if (width < 1 || height < 1) return null;
+  const {result, context} = canvas(width * zoom, height * zoom);
+  context.drawImage(page,x,y,width,height,0,0,result.width,result.height);
+  return result;
+}
+
+function trimScreenshotBars(page: HTMLCanvasElement) {
+  if (page.height < page.width * 1.4) return null;
+  const {result,context} = canvas(40,160);
+  context.drawImage(page,0,0,result.width,result.height);
+  const {data} = context.getImageData(0,0,result.width,result.height);
+  const rows = Array.from({length: result.height}, (_, row) => {
+    let bright = 0;
+    for (let column = 0; column < result.width; column++) {
+      const offset = (row * result.width + column) * 4;
+      if (data[offset] + data[offset+1] + data[offset+2] >= 360) bright++;
+    }
+    return bright >= 22;
+  });
+  const top = rows.findIndex((_, row) => rows[row] && rows[row+1] && rows[row+2]);
+  const bottom = rows.findLastIndex((_, row) => rows[row] && rows[row-1] && rows[row-2]) + 1;
+  if (top < 8 || bottom > 152 || bottom - top < 64) return null;
+  return cropRegion(page,0,page.height*(top-1)/160,page.width,page.height*(bottom+1)/160);
+}
+
+async function readPrintedPortugueseNumber(worker: OcrWorker, mode: OcrPageMode, page: HTMLCanvasElement, boxes: {x0:number;y0:number;x1:number;y1:number}[], signal: AbortSignal) {
+  await worker.setParameters({tessedit_pageseg_mode:mode,tessedit_char_whitelist:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"});
+  const numbers: string[] = [];
+  for (const box of boxes.slice(0,3)) {
+    const width = box.x1 - box.x0, height = box.y1 - box.y0;
+    // On Portuguese passports the printed number is to the right of the country code.
+    const cropped = cropRegion(page, box.x1 + width * 2, box.y0 + height * .28, box.x1 + width * 7, box.y1 + height * .75, 3);
+    if (!cropped) continue;
+    try {
+      const {data} = await abortable(worker.recognize(cropped),signal);
+      numbers.push(...(data.text.toUpperCase().match(/\b[A-Z]{2}[0-9OQILZSB]{6}\b/g) || []));
+    } finally { cropped.width=0; cropped.height=0; }
+  }
+  return numbers;
 }
 
 async function imagePage(file:File) {
@@ -146,7 +191,8 @@ export async function scanClientDocument(files:File[],signal:AbortSignal,onProgr
       onProgress("A ler página "+(index+1)+" de "+pages.length+"…");
       await worker.setParameters({tessedit_pageseg_mode:PSM.SPARSE_TEXT,tessedit_char_whitelist:""});
       const { image: page, text } = pages[index];
-      const scans = [text, (await abortable(worker.recognize(page),signal)).data.text].filter(Boolean);
+      const initial = await abortable(worker.recognize(page, {}, {text:true,blocks:true}),signal);
+      const scans = [text, initial.data.text].filter(Boolean);
       let best = readIdentityPage(scans, today);
       let orientedPage = page;
       try {
@@ -170,16 +216,29 @@ export async function scanClientDocument(files:File[],signal:AbortSignal,onProgr
         }
         if (!isCompleteReading(best)) {
           onProgress("A verificar os campos do documento…");
-          const cropped = trimPageMargins(orientedPage);
+          let passportNumbers: string[] = [];
+          const screenshot = trimScreenshotBars(orientedPage);
+          if (screenshot) {
+            try {
+              passportNumbers = orientedPage === page && readPortuguesePassportCover(scans)
+                ? await readPrintedPortugueseNumber(worker, PSM.SPARSE_TEXT, page,
+                    (initial.data.blocks || []).flatMap(block => block.paragraphs.flatMap(paragraph =>
+                      paragraph.lines.filter(line => line.text.trim() === "PRT").map(line => line.bbox))), signal)
+                : [];
+              best = await readMachineZone(worker,PSM.SINGLE_BLOCK,screenshot,scans,best,today,signal,passportNumbers);
+            } finally { screenshot.width=0; screenshot.height=0; }
+          }
+          await worker.setParameters({tessedit_pageseg_mode:PSM.SPARSE_TEXT,tessedit_char_whitelist:""});
+          const cropped = isCompleteReading(best) ? null : trimPageMargins(orientedPage);
           if (cropped) {
             try {
               const cropText = (await abortable(worker.recognize(cropped),signal)).data.text;
               scans.push(cropText);
-              best = readIdentityPage(scans,today);
-              if (!isCompleteReading(best)) best = await readMachineZone(worker,PSM.SINGLE_BLOCK,cropped,scans,best,today,signal);
+              best = readIdentityPage(scans,today,passportNumbers);
+              if (!isCompleteReading(best)) best = await readMachineZone(worker,PSM.SINGLE_BLOCK,cropped,scans,best,today,signal,passportNumbers);
             } finally { cropped.width=0; cropped.height=0; }
           }
-          if (!isCompleteReading(best)) best = await readMachineZone(worker,PSM.SINGLE_BLOCK,orientedPage,scans,best,today,signal);
+          if (!isCompleteReading(best)) best = await readMachineZone(worker,PSM.SINGLE_BLOCK,orientedPage,scans,best,today,signal,passportNumbers);
         }
         readings.push(best);
       } finally {
@@ -193,7 +252,7 @@ export async function scanClientDocument(files:File[],signal:AbortSignal,onProgr
   }
 }
 
-async function readMachineZone(worker: OcrWorker, mode: OcrPageMode, page: HTMLCanvasElement, scans: string[], reading: DocumentReading, today: string, signal: AbortSignal) {
+async function readMachineZone(worker: OcrWorker, mode: OcrPageMode, page: HTMLCanvasElement, scans: string[], reading: DocumentReading, today: string, signal: AbortSignal, passportNumbers: string[] = []) {
   let best = reading;
   // Start with the MRZ itself so the printed fields above it do not interfere.
   // The wider crop also covers photos with extra space beneath the document.
@@ -215,7 +274,7 @@ async function readMachineZone(worker: OcrWorker, mode: OcrPageMode, page: HTMLC
       if (contrast) context.filter = "grayscale(1) contrast(1.6)";
       context.drawImage(page,0,top,page.width,height,0,0,result.width,result.height);
       scans.push((await abortable(worker.recognize(result),signal)).data.text);
-      best = readIdentityPage(scans, today);
+      best = readIdentityPage(scans, today, passportNumbers);
     } finally {result.width=0;result.height=0;}
     if (isCompleteReading(best)) break;
   }
