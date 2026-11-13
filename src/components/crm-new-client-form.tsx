@@ -5,6 +5,7 @@ import { lisbonDay } from "@/lib/crm-calendar";
 import { missingIdentityFields, type DocumentReading } from "@/lib/crm-document-ocr";
 import { officeButton, officeInput, officeSecondary, type AuthorizedFetch } from "@/lib/crm-office-types";
 import CrmDocumentScanner from "./crm-document-scanner";
+import CrmClientBillingFields from "./crm-client-billing-fields";
 
 const field = "block space-y-1 text-sm font-semibold";
 
@@ -38,6 +39,7 @@ export default function CrmNewClientForm({ saving, onSave, authorizedFetch }: {
       <label className={field}>Email<input name="email" type="email" maxLength={254} autoComplete="email" className={officeInput} /></label>
       <label className={field}>Telefone<input name="phone" type="tel" maxLength={40} autoComplete="tel" className={officeInput} /></label>
       <label className={field}>Idioma<select name="language" defaultValue="pt" className={officeInput}><option value="pt">Português</option><option value="en">English</option><option value="fr">Français</option></select></label>
+      <CrmClientBillingFields inputClass={officeInput} labelClass={field} />
       <label className={field + " sm:col-span-2"}>Notas internas<textarea name="internal_notes" rows={3} maxLength={4000} className={officeInput} placeholder="Preferências ou notas úteis sobre o cliente" /></label>
       {document && <fieldset key={document.revision} className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
         <legend className="px-2 text-sm font-semibold">Documento de identificação</legend>

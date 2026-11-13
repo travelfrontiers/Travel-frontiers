@@ -1,5 +1,5 @@
 export type AuthorizedFetch=(url:string,init?:RequestInit)=>Promise<Response>;
-export type OfficeClient={id:string;birth_date?:string|null;full_name:string;email:string|null;phone:string|null;language:"pt"|"en"|"fr";internal_notes:string|null};
+export type OfficeClient={id:string;birth_date?:string|null;full_name:string;email:string|null;phone:string|null;nif?:string|null;address?:string|null;language:"pt"|"en"|"fr";internal_notes:string|null};
 export type OfficeLead={id:string;full_name:string;destination:string|null;client_id:string|null;status:string;departure_date:string|null;return_date:string|null};
 export type OfficeTrip={id:string;destination:string|null;client_id:string|null;client_ids:string[];lead_id:string|null;reference:string|null;departure_date:string|null;return_date:string|null;status:string};
 export type EntityContext={type:"client"|"lead"|"trip"|"proposal";id:string;label?:string};
