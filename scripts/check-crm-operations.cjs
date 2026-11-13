@@ -111,6 +111,12 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  assert.equal(readIdentityPage([passportCover, foldedRows, damagedRow], "2026-11-13", ["XY123457"]).document_number, "");
  assert.equal(readIdentityPage([passportCover, damagedRow], "2026-11-13", [validNumber]).document_number, "");
  assert.equal(readIdentityPage([passportCover, foldedRows, damagedRow], "2026-11-13", [validNumber, "XY223356"]).document_number, "");
+ const optional = "12345678<<<<<<";
+ const checkedOptional = optional + checkDigit(optional);
+ const compositeCheck = checkDigit(validNumber + "<" + numberCheck + "900912" + birthCheck + dateTail.slice(1) + checkedOptional);
+ const numberlessRow = "PRT900912" + birthCheck + dateTail + checkedOptional + compositeCheck;
+ assert.equal(readIdentityPage([passportCover, numberlessRow], "2026-11-13", [validNumber]).document_number, validNumber);
+ assert.equal(readIdentityPage([passportCover, numberlessRow], "2026-11-13", ["XY123457"]).document_number, "");
  assert.equal(read("PASSAPORTE\nVálido até 05.06.2031").expires_on,"2031-06-05");
  const alternative=read("PASSAPORTE\nSobrenome / Surname\nCOSTA TESTE\nGiven name(s): MARTA JOANA\nPassport No.\nXY123456\nD.O.B. 12/09/1990\nDate of expiration 25/09/2035");
  assert.deepEqual(alternative,{document_type:"passport",full_name:"Marta Joana Costa Teste",birth_date:"1990-09-12",expires_on:"2035-09-25",document_number:"XY123456"});

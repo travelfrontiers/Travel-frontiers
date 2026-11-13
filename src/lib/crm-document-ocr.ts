@@ -31,15 +31,16 @@ function realDate(year: number, month: number, day: number) {
 }
 
 // ICAO Doc 9303, TD1 (identity cards) and TD3 (passports).
-function checked(value: string, check: string) {
-  if (!/^[A-Z0-9<]+$/.test(value) || !/^\d$/.test(check)) return false;
+function checkDigit(value: string) {
   const weights = [7, 3, 1];
   const sum = [...value].reduce((total, character, index) => {
     const digit = character === "<" ? 0 : /\d/.test(character) ? Number(character) : character.charCodeAt(0) - 55;
     return total + digit * weights[index % 3];
   }, 0);
-  return sum % 10 === Number(check);
+  return String(sum % 10);
 }
+
+const checked = (value: string, check: string) => /^[A-Z0-9<]+$/.test(value) && /^\d$/.test(check) && checkDigit(value) === check;
 
 const numericOcr = (value: string) => value.replace(/[OQ]/g, "0").replace(/[IL]/g, "1").replace(/Z/g, "2").replace(/S/g, "5").replace(/B/g, "8");
 const mrzRow = (line: string) => fold(line).replace(/[«»]/g, "<<").replace(/[›‹>]/g, "<").replace(/\s+/g, "");
@@ -190,6 +191,17 @@ function readPortuguesePassportZone(scans: string[], today: string, cover: NonNu
         if (mrzDate(expiry, expiryCheck, today, false) !== cover.expires_on) continue;
         const birthMatches = mrzDate(birth, birthCheck, today, true) === cover.birth_date;
         matchingDates ||= birthMatches;
+        // The final TD3 check covers the document number even when its own
+        // check digit is lost. Require the optional data check as well.
+        const tail = zone.index === undefined ? "" : row.slice(zone.index + zone[0].length);
+        if (birthMatches && /^[A-Z0-9<]{14}\d{2}$/.test(tail) && checked(tail.slice(0, 14), tail[14])) {
+          const composite = numericOcr(birth + birthCheck + expiry + expiryCheck) + tail.slice(0, 15);
+          for (const raw of printedNumbers) {
+            const number = raw.slice(0, 2) + numericOcr(raw.slice(2));
+            const field = number + "<";
+            if (/^[A-Z]{2}\d{6}$/.test(number) && checked(field + checkDigit(field) + composite, tail[15])) found.add(number);
+          }
+        }
         // A different crop may have read the birth year. Borrow the number's
         // check digit only if the remaining date evidence identifies this row.
         if (!digit || !/^\d$/.test(numericOcr(digit)) ||

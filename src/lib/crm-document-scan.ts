@@ -93,12 +93,16 @@ async function readPrintedPortugueseNumber(worker: OcrWorker, mode: OcrPageMode,
   for (const box of boxes.slice(0,3)) {
     const width = box.x1 - box.x0, height = box.y1 - box.y0;
     // On Portuguese passports the printed number is to the right of the country code.
-    const cropped = cropRegion(page, box.x1 + width * 2, box.y0 + height * .28, box.x1 + width * 7, box.y1 + height * .75, 3);
-    if (!cropped) continue;
-    try {
-      const {data} = await abortable(worker.recognize(cropped),signal);
-      numbers.push(...(data.text.toUpperCase().match(/\b[A-Z]{2}[0-9OQILZSB]{6}\b/g) || []));
-    } finally { cropped.width=0; cropped.height=0; }
+    for (const [left, top, right, bottom] of [
+      [2, .28, 7, .75], [1.5, 0, 7.7, .95],
+    ]) {
+      const cropped = cropRegion(page, box.x1 + width * left, box.y0 + height * top, box.x1 + width * right, box.y1 + height * bottom, 3);
+      if (!cropped) continue;
+      try {
+        const {data} = await abortable(worker.recognize(cropped),signal);
+        numbers.push(...(data.text.toUpperCase().match(/\b[A-Z]{2}[0-9OQILZSB]{6}\b/g) || []));
+      } finally { cropped.width=0; cropped.height=0; }
+    }
   }
   return numbers;
 }
