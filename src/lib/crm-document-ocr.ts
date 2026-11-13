@@ -31,17 +31,19 @@ function realDate(year: number, month: number, day: number) {
 }
 
 // ICAO Doc 9303, TD1 (identity cards) and TD3 (passports).
-function checked(value: string, check: string) {
-  if (!/^[A-Z0-9<]+$/.test(value) || !/^\d$/.test(check)) return false;
+function checkDigit(value: string) {
   const weights = [7, 3, 1];
   const sum = [...value].reduce((total, character, index) => {
     const digit = character === "<" ? 0 : /\d/.test(character) ? Number(character) : character.charCodeAt(0) - 55;
     return total + digit * weights[index % 3];
   }, 0);
-  return sum % 10 === Number(check);
+  return String(sum % 10);
 }
 
+const checked = (value: string, check: string) => /^[A-Z0-9<]+$/.test(value) && /^\d$/.test(check) && checkDigit(value) === check;
+
 const numericOcr = (value: string) => value.replace(/[OQ]/g, "0").replace(/[IL]/g, "1").replace(/Z/g, "2").replace(/S/g, "5").replace(/B/g, "8");
+const mrzRow = (line: string) => fold(line).replace(/[«»]/g, "<<").replace(/[›‹>]/g, "<").replace(/\s+/g, "");
 
 function mrzDate(value: string, digit: string, today: string, birth: boolean) {
   const digits = numericOcr(value);
@@ -66,7 +68,7 @@ function mrzName(value: string) {
 }
 
 function readMrz(text: string, today: string): DocumentReading[] {
-  const rows = text.split(/\r?\n/).map(line => fold(line).replace(/[«»]/g, "<<").replace(/[›‹>]/g, "<").replace(/\s+/g, ""));
+  const rows = text.split(/\r?\n/).map(mrzRow);
   const candidates: DocumentReading[] = [];
   for (let index = 0; index < rows.length - 1; index++) {
     const first = rows[index], second = rows[index + 1];
@@ -156,7 +158,70 @@ function printedDocumentNumber(lines: string[]) {
   return found.size === 1 ? [...found][0] : "";
 }
 
-export function readIdentityPage(scans: string[], today: string): DocumentReading {
+export function readPortuguesePassportCover(scans: string[]) {
+  for (const scan of scans) {
+    const lines = scan.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    const surname = labelledName(lines, /^\[01\]/);
+    const given = labelledName(lines, /^\[02\]/);
+    const birth = lines.find(line => /^\[05\]/.test(line));
+    const expiry = lines.find(line => /^\[11\]/.test(line));
+    if (!surname || !given || !birth || !expiry) continue;
+    const birthDate = printedDate(birth);
+    const expiresOn = printedDate(expiry);
+    if (birthDate && expiresOn && birthDate < expiresOn) {
+      return { full_name: given + " " + surname, birth_date: birthDate, expires_on: expiresOn };
+    }
+  }
+  return null;
+}
+
+function readPortuguesePassportZone(scans: string[], today: string, cover: NonNullable<ReturnType<typeof readPortuguesePassportCover>>, printedNumbers: string[]) {
+  const found = new Set<string>();
+  const rowsWithNumberCheck: { digit: string; machineNumber: string | undefined }[] = [];
+  let matchingDates = false;
+  const coverBirthDigits = cover.birth_date.slice(2).replace(/-/g, "");
+  for (const scan of scans) {
+    const rows = scan.split(/\r?\n/).map(mrzRow).filter(Boolean);
+    for (let index = 0; index < rows.length; index++) {
+      // Sparse OCR can split the bottom row or lose its leading characters.
+      for (const row of [rows[index], rows[index] + (rows[index + 1] || "")]) {
+        const zone = row.match(/([A-Z0-9<])?PRT([A-Z0-9]{6})([A-Z0-9])[MFX<]([A-Z0-9]{6})([A-Z0-9])/);
+        if (!zone) continue;
+        const [, digit, birth, birthCheck, expiry, expiryCheck] = zone;
+        if (mrzDate(expiry, expiryCheck, today, false) !== cover.expires_on) continue;
+        const birthMatches = mrzDate(birth, birthCheck, today, true) === cover.birth_date;
+        matchingDates ||= birthMatches;
+        // The final TD3 check covers the document number even when its own
+        // check digit is lost. Require the optional data check as well.
+        const tail = zone.index === undefined ? "" : row.slice(zone.index + zone[0].length);
+        if (birthMatches && /^[A-Z0-9<]{14}\d{2}$/.test(tail) && checked(tail.slice(0, 14), tail[14])) {
+          const composite = numericOcr(birth + birthCheck + expiry + expiryCheck) + tail.slice(0, 15);
+          for (const raw of printedNumbers) {
+            const number = raw.slice(0, 2) + numericOcr(raw.slice(2));
+            const field = number + "<";
+            if (/^[A-Z]{2}\d{6}$/.test(number) && checked(field + checkDigit(field) + composite, tail[15])) found.add(number);
+          }
+        }
+        // A different crop may have read the birth year. Borrow the number's
+        // check digit only if the remaining date evidence identifies this row.
+        if (!digit || !/^\d$/.test(numericOcr(digit)) ||
+            (!birthMatches && !(numericOcr(birth).slice(2) === coverBirthDigits.slice(2) &&
+              checked(coverBirthDigits, numericOcr(birthCheck))))) continue;
+        rowsWithNumberCheck.push({ digit, machineNumber: birthMatches
+          ? row.slice(0, zone.index).match(/([A-Z]{2}[A-Z0-9]{6})<$/)?.[1] : undefined });
+      }
+    }
+  }
+  if (matchingDates) for (const { digit, machineNumber } of rowsWithNumberCheck) {
+    for (const raw of machineNumber ? [...printedNumbers, machineNumber] : printedNumbers) {
+      const number = raw.slice(0, 2) + numericOcr(raw.slice(2));
+      if (/^[A-Z]{2}\d{6}$/.test(number) && checked(number + "<", numericOcr(digit))) found.add(number);
+    }
+  }
+  return found.size === 1 ? [...found][0] : "";
+}
+
+export function readIdentityPage(scans: string[], today: string, passportNumbers: string[] = []): DocumentReading {
   const verified = scans.flatMap(scan => readMrz(scan, today));
   const fingerprints = new Set(verified.filter(reading => reading.document_number).map(reading => reading.document_type + ":" + reading.document_number));
   if (fingerprints.size > 1) throw new Error("Foram lidos documentos diferentes. Escolhe apenas as páginas ou faces do mesmo documento.");
@@ -177,7 +242,8 @@ export function readIdentityPage(scans: string[], today: string): DocumentReadin
     if (/\bCARTAO\s+DE\s+CIDADAO\b/.test(normalized)) result.document_type = "identity_card";
     else if (/\b(PASSAPORTE|PASSPORT|PASSEPORT)\b/.test(normalized)) result.document_type = "passport";
   }
-  result.document_number ||= printedDocumentNumber(lines);
+  const printedNumber = printedDocumentNumber(lines);
+  result.document_number ||= printedNumber;
   const printedBirth = labelledDate(lines, birthLabel);
   const printedExpiry = labelledDate(lines, expiryLabel);
   // A matching full printed year resolves the century ambiguity in the MRZ.
@@ -186,6 +252,16 @@ export function readIdentityPage(scans: string[], today: string): DocumentReadin
   const surname = labelledName(lines, /\b(?:APELIDOS?|SOBRENOMES?|SURNAMES?|FAMILY NAMES?|NOM DE FAMILLE)\b/);
   const given = labelledName(lines, /\b(?:NOME\(S\)|NOMES?|GIVEN NAME(?:S|\(S\))?|FIRST NAMES?|PRENOMS?)(?=\W|$)/);
   const printedName = labelledName(lines, /\b(?:NOME COMPLETO|FULL NAME|NOM COMPLET)\b/) || (given && surname ? given + " " + surname : "");
+  const cover = result.document_type === "passport" ? readPortuguesePassportCover(scans) : null;
+  if (cover && cover.birth_date <= today && !verified.some(candidate =>
+    (candidate.birth_date && candidate.birth_date !== cover.birth_date) ||
+    (candidate.expires_on && candidate.expires_on !== cover.expires_on))) {
+    const checkedNumber = readPortuguesePassportZone(scans, today, cover, [printedNumber, ...passportNumbers].filter(Boolean));
+    result.full_name = cover.full_name;
+    result.birth_date = cover.birth_date;
+    result.expires_on = cover.expires_on;
+    if (!verified.some(candidate => candidate.document_number)) result.document_number = checkedNumber;
+  }
   const coverSurname = result.document_type === "passport" ? labelledName(lines, /^\[01\]/) : "";
   const coverGiven = coverSurname ? labelledName(lines, /^\[02\]/) : "";
   const coverName = coverGiven ? coverGiven + " " + coverSurname : "";
