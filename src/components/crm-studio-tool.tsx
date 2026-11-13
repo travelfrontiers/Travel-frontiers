@@ -7,6 +7,7 @@ import styles from "./crm-studio-tool.module.css";
 import CrmDriveDocuments from "./crm-drive-documents";
 import CrmDocumentScanner from "./crm-document-scanner";
 import CrmNewClientForm from "./crm-new-client-form";
+import CrmClientBillingFields from "./crm-client-billing-fields";
 import TripClientSelect from "./crm-trip-client-select";
 import CrmProposals from "./crm-proposals";
 import CrmEmailPanel from "./crm-email-panel";
@@ -36,7 +37,7 @@ type Lead = {
   date_flexible: boolean; travel_period: string | null; archived_at: string | null; client_id: string | null; adults: number; children_ages: number[]; travel_style: string | null;
   budget: string | null; notes: string | null; status: LeadStatus; internal_notes: string | null; follow_up_date: string | null; lost_reason: string | null;
 };
-type Client = { id: string; full_name: string; birth_date?: string | null; email: string | null; phone: string | null; language: "pt" | "en" | "fr"; internal_notes: string | null; source: string; created_at: string; updated_at: string };
+type Client = { id: string; full_name: string; birth_date?: string | null; email: string | null; phone: string | null; nif?: string | null; address?: string | null; language: "pt" | "en" | "fr"; internal_notes: string | null; source: string; created_at: string; updated_at: string };
 
 type ClientDocument = { id: string; client_id: string; document_type: "passport" | "identity_card" | "residence_permit" | "other"; document_number: string; expires_on: string; created_at: string; updated_at: string };
 type TripTask = { id: string; trip_id: string; title: string; due_at: string | null; completed: boolean; sort_order: number; source_service_id?: string | null; template_item_id?: string | null; template_override?: boolean };
@@ -402,7 +403,7 @@ export default function CrmStudioTool() {
     try {
       const response = await authorizedFetch("/api/crm/clients", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ full_name: data.get("full_name"), email: data.get("email"), phone: data.get("phone"), language: data.get("language"), internal_notes: data.get("internal_notes"), birth_date: data.get("birth_date"),
+        body: JSON.stringify({ full_name: data.get("full_name"), email: data.get("email"), phone: data.get("phone"), language: data.get("language"), internal_notes: data.get("internal_notes"), birth_date: data.get("birth_date"), nif: data.get("nif"), address: data.get("address"),
           document: data.has("document_type") ? { document_type: data.get("document_type"), document_number: data.get("document_number"),
             expires_on: data.get("expires_on"), reviewed: data.get("reviewed") === "on" } : undefined }),
       });
@@ -421,7 +422,7 @@ export default function CrmStudioTool() {
     try {
       const response = await authorizedFetch(`/api/crm/clients/${client.id}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ full_name: data.get("full_name"), birth_date: data.get("birth_date"), email: data.get("email"), phone: data.get("phone"), language: data.get("language"), internal_notes: data.get("internal_notes") }),
+        body: JSON.stringify({ full_name: data.get("full_name"), birth_date: data.get("birth_date"), email: data.get("email"), phone: data.get("phone"), language: data.get("language"), internal_notes: data.get("internal_notes"), nif: data.get("nif"), address: data.get("address") }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível atualizar o cliente.");
@@ -844,6 +845,14 @@ export default function CrmStudioTool() {
                   <div className="flex flex-wrap items-center gap-2"><h3 className="min-w-0 break-words text-lg font-semibold">{client.full_name}</h3><CopyClientField label="nome" value={client.full_name} /></div>
                   <p className="mt-2 break-all text-sm text-slate-600">{client.email || "Sem email"}</p>
                   <p className="text-sm text-slate-600">{client.phone || "Sem telefone"}</p>
+                  {client.nif && <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                    <span>NIF: {client.nif}</span>
+                    <CopyClientField label="NIF" value={client.nif} />
+                  </div>}
+                  {client.address && <div className="mt-1 flex flex-wrap items-start gap-2 text-sm text-slate-600">
+                    <span className="whitespace-pre-line break-words">Morada: {client.address}</span>
+                    <CopyClientField label="morada" value={client.address} />
+                  </div>}
                   {client.birth_date && <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                     <span>Nascimento: <time dateTime={client.birth_date}>{birthDate}</time></span>
                     <CopyClientField label="data de nascimento" value={birthDate} />
@@ -858,6 +867,7 @@ export default function CrmStudioTool() {
                 <label className="space-y-1 text-xs font-semibold">Email<input name="email" type="email" maxLength={254} defaultValue={client.email || ""} className={inputClass} /></label>
                 <label className="space-y-1 text-xs font-semibold">Telefone<input name="phone" type="tel" maxLength={40} defaultValue={client.phone || ""} className={inputClass} /></label>
                 <label className="space-y-1 text-xs font-semibold">Idioma<select name="language" defaultValue={client.language} className={inputClass}><option value="pt">Português</option><option value="en">English</option><option value="fr">Français</option></select></label>
+                <CrmClientBillingFields inputClass={inputClass} labelClass="space-y-1 text-xs font-semibold" nif={client.nif} address={client.address} />
                 <label className="space-y-1 text-xs font-semibold sm:col-span-2">Notas internas<textarea name="internal_notes" rows={3} maxLength={4000} defaultValue={client.internal_notes || ""} className={inputClass} /></label>
                 <div className="flex justify-end gap-2 sm:col-span-2"><button type="button" onClick={() => setEditingClientId(null)} className="rounded-full border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700">Cancelar</button><button disabled={saving} className="rounded-full bg-orange-800 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60">{saving ? "A guardar…" : "Guardar alterações"}</button></div>
               </form>}

@@ -2,6 +2,7 @@ import { dateOnly, failure, payload, privateJson, rows, rpc } from "@/lib/crm-of
 import { lisbonDay } from "@/lib/crm-calendar";
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthorizedStudioUser, supabaseAdminConfig } from "@/lib/crm-api";
+import { readOptionalClientFields } from "@/lib/crm-client-fields";
 
 export const runtime = "nodejs";
 const languages = ["pt", "en", "fr"] as const;
@@ -40,7 +41,9 @@ export async function POST(request: NextRequest) {
   if (birthDate !== null && (!dateOnly(birthDate) || birthDate > lisbonDay(new Date().toISOString()))) {
     return privateJson({ error: "Indica uma data de nascimento válida." }, 400);
   }
-  const client = { full_name: fullName, email, phone, language, internal_notes: internalNotes, birth_date: birthDate, source: "manual" };
+  const optionalFields = readOptionalClientFields(body);
+  if (!optionalFields) return privateJson({ error: "Revê o NIF e a morada do cliente." }, 400);
+  const client = { full_name: fullName, email, phone, language, internal_notes: internalNotes, birth_date: birthDate, source: "manual", ...optionalFields };
 
   if (body.document != null) {
     const document = body.document as Record<string, unknown>;

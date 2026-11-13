@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthorizedStudioUser, supabaseAdminConfig } from "@/lib/crm-api";
+import { readOptionalClientFields } from "@/lib/crm-client-fields";
 
 import {dateOnly} from "@/lib/crm-office-api";
 import {lisbonDay} from "@/lib/crm-calendar";
@@ -22,6 +23,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const phone = typeof body.phone === "string" ? body.phone.trim() || null : null;
   const language = typeof body.language === "string" ? body.language : "";
   const internalNotes = typeof body.internal_notes === "string" ? body.internal_notes.trim() || null : null;
+  const optionalFields = readOptionalClientFields(body);
+  if (!optionalFields) return NextResponse.json({ error: "Revê o NIF e a morada do cliente." }, { status: 400 });
 
   const birthDate=body.birth_date===""?null:body.birth_date;
   if (birthDate!==undefined&&birthDate!==null&&(!dateOnly(birthDate)||birthDate>lisbonDay(new Date().toISOString()))) {
@@ -38,7 +41,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const response = await fetch(`${config.url}/rest/v1/crm_clients?id=eq.${encodeURIComponent(id)}&select=*`, {
       method: "PATCH",
       headers: { ...config.headers, Prefer: "return=representation" },
-      body: JSON.stringify({ full_name: fullName, email, phone, language, internal_notes: internalNotes, ...(birthDate===undefined?{}:{birth_date:birthDate}), updated_at: new Date().toISOString() }),
+      body: JSON.stringify({ full_name: fullName, email, phone, language, internal_notes: internalNotes, ...(birthDate===undefined?{}:{birth_date:birthDate}), ...optionalFields, updated_at: new Date().toISOString() }),
       cache: "no-store",
     });
     if (response.status === 409) return NextResponse.json({ error: "Já existe um cliente com este email." }, { status: 409 });
