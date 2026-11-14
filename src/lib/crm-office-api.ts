@@ -25,6 +25,7 @@ const messages: Record<string,[string,number]> = {
  finance_currency_locked:["A moeda está associada ao plano ou aos movimentos desta viagem.",409],
  payment_plan_exceeds_total:["As prestações excedem o total da reserva. Ajusta primeiro o plano.",409],
  payment_total_required:["Define primeiro o valor total da reserva.",400],
+ service_not_found:["O serviço já não existe nesta viagem.",404],
  payment_not_found:["Este registo já não existe nesta viagem.",404],
  payment_plan_exists:["Já existe um plano. Edita as prestações existentes.",409],
  invalid_deposit:["O sinal deve estar entre zero e o valor total da reserva.",400],
