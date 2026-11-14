@@ -15,6 +15,8 @@ Abre o [CRM](https://promo.travelfrontiers.pt/admin/crm) e entra com a conta Goo
 3. Usa **Criar cliente a partir do pedido** para copiar nome, email, telefone e idioma. Se começares por **Nova proposta**, o CRM pode criar ou associar o cliente quando guardas a proposta.
 4. Para tirar um pedido da vista ativa, usa **Arquivar pedido**. Podes encontrá-lo nos filtros e restaurá-lo. A eliminação está condicionada às ligações do pedido.
 
+Para um pedido recebido por WhatsApp, telefone, email ou referência, abre **Kanban comercial → Novo pedido**. Escolhe a origem, introduz o nome ou seleciona um cliente existente e guarda com os dados que já tiveres. O email é opcional. Se indicares a data de **Próximo contacto**, aparece no calendário. O pedido entra em **Novos pedidos**. Na ficha podes editar os detalhes quando tiveres mais informação.
+
 ## 3. Criar um cliente com passaporte ou Cartão de Cidadão
 
 1. Abre **Novo cliente** no Resumo comercial ou **Clientes → Adicionar cliente**.
@@ -53,6 +55,7 @@ A leitura é feita no navegador. O CRM guarda os campos revistos. Para guardar t
 
 - **Email e modelos** aparece em pedidos, propostas e viagens. Escolhe o modelo da etapa, confirma os campos assinalados e revê antes de enviar. Há modelos em português, inglês e francês, conforme o idioma da ficha.
 - Usa **Editar modelo** para alterar o texto reutilizável no idioma apresentado. Alterar o assunto ou a mensagem no rascunho serve apenas para aquele envio.
+- Para editar qualquer modelo sem abrir uma ficha, vai a **Vista comercial → Modelos de email**. Escolhe o modelo e o idioma, altera o assunto ou a mensagem e carrega em **Guardar modelo**. **Repor texto original** coloca o texto inicial no editor, pronto para rever e guardar.
 - Na viagem, usa os modelos de confirmação da reserva e de acompanhamento antes, durante e depois da viagem. O histórico mostra as mensagens registadas. **Sincronizar respostas** consulta o Roundcube quando precisas.
 - Na ficha do cliente ou da viagem, **Escolher do Google Drive** permite navegar pelas pastas e associar um PDF, JPG ou PNG existente. O original fica na mesma pasta. Para enviar um ficheiro do dispositivo, usa **Guardar no Drive** (até 20 MB). Na primeira utilização, confirma a ligação à tua conta Google. **Retirar ligação** desassocia o ficheiro da ficha e o original continua no Drive.
 - **Histórico** ajuda a seguir alterações e notas internas. Em **Duplicados**, revê as duas fichas e os dados finais antes de confirmar uma junção.

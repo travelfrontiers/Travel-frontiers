@@ -1,6 +1,8 @@
 import { crmConfig, CrmError, failure, privateJson, setArchived, uuid } from "@/lib/crm-office-api";
 import { NextRequest, NextResponse } from "next/server";
 import { CRM_LEAD_STATUSES, isAuthorizedStudioUser, supabaseAdminConfig } from "@/lib/crm-api";
+import { manualLeadFields } from "@/lib/crm-manual-lead-api";
+import { manualLeadSources } from "@/lib/crm-manual-lead";
 
 export const runtime = "nodejs";
 
@@ -24,6 +26,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (typeof body.archived === "boolean") {
     try { return await setArchived(config, "crm_leads", id, body.archived); }
     catch (cause) { return failure(cause); }
+  }
+  if (body.action === "edit_details") {
+    try {
+      const { client_id: ignoredClient, ...fields } = manualLeadFields(body);
+      void ignoredClient;
+      const query = new URLSearchParams({
+        id: "eq." + id, source: "in.(" + Object.keys(manualLeadSources).join(",") + ")", archived_at: "is.null", select: "*",
+      });
+      const response = await fetch(config.url + "/rest/v1/crm_leads?" + query, {
+        method: "PATCH", headers: { ...config.headers, Prefer: "return=representation" },
+        body: JSON.stringify({ ...fields, updated_at: new Date().toISOString() }), cache: "no-store",
+      });
+      if (!response.ok) throw new CrmError("Não foi possível atualizar o pedido.", 502);
+      const [lead] = await response.json();
+      if (!lead) throw new CrmError("Este pedido já não está disponível para edição.", 404);
+      return privateJson({ lead });
+    } catch (cause) { return failure(cause); }
   }
   const status = body.status;
   const internalNotes = body.internal_notes;

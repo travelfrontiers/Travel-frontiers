@@ -1,8 +1,10 @@
 export const emailScopes = ["lead", "proposal", "trip"] as const;
 export type EmailScope = typeof emailScopes[number];
-export type EmailLanguage = "pt" | "en" | "fr";
+export const emailLanguages = { pt: "Português", en: "English", fr: "Français" } as const;
+export type EmailLanguage = keyof typeof emailLanguages;
 export const emailTemplateKeys = ["received", "research", "quote", "follow_up", "booking", "before_trip", "during_trip", "after_trip"] as const;
 export type EmailTemplateKey = typeof emailTemplateKeys[number];
+export const emailTemplateBodyLimit = 16000;
 export type EmailAttachmentRole = "quote" | "fin" | "terms" | "other";
 
 export const emailAttachmentLabels: Record<EmailAttachmentRole, string> = {
