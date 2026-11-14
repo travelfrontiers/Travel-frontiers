@@ -1,8 +1,24 @@
-import { rows } from "@/lib/crm-office-api";
+import { crmConfig, CrmError, failure, payload, privateJson, rows } from "@/lib/crm-office-api";
+import { manualLeadFields } from "@/lib/crm-manual-lead-api";
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthorizedStudioUser, supabaseAdminConfig } from "@/lib/crm-api";
 
 export const runtime = "nodejs";
+
+export async function POST(request: NextRequest) {
+  try {
+    const config = await crmConfig(request);
+    const fields = manualLeadFields(await payload(request));
+    const response = await fetch(config.url + "/rest/v1/crm_leads?select=*", {
+      method: "POST", headers: { ...config.headers, Prefer: "return=representation" },
+      body: JSON.stringify({ ...fields, status: "new" }), cache: "no-store",
+    });
+    if (response.status === 409) throw new CrmError("O cliente selecionado já não está disponível.", 409);
+    if (!response.ok) throw new CrmError("Não foi possível guardar o pedido.", 502);
+    const [lead] = await response.json();
+    return privateJson({ lead }, 201);
+  } catch (error) { return failure(error); }
+}
 
 export async function GET(request: NextRequest) {
   if (!await isAuthorizedStudioUser(request)) {

@@ -2,19 +2,23 @@ const assert = require("node:assert/strict");
 const ts = require("typescript");
 const fs = require("node:fs");
 const base=require("node:path").resolve(__dirname, "..") + "/";
+const modules = new Map();
 let calls=[], mails=0, lastMail, authorized=true, reply={ok:true,status:200,data:{}};
 const env={SUPABASE_SECRET_KEY:"synthetic-only",CRM_SMTP_HOST:"example.invalid",CRM_SMTP_USER:"synthetic@example.invalid",CRM_SMTP_PASSWORD:"synthetic",CRM_NOTIFICATION_TO:"synthetic@example.invalid",CRON_SECRET:"synthetic-cron",VERCEL_ENV:"production"};
 function load(path){
+ if(modules.has(path)) return modules.get(path).exports;
  const output=ts.transpileModule(fs.readFileSync(base+path,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText;
  const mod={exports:{}};
+ modules.set(path,mod);
  const req=(name)=>{
   if(name==="next/server")return {NextResponse:{json:(data,options={})=>({status:options.status||200,body:data,headers:options.headers})}};
   if(name==="@/lib/crm-api")return {isAuthorizedStudioUser:async()=>authorized,supabaseAdminConfig:()=>({url:"https://db.example.invalid",headers:{apikey:"synthetic"}})};
   if(name==="nodemailer")return {createTransport:()=>({sendMail:async(mail)=>{mails++;lastMail=mail;}})};
   if(name.startsWith("@/"))return load("src/"+name.slice(2)+".ts");
+  if(name.startsWith("."))return load(require("node:path").posix.join(require("node:path").posix.dirname(path),name)+".ts");
   return require(name);
  };
- new Function("require","module","exports","fetch","process",output)(req,mod,mod.exports,async(url,init={})=>{calls.push({url,init});return typeof reply==="function"?reply(url,init):{ok:reply.ok,status:reply.status,headers:new Headers(reply.headers),json:async()=>reply.data};},{env});
+ new Function("require","module","exports","fetch","process",output)(req,mod,mod.exports,async(url,init={})=>{calls.push({url,init});return typeof reply==="function"?reply(url,init):{ok:reply.ok,status:reply.status,headers:new Headers(reply.headers),json:async()=>reply.data,text:async()=>reply.status===204?"":JSON.stringify(reply.data)};},{env});
  return mod.exports;
 }
 const id="12345678-1234-4123-8123-123456789abc";
@@ -66,6 +70,29 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  };
  result=await allLeads.GET(request({}));
  assert.equal(result.status,200);assert.deepEqual(result.body.leads,records);assert.equal(calls.length,4);
+
+ const manual={full_name:"Pedido fictício",source:"whatsapp",phone:"+351000000000",follow_up_date:"2026-11-20"};
+ calls=[];reply={ok:true,status:201,data:[{id,...manual,status:"new"}]};
+ result=await allLeads.POST(request(manual));
+ assert.equal(result.status,201);
+ assert.equal(JSON.parse(calls[0].init.body).email,null);
+ assert.equal(JSON.parse(calls[0].init.body).follow_up_date,manual.follow_up_date);
+ calls=[];result=await allLeads.POST(request({...manual,source:"public_form"}));
+ assert.equal(result.status,400);assert.equal(calls.length,0);
+ calls=[];result=await leads.PATCH(request({...manual,action:"edit_details",client_id:id}),params);
+ assert.equal(result.status,200);assert.ok(!Object.hasOwn(JSON.parse(calls[0].init.body),"client_id"));
+ assert.match(new URL(calls[0].url).searchParams.get("source"),/whatsapp/);
+
+ const templateApi=load("src/app/api/crm/email/templates/route.ts");
+ calls=[];reply={ok:true,status:200,data:[{template_key:"received",subject:"Edited",body:"Dear {{cliente}}"}]};
+ result=await templateApi.GET({nextUrl:new URL("https://example.invalid/?language=en")});
+ assert.equal(result.status,200);assert.equal(result.body.templates.find(item=>item.key==="received").subject,"Edited");
+ assert.ok(result.body.templates.some(item=>item.key==="quote"));
+ calls=[];reply={ok:true,status:204,data:null};
+ result=await templateApi.POST(request({key:"received",language:"en",subject:"Edited",body:"Dear {{cliente}}"}));
+ assert.equal(result.status,200);assert.equal(JSON.parse(calls[0].init.body).language,"en");assert.equal(calls.length,1);
+ calls=[];authorized=false;result=await templateApi.POST(request({key:"received",language:"en",subject:"Edited",body:"Dear {{cliente}}"}));
+ assert.equal(result.status,401);assert.equal(calls.length,0);authorized=true;
 
  const {combineIdentityPages,readIdentityPage}=load("src/lib/crm-document-ocr.ts");
  const read=(text)=>readIdentityPage([text],"2026-11-11");

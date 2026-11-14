@@ -6,6 +6,7 @@ import { crmConfig, CrmError, failure, payload, privateJson, rpc, uuid } from "@
 import { emailRest, emailScopeFilter, isEmailScope, loadEmailContext, validEmail, type EmailConfig, type EmailContext } from "@/lib/crm-email-context";
 import { archiveSentMessage, mailboxSettings, mailBodyLimit, smtpTransport, verifyMailbox, withInbox } from "@/lib/crm-mailbox";
 import { baseEmailTemplate, emailAttachmentLabels, emailTemplates, missingEmailFields, type EmailAttachmentRole, type EmailTemplateKey } from "@/lib/crm-email-templates";
+import { readStoredTemplates, saveStoredTemplate, validTemplate } from "@/lib/crm-email-template-store";
 import { configuredQuoteDocuments, formatCrmEmail, quoteBodyWithLinks } from "@/lib/crm-email-signature";
 import { agencyCopyAddress, maxEmailRecipients, parseEmailRecipients } from "@/lib/crm-email-recipients";
 import { readBounded } from "@/lib/studio-request";
@@ -18,16 +19,11 @@ const maxAttachmentBytes = 3_800_000;
 const roles = Object.keys(emailAttachmentLabels) as EmailAttachmentRole[];
 const columns = "id,direction,state,template_key,occurred_at,subject,body,sender,recipient,cc,attachments,archive_state,proposal_version,internet_message_id";
 
-type StoredTemplate = { template_key: EmailTemplateKey; subject: string; body: string };
 type EmailRow = {
   id: string; direction: "in" | "out"; state: string; template_key: EmailTemplateKey | null;
   client_id: string | null; lead_id: string | null; proposal_id: string | null; proposal_version: number | null; trip_id: string | null;
   internet_message_id: string; recipient: string; sender: string; subject: string; occurred_at: string;
 };
-
-function validTemplate(key: unknown): key is EmailTemplateKey {
-  return typeof key === "string" && Object.hasOwn(emailTemplates, key);
-}
 
 function verifyText(subject: unknown, body: unknown) {
   if (typeof subject !== "string" || !subject.trim() || subject.length > 240 || /[\r\n\u0000]/.test(subject) ||
@@ -68,9 +64,7 @@ export async function GET(request: NextRequest) {
       emailRest<EmailRow[]>(config, "crm_emails", {
         ...emailScopeFilter(context), select: columns, order: "occurred_at.desc,id", limit: "60",
       }),
-      emailRest<StoredTemplate[]>(config, "crm_email_templates", {
-        language: "eq." + context.language, select: "template_key,subject,body",
-      }),
+      readStoredTemplates(config, context.language),
     ]);
     const quoteDocuments = configuredQuoteDocuments();
     const templates = Object.entries(emailTemplates).flatMap(([key, template]) => {
@@ -264,12 +258,7 @@ export async function POST(request: NextRequest) {
     if (data.action === "sync" || data.action === "link") return await sync(config, context, data.action === "link" ? data.mailbox_key ?? null : undefined);
     if (data.action === "template") {
       const key = templateFor(context, data.template);
-      const { subject, body } = verifyText(data.subject, data.body);
-      if (body.length > 16000) throw new CrmError("O modelo excede 16.000 caracteres.");
-      await emailRest(config, "crm_email_templates", { on_conflict: "template_key,language" }, {
-        method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-        body: JSON.stringify({ template_key: key, language: context.language, subject, body, updated_at: new Date().toISOString() }),
-      });
+      await saveStoredTemplate(config, key, context.language, data);
       return privateJson({ saved: true });
     }
     throw new CrmError("Ação inválida.");
