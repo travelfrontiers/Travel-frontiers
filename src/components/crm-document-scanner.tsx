@@ -7,21 +7,24 @@ import {identityFileLimit, identityFileTypes, scanClientDocument} from "@/lib/cr
 import {lisbonDay} from "@/lib/crm-calendar";
 import {missingIdentityFields, type DocumentReading} from "@/lib/crm-document-ocr";
 import {officeInput as input,officeButton as primary,officeSecondary as secondary,type AuthorizedFetch} from "@/lib/crm-office-types";
+import CrmDocumentPreview, {documentReviewColumns, documentReviewLayout} from "./crm-document-preview";
 
 type ClientIdentity={id:string;full_name:string;birth_date?:string|null;updated_at:string};
 type SavedScan={client:ClientIdentity;document:{id:string;client_id:string;document_type:"passport"|"identity_card";document_number:string;expires_on:string;created_at:string;updated_at:string}};
+export type DocumentReview = { reading: DocumentReading; pages: Blob[] };
 const nameKey=(name:string)=>name.normalize("NFD").replace(/\p{M}/gu,"").toLowerCase().replace(/[^a-z]/g,"");
 const field="block space-y-1 text-sm font-medium";
 
 type ScannerProps =
   | { client: ClientIdentity; authorizedFetch: AuthorizedFetch; onSaved: (result: SavedScan) => void }
-  | { authorizedFetch: AuthorizedFetch; onRead: (reading: DocumentReading | null) => void; onScanning: (scanning: boolean) => void; disabled?: boolean };
+  | { authorizedFetch: AuthorizedFetch; onRead: (review: DocumentReview | null) => void; onScanning: (scanning: boolean) => void; disabled?: boolean };
 
 export default function CrmDocumentScanner(props: ScannerProps) {
   const client = "client" in props ? props.client : null;
   const disabled = "disabled" in props && props.disabled;
   const [open,setOpen]=useState(false);
   const [reading,setReading]=useState<DocumentReading|null>(null);
+  const [pages,setPages]=useState<Blob[]>([]);
   const [progress,setProgress]=useState("");
   const [error,setError]=useState("");
   const [saved,setSaved]=useState(false);
@@ -59,23 +62,23 @@ export default function CrmDocumentScanner(props: ScannerProps) {
       const files = await getFiles(request.signal);
       if (!files || request.signal.aborted) return;
       setReading(null);
+      setPages([]);
       if ("onRead" in props) props.onRead(null);
       reviewedRevision.current=client?.updated_at ?? "";
       timer=window.setTimeout(()=>request.abort(),120000);
-      const result=await scanClientDocument(files,request.signal,setProgress);
+      let reviewPages: Blob[] = [];
+      const result=await scanClientDocument(files,request.signal,setProgress,prepared => {
+        reviewPages = prepared;
+        setPages(prepared);
+      });
       if(request.signal.aborted) return;
-      if (!result.full_name && !result.document_number && !result.birth_date && !result.expires_on) {
-        setError(result.document_type
-          ? "Só foi possível reconhecer o tipo de documento. Tenta uma imagem mais nítida da página com os dados e as linhas no rodapé."
-          : "A leitura terminou sem encontrar dados. Tenta uma imagem mais nítida ou inclui a face com os dados do documento.");
-        return;
-      }
       if (client && result.full_name && nameKey(result.full_name) === nameKey(client.full_name)) result.full_name = client.full_name;
-      setReading(result);
       if ("onRead" in props) {
-        props.onRead(result);
+        props.onRead({reading:result,pages:reviewPages});
+        setPages([]);
         setOpen(false);
-        setSaved(true);
+      } else {
+        setReading(result);
       }
     } catch(cause) {
       setError(request.signal.aborted?"A leitura foi interrompida.":cause instanceof Error?cause.message:"Não foi possível ler o documento.");
@@ -123,19 +126,19 @@ export default function CrmDocumentScanner(props: ScannerProps) {
       const result=await response.json();
       if(!response.ok) throw new Error(result.error||"Não foi possível guardar o documento.");
       onSaved(result);
-      setReading(null);setSaved(true);setOpen(false);
+      setReading(null);setPages([]);setSaved(true);setOpen(false);
     } catch(cause) {setError(cause instanceof Error?cause.message:"Não foi possível guardar.");}
     finally {setSaving(false);}
   }
 
   const unread = reading ? missingIdentityFields(reading) : [];
 
-  return <div className="my-3 space-y-3">
+  return <div className={"my-3 space-y-3 " + documentReviewLayout}>
     <button type="button" aria-expanded={open} className={secondary} disabled={disabled || saving || scanning}
-      onClick={()=>{if(open){controller.current?.abort();setReading(null);}setError("");setDriveError("");setSaved(false);setOpen(!open);}}>
+      onClick={()=>{if(open){setReading(null);setPages([]);}setError("");setDriveError("");setSaved(false);setOpen(!open);}}>
       {open?"Fechar leitura":"Ler passaporte ou Cartão de Cidadão"}
     </button>
-    {saved&&<p role="status" className="text-sm text-orange-800">{client ? "Documento e ficha do cliente guardados." : unread.length ? "Leitura parcial. Confirma os campos preenchidos e completa os que faltam." : "Leitura concluída. Confirma os campos no formulário."}</p>}
+    {saved&&<p role="status" className="text-sm text-orange-800">Documento e ficha do cliente guardados.</p>}
     {open&&<div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
       <form onSubmit={scanLocal} className="space-y-3">
         <label className={field}>Fotografias ou PDF do documento
@@ -151,27 +154,30 @@ export default function CrmDocumentScanner(props: ScannerProps) {
       {driveError && <p className="text-xs text-slate-600">{driveError} Podes usar um ficheiro do dispositivo.</p>}
       {progress&&<p role="status" className="text-sm">{progress}</p>}
       {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
-      {reading&&client&&<form onSubmit={save} className="space-y-3 border-t border-slate-200 pt-4">
-        <p className="text-sm font-semibold">Confirma os dados de {client.full_name}</p>
-        {unread.length > 0 && <p role="status" className="text-sm text-amber-800">Confirma no documento e preenche os campos por ler ({unread.join(", ")}).</p>}
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className={field}>Tipo<select name="document_type" defaultValue={reading.document_type||""} required className={input}>
-            <option value="">Seleciona</option><option value="passport">Passaporte</option><option value="identity_card">Cartão de Cidadão</option>
-          </select></label>
-          <label className={field}>Número/ID<input name="document_number" maxLength={80} defaultValue={reading.document_number} required className={input}/></label>
-          <label className={field+" sm:col-span-2"}>Nome completo<input name="full_name" minLength={2} maxLength={160} defaultValue={reading.full_name} required className={input}/></label>
-          <label className={field}>Data de nascimento<input name="birth_date" type="date" max={lisbonDay(new Date().toISOString())} defaultValue={reading.birth_date} required className={input}/></label>
-          <label className={field}>Validade<input name="expires_on" type="date" defaultValue={reading.expires_on} required className={input}/></label>
-        </div>
-        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm">
-          <input name="reviewed" type="checkbox" required className="mt-0.5 size-[18px] shrink-0 appearance-auto accent-orange-800"
-            onInvalid={event => event.currentTarget.setCustomValidity("Assinala esta caixa para confirmar os dados antes de guardar.")}
-            onChange={event => event.currentTarget.setCustomValidity("")}/>
-          <span>Confirmei que o documento pertence a este cliente e que os dados estão certos. *</span>
-        </label>
-        <p className="text-xs text-slate-500">Ao guardar, o nome e a data de nascimento são atualizados na ficha. Se o documento já existir, é atualizada a validade.</p>
-        <button className={primary} disabled={saving}>{saving?"A guardar…":"Guardar documento e ficha"}</button>
-      </form>}
+      <div className={documentReviewColumns}>
+        {pages.length > 0 && <CrmDocumentPreview pages={pages}/>}
+        {reading&&client&&<form onSubmit={save} className="min-w-0 space-y-3 border-t border-slate-200 pt-4">
+          <p className="text-sm font-semibold">Confirma os dados de {client.full_name}</p>
+          {unread.length > 0 && <p role="status" className="text-sm text-amber-800">Confirma no documento e preenche os campos por ler ({unread.join(", ")}).</p>}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className={field}>Tipo<select name="document_type" defaultValue={reading.document_type||""} required className={input}>
+              <option value="">Seleciona</option><option value="passport">Passaporte</option><option value="identity_card">Cartão de Cidadão</option>
+            </select></label>
+            <label className={field}>Número/ID<input name="document_number" maxLength={80} defaultValue={reading.document_number} required className={input}/></label>
+            <label className={field+" sm:col-span-2"}>Nome completo<input name="full_name" minLength={2} maxLength={160} defaultValue={reading.full_name} required className={input}/></label>
+            <label className={field}>Data de nascimento<input name="birth_date" type="date" max={lisbonDay(new Date().toISOString())} defaultValue={reading.birth_date} required className={input}/></label>
+            <label className={field}>Validade<input name="expires_on" type="date" defaultValue={reading.expires_on} required className={input}/></label>
+          </div>
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm">
+            <input name="reviewed" type="checkbox" required className="mt-0.5 size-[18px] shrink-0 appearance-auto accent-orange-800"
+              onInvalid={event => event.currentTarget.setCustomValidity("Assinala esta caixa para confirmar os dados antes de guardar.")}
+              onChange={event => event.currentTarget.setCustomValidity("")}/>
+            <span>Confirmei que o documento pertence a este cliente e que os dados estão certos. *</span>
+          </label>
+          <p className="text-xs text-slate-500">Ao guardar, o nome e a data de nascimento são atualizados na ficha. Se o documento já existir, é atualizada a validade.</p>
+          <button className={primary} disabled={saving}>{saving?"A guardar…":"Guardar documento e ficha"}</button>
+        </form>}
+      </div>
     </div>}
   </div>;
 }
