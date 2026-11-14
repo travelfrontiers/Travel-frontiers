@@ -5,7 +5,7 @@ let authorized=true,calls=[],replies=[];
 const id="12345678-1234-4123-8123-123456789abc",second="22345678-1234-4123-8123-123456789abc";
 function load(file){
  const source=ts.transpileModule(fs.readFileSync(path.join(__dirname,"..",file),"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText,mod={exports:{}};
- const req=name=>name==="next/server"?{NextResponse:{json:(body,options={})=>({body,status:options.status||200})}}:name==="@/lib/crm-api"?{isAuthorizedStudioUser:async()=>authorized,supabaseAdminConfig:()=>({url:"https://synthetic.invalid",headers:{apikey:"synthetic"}})}:name.startsWith("@/")?load("src/"+name.slice(2)+".ts"):require(name);
+ const req=name=>name==="next/server"?{NextResponse:{json:(body,options={})=>({body,status:options.status||200})}}:name==="@/lib/crm-api"?{isAuthorizedStudioUser:async()=>authorized,supabaseAdminConfig:()=>({url:"https://synthetic.invalid",headers:{apikey:"synthetic"}})}:name.startsWith("@/")?load("src/"+name.slice(2)+".ts"):name.startsWith("./")?load(path.join(path.dirname(file),name+".ts")):require(name);
  new Function("require","module","exports","fetch",source)(req,mod,mod.exports,async(url,init={})=>{calls.push({url,init});const reply=replies.shift();if(!reply)throw new Error("Unexpected fetch: "+url);return {ok:reply.status===undefined||reply.status<400,status:reply.status||200,json:async()=>reply.data,headers:new Headers(reply.headers||{})};});return mod.exports;
 }
 const request=(body={},query="")=>({text:async()=>JSON.stringify(body),json:async()=>body,headers:new Headers(),nextUrl:new URL("https://synthetic.invalid/"+query)});
@@ -25,6 +25,17 @@ const reset=(...items)=>{calls=[];replies=items;};
  const proposalFilters=new URL(calls[0].url).searchParams;
  assert.equal(proposalFilters.get("trip_id"),`eq.${id}`);assert.equal(proposalFilters.get("status"),"eq.accepted");
  reset();assert.equal((await proposal.GET(request({},"?trip_id=invalid"))).status,400);assert.equal(calls.length,0);
+ const alerts=load("src/app/api/crm/trip-alerts/route.ts");
+ authorized=false;reset();assert.equal((await alerts.GET(request({},`?trip_id=${id}`))).status,401);assert.equal(calls.length,0);authorized=true;
+ reset({data:[{id:"p",label:"Sinal",due_on:"2026-11-01",currency:"EUR",amount_remaining:50}]},{data:[{id:"q",title:"Orçamento",valid_until:"2026-11-03"}]});
+ const alertReply=await alerts.GET(request({},`?trip_id=${id}`));
+ assert.equal(alertReply.status,200);assert.deepEqual(alertReply.body.alerts.map(alert=>alert.target),[{type:"trip",id,finance:true},{type:"proposal",id:"q"}]);
+ assert.ok(calls.every(call=>new URL(call.url).searchParams.get("trip_id")==="eq."+id));
+ const {tripContextAlerts}=load("src/lib/crm-trip-alerts.ts");
+ const alertTrip={id,status:"confirmed",archived_at:null,departure_date:"2027-04-02",return_date:"2027-05-04",tasks:[{id:"check",title:"Check-in",due_at:"2027-04-01T23:30:00Z",source_service_id:second,completed:false},{id:"done",title:"Feita",due_at:"2027-04-01T23:30:00Z",completed:true}]};
+ const documentAlert={id:"doc",date:"2027-05-02",kind:"Documento",target:{type:"client",id}};
+ assert.deepEqual(tripContextAlerts(alertTrip,"2027-04-01",[documentAlert],null).map(item=>[item.kind,item.date]),[["Documento","2027-05-02"],["Check-in","2027-04-02"],["Partida","2027-04-02"]]);
+ assert.deepEqual(tripContextAlerts({...alertTrip,status:"cancelled"},"2027-04-01",[documentAlert],null),[]);
  const valid={action:"save",id:null,client_id:id,expected_version:0,data:{title:"Synthetic quote",total_amount:1234.56,currency:"EUR",departure_date:"2027-04-06",return_date:"2027-04-17"}};
  reset({data:{id,current_version:1}});let r=await proposal.POST(request(valid));assert.equal(r.status,201);assert.equal(calls.length,1);assert.ok(calls[0].url.endsWith("/rpc/crm_save_proposal"));
  reset({status:400,data:{message:"stale_version"}});r=await proposal.POST(request({...valid,id,expected_version:1}));assert.equal(r.status,409);assert.equal(calls.length,1);
