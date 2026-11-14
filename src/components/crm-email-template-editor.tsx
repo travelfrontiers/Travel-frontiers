@@ -55,7 +55,7 @@ export default function CrmEmailTemplateEditor({ authorizedFetch }: { authorized
       if (!response.ok) throw new Error(result.error || "Não foi possível guardar o modelo.");
       setTemplates(items => items.map(item => item.key === key ? result.template : item));
       setDraft(null);
-      setNotice("Modelo guardado. O novo texto será usado nos próximos rascunhos neste idioma.");
+      setNotice(key === "document_renewal" ? "Modelo guardado para os próximos lembretes neste idioma." : "Modelo guardado. O novo texto será usado nos próximos rascunhos neste idioma.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível guardar o modelo.");
     } finally { setBusy(false); }
@@ -90,7 +90,9 @@ export default function CrmEmailTemplateEditor({ authorizedFetch }: { authorized
         </select>
       </label>
     </div>
-    <p className="text-sm text-slate-600">Disponível em {emailTemplates[key].scopes.map(scope => sectionLabels[scope]).join(" e ")}.</p>
+    <p className="text-sm text-slate-600">{key === "document_renewal"
+      ? "Enviado automaticamente ao cliente um mês antes de vencer. Campos preenchidos: {{cliente}}, {{tipo_documento}} e {{validade}}."
+      : "Disponível em " + emailTemplates[key].scopes.map(scope => sectionLabels[scope]).join(" e ") + "."}</p>
     {loading && <p role="status" className="text-sm">A carregar modelos…</p>}
     {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
     {notice && <p role="status" className="text-sm text-orange-800">{notice}</p>}

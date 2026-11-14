@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const base=require("node:path").resolve(__dirname, "..") + "/";
 const modules = new Map();
 let calls=[], mails=0, lastMail, authorized=true, reply={ok:true,status:200,data:{}};
+const renewalMails=[];
 const env={SUPABASE_SECRET_KEY:"synthetic-only",CRM_SMTP_HOST:"example.invalid",CRM_SMTP_USER:"synthetic@example.invalid",CRM_SMTP_PASSWORD:"synthetic",CRM_NOTIFICATION_TO:"synthetic@example.invalid",CRON_SECRET:"synthetic-cron",VERCEL_ENV:"production"};
 function load(path){
  if(modules.has(path)) return modules.get(path).exports;
@@ -14,11 +15,14 @@ function load(path){
   if(name==="next/server")return {NextResponse:{json:(data,options={})=>({status:options.status||200,body:data,headers:options.headers})}};
   if(name==="@/lib/crm-api")return {isAuthorizedStudioUser:async()=>authorized,supabaseAdminConfig:()=>({url:"https://db.example.invalid",headers:{apikey:"synthetic"}})};
   if(name==="nodemailer")return {createTransport:()=>({sendMail:async(mail)=>{mails++;lastMail=mail;}})};
+  if(name==="@/lib/crm-mailbox")return {smtpTransport:()=>({user:"sender@example.invalid",smtp:{
+   sendMail:async(mail)=>{renewalMails.push(mail);return {accepted:[mail.to],rejected:[]};},close(){},
+  }})};
   if(name.startsWith("@/"))return load("src/"+name.slice(2)+".ts");
   if(name.startsWith("."))return load(require("node:path").posix.join(require("node:path").posix.dirname(path),name)+".ts");
   return require(name);
  };
- new Function("require","module","exports","fetch","process",output)(req,mod,mod.exports,async(url,init={})=>{calls.push({url,init});return typeof reply==="function"?reply(url,init):{ok:reply.ok,status:reply.status,headers:new Headers(reply.headers),json:async()=>reply.data,text:async()=>reply.status===204?"":JSON.stringify(reply.data)};},{env});
+ new Function("require","module","exports","fetch","process",output)(req,mod,mod.exports,async(url,init={})=>{calls.push({url,init});return typeof reply==="function"?reply(url,init):{ok:reply.ok,status:reply.status,headers:new Headers(reply.headers),json:async()=>reply.data,text:async()=>reply.status===204?"":JSON.stringify(reply.data)};},{env,cwd:process.cwd});
  return mod.exports;
 }
 const id="12345678-1234-4123-8123-123456789abc";
@@ -176,6 +180,27 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  assert.equal(result.status,200);
  const cron=load("src/app/api/crm/checkin-reminders/route.ts");
  calls=[];result=await cron.GET(request({},{"x-vercel-cron":"1"}));assert.equal(result.status,401);assert.equal(calls.length,0);
+ const renewal=load("src/app/api/crm/document-renewal-reminders/route.ts");
+ const bearer={authorization:"Bearer synthetic-cron"};
+ calls=[];result=await renewal.GET(request({},{"x-vercel-cron":"1"}));assert.equal(result.status,401);assert.equal(calls.length,0);
+ env.VERCEL_ENV="preview";
+ result=await renewal.GET(request({},bearer));assert.deepEqual(result.body,{skipped:true});assert.equal(calls.length,0);
+ env.VERCEL_ENV="production";
+ const common={id,document_type:"passport",expires_on:"2027-04-06",full_name:"Sofia <Exemplo>",language:"fr",email:"customer@example.invalid"};
+ const jobs=[{...common,audience:"customer"},{...common,audience:"internal",email:null},null], finishes=[];
+ reply=async(url,init)=>{
+  const json=data=>({ok:true,status:200,json:async()=>data,text:async()=>JSON.stringify(data)});
+  if(url.endsWith("crm_claim_document_renewal"))return json(jobs.shift());
+  if(url.endsWith("crm_finish_document_renewal")){finishes.push(JSON.parse(init.body));return json(null);}
+  if(url.includes("crm_email_templates"))return json([{template_key:"document_renewal",subject:"Renouvellement · {{tipo_documento}}",body:"Bonjour {{cliente}}. Expire le {{validade}}."}]);
+  throw new Error("Unexpected mock request");
+ };
+ result=await renewal.GET(request({},bearer));assert.equal(result.status,200);assert.equal(result.body.sent,2);
+ assert.deepEqual(renewalMails.map(mail=>mail.to),["customer@example.invalid","synthetic@example.invalid"]);
+ assert.ok(renewalMails.every(mail=>!mail.cc&&!mail.bcc&&mail.attachments[0].content.length>0));
+ assert.match(renewalMails[0].subject,/Passeport/);assert.match(renewalMails[0].html,/Sofia &lt;Exemplo&gt;.*6 avril 2027/);
+ assert.match(renewalMails[1].text,/não tem um email válido/);
+ assert.ok(finishes.every(item=>item.p_state==="sent"));
  const drive=load("src/app/api/crm/drive/route.ts");
  authorized=false;calls=[];result=await drive.GET(request({}));assert.equal(result.status,401);assert.equal(calls.length,0);
  const upload=load("src/lib/crm-drive-upload.ts").uploadCrmDriveFile;
