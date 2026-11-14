@@ -250,14 +250,46 @@ function extractItineraryDateRange(text: string) {
   return bounds.departure_date && bounds.return_date ? bounds : { departure_date: "", return_date: "" };
 }
 
+const serviceName = (value: string) => value.normalize("NFD").replace(/\p{M}/gu, "")
+  .toLocaleLowerCase("pt-PT").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+
+function mergeHotelMentions(services: TripPdfService[]): TripPdfService[] {
+  const entries = services.map((service, position) => ({ service, position }));
+  const result: typeof entries = [];
+  const hotelName = (title: string) => serviceName(title).replace(/\s+hotels$/, "");
+  const compatible = (first: string, second: string) => !first || !second || first === second;
+  const dated = (service: TripPdfService) => Boolean(service.starts_on || service.ends_on);
+  // Place dated stays first so an undated mention cannot join two separate stays.
+  for (const entry of entries.sort((a, b) => Number(dated(b.service)) - Number(dated(a.service)))) {
+    const { service } = entry;
+    const name = hotelName(service.title);
+    const sameHotel = result.filter(({service: item}) => hotelName(item.title) === name &&
+      compatible(item.starts_on, service.starts_on) && compatible(item.ends_on, service.ends_on) &&
+      compatible(item.reference, service.reference));
+    if (sameHotel.length > 1 && !dated(service)) continue;
+    if (sameHotel.length !== 1) {
+      result.push(entry);
+      continue;
+    }
+    const { service: existing } = sameHotel[0];
+    existing.starts_on ||= service.starts_on;
+    existing.ends_on ||= service.ends_on;
+    existing.reference ||= service.reference;
+    existing.provider ||= service.provider;
+  }
+  return result.sort((a, b) => a.position - b.position).map(item => item.service);
+}
+
 function extractTravelServices(text: string): TripPdfService[] {
   const lines = text.split(/\r?\n/).map((line) => line.replace(/[\t ]+/g, " ").trim()).filter(Boolean);
   const services: TripPdfService[] = [];
   let inFlightSection = false;
   let inHotelSection = false;
   const add = (candidate: TripPdfService) => {
-    const key = `${candidate.service_type}:${candidate.title.toLocaleLowerCase("pt-PT")}`;
-    if (candidate.title.length > 2 && !services.some((service) => `${service.service_type}:${service.title.toLocaleLowerCase("pt-PT")}` === key)) services.push(candidate);
+    if (candidate.title.length > 2 && !services.some(service =>
+      service.service_type === candidate.service_type && serviceName(service.title) === serviceName(candidate.title) &&
+      service.starts_on === candidate.starts_on && service.ends_on === candidate.ends_on && service.reference === candidate.reference
+    )) services.push(candidate);
   };
   const heading = /^(?:voos?|flights?|segmentos?\s+a[eé]reos?|a[eé]reos?)\s*[:\-–—]?$/i;
   const hotelHeading = /^(?:hot[eé]is?|alojamento|accommodation|hotel details?)\s*[:\-–—]?$/i;
@@ -295,11 +327,25 @@ function extractTravelServices(text: string): TripPdfService[] {
     const isHotelLine = Boolean(hotelMatch) || inHotelSection && !sectionEnd.test(line) && !/^(?:check[- ]?in|check[- ]?out|entrada|sa[ií]da|noites?)\b/i.test(line);
     if (isHotelLine) {
       const rawName = hotelMatch?.[1] || line;
-      const title = rawName.replace(/^\s*(?:no|na|em|at)\s+/i, "").replace(/\s+(?:check[- ]?in|check[- ]?out|entrada|sa[ií]da|regime|refei[cç][oõ]es?)\b.*$/i, "").replace(/[,.;].*$/, "").trim();
+      let title = rawName.replace(/^\s*(?:no|na|em|at)\s+/i, "").replace(/\s+(?:check[- ]?in|check[- ]?out|entrada|sa[ií]da|regime|refei[cç][oõ]es?)\b.*$/i, "").replace(/[,;].*$|\.\s.*$/, "").trim();
       const serviceContext = lines.slice(Math.max(0, index - 1), index + 3).join(" ");
-      const dateRange = extractDateRange(serviceContext) || extractDateRange(`${line} ${next}`);
+      const following = lines.slice(index + 1, index + 3);
+      const checkIn = /^(?:check[- ]?in|entrada)\b/i;
+      const checkOut = /^(?:check[- ]?out|sa[ií]da)\b/i;
+      const bounds = extractDateBounds(line);
+      if (bounds.departure_date && bounds.return_date !== bounds.departure_date) {
+        const nights = (Date.parse(bounds.return_date) - Date.parse(bounds.departure_date)) / 86400000;
+        const datePrefix = line.slice(0, hotelMatch?.index ?? 0);
+        const tableRow = extractDateBounds(datePrefix);
+        if (tableRow.departure_date && tableRow.departure_date !== tableRow.return_date) {
+          title = title.replace(new RegExp(`\\s+${nights}(?:\\s+(?:noites?|nights?))?$`, "i"), "");
+        }
+      }
+      const start = bounds.departure_date || extractSingleDate(following.find(value => checkIn.test(value)) ?? "");
+      const end = (bounds.return_date !== bounds.departure_date ? bounds.return_date : "") ||
+        extractSingleDate(following.find(value => checkOut.test(value)) ?? "");
       const provider = /\b(Booking\.com|TUI|Soltour|Travelplan|H10|Iberostar|RIU|Meli[aá]|Barcel[oó]|Hilton|Marriott|Hyatt|Pestana)\b/i.exec(title)?.[1] || "";
-      add({ service_type: "accommodation", title: title.slice(0, 240), provider, reference: "", starts_on: dateRange.departure_date || extractSingleDate(line), ends_on: dateRange.return_date || extractSingleDate(next), details: serviceContext.slice(0, 1000) });
+      add({ service_type: "accommodation", title: title.slice(0, 240), provider, reference: "", starts_on: start, ends_on: end, details: serviceContext.slice(0, 1000) });
     }
   }
 
@@ -327,10 +373,18 @@ function extractTravelServices(text: string): TripPdfService[] {
       details: block.slice(0, 1000),
     };
   });
-  const flightReferences = new Set(detailedFlights.map((service) => service.reference.toLocaleLowerCase("pt-PT")));
-  const filtered = services.filter((service) => service.service_type !== "flight" || service.reference && flightReferences.has(service.reference.toLocaleLowerCase("pt-PT")));
-  filtered.push(...detailedFlights);
-  return filtered.slice(0, 40);
+  const flightCode = (value: string) => value.replace(/\s/g, "").toUpperCase();
+  const flights = services.filter(service => service.service_type === "flight" &&
+    (!detailedFlights.length ? Boolean(service.reference || service.title.includes(" → ")) : (service.reference && !detailedFlights.some(flight =>
+      flightCode(flight.reference) === flightCode(service.reference) &&
+      (!service.starts_on || !flight.starts_on || flight.starts_on === service.starts_on))))
+  );
+  flights.push(...detailedFlights.filter((flight, index) => !detailedFlights.slice(0, index).some(previous =>
+    flightCode(previous.reference) === flightCode(flight.reference) &&
+    serviceName(previous.title) === serviceName(flight.title) &&
+    previous.starts_on === flight.starts_on && previous.ends_on === flight.ends_on
+  )));
+  return [...flights, ...mergeHotelMentions(services.filter(service => service.service_type === "accommodation"))].slice(0, 40);
 }
 
 export function extractTripFieldsFromPdfText(text: string): TripPdfFields {
