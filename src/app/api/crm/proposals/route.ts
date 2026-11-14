@@ -19,7 +19,9 @@ export async function GET(request:NextRequest) { try {
  }
  const offset=Number(q.get("offset")||0);if(!Number.isInteger(offset)||offset<0||offset>100000)throw new CrmError("Página inválida.");
  const params=new URLSearchParams({select:"*",order:"updated_at.desc,id",limit:"30",offset:String(offset)});
- const status=q.get("status");if(status){if(!["draft","sent","accepted","declined","archived"].includes(status))throw new CrmError("Estado inválido.");params.set("status","eq."+status);}
+ const status=q.get("status");
+ if(status&&!["draft","sent","accepted","declined","archived"].includes(status))throw new CrmError("Estado inválido.");
+ params.set("status",status?"eq."+status:"neq.archived");
  const client=q.get("client_id");if(client){if(!uuid(client))throw new CrmError("Cliente inválido.");params.set("client_id","eq."+client);}
  const trip=q.get("trip_id");if(trip){if(!uuid(trip))throw new CrmError("Viagem inválida.");params.set("trip_id","eq."+trip);}
  const search=(q.get("q")||"").trim().slice(0,120).replace(/[*,%()]/g,"");if(search)params.set("title","ilike.*"+search+"*");
@@ -53,6 +55,11 @@ export async function POST(request:NextRequest) { try {
   return privateJson({proposal},body.id?200:201);
  }
  if(!uuid(body.id)||!Number.isInteger(body.version)||Number(body.version)<1)throw new CrmError("Proposta ou versão inválida.");
+ if(body.action==="archive"||body.action==="restore"||body.action==="delete"){
+  if(typeof body.status!=="string" || !["draft","sent","accepted","declined","archived"].includes(body.status))throw new CrmError("Estado inválido.");
+  const result=await rpc(config,"crm_manage_proposal",{p_id:body.id,p_version:body.version,p_status:body.status,p_action:body.action});
+  return privateJson(body.action==="delete"?{deleted:true}:{proposal:result});
+ }
  if(body.action==="status"){
   if(!["draft","sent","accepted","declined","archived"].includes(String(body.status))||typeof body.note!=="string"||body.note.length>2000)throw new CrmError("Revê o estado e a confirmação.");
   return privateJson({proposal:await rpc(config,"crm_set_proposal_status",{p_id:body.id,p_version:body.version,p_status:body.status,p_note:body.note})});
