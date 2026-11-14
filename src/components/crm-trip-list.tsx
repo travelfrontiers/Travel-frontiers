@@ -1,4 +1,4 @@
-import { formatMoney, type FinanceSummary } from "@/lib/crm-finance";
+import { commissionStates, formatMoney, type FinanceSummary } from "@/lib/crm-finance";
 import { officeSecondary } from "@/lib/crm-office-types";
 
 export type TripListItem = {
@@ -12,13 +12,17 @@ export default function CrmTripList({ items, mode, onOpen }: { items: TripListIt
     const money = (value: number | null | undefined) => value == null ? "—" : formatMoney(value, item.currency);
     const commission = [
       ["Prevista", money(item.finance?.commission_expected)],
+      ["Confirmada", money(item.finance?.commission_confirmed)],
       ["Recebida", money(item.finance?.commission_net)],
-      ["Diferença face à estimativa", money(item.finance?.commission_balance)],
+      ["Por receber", money(item.finance?.commission_to_receive)],
     ];
-    return mode === "commissions" ? commission : [
+    return mode === "commissions" ? [...commission, ["Divergência (estimativa − confirmação)", money(item.finance?.commission_discrepancy)]] : [
       ["Total", money(item.total)], ["Saldo do cliente", money(item.finance?.balance)], ...commission,
     ];
   };
+  const status = (item: TripListItem) => mode === "commissions" && item.finance?.commission_state
+    ? commissionStates[item.finance.commission_state] + (item.finance.commission_has_discrepancy && item.finance.commission_state !== "settled" ? " · Divergência" : "")
+    : item.status;
   const open = (item: TripListItem) => <button type="button" onClick={() => onOpen(item.id)}
     aria-label={`Abrir ${mode === "commissions" ? "comissão" : "viagem"}: ${item.destination}`}
     className={officeSecondary + " min-h-11 whitespace-nowrap"}>Abrir</button>;
@@ -35,7 +39,7 @@ export default function CrmTripList({ items, mode, onOpen }: { items: TripListIt
           {items.map(item => <tr key={item.id}>
             <th scope="row" className="min-w-40 px-3 py-3"><span className="block font-semibold">{item.destination}</span><span className="font-normal text-slate-600">{item.client}</span></th>
             <td className="px-3 py-3">{item.dates}</td><td className="px-3 py-3">{item.operator}<span className="block text-slate-600">{item.reference}</span></td>
-            <td className="px-3 py-3">{item.status}</td>
+            <td className="px-3 py-3">{status(item)}</td>
             {getValues(item).map(([label, value]) => <td key={label} className="whitespace-nowrap px-3 py-3 tabular-nums">{value}</td>)}
             <td className="px-3 py-3">{open(item)}</td>
           </tr>)}
@@ -45,7 +49,7 @@ export default function CrmTripList({ items, mode, onOpen }: { items: TripListIt
     <ul className="grid gap-3 sm:grid-cols-2 xl:hidden">
       {items.map(item => <li key={item.id} className="min-w-0 rounded-xl border border-slate-200 bg-white p-4">
         <h3 className="break-words font-semibold">{item.destination}</h3>
-        <p className="break-words text-sm text-slate-600">{item.client} · {item.status}</p>
+        <p className="break-words text-sm text-slate-600">{item.client} · {status(item)}</p>
         <p className="mt-1 break-words text-sm text-slate-600">{[item.dates, item.operator, item.reference].filter(Boolean).join(" · ")}</p>
         <dl className="my-3 grid grid-cols-2 gap-2 text-sm">
           {getValues(item).map(([label, value]) => <div key={label}><dt className="text-xs text-slate-600">{label}</dt><dd className="font-semibold tabular-nums">{value}</dd></div>)}

@@ -23,7 +23,7 @@ import { travelTypeLabels, type EntityContext, type OpenTarget } from "@/lib/crm
 import CrmWorkspaceNavigation, { type CrmView as View } from "./crm-workspace-navigation";
 import CrmTripList from "./crm-trip-list";
 import { CrmTripTabs, CrmTripPanel, type TripTab } from "./crm-trip-tabs";
-import type { FinanceSummary } from "@/lib/crm-finance";
+import { commissionStates, formatMoney, type FinanceSummary } from "@/lib/crm-finance";
 import CrmTripAlerts from "./crm-trip-alerts";
 import { tripContextAlerts, type TripAlert } from "@/lib/crm-trip-alerts";
 import { lisbonDay } from "@/lib/crm-calendar";
@@ -189,6 +189,7 @@ export default function CrmStudioTool() {
   const [financeListStatus, setFinanceListStatus] = useState<"loading"|"ready"|"error">("loading");
   const [tripBalance, setTripBalance] = useState("");
   const [tripCommission, setTripCommission] = useState("");
+  const [commissionPeriod, setCommissionPeriod] = useState("");
   const [showArchivedLeads, setShowArchivedLeads] = useState(false);
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [editingLeadId, setEditingLeadId] = useState("");
@@ -220,6 +221,7 @@ export default function CrmStudioTool() {
   const [calendarKind, setCalendarKind] = useState("");
   const [calendarDay, setCalendarDay] = useState("");
   const [visitedFinance, setVisitedFinance] = useState(false);
+  const [tripListView,setTripListView]=useState<"trips"|"commissions">("trips");
   const [proposalContext, setProposalContext] = useState<EntityContext | null>(null);
   const [activityContext, setActivityContext] = useState<EntityContext | null>(null);
   const [focused, setFocused] = useState<OpenTarget | null>(null);
@@ -319,15 +321,19 @@ export default function CrmStudioTool() {
       .sort((a,b)=>clientSort==="newest"?b.created_at.localeCompare(a.created_at):a.full_name.localeCompare(b.full_name));
   }, [clients,clientSearch,focused,clientLanguage,clientFilter,clientSort,trips,documents]);
   const financeByTrip = useMemo(() => new Map(financeSummaries.map(item => [item.trip_id, item])), [financeSummaries]);
+  const hasOpenCommission = (finance: FinanceSummary) => Number(finance.commission_to_receive) > 0 ||
+    (finance.commission_has_discrepancy === true && finance.commission_state !== "settled");
   const visibleTrips = trips.filter(t => {
     const finance = financeByTrip.get(t.id);
     const travelerIds = t.client_ids ?? [];
     const text = [t.destination,t.reference,t.operator,tripClientName(t,clients,leads),
       ...clients.filter(client => travelerIds.includes(client.id)).map(client => client.full_name)].filter(Boolean).join(" ");
     const matchesPayments = !tripBalance || Number(tripBalance === "overdue" ? finance?.overdue_amount : finance?.balance) > 0;
-    const matchesCommission = !tripCommission || (finance && (tripCommission === "unestimated" ?
-      finance.commission_expected === null : t.status !== "cancelled" && Number(finance.commission_balance) > 0));
-    return Boolean(t.archived_at) === showArchivedTrips &&
+    const matchesCommission = !tripCommission || (finance && (tripCommission === "pending" ? t.status !== "cancelled" && hasOpenCommission(finance) :
+      tripCommission === "collectible" ? Number(finance.commission_to_receive)>0 :
+      tripCommission === "discrepancy" ? finance.commission_has_discrepancy : finance.commission_state === tripCommission));
+    const matchesPeriod = view !== "commissions" || !commissionPeriod || finance?.commission_confirmed_on?.slice(0, 7) === commissionPeriod;
+    return matchesPeriod && Boolean(t.archived_at) === showArchivedTrips &&
       (!tripQuery.trim() || text.toLocaleLowerCase("pt-PT").includes(tripQuery.trim().toLocaleLowerCase("pt-PT"))) &&
       (!tripState || t.status === tripState) && (!tripType || t.travel_type === tripType) &&
       (!tripPerson || t.client_id === tripPerson || travelerIds.includes(tripPerson)) &&
@@ -376,7 +382,8 @@ export default function CrmStudioTool() {
     await Promise.all([quietRefresh(), refreshFinance()]);
   }, [quietRefresh, refreshFinance]);
 
-  function openTrip(id: string, tab: TripTab = "summary", taskId?: string) {
+  function openTrip(id: string, tab: TripTab = "summary", taskId?: string, backTo: "trips"|"commissions" = "trips") {
+    setTripListView(backTo);
     setSelected(null); setError(""); setTripTab(tab); setVisitedFinance(tab === "payments" || tab === "commission");
     goToView("trips"); setFocused({ type: "trip", id, taskId });
   }
@@ -794,9 +801,9 @@ export default function CrmStudioTool() {
     { label: "Seguimentos vencidos", value: overdueFollowups, note: "Pedidos com contacto por fazer", icon: Inbox, tone: "sky", action: () => {
       setShowArchivedLeads(false); setSearch(""); setLeadFilter(""); setFollowupFilter("overdue"); goToView("pipeline");
     } },
-    { label: "Abaixo da comissão prevista", value: financeListStatus === "ready" ? financeSummaries.filter(item=>!item.archived_at && item.status!=="cancelled" && Number(item.commission_balance)>0).length : "—", note: "Diferença face à estimativa", icon: ListTodo, tone: "amber", action: () => {
+    { label: "Comissões por regularizar", value: financeListStatus === "ready" ? financeSummaries.filter(item=>!item.archived_at && item.status!=="cancelled" && hasOpenCommission(item)).length : "—", note: "Saldo confirmado ou divergência em aberto", icon: ListTodo, tone: "amber", action: () => {
       setShowArchivedTrips(false); setTripState(""); setTripType(""); setTripPerson(""); setTripQuery(""); setTripFrom(""); setTripTo("");
-      setTripBalance(""); setTripCommission("pending"); goToView("commissions");
+      setTripBalance(""); setTripCommission("pending"); setCommissionPeriod(""); goToView("commissions");
     } },
   ];
 
@@ -1011,7 +1018,7 @@ export default function CrmStudioTool() {
           {focused?.type !== "trip" && <>
           {view === "trips" ? <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-lg font-semibold">Viagens</h2><p className="text-sm text-slate-500">Cria uma viagem manualmente ou pré-preenche-a a partir de um PDF.</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => { setShowPdfImport(false); setPdfPreview(null); setPdfSource(null); setShowTripForm((open) => !open); }} className="rounded-full border border-orange-800 px-5 py-2.5 text-sm font-semibold text-orange-800 hover:bg-orange-50">{showTripForm ? "Fechar formulário" : "Adicionar manualmente"}</button><button type="button" onClick={() => { setShowTripForm(false); setShowPdfImport((open) => !open); setPdfPreview(null); setPdfSource(null); }} className="rounded-full bg-orange-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-900">{showPdfImport ? "Fechar importação" : "Ler PDF e criar viagem"}</button></div></div> : <div className="mb-5">
             <h2 className="text-xl font-semibold">Comissões</h2>
-            <p className="text-sm text-slate-600">Estimativas e recebimentos por viagem. A diferença apresentada é calculada face à estimativa.</p>
+            <p className="text-sm text-slate-600">Comissões previstas, confirmações da agência, recebimentos e divergências por viagem.</p>
           </div>}
 
           <div className="mb-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-4"><label className="text-sm">Pesquisar<input className={inputClass} value={tripQuery} onChange={e=>setTripQuery(e.target.value)} placeholder="Destino, cliente, operador ou referência"/></label><label className="text-sm">Estado<select className={inputClass} value={tripState} onChange={e=>setTripState(e.target.value)}><option value="">Todos</option>{tripStatuses.map(st=><option key={st.id} value={st.id}>{st.label}</option>)}</select></label><label className="text-sm">Tipo<select className={inputClass} value={tripType} onChange={e=>setTripType(e.target.value)}><option value="">Todos</option>{Object.entries(travelTypeLabels).filter(([id])=>id!=="all").map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><label className="text-sm">Cliente<select className={inputClass} value={tripPerson} onChange={e=>setTripPerson(e.target.value)}><option value="">Todos</option>{clients.map(c=><option key={c.id} value={c.id}>{c.full_name}</option>)}</select></label><label className="text-sm">Partida desde<input type="date" className={inputClass} value={tripFrom} onChange={e=>setTripFrom(e.target.value)}/></label><label className="text-sm">Partida até<input type="date" min={tripFrom} className={inputClass} value={tripTo} onChange={e=>setTripTo(e.target.value)}/></label><label className="text-sm">Ordenar<select className={inputClass} value={tripSort} onChange={e=>setTripSort(e.target.value)}><option value="departure">Partida</option><option value="destination">Destino</option></select></label><p className="self-end pb-3 text-sm text-slate-500">{visibleTrips.length} viagens</p><button type="button" className={archiveButton} aria-pressed={showArchivedTrips} onClick={() => { setFocused(null); setShowArchivedTrips(!showArchivedTrips); }}>{showArchivedTrips ? "Voltar às viagens" : "Viagens arquivadas"}</button></div>
@@ -1037,13 +1044,22 @@ export default function CrmStudioTool() {
               <option value="">Todos</option><option value="pending">Com saldo em falta</option><option value="overdue">Com prestações em atraso</option>
             </select></label>
             <label className="text-sm">Comissão<select className={inputClass} value={tripCommission} onChange={e=>setTripCommission(e.target.value)} disabled={financeListStatus!=="ready"}>
-              <option value="">Todas</option><option value="unestimated">Por calcular</option><option value="pending">Abaixo da estimativa</option>
+              <option value="">Todas</option><option value="pending">Por regularizar</option><option value="collectible">Confirmadas por receber</option>
+              <option value="discrepancy">Com divergência</option>
+              {Object.entries(commissionStates).map(([value,label])=><option key={value} value={value}>{label}</option>)}
             </select></label>
+            {view==="commissions" && <label className="text-sm">Mês da confirmação da agência
+              <input type="month" className={inputClass} value={commissionPeriod} onChange={event=>setCommissionPeriod(event.target.value)}/>
+            </label>}
           </div>
+          {view==="commissions" && financeListStatus==="ready" && <CommissionTotals trips={visibleTrips.flatMap(trip => {
+            const finance=financeByTrip.get(trip.id);
+            return finance ? [finance] : [];
+          })}/>}
           {financeListStatus==="loading" && <p role="status" className="mb-3 text-sm text-slate-600">A carregar valores financeiros…</p>}
           {financeListStatus==="error" && <div role="status" className="mb-3 text-sm text-slate-600">Dados financeiros indisponíveis. <button type="button" className="underline" onClick={()=>void refreshFinance()}>Tentar novamente</button></div>}
           {view === "trips" && trips.length === 0 ? <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">Ainda não há viagens. Podes converter um pedido ganho ou adicionar uma viagem a um cliente.</p> :
-            <CrmTripList mode={view} onOpen={id=>openTrip(id, view === "commissions" ? "commission" : "summary")}
+            <CrmTripList mode={view} onOpen={id=>openTrip(id, view === "commissions" ? "commission" : "summary", undefined, view)}
               items={visibleTrips.map(trip => ({
                 id: trip.id, destination: trip.destination || "Destino por definir", client: tripClientName(trip, clients, leads),
                 dates: [trip.departure_date, trip.return_date].filter((date): date is string => Boolean(date)).map(dateLabel).join(" – ") || "Por definir",
@@ -1054,7 +1070,7 @@ export default function CrmStudioTool() {
           </>}
           {focused?.type === "trip" && !trips.some(trip=>trip.id===focused.id) && <p role="status" className="text-sm text-slate-600">Não foi possível encontrar esta viagem. <button className="underline" type="button" onClick={()=>setFocused(null)}>Ver viagens</button></p>}
           {focused?.type === "trip" && trips.filter(trip=>trip.id===focused.id).map((trip) => <article id={"trip-"+trip.id} tabIndex={-1} key={trip.id} className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-            <button type="button" className="mb-4 text-sm font-semibold text-orange-800 underline" onClick={()=>goToView("trips")}>Voltar à lista de viagens</button>
+            <button type="button" className="mb-4 text-sm font-semibold text-orange-800 underline" onClick={()=>goToView(tripListView)}>{tripListView==="commissions"?"Voltar a Comissões":"Voltar à lista de viagens"}</button>
             <div className="mb-5 flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wide text-orange-800">{tripClientName(trip, clients, leads)}{trip.reference ? ` · ${trip.reference}` : ""}</p><h3 className="mt-1 text-xl font-bold">{trip.destination || "Destino por definir"}</h3>{trip.archived_at && <p className="text-sm text-slate-500">Arquivada</p>}</div><div className="flex shrink-0 flex-wrap gap-2"><button type="button" disabled={saving} className={archiveButton} onClick={() => void changeArchive(trip, "trips")}>{trip.archived_at ? "Restaurar viagem" : "Arquivar viagem"}</button><button type="button" disabled={saving} onClick={() => void deleteTrip(trip)} className="shrink-0 rounded-full border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Apagar viagem</button></div></div>
             <div className="mb-4 flex flex-wrap gap-2">
               {trip.client_id && <button type="button" className={archiveButton} onClick={()=>openTarget({type:"client",id:trip.client_id!})}>Ficha do cliente</button>}
@@ -1085,7 +1101,7 @@ export default function CrmStudioTool() {
             </CrmTripPanel>
             <CrmTripPanel id={trip.id} tab={tripTab === "commission" ? "commission" : "payments"} active={tripTab}>
               {visitedFinance && <FinanceTrip authorizedFetch={authorizedFetch} tripId={trip.id}
-                section={tripTab === "commission" ? "commission" : "payments"} theme={theme} onChanged={refreshAfterFinance}/>}
+                section={tripTab === "commission" ? "commission" : "payments"} onOpenServices={()=>setTripTab("services")} theme={theme} onChanged={refreshAfterFinance}/>}
             </CrmTripPanel>
             {tripTab !== "commission" && <CrmTripPanel id={trip.id} tab="commission" active={tripTab}>{null}</CrmTripPanel>}
             {tripTab === "commission" && <CrmTripPanel id={trip.id} tab="payments" active={tripTab}>{null}</CrmTripPanel>}
@@ -1113,6 +1129,11 @@ export default function CrmStudioTool() {
             <div className="mb-4 flex flex-wrap gap-2">
               <button type="button" className={archiveButton} onClick={()=>{setCalendarKind("");setCalendarDay(trip.departure_date || "");goToView("calendar");}}>Abrir calendário</button>
               <button type="button" className={archiveButton} onClick={()=>setTripTab("tasks")}>Ver tarefas da viagem</button>
+              {!trip.archived_at && trip.status!=="cancelled" && (() => {
+                const finance=financeByTrip.get(trip.id);
+                return finance && hasOpenCommission(finance) && <button type="button" className={archiveButton+" text-amber-800"}
+                  onClick={()=>{setVisitedFinance(true);setTripTab("commission");}}>Ver comissão por regularizar</button>;
+              })()}
             </div>
             <CrmEmailPanel authorizedFetch={authorizedFetch} scope="trip" id={trip.id} recipientRevision={trip.client_ids?.join(",") ?? trip.client_id ?? ""} />
             </CrmTripPanel>
@@ -1165,6 +1186,21 @@ export default function CrmStudioTool() {
 
 function leadName(leadId: string | null, leads: Lead[]) {
   return leadId ? leads.find((lead) => lead.id === leadId)?.full_name || "Cliente" : "Cliente";
+}
+
+function CommissionTotals({trips}:{trips:FinanceSummary[]}) {
+  const totals = new Map<string, { expected:number; confirmed:number; received:number; toReceive:number; estimates:number; confirmations:number }>();
+  for (const trip of trips) {
+    const sum = totals.get(trip.currency) ?? { expected:0, confirmed:0, received:0, toReceive:0, estimates:0, confirmations:0 };
+    if (trip.commission_expected != null) { sum.expected += Math.round(trip.commission_expected*100); sum.estimates++; }
+    if (trip.commission_confirmed != null) { sum.confirmed += Math.round(trip.commission_confirmed*100); sum.confirmations++; }
+    sum.received += Math.round(trip.commission_net*100);
+    sum.toReceive += Math.max(0,Math.round((trip.commission_to_receive ?? 0)*100));
+    totals.set(trip.currency,sum);
+  }
+  return <div className="mb-4 space-y-2">{[...totals].map(([currency,sum])=><p key={currency} className="rounded-xl border border-slate-200 bg-white p-3 text-sm">
+    <strong>{currency}</strong> · Prevista {sum.estimates?formatMoney(sum.expected/100,currency):"—"} · Confirmada {sum.confirmations?formatMoney(sum.confirmed/100,currency):"—"} · Recebida {formatMoney(sum.received/100,currency)} · Por receber {sum.confirmations?formatMoney(sum.toReceive/100,currency):"—"}
+  </p>)}</div>;
 }
 
 function expiryAlertsForTrip(trip: Trip, clients: Client[], documents: ClientDocument[]): TripAlert[] {
