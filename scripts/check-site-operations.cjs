@@ -181,6 +181,11 @@ function load(file, mocks = {}, env = {}, network = fetch) {
             } }),
         },
         "@/lib/crm-email-templates": load("src/lib/crm-email-templates.ts"),
+        "@/lib/crm-email-template-store": load("src/lib/crm-email-template-store.ts", {
+            "./crm-office-api": {},
+            "./crm-email-context": { emailRest: async () => [] },
+            "./crm-email-templates": load("src/lib/crm-email-templates.ts"),
+        }),
         "@/lib/crm-email-signature": signature,
         "@/lib/crm-email-recipients": recipientHelpers,
         "@/lib/studio-request": controls,

@@ -21,6 +21,7 @@ export async function GET(request:NextRequest) { try {
  const params=new URLSearchParams({select:"*",order:"updated_at.desc,id",limit:"30",offset:String(offset)});
  const status=q.get("status");if(status){if(!["draft","sent","accepted","declined","archived"].includes(status))throw new CrmError("Estado inválido.");params.set("status","eq."+status);}
  const client=q.get("client_id");if(client){if(!uuid(client))throw new CrmError("Cliente inválido.");params.set("client_id","eq."+client);}
+ const trip=q.get("trip_id");if(trip){if(!uuid(trip))throw new CrmError("Viagem inválida.");params.set("trip_id","eq."+trip);}
  const search=(q.get("q")||"").trim().slice(0,120).replace(/[*,%()]/g,"");if(search)params.set("title","ilike.*"+search+"*");
  const response=await fetch(config.url+"/rest/v1/crm_proposals_overview?"+params,{headers:{...config.headers,Prefer:"count=exact"},cache:"no-store"});
  if(!response.ok)throw new CrmError("Não foi possível carregar propostas.",502);

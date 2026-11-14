@@ -6,6 +6,7 @@ import {commissionRulesVersion,roundEuro,type CommissionInputs} from "@/lib/comm
 import {formatMoney,formatFinanceDate,receiptKinds,receiptMethods,receiptParties,type FinanceDetail,type FinanceSummary,type PaymentSchedule,type Receipt} from "@/lib/crm-finance";
 import {officeInput as input,officeButton as primary,officeSecondary as secondary,type AuthorizedFetch} from "@/lib/crm-office-types";
 import {TripCommissionCalculator} from "./commission-calculator";
+import type {TripFinanceTab} from "./crm-trip-tabs";
 import CrmDriveDocuments from "./crm-drive-documents";
 
 const panel="rounded-2xl border border-slate-200 bg-white p-5";
@@ -153,7 +154,7 @@ function PaymentEditor({editor,detail,busy,onSubmit,onClose}:{editor:Exclude<Edi
   </form>;
 }
 
-function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpenTrip}:{authorizedFetch:AuthorizedFetch;tripId:string;theme:"light"|"dark";onChanged:()=>Promise<void>;onBack:()=>void;onOpenTrip:()=>void}) {
+export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpenTrip,section}:{authorizedFetch:AuthorizedFetch;tripId:string;theme:"light"|"dark";onChanged:()=>Promise<void>;onBack?:()=>void;onOpenTrip?:()=>void;section?:TripFinanceTab}) {
   const [detail,setDetail]=useState<FinanceDetail|null>(null);
   const [editor,setEditor]=useState<Editor|null>(null);
   const [loading,setLoading]=useState(true);
@@ -201,7 +202,7 @@ function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpenTrip}:
     try{await getDetail();}catch(cause){setError(cause instanceof Error?cause.message:"Não foi possível atualizar.");}
     finally{setLoading(false);}
   }
-  const back=<div className="flex flex-wrap gap-2"><button className={secondary} onClick={onBack}>← Todos os pagamentos</button><button className={secondary} onClick={onOpenTrip}>Abrir viagem</button><button className={secondary} disabled={loading||busy} onClick={()=>void reload()}>Atualizar ficha</button></div>;
+  const back=<div className="flex flex-wrap gap-2">{onBack&&<button className={secondary} onClick={onBack}>← Todos os pagamentos</button>}{onOpenTrip&&<button className={secondary} onClick={onOpenTrip}>Abrir viagem</button>}<button className={secondary} disabled={loading||busy} onClick={()=>void reload()}>Atualizar ficha</button></div>;
   if(!detail) return <div className="space-y-4">{back}{loading?<p role="status">A carregar ficha…</p>:<p role="alert" className="text-red-700">{error}</p>}</div>;
   const summary=detail.summary,currency=summary.currency;
   const today=todayInLisbon(),soon=addDays(today,7);
@@ -210,12 +211,16 @@ function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpenTrip}:
     travelerPrice:roundEuro((summary.total_amount??0)/people),selfTravels:false,shareSaving:false,cedeCommission:false,requestedCession:0};
   const previous=detail.commission?.source;
   const stale=Boolean(previous&&(previous.total_amount!==summary.total_amount||previous.adults!==detail.adults||previous.children_count!==detail.children_count));
+  const isCommissionEditor = editor?.type === "commission" ||
+    editor?.type === "receipt" && (editor.commission || editor.item?.kind.startsWith("commission_"));
   const receiptGroups=([false,true] as const).map(commission=>({commission,items:detail.receipts.filter(item=>item.kind.startsWith("commission_")===commission)}));
   return <section className="space-y-5">
     {back}
     <div><h2 className="text-2xl font-bold">{tripLabel(summary)}</h2><p className="text-sm text-slate-500">Ficha financeira · {currency}{summary.archived_at?" · Viagem arquivada":summary.status==="cancelled"?" · Viagem cancelada":""}</p></div>
     {error&&<p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
     {message&&<p role="status" className="text-sm text-orange-800">{message}</p>}
+    {editor&&editor.type!=="commission"&&<div hidden={section!==undefined&&(section==="commission")!==Boolean(isCommissionEditor)} ref={editorRef}><PaymentEditor key={editor.type+("item" in editor?editor.item?.id||String(editor.type==="receipt"&&editor.commission):"")} editor={editor} detail={detail} busy={busy} onSubmit={mutate} onClose={()=>setEditor(null)}/></div>}
+    {section!=="commission"&&<>
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <MoneyCard label="Total da reserva" value={formatMoney(summary.total_amount,currency)}/>
       <MoneyCard label="Recebido após reembolsos" value={formatMoney(summary.customer_net,currency)}/>
@@ -226,7 +231,7 @@ function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpenTrip}:
       <button className={secondary} disabled={busy} onClick={()=>setEditor({type:"total"})}>Editar total da reserva</button>
       <button className={primary} disabled={busy||summary.total_amount===null} onClick={()=>setEditor({type:"receipt"})}>Registar pagamento</button>
     </div>
-    {editor&&editor.type!=="commission"&&<div ref={editorRef}><PaymentEditor key={editor.type+("item" in editor?editor.item?.id||String(editor.type==="receipt"&&editor.commission):"")} editor={editor} detail={detail} busy={busy} onSubmit={mutate} onClose={()=>setEditor(null)}/></div>}
+
     <section className={panel}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><h3 className="text-lg font-bold">Plano de prestações</h3>
@@ -249,7 +254,8 @@ function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpenTrip}:
         })}
       </ul>}
     </section>
-    <section className={panel+" space-y-4"}>
+    </>}
+    <section hidden={section==="payments"} className={panel+" space-y-4"+(section==="payments"?" hidden":"")}>
       <div className="flex flex-wrap justify-between gap-3">
         <div><h3 className="text-lg font-bold">Comissão da viagem</h3>
           <p className="text-sm text-slate-500">{currency==="EUR"?"Usa a calculadora para guardar a estimativa nesta viagem.":"A calculadora está disponível para viagens em euros."}</p></div>
@@ -259,14 +265,14 @@ function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpenTrip}:
       <div className="grid gap-3 sm:grid-cols-3">
         <MoneyCard label="Comissão líquida estimada" value={summary.commission_expected===null?"Por calcular":formatMoney(summary.commission_expected,currency)}/>
         <MoneyCard label="Comissão recebida" value={formatMoney(summary.commission_net,currency)}/>
-        <MoneyCard label={Number(summary.commission_balance)<0?"Acima da estimativa":"Comissão por receber"} value={summary.commission_balance===null?"Por calcular":formatMoney(Math.abs(summary.commission_balance),currency)}/>
+        <MoneyCard label="Diferença face à estimativa" value={summary.commission_balance===null?"Por calcular":formatMoney(summary.commission_balance,currency)}/>
       </div>
       {editor?.type==="commission"&&<TripCommissionCalculator initialValues={initialValues} theme={theme}
         onSave={(inputs,apply_to_total)=>mutate("commission_save",{inputs,apply_to_total})}/>}
       {detail.commission && detail.commission.rules_version !== commissionRulesVersion && <p className="text-sm text-amber-800">A comissão guardada foi calculada com a fórmula anterior. Abre a calculadora e guarda o cálculo revisto para atualizar a estimativa.</p>}
       {detail.commission&&<button className={secondary} disabled={busy} onClick={()=>remove("commission_clear")}>Remover cálculo guardado</button>}
     </section>
-    {receiptGroups.map(({commission,items})=><section key={String(commission)} className={panel}>
+    {receiptGroups.filter(({commission})=>!section || commission===(section==="commission")).map(({commission,items})=><section key={String(commission)} className={panel}>
       <div className="flex flex-wrap justify-between gap-3">
         <h3 className="text-lg font-bold">{commission?"Movimentos de comissão":"Pagamentos e reembolsos do cliente"}</h3>
         <button className={secondary} disabled={busy||(!commission&&summary.total_amount===null)} onClick={()=>setEditor({type:"receipt",commission})}>{commission?"Registar comissão":"Adicionar movimento"}</button>
