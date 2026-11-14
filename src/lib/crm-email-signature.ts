@@ -47,7 +47,9 @@ const escapeHtml = (text: string) => text.replace(/[&<>"']/g, character => escap
 
 export function formatCrmEmail(body: string, language: EmailLanguage, links: QuoteDocumentLinks | null, signatureCid: string) {
   const documents = quoteDocumentItems(language, links);
-  const textSignature = /Tiago Ferreira\s+Travel Frontiers\s*$/i.test(body) ? emailSignatureSite : emailSignatureName + "\n" + emailSignatureSite;
+  const textName = /Tiago Ferreira\s+Travel Frontiers\s*$/i.test(body) ? ""
+    : /(?:^|\n)Tiago Ferreira\s*$/i.test(body) ? "Travel Frontiers · GupiTravel\n" : emailSignatureName + "\n";
+  const textSignature = textName + emailSignatureSite;
   const text = [body, textSignature,
     ...documents.map(({ label, url }) => label + ": " + url)].join("\n\n");
   const html = `<!doctype html><html lang="${language}"><body>
