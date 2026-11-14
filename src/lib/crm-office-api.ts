@@ -38,6 +38,8 @@ const messages: Record<string,[string,number]> = {
  commission_eur_only:["A calculadora usa reservas em euros.",400],
  stale_version:["Esta proposta já foi alterada. Reabre a ficha antes de guardar.",409],
  client_not_found:["O cliente já não existe.",404], lead_not_found:["O pedido já não existe.",404],
+ proposal_has_history:["Esta proposta tem histórico comercial ou está ligada a uma viagem. Podes arquivá-la.",409],
+ proposal_archive_status_unknown:["Escolhe um estado para reativar esta proposta arquivada anteriormente.",409],
  proposal_not_found:["A proposta já não existe.",404], trip_not_found:["A viagem já não existe.",404],
  template_not_found:["O template já não existe ou está desativado.",404], task_not_found:["A tarefa já não existe.",404],
  manual_confirmation_required:["Regista a confirmação manual do cliente antes de continuar.",400],
