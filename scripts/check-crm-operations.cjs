@@ -95,6 +95,20 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  assert.equal(result.status,401);assert.equal(calls.length,0);authorized=true;
 
  const {combineIdentityPages,readIdentityPage}=load("src/lib/crm-document-ocr.ts");
+ const {extractTripFieldsFromPdfText}=load("src/lib/crm-trip-pdf.ts");
+ const importServices = text => extractTripFieldsFromPdfText(text).services;
+ const duplicateHotel = importServices([
+  "17 de abr. de 2027 21 de abr. de 2027 Acomodação: Hotel Exemplo by Operador Hotels 4",
+  "Cidade — 4 noites: alojamento no Hotel Exemplo by Operador, perto do centro.",
+  "Outra cidade — 3 noites: alojamento no Hotel Segunda Paragem, perto da estação.",
+ ].join("\n"));
+ assert.deepEqual(duplicateHotel.map(s=>[s.title,s.starts_on,s.ends_on]),[
+  ["Hotel Exemplo by Operador Hotels","2027-04-17","2027-04-21"], ["Hotel Segunda Paragem","",""],
+ ]);
+ const repeatStays = importServices("Alojamento: Hotel Exemplo\nCheck-in: 03/04/2027\nCheck-out: 05/04/2027\nAlojamento: Hotel Exemplo\nCheck-in: 17/04/2027\nCheck-out: 21/04/2027\nAlojamento no Hotel Exemplo, no centro.");
+ assert.deepEqual(repeatStays.map(s=>s.starts_on),["2027-04-03","2027-04-17"]);
+ const repeatFlights = importServices("Voo TP 123 LIS → FNC 05/04/2027\nTAP Air Portugal - TP 123\nLisboa (LIS) 05/04/2027\nFunchal (FNC) 05/04/2027");
+ assert.equal(repeatFlights.filter(s=>s.service_type==="flight").length,1);
  const read=(text)=>readIdentityPage([text],"2026-11-11");
  const passport=read("PASSPORT\nFULL NAME: ANA SILVA\nDATE OF BIRTH: 1990-04-06");
  const identityCard=read("CARTÃO DE CIDADÃO\nVALIDADE: 2031-04-06");
