@@ -21,6 +21,9 @@ type Config=NonNullable<ReturnType<typeof supabaseAdminConfig>>;
 const messages: Record<string,[string,number]> = {
  client_identity_stale:["A ficha foi alterada. Atualiza o CRM e volta a confirmar os dados do documento.",409],
  invalid_document_identity:["Revê o nome e as datas do documento.",400],
+ commission_movement_locked:["O movimento de comissão está protegido. Regista um estorno ou um novo movimento para corrigir o saldo.",409],
+ commission_reason_required:["Indica por que motivo estás a corrigir a confirmação da agência.",400],
+ commission_not_settled:["A regularização exige que o valor confirmado coincida com o recebido líquido.",409],
  finance_stale_version:["A viagem ou os pagamentos mudaram. Atualiza a ficha antes de voltar a guardar.",409],
  finance_currency_locked:["A moeda está associada ao plano ou aos movimentos desta viagem.",409],
  payment_plan_exceeds_total:["As prestações excedem o total da reserva. Ajusta primeiro o plano.",409],

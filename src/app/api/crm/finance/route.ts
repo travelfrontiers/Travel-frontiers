@@ -42,7 +42,7 @@ export async function GET(request:NextRequest) {
     const tripId=request.nextUrl.searchParams.get("trip_id");
     if(tripId) {
       if(!uuid(tripId)) throw new CrmError("Viagem inválida.");
-      const detail=await rpc<FinanceDetail|null>(config,"crm_finance_detail",{p_trip_id:tripId});
+      const detail=await rpc<FinanceDetail|null>(config,"crm_finance_reconciled_detail",{p_trip_id:tripId});
       if(!detail) throw new CrmError("A viagem já não existe.",404);
       return privateJson(detail);
     }
@@ -52,7 +52,7 @@ export async function GET(request:NextRequest) {
       params.set("archived_at","is.null");
       params.set("or","(overdue_amount.gt.0,due_soon_amount.gt.0)");
     }
-    return privateJson({trips:await rows<FinanceSummary>(config,"crm_trip_finance_overview",params)});
+    return privateJson({trips:await rows<FinanceSummary>(config,"crm_commission_overview",params)});
   } catch(cause) { return failure(cause); }
 }
 
@@ -87,7 +87,7 @@ export async function POST(request:NextRequest) {
         }
         if(date(body.paid_on)>lisbonDay(new Date().toISOString())) throw new CrmError("A data do movimento não pode estar no futuro.");
         data={id,kind:body.kind,amount:money(body.amount,0.01),paid_on:body.paid_on,method:body.method,
-          received_by:body.received_by,document_id:body.document_id||null,reference:cleanText(body.reference,160),notes:cleanText(body.notes,2000)};
+          received_by:body.received_by,document_id:body.document_id||null,reference:cleanText(body.reference,160),notes:cleanText(body.notes,2000,body.kind==="commission_refund")};
         break;
       case "schedule_delete":
       case "receipt_delete":
@@ -99,6 +99,17 @@ export async function POST(request:NextRequest) {
         const result=calculateCommission(inputs);
         data={snapshot:{inputs,result,rules_version:commissionRulesVersion},apply_to_total:body.apply_to_total===true};
         break;
+      }
+      case "commission_confirm":
+      case "commission_settle": {
+        const settled=body.action==="commission_settle";
+        if(!nullableId(body.document_id)||settled&&!uuid(body.document_id)) throw new CrmError("Seleciona o comprovativo da viagem.");
+        const effectiveOn=date(body.effective_on);
+        if(effectiveOn>lisbonDay(new Date().toISOString())) throw new CrmError("A data não pode estar no futuro.");
+        data={amount:settled?null:money(body.amount),effective_on:effectiveOn,reference:cleanText(body.reference,160,true),
+          notes:cleanText(body.notes,2000,settled),document_id:body.document_id||null};
+        await rpc(config,"crm_review_commission",{p_trip_id:body.trip_id,p_version:body.expected_version,p_action:body.action,p_data:data});
+        return privateJson({ok:true});
       }
       case "commission_clear":
         data={};
