@@ -15,11 +15,20 @@ import CrmEmailTemplateEditor from "./crm-email-template-editor";
 import CrmManualLeadForm from "./crm-manual-lead-form";
 import { isManualLeadSource, manualLeadSources } from "@/lib/crm-manual-lead";
 import CrmCalendar from "./crm-calendar";
-import CrmPayments, { CrmPaymentAlerts } from "./crm-payments";
+import CrmPayments, { CrmPaymentAlerts, FinanceTrip } from "./crm-payments";
 import CrmActivity from "./crm-activity";
 import CrmDuplicates from "./crm-duplicates";
 import CrmChecklistTemplates, { CrmTripTemplatePicker } from "./crm-checklist-templates";
 import { travelTypeLabels, type EntityContext, type OpenTarget } from "@/lib/crm-office-types";
+import CrmWorkspaceNavigation, { type CrmView as View } from "./crm-workspace-navigation";
+import CrmTripList from "./crm-trip-list";
+import { CrmTripTabs, CrmTripPanel, type TripTab } from "./crm-trip-tabs";
+import { commissionStates, formatMoney, type FinanceSummary } from "@/lib/crm-finance";
+import CrmTripAlerts from "./crm-trip-alerts";
+import { tripContextAlerts, type TripAlert } from "@/lib/crm-trip-alerts";
+import { lisbonDay } from "@/lib/crm-calendar";
+import { CrmServiceFinanceEditor, CrmServiceFinanceSummary } from "./crm-service-finance";
+import type { ServiceFinance } from "@/lib/crm-service-finance";
 import type { TripPdfFields } from "@/lib/crm-trip-pdf";
 
 const adminEmail = "tf.travel.frontiers@gmail.com";
@@ -44,10 +53,8 @@ type Client = { id: string; full_name: string; birth_date?: string | null; email
 
 type ClientDocument = { id: string; client_id: string; document_type: "passport" | "identity_card" | "residence_permit" | "other"; document_number: string; expires_on: string; created_at: string; updated_at: string };
 type TripTask = { id: string; trip_id: string; title: string; due_at: string | null; completed: boolean; sort_order: number; source_service_id?: string | null; template_item_id?: string | null; template_override?: boolean };
-type TripService = { id: string; trip_id: string; service_type: "flight" | "accommodation" | "activity" | "transfer" | "insurance" | "other"; title: string; provider: string | null; reference: string | null; starts_on: string | null; ends_on: string | null; details: string | null; sort_order: number };
+type TripService = Partial<ServiceFinance> & { id: string; trip_id: string; service_type: "flight" | "accommodation" | "activity" | "transfer" | "insurance" | "other"; title: string; provider: string | null; reference: string | null; starts_on: string | null; ends_on: string | null; details: string | null; sort_order: number };
 type Trip = { archived_at: string | null; travel_type: string; id: string; client_id: string | null; client_ids: string[]; lead_id: string | null; reference: string | null; destination: string | null; departure_date: string | null; return_date: string | null; status: (typeof tripStatuses)[number]["id"]; operator: string | null; adults: number | null; children_count: number | null; total_amount: number | null; currency: string; trip_notes: string | null; services: TripService[]; tasks: TripTask[] };
-type View = "dashboard" | "pipeline" | "clients" | "trips" | "calendar" | "proposals" | "templates" | "email-templates" | "activity" | "duplicates" | "payments";
-type CrmArea = "commercial" | "operational";
 
 const budgetLabels: Record<string, string> = {
   under_500: "Até 500 €", "500_1000": "500 € – 1.000 €", "1000_1500": "1.000 € – 1.500 €",
@@ -177,7 +184,12 @@ export default function CrmStudioTool() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [selected, setSelected] = useState<Lead | null>(null);
   const [view, setView] = useState<View>("dashboard");
-  const [area, setArea] = useState<CrmArea>("commercial");
+  const [tripTab, setTripTab] = useState<TripTab>("summary");
+  const [financeSummaries, setFinanceSummaries] = useState<FinanceSummary[]>([]);
+  const [financeListStatus, setFinanceListStatus] = useState<"loading"|"ready"|"error">("loading");
+  const [tripBalance, setTripBalance] = useState("");
+  const [tripCommission, setTripCommission] = useState("");
+  const [commissionPeriod, setCommissionPeriod] = useState("");
   const [showArchivedLeads, setShowArchivedLeads] = useState(false);
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [editingLeadId, setEditingLeadId] = useState("");
@@ -202,8 +214,14 @@ export default function CrmStudioTool() {
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
 
-  const [financeTripId, setFinanceTripId] = useState("");
   const [proposalId, setProposalId] = useState("");
+  const [proposalTripId, setProposalTripId] = useState("");
+  const [proposalStatusFilter, setProposalStatusFilter] = useState("");
+  const [sentProposalCount, setSentProposalCount] = useState<number | null>(null);
+  const [calendarKind, setCalendarKind] = useState("");
+  const [calendarDay, setCalendarDay] = useState("");
+  const [visitedFinance, setVisitedFinance] = useState(false);
+  const [tripListView,setTripListView]=useState<"trips"|"commissions">("trips");
   const [proposalContext, setProposalContext] = useState<EntityContext | null>(null);
   const [activityContext, setActivityContext] = useState<EntityContext | null>(null);
   const [focused, setFocused] = useState<OpenTarget | null>(null);
@@ -224,13 +242,6 @@ export default function CrmStudioTool() {
   function goToView(nextView: View) {
     setFocused(null);
     setView(nextView);
-    setArea(nextView === "trips" || nextView === "calendar" || nextView === "templates" || nextView === "payments" ? "operational" : "commercial");
-  }
-
-  function goToArea(nextArea: CrmArea) {
-    setFocused(null);
-    setArea(nextArea);
-    setView(nextArea === "commercial" ? "dashboard" : "trips");
   }
 
   useEffect(() => {
@@ -309,33 +320,90 @@ export default function CrmStudioTool() {
        documents.some(d=>d.client_id===entry.id&&daysUntilDate(d.expires_on)<=30))))
       .sort((a,b)=>clientSort==="newest"?b.created_at.localeCompare(a.created_at):a.full_name.localeCompare(b.full_name));
   }, [clients,clientSearch,focused,clientLanguage,clientFilter,clientSort,trips,documents]);
-  const visibleTrips = useMemo(() => trips.filter(t => (focused?.type === "trip" ? focused.id === t.id : Boolean(t.archived_at) === showArchivedTrips) &&
-    (!tripQuery || (t.destination+" "+t.reference+" "+t.operator+" "+tripClientName(t,clients,leads)).toLocaleLowerCase("pt-PT").includes(tripQuery.toLocaleLowerCase("pt-PT"))) &&
-    (!tripState || t.status===tripState) && (!tripType || t.travel_type===tripType) && (!tripPerson || t.client_id===tripPerson || t.client_ids.includes(tripPerson)) &&
-    (!tripFrom || Boolean(t.departure_date&&t.departure_date>=tripFrom)) && (!tripTo || Boolean(t.departure_date&&t.departure_date<=tripTo)))
-    .sort((a,b)=>tripSort==="destination"?(a.destination||"").localeCompare(b.destination||""):(a.departure_date||"9999").localeCompare(b.departure_date||"9999")),
-    [trips,focused,showArchivedTrips,tripQuery,tripState,tripType,tripPerson,tripFrom,tripTo,tripSort,clients,leads]);
+  const financeByTrip = useMemo(() => new Map(financeSummaries.map(item => [item.trip_id, item])), [financeSummaries]);
+  const hasOpenCommission = (finance: FinanceSummary) => Number(finance.commission_to_receive) > 0 ||
+    (finance.commission_has_discrepancy === true && finance.commission_state !== "settled");
+  const visibleTrips = trips.filter(t => {
+    const finance = financeByTrip.get(t.id);
+    const travelerIds = t.client_ids ?? [];
+    const text = [t.destination,t.reference,t.operator,tripClientName(t,clients,leads),
+      ...clients.filter(client => travelerIds.includes(client.id)).map(client => client.full_name)].filter(Boolean).join(" ");
+    const matchesPayments = !tripBalance || Number(tripBalance === "overdue" ? finance?.overdue_amount : finance?.balance) > 0;
+    const matchesCommission = !tripCommission || (finance && (tripCommission === "pending" ? t.status !== "cancelled" && hasOpenCommission(finance) :
+      tripCommission === "collectible" ? Number(finance.commission_to_receive)>0 :
+      tripCommission === "discrepancy" ? finance.commission_has_discrepancy : finance.commission_state === tripCommission));
+    const matchesPeriod = view !== "commissions" || !commissionPeriod || finance?.commission_confirmed_on?.slice(0, 7) === commissionPeriod;
+    return matchesPeriod && Boolean(t.archived_at) === showArchivedTrips &&
+      (!tripQuery.trim() || text.toLocaleLowerCase("pt-PT").includes(tripQuery.trim().toLocaleLowerCase("pt-PT"))) &&
+      (!tripState || t.status === tripState) && (!tripType || t.travel_type === tripType) &&
+      (!tripPerson || t.client_id === tripPerson || travelerIds.includes(tripPerson)) &&
+      (!tripFrom || Boolean(t.departure_date && t.departure_date >= tripFrom)) &&
+      (!tripTo || Boolean(t.departure_date && t.departure_date <= tripTo)) &&
+      (financeListStatus !== "ready" || (matchesPayments && matchesCommission));
+  }).sort((a,b)=>tripSort==="destination"?(a.destination||"").localeCompare(b.destination||""):(a.departure_date||"9999").localeCompare(b.departure_date||"9999"));
+
+  useEffect(() => {
+    if (view !== "dashboard" || !token || user?.email?.toLowerCase() !== adminEmail) return;
+    const controller = new AbortController();
+    authorizedFetch("/api/crm/proposals?status=sent", { signal: controller.signal })
+      .then(async response => {
+        const data = await response.json();
+        if (!controller.signal.aborted) setSentProposalCount(response.ok && Number.isInteger(data.total) ? data.total : null);
+      })
+      .catch(() => { if (!controller.signal.aborted) setSentProposalCount(null); });
+    return () => controller.abort();
+  }, [view, token, user?.email, authorizedFetch]);
 
   const quietRefresh = useCallback(() => refresh(true), [refresh]);
+  const refreshFinance = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const response = await authorizedFetch("/api/crm/finance", { signal });
+      const data = await response.json();
+      if (!response.ok || !Array.isArray(data.trips)) throw new Error();
+      if (!signal?.aborted) {
+        setFinanceSummaries(data.trips);
+        setFinanceListStatus("ready");
+      }
+    } catch {
+      if (!signal?.aborted) {
+        setFinanceSummaries([]);
+        setFinanceListStatus("error");
+      }
+    }
+  }, [authorizedFetch]);
+  useEffect(() => {
+    if (!token || user?.email?.toLowerCase() !== adminEmail) return;
+    const controller = new AbortController();
+    void refreshFinance(controller.signal);
+    return () => controller.abort();
+  }, [token, user?.email, refreshFinance]);
+
+  const refreshAfterFinance = useCallback(async () => {
+    await Promise.all([quietRefresh(), refreshFinance()]);
+  }, [quietRefresh, refreshFinance]);
+
+  function openTrip(id: string, tab: TripTab = "summary", taskId?: string, backTo: "trips"|"commissions" = "trips") {
+    setTripListView(backTo);
+    setSelected(null); setError(""); setTripTab(tab); setVisitedFinance(tab === "payments" || tab === "commission");
+    goToView("trips"); setFocused({ type: "trip", id, taskId });
+  }
   function openFinance(tripId: string) {
-    setFinanceTripId(tripId);
-    setError("");
-    goToView("payments");
+    if (tripId) { openTrip(tripId, "payments"); return; }
+    setError(""); goToView("payments");
   }
   function openTarget(target: OpenTarget) {
-    if (target.finance && target.type === "trip") { openFinance(target.id); return; }
+    if (target.type === "trip") { openTrip(target.id, target.finance ? "payments" : target.taskId ? "tasks" : "summary", target.taskId); return; }
     setSelected(null); setError("");
     if (target.type==="lead") { const lead=leads.find(l=>l.id===target.id); if(lead){setSelected(lead);setSaved(false);} else setError("Este pedido já não existe."); return; }
-    if (target.type==="proposal") { setProposalId(target.id);setProposalContext(null);goToView("proposals");return; }
-    goToView(target.type==="client"?"clients":"trips");setFocused(target);
-    if(target.type==="client"){setClientSearch("");setClientFilter("");setClientLanguage("");}
-    else {setTripQuery("");setTripState("");setTripType("");setTripPerson("");setTripFrom("");setTripTo("");}
+    if (target.type==="proposal") { setProposalId(target.id);setProposalStatusFilter("");setProposalTripId("");setProposalContext(null);goToView("proposals");return; }
+    goToView("clients"); setFocused(target);
+    setClientSearch("");setClientFilter("");setClientLanguage("");
   }
-  function newProposal(context: EntityContext) { setSelected(null);setProposalId("");setProposalContext(context);goToView("proposals"); }
+  function newProposal(context: EntityContext) { setSelected(null);setProposalId("");setProposalStatusFilter("");setProposalTripId("");setProposalContext(context);goToView("proposals"); }
   function showHistory(context: EntityContext | null) {setSelected(null);setActivityContext(context);goToView("activity");}
   useEffect(()=>{if(!focused||loading)return;const id=focused.taskId?"task-title-"+focused.taskId:focused.type+"-"+focused.id;
     const element=document.getElementById(id);if(element){element.scrollIntoView({behavior:"smooth",block:"center"});element.focus({preventScroll:true});}
-  },[focused,loading,trips,clients]);
+  },[focused,loading]);
   async function resetTemplateTask(taskId:string){setSaving(true);setError("");try{const r=await authorizedFetch("/api/crm/checklist-templates",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"reset_task",task_id:taskId})}),d=await r.json();if(!r.ok)throw new Error(d.error);await reloadTrips();}catch(c){setError(c instanceof Error?c.message:"Não foi possível retomar o automatismo.");}finally{setSaving(false);}}
 
   async function saveLead(event: FormEvent<HTMLFormElement>) {
@@ -407,7 +475,7 @@ export default function CrmStudioTool() {
       const response = await authorizedFetch("/api/crm/trips", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lead_id: lead.id }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível criar a viagem.");
-      await refresh(); setSelected(null); goToView("trips");
+      await refreshAfterFinance(); openTrip(result.trip_id);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Não foi possível criar a viagem."); }
     finally { setSaving(false); }
   }
@@ -513,7 +581,7 @@ export default function CrmStudioTool() {
       setShowTripForm(false); form.reset();
       if (pdfPreview && pdfSource) setPdfToArchive({ tripId: result.trip_id, file: pdfSource });
       setShowPdfImport(false); setPdfPreview(null); setPdfSource(null);
-      await refresh(); goToView("trips");
+      await Promise.all([refresh(true),refreshFinance()]); openTrip(result.trip_id, pdfPreview && pdfSource ? "documents" : "summary");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Não foi possível criar a viagem."); }
     finally { setSaving(false); }
   }
@@ -548,7 +616,7 @@ export default function CrmStudioTool() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível guardar a viagem.");
-      await reloadTrips();
+      await Promise.all([reloadTrips(), refreshFinance()]);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Não foi possível guardar a viagem."); }
     finally { setSaving(false); }
   }
@@ -698,7 +766,6 @@ export default function CrmStudioTool() {
   const currentTrips = trips.filter(trip => !trip.archived_at);
   const activeLeads = currentLeads.filter((lead) => lead.status !== "won" && lead.status !== "lost");
   const newLeads = currentLeads.filter((lead) => lead.status === "new");
-  const awaitingClient = currentLeads.filter((lead) => lead.status === "quote_sent" || lead.status === "awaiting_reply");
   const activeTrips = currentTrips.filter((trip) => trip.status !== "completed" && trip.status !== "cancelled");
   const tripStageCounts = tripStatuses.map((status) => ({ ...status, count: currentTrips.filter((trip) => trip.status === status.id).length }));
   const maxTripStageCount = Math.max(1, ...tripStageCounts.map((status) => status.count));
@@ -709,27 +776,35 @@ export default function CrmStudioTool() {
     .filter((trip) => trip.departure_date && trip.departure_date >= today && trip.departure_date <= dateAfterDays(30))
     .sort((a, b) => (a.departure_date || "").localeCompare(b.departure_date || ""));
   const dueItems = [
-    ...activeLeadFollowups(leads).map((lead) => ({ date: lead.follow_up_date!, title: `Seguimento · ${lead.full_name}`, detail: lead.destination || "Pedido de viagem", kind: "Seguimento" as const })),
-    ...currentTrips.flatMap((trip) => trip.tasks
+    ...activeLeadFollowups(leads).map((lead) => ({ date: lead.follow_up_date!, title: `Seguimento · ${lead.full_name}`, detail: lead.destination || "Pedido de viagem", kind: "Seguimento" as const, target: { type: "lead", id: lead.id } as OpenTarget })),
+    ...currentTrips.filter(trip=>trip.status!=="cancelled").flatMap((trip) => trip.tasks
       .filter((task) => !task.completed && task.due_at)
-      .map((task) => ({ date: task.due_at!.slice(0, 10), title: task.title, detail: tripClientName(trip, clients, leads), kind: "Tarefa" as const }))),
+      .map((task) => ({ date: lisbonDay(task.due_at!), title: task.title, detail: tripClientName(trip, clients, leads), kind: "Tarefa" as const, target: { type: "trip", id: trip.id, taskId: task.id } as OpenTarget }))),
     ...activeTrips.flatMap((trip) => [
-      ...(trip.departure_date ? [{ date: trip.departure_date, title: `Partida · ${trip.destination || "Viagem"}`, detail: tripClientName(trip, clients, leads), kind: "Viagem" as const }] : []),
-      ...(trip.return_date ? [{ date: trip.return_date, title: `Regresso · ${trip.destination || "Viagem"}`, detail: tripClientName(trip, clients, leads), kind: "Viagem" as const }] : []),
+      ...(trip.departure_date ? [{ date: trip.departure_date, title: `Partida · ${trip.destination || "Viagem"}`, detail: tripClientName(trip, clients, leads), kind: "Viagem" as const, target: { type: "trip", id: trip.id } as OpenTarget }] : []),
+      ...(trip.return_date ? [{ date: trip.return_date, title: `Regresso · ${trip.destination || "Viagem"}`, detail: tripClientName(trip, clients, leads), kind: "Viagem" as const, target: { type: "trip", id: trip.id } as OpenTarget }] : []),
     ]),
   ].filter((item) => item.date <= dateAfterDays(14) && (item.kind === "Tarefa" || item.kind === "Seguimento" || item.date >= today)).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 8);
   const overdueFollowups = activeLeadFollowups(leads).filter((lead) => lead.follow_up_date! < today).length;
-  const overdueTasks = currentTrips.reduce((count, trip) => count + trip.tasks.filter((task) => !task.completed && task.due_at && task.due_at.slice(0, 10) < today).length, 0);
-  const attentionCount = overdueFollowups + overdueTasks;
+  const overdueTasks = currentTrips.filter(trip=>trip.status!=="cancelled").reduce((count, trip) => count + trip.tasks.filter((task) => !task.completed && task.due_at && lisbonDay(task.due_at) < today).length, 0);
   const recentLeads = [...currentLeads].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 5);
   const maxStageCount = Math.max(1, ...leadStatuses.map((status) => currentLeads.filter((lead) => lead.status === status.id).length));
   const dashboardMetrics = [
-    { label: "Novos pedidos", value: newLeads.length, note: `${leadsThisMonth} recebidos este mês`, icon: Inbox, tone: "sky", action: () => goToView("pipeline") },
+    { label: "Novos pedidos", value: newLeads.length, note: `${leadsThisMonth} recebidos este mês`, icon: Inbox, tone: "sky", action: () => { setShowArchivedLeads(false); setSearch(""); setFollowupFilter(""); setLeadFilter("new"); goToView("pipeline"); } },
     { label: "Em acompanhamento", value: activeLeads.length, note: "Pedidos ainda não ganhos nem perdidos", icon: Users, tone: "teal", action: () => goToView("pipeline") },
-    { label: "À espera do cliente", value: awaitingClient.length, note: "Orçamentos enviados ou resposta pendente", icon: Send, tone: "violet", action: () => goToView("pipeline") },
+    { label: "Propostas enviadas", value: sentProposalCount ?? "—", note: "À espera de resposta", icon: Send, tone: "violet", action: () => {
+      setProposalId(""); setProposalTripId(""); setProposalContext(null); setProposalStatusFilter("sent"); goToView("proposals");
+    } },
     { label: "Viagens ativas", value: activeTrips.length, note: "Em preparação, confirmadas ou em viagem", icon: Plane, tone: "blue", action: () => goToView("trips") },
-    { label: "Tarefas atrasadas", value: attentionCount, note: `${overdueTasks} tarefas · ${overdueFollowups} seguimentos`, icon: ListTodo, tone: attentionCount ? "rose" : "slate", action: () => goToView("calendar") },
-    { label: "Documentos a verificar", value: expiryAlerts.length, note: "Vencidos ou a vencer nos próximos 30 dias", icon: FileWarning, tone: expiryAlerts.length ? "amber" : "slate", action: () => goToView("clients") },
+    { label: "Tarefas atrasadas", value: overdueTasks, note: "Tarefas pendentes com prazo vencido", icon: ListTodo, tone: overdueTasks ? "rose" : "slate", action: () => { setCalendarKind("task"); setCalendarDay(today); goToView("calendar"); } },
+    { label: "Documentos a verificar", value: expiryAlerts.length, note: "Vencidos ou a vencer nos próximos 30 dias", icon: FileWarning, tone: expiryAlerts.length ? "amber" : "slate", action: () => { setClientLanguage(""); setClientSearch(""); setClientFilter("documents"); goToView("clients"); } },
+    { label: "Seguimentos vencidos", value: overdueFollowups, note: "Pedidos com contacto por fazer", icon: Inbox, tone: "sky", action: () => {
+      setShowArchivedLeads(false); setSearch(""); setLeadFilter(""); setFollowupFilter("overdue"); goToView("pipeline");
+    } },
+    { label: "Comissões por regularizar", value: financeListStatus === "ready" ? financeSummaries.filter(item=>!item.archived_at && item.status!=="cancelled" && hasOpenCommission(item)).length : "—", note: "Saldo confirmado ou divergência em aberto", icon: ListTodo, tone: "amber", action: () => {
+      setShowArchivedTrips(false); setTripState(""); setTripType(""); setTripPerson(""); setTripQuery(""); setTripFrom(""); setTripTo("");
+      setTripBalance(""); setTripCommission("pending"); setCommissionPeriod(""); goToView("commissions");
+    } },
   ];
 
   return (
@@ -742,26 +817,24 @@ export default function CrmStudioTool() {
       </header>
 
       <section className="mx-auto max-w-[1500px] px-5 py-7 sm:px-8">
-        <div className="mb-7 space-y-3">
-          <nav aria-label="Vistas principais do CRM" className="flex flex-wrap gap-2">
-            {([["commercial", "Vista comercial"], ["operational", "Vista operacional"]] as [CrmArea, string][]).map(([id, label]) => <button key={id} type="button" onClick={() => goToArea(id)} aria-pressed={area === id} className={`rounded-full px-5 py-2.5 text-sm font-semibold ${area === id ? "bg-orange-950 text-white" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"}`}>{label}</button>)}
-          </nav>
-          <nav aria-label={area === "commercial" ? "Secções comerciais" : "Secções operacionais"} className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
-            {(area === "commercial" ? ([["dashboard", "Resumo comercial"], ["pipeline", "Kanban comercial"], ["clients", "Clientes"], ["proposals", "Propostas"], ["email-templates", "Modelos de email"], ["activity", "Histórico"], ["duplicates", "Duplicados"]] as [View, string][]) : ([["trips", "Viagens e checklist"], ["calendar", "Calendário"], ["templates", "Templates"], ["payments", "Pagamentos e comissão"]] as [View, string][])).map(([id, label]) => <button key={id} type="button" onClick={() => { if(id==="activity")setActivityContext(null);if(id==="payments")setFinanceTripId("");goToView(id); }} aria-current={view === id ? "page" : undefined} className={`rounded-full px-4 py-2 text-sm font-semibold ${view === id ? "bg-orange-800 text-white" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"}`}>{label}</button>)}
-          </nav>
-        </div>
+        <CrmWorkspaceNavigation view={view} onNavigate={next => {
+          if (next === "activity") setActivityContext(null);
+          if (next === "proposals") { setProposalId(""); setProposalStatusFilter(""); setProposalTripId(""); setProposalContext(null); }
+          if (next === "calendar") { setCalendarKind(""); setCalendarDay(""); }
+          goToView(next);
+        }} />
 
         {error && <p role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</p>}
         {loading && <p className="rounded-xl bg-white p-8 text-sm text-slate-500">A carregar CRM…</p>}
 
-        {!loading && focused && <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 p-3"><p className="text-sm text-orange-800">A mostrar a ficha selecionada.</p><button className="text-sm font-semibold underline" onClick={()=>setFocused(null)}>Ver todas as fichas</button></div>}
-        {!loading && view === "proposals" && <CrmProposals authorizedFetch={authorizedFetch} clients={clients} leads={leads} trips={trips} initialId={proposalId} initialContext={proposalContext} onChanged={quietRefresh} onOpen={openTarget} onHistory={showHistory}/>}
+        {!loading && focused && focused.type !== "trip" && <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 p-3"><p className="text-sm text-orange-800">A mostrar a ficha selecionada.</p><button className="text-sm font-semibold underline" onClick={()=>setFocused(null)}>Ver todas as fichas</button></div>}
+        {!loading && view === "proposals" && <CrmProposals key={proposalTripId + ":" + proposalStatusFilter} initialStatus={proposalStatusFilter} authorizedFetch={authorizedFetch} clients={clients} leads={leads} trips={trips} initialId={proposalId} tripFilter={proposalTripId} initialContext={proposalContext} onChanged={refreshAfterFinance} onOpen={openTarget} onHistory={showHistory}/>}
         {!loading && view === "email-templates" && <CrmEmailTemplateEditor authorizedFetch={authorizedFetch} />}
         {!loading && view === "templates" && <CrmChecklistTemplates authorizedFetch={authorizedFetch} onChanged={quietRefresh}/>}
         {!loading && view === "activity" && <CrmActivity key={activityContext?.id||"all"} authorizedFetch={authorizedFetch} context={activityContext} onOpen={openTarget}/>}
         {!loading && view === "duplicates" && <CrmDuplicates authorizedFetch={authorizedFetch} clients={clients} onChanged={quietRefresh}/>}
-        {!loading && view === "payments" && <CrmPayments authorizedFetch={authorizedFetch} tripId={financeTripId} theme={theme}
-          onOpen={openFinance} onChanged={quietRefresh} onOpenTrip={id=>openTarget({type:"trip",id})}/>}
+        {!loading && view === "payments" && <CrmPayments authorizedFetch={authorizedFetch} tripId="" theme={theme}
+          onOpen={openFinance} onChanged={refreshAfterFinance} onOpenTrip={id=>openTarget({type:"trip",id})}/>}
         {!loading && view === "dashboard" && <>
           <section className="relative mb-6 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#171717] via-[#29231b] to-[#563719] px-6 py-7 text-white shadow-lg sm:px-8 sm:py-8">
             <div className="pointer-events-none absolute -right-12 -top-20 size-72 rounded-full border border-white/10" />
@@ -810,9 +883,9 @@ export default function CrmStudioTool() {
 
           <div className="mb-6 grid gap-6 xl:grid-cols-3">
             <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 xl:col-span-1">
-              <div className="mb-4 flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-violet-800">Agenda</p><h3 className="mt-1 text-lg font-bold">Próximos 14 dias</h3></div><button type="button" onClick={() => goToView("calendar")} aria-label="Abrir calendário" className="rounded-xl bg-violet-50 p-2 text-violet-800 transition hover:bg-violet-100"><CalendarDays className="size-5" /></button></div>
-              {dueItems.length === 0 ? <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">Sem tarefas ou marcos próximos. A agenda aparecerá aqui quando definires prazos.</p> : <ol className="space-y-2.5">{dueItems.map((item, index) => { const days = daysUntilDate(item.date); return <li key={`${item.date}-${item.title}-${index}`} className="flex gap-3 rounded-2xl bg-slate-50 p-3"><span className={`flex min-h-10 min-w-10 items-center justify-center rounded-xl px-2 text-xs font-bold ${days < 0 ? "bg-rose-100 text-rose-800" : days === 0 ? "bg-amber-100 text-amber-900" : "bg-orange-100 text-orange-900"}`}>{days < 0 ? "!" : days === 0 ? "Hoje" : `${days}d`}</span><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-900">{item.title}</p><p className="mt-0.5 truncate text-xs text-slate-500">{item.detail} · {dateLabel(item.date)}</p></div></li>; })}</ol>}
-              <button type="button" onClick={() => goToView("calendar")} className="mt-4 w-full rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-700 hover:text-orange-800">Abrir calendário</button>
+              <div className="mb-4 flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-violet-800">Agenda</p><h3 className="mt-1 text-lg font-bold">Próximos 14 dias</h3></div><button type="button" onClick={() => { setCalendarKind(""); setCalendarDay(""); goToView("calendar"); }} aria-label="Abrir calendário" className="rounded-xl bg-violet-50 p-2 text-violet-800 transition hover:bg-violet-100"><CalendarDays className="size-5" /></button></div>
+              {dueItems.length === 0 ? <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">Sem tarefas ou marcos próximos. A agenda aparecerá aqui quando definires prazos.</p> : <ol className="space-y-2.5">{dueItems.map((item, index) => { const days = daysUntilDate(item.date); return <li key={`${item.date}-${item.title}-${index}`}><button type="button" onClick={()=>openTarget(item.target)} className="flex w-full gap-3 rounded-2xl bg-slate-50 p-3 text-left hover:bg-slate-100"><span className={`flex min-h-10 min-w-10 items-center justify-center rounded-xl px-2 text-xs font-bold ${days < 0 ? "bg-rose-100 text-rose-800" : days === 0 ? "bg-amber-100 text-amber-900" : "bg-orange-100 text-orange-900"}`}>{days < 0 ? "!" : days === 0 ? "Hoje" : `${days}d`}</span><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-900">{item.title}</p><p className="mt-0.5 truncate text-xs text-slate-500">{item.detail} · {dateLabel(item.date)}</p></div></button></li>; })}</ol>}
+              <button type="button" onClick={() => { setCalendarKind(""); setCalendarDay(""); goToView("calendar"); }} className="mt-4 w-full rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-700 hover:text-orange-800">Abrir calendário</button>
             </section>
 
             <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 xl:col-span-1">
@@ -823,7 +896,7 @@ export default function CrmStudioTool() {
 
             <section className={`rounded-3xl border p-5 shadow-sm sm:p-6 xl:col-span-1 ${expiryAlerts.length ? "border-amber-300 bg-gradient-to-br from-amber-50 to-white" : "border-slate-200 bg-white"}`}>
               <div className="mb-4 flex items-center justify-between gap-3"><div><p className={`text-xs font-bold uppercase tracking-[0.16em] ${expiryAlerts.length ? "text-amber-800" : "text-emerald-800"}`}>Proteção dos viajantes</p><h3 className="mt-1 text-lg font-bold">Documentação</h3></div><span className={`flex size-10 items-center justify-center rounded-xl ${expiryAlerts.length ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>{expiryAlerts.length ? <FileWarning className="size-5" /> : <ShieldCheck className="size-5" />}</span></div>
-              {expiryAlerts.length === 0 ? <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/60 p-4"><p className="font-semibold text-emerald-900">Tudo em dia</p><p className="mt-1 text-sm text-emerald-800">Sem documentos vencidos ou a vencer nos próximos 30 dias.</p></div> : <><p className="mb-3 text-sm text-amber-900">{expiryAlerts.length} {expiryAlerts.length === 1 ? "documento requer" : "documentos requerem"} atenção.</p><ul className="space-y-2">{expiryAlerts.slice(0, 5).map(({ document, client: documentClient, days }) => <li key={document.id} className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2.5"><span className="min-w-0"><span className="block truncate text-sm font-semibold text-slate-900">{documentClient?.full_name || "Cliente"}</span><span className="mt-0.5 block text-xs text-slate-500">{documentTypeLabels[document.document_type]} · {dateLabel(document.expires_on)}</span></span><span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${days < 0 ? "bg-rose-100 text-rose-800" : "bg-amber-100 text-amber-900"}`}>{days < 0 ? `Vencido ${Math.abs(days)}d` : days === 0 ? "Hoje" : `${days}d`}</span></li>)}</ul>{expiryAlerts.length > 5 && <p className="mt-3 text-xs text-slate-500">Mais {expiryAlerts.length - 5} documentos na secção Clientes.</p>}</>}
+              {expiryAlerts.length === 0 ? <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/60 p-4"><p className="font-semibold text-emerald-900">Tudo em dia</p><p className="mt-1 text-sm text-emerald-800">Sem documentos vencidos ou a vencer nos próximos 30 dias.</p></div> : <><p className="mb-3 text-sm text-amber-900">{expiryAlerts.length} {expiryAlerts.length === 1 ? "documento requer" : "documentos requerem"} atenção.</p><ul className="space-y-2">{expiryAlerts.slice(0, 5).map(({ document, client: documentClient, days }) => <li key={document.id}><button type="button" onClick={() => openTarget({type:"client",id:document.client_id})} className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-white px-3 py-2.5 text-left hover:bg-slate-100"><span className="min-w-0"><span className="block truncate text-sm font-semibold text-slate-900">{documentClient?.full_name || "Cliente"}</span><span className="mt-0.5 block text-xs text-slate-500">{documentTypeLabels[document.document_type]} · {dateLabel(document.expires_on)}</span></span><span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${days < 0 ? "bg-rose-100 text-rose-800" : "bg-amber-100 text-amber-900"}`}>{days < 0 ? `Vencido ${Math.abs(days)}d` : days === 0 ? "Hoje" : `${days}d`}</span></button></li>)}</ul>{expiryAlerts.length > 5 && <p className="mt-3 text-xs text-slate-500">Mais {expiryAlerts.length - 5} documentos na secção Clientes.</p>}</>}
               <p className="mt-3 text-xs text-slate-500">Os números/IDs dos documentos não aparecem no dashboard.</p><button type="button" onClick={() => goToView("clients")} className="mt-3 w-full rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-700 hover:text-orange-800">Ver clientes</button>
             </section>
           </div>
@@ -941,11 +1014,16 @@ export default function CrmStudioTool() {
           })}</div>}
         </>}
 
-        {!loading && view === "trips" && <>
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-lg font-semibold">Viagens</h2><p className="text-sm text-slate-500">Cria uma viagem manualmente ou pré-preenche-a a partir de um PDF.</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => { setShowPdfImport(false); setPdfPreview(null); setPdfSource(null); setShowTripForm((open) => !open); }} className="rounded-full border border-orange-800 px-5 py-2.5 text-sm font-semibold text-orange-800 hover:bg-orange-50">{showTripForm ? "Fechar formulário" : "Adicionar manualmente"}</button><button type="button" onClick={() => { setShowTripForm(false); setShowPdfImport((open) => !open); setPdfPreview(null); setPdfSource(null); }} className="rounded-full bg-orange-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-900">{showPdfImport ? "Fechar importação" : "Ler PDF e criar viagem"}</button></div></div>
+        {!loading && (view === "trips" || view === "commissions") && <>
+          {focused?.type !== "trip" && <>
+          {view === "trips" ? <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-lg font-semibold">Viagens</h2><p className="text-sm text-slate-500">Cria uma viagem manualmente ou pré-preenche-a a partir de um PDF.</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => { setShowPdfImport(false); setPdfPreview(null); setPdfSource(null); setShowTripForm((open) => !open); }} className="rounded-full border border-orange-800 px-5 py-2.5 text-sm font-semibold text-orange-800 hover:bg-orange-50">{showTripForm ? "Fechar formulário" : "Adicionar manualmente"}</button><button type="button" onClick={() => { setShowTripForm(false); setShowPdfImport((open) => !open); setPdfPreview(null); setPdfSource(null); }} className="rounded-full bg-orange-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-900">{showPdfImport ? "Fechar importação" : "Ler PDF e criar viagem"}</button></div></div> : <div className="mb-5">
+            <h2 className="text-xl font-semibold">Comissões</h2>
+            <p className="text-sm text-slate-600">Comissões previstas, confirmações da agência, recebimentos e divergências por viagem.</p>
+          </div>}
+
           <div className="mb-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-4"><label className="text-sm">Pesquisar<input className={inputClass} value={tripQuery} onChange={e=>setTripQuery(e.target.value)} placeholder="Destino, cliente, operador ou referência"/></label><label className="text-sm">Estado<select className={inputClass} value={tripState} onChange={e=>setTripState(e.target.value)}><option value="">Todos</option>{tripStatuses.map(st=><option key={st.id} value={st.id}>{st.label}</option>)}</select></label><label className="text-sm">Tipo<select className={inputClass} value={tripType} onChange={e=>setTripType(e.target.value)}><option value="">Todos</option>{Object.entries(travelTypeLabels).filter(([id])=>id!=="all").map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><label className="text-sm">Cliente<select className={inputClass} value={tripPerson} onChange={e=>setTripPerson(e.target.value)}><option value="">Todos</option>{clients.map(c=><option key={c.id} value={c.id}>{c.full_name}</option>)}</select></label><label className="text-sm">Partida desde<input type="date" className={inputClass} value={tripFrom} onChange={e=>setTripFrom(e.target.value)}/></label><label className="text-sm">Partida até<input type="date" min={tripFrom} className={inputClass} value={tripTo} onChange={e=>setTripTo(e.target.value)}/></label><label className="text-sm">Ordenar<select className={inputClass} value={tripSort} onChange={e=>setTripSort(e.target.value)}><option value="departure">Partida</option><option value="destination">Destino</option></select></label><p className="self-end pb-3 text-sm text-slate-500">{visibleTrips.length} viagens</p><button type="button" className={archiveButton} aria-pressed={showArchivedTrips} onClick={() => { setFocused(null); setShowArchivedTrips(!showArchivedTrips); }}>{showArchivedTrips ? "Voltar às viagens" : "Viagens arquivadas"}</button></div>
-          {showPdfImport && <section className="mb-6 rounded-2xl border border-orange-200 bg-orange-50/50 p-5 shadow-sm"><div className="mb-4"><h3 className="font-semibold">Pré-preencher a viagem pelo PDF</h3><p className="mt-1 text-sm text-slate-600">O PDF é processado no servidor e descartado após a leitura. Confirma os campos antes de guardar; o texto integral não é retido.</p></div><form onSubmit={previewTripPdf} className="flex flex-wrap items-end gap-3"><label className="min-w-64 flex-1 space-y-1 text-sm font-semibold">Orçamento ou documento de reserva (PDF, até 4 MB)<input name="pdf_file" type="file" accept="application/pdf,.pdf" required className={`${inputClass} file:mr-3 file:rounded-full file:border-0 file:bg-orange-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold`} /></label><button disabled={pdfLoading} className="rounded-full bg-orange-800 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{pdfLoading ? "A ler PDF…" : "Extrair campos"}</button></form>{pdfPreview && <form onSubmit={createManualTrip} className="mt-5 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 sm:grid-cols-2"><div className="sm:col-span-2"><p className="font-semibold text-orange-900">Campos sugeridos extraídos</p><p className="mt-1 text-sm text-slate-600">Revê e corrige tudo. Só depois de carregares em “Confirmar e criar viagem” será criado o registo e a checklist.</p></div><TripClientSelect clients={clients} id="crm-pdf-trip-clients" /><label className="space-y-1 text-sm font-semibold">Tipo de viagem<select name="travel_type" defaultValue={"general"} className={inputClass}>{Object.entries(travelTypeLabels).filter(([id])=>id!=="all").map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><label className="space-y-1 text-sm font-semibold">Operador<input name="operator" maxLength={160} defaultValue={pdfPreview.operator} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Referência<input name="reference" maxLength={80} defaultValue={pdfPreview.reference} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Destino<input name="destination" maxLength={240} defaultValue={pdfPreview.destination} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Estado da viagem<select name="status" defaultValue="planning" className={inputClass}>{tripStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label><label className="space-y-1 text-sm font-semibold">Partida<input name="departure_date" type="date" defaultValue={pdfPreview.departure_date} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Regresso<input name="return_date" type="date" defaultValue={pdfPreview.return_date} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Adultos<input name="adults" type="number" min={1} max={20} defaultValue={pdfPreview.adults} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Crianças<input name="children_count" type="number" min={0} max={30} defaultValue={pdfPreview.children_count} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Valor total<input name="total_amount" type="number" min={0} max={9999999999.99} step="0.01" defaultValue={pdfPreview.total_amount} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Moeda<input name="currency" required minLength={3} maxLength={3} pattern="[A-Za-z]{3}" title="Código de moeda de 3 letras, por exemplo EUR" defaultValue={pdfPreview.currency || "EUR"} className={inputClass} /></label><div className="sm:col-span-2 rounded-xl border border-slate-200 p-4"><p className="font-semibold">Voos e hotéis sugeridos ({pdfPreview.services.length})</p>{pdfPreview.services.length === removedPdfServices.length && <p className="mt-1 text-sm text-slate-600">Sem voos ou alojamentos para importar. Podes adicioná-los na ficha da viagem.</p>}<div className="mt-3 space-y-3">{pdfPreview.services.map((service, index) => <fieldset key={index} hidden={removedPdfServices.includes(index)} disabled={removedPdfServices.includes(index)} className={removedPdfServices.includes(index) ? "hidden" : "grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-2"}><input type="hidden" name={`service_${index}_type`} value={service.service_type} /><div className="flex justify-end sm:col-span-2"><button type="button" disabled={saving} aria-label={`Retirar ${service.title} da importação`} className={archiveButton} onClick={() => setRemovedPdfServices(current => [...current, index])}>Retirar da importação</button></div><label className="space-y-1 text-xs font-semibold text-slate-600 sm:col-span-2">{service.service_type === "flight" ? "Voo" : "Hotel/alojamento"}<input name={`service_${index}_title`} required maxLength={240} defaultValue={service.title} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Companhia/fornecedor<input name={`service_${index}_provider`} maxLength={160} defaultValue={service.provider} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">N.º do voo ou referência<input name={`service_${index}_reference`} maxLength={100} defaultValue={service.reference} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Início/check-in<input name={`service_${index}_starts_on`} type="date" defaultValue={service.starts_on} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Fim/check-out<input name={`service_${index}_ends_on`} type="date" defaultValue={service.ends_on} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600 sm:col-span-2">Detalhes extraídos<textarea name={`service_${index}_details`} rows={2} maxLength={1000} defaultValue={service.details} className={inputClass} /></label></fieldset>)}</div>{removedPdfServices.length > 0 && <button type="button" disabled={saving} className={archiveButton + " mt-3"} onClick={() => setRemovedPdfServices([])}>Repor serviços retirados</button>}</div><label className="space-y-1 text-sm font-semibold sm:col-span-2">Notas da viagem<textarea name="trip_notes" rows={3} maxLength={4000} defaultValue={pdfPreview.trip_notes} className={inputClass} placeholder="Outros dados úteis extraídos" /></label><div className="sm:col-span-2 flex justify-end"><button disabled={saving || clients.length === 0} className="rounded-full bg-orange-800 px-6 py-3 font-semibold text-white disabled:opacity-60">{saving ? "A guardar…" : "Confirmar e criar viagem"}</button></div></form>}</section>}
-          {showTripForm && <form onSubmit={createManualTrip} className="mb-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2">
+          {view === "trips" && showPdfImport && <section className="mb-6 rounded-2xl border border-orange-200 bg-orange-50/50 p-5 shadow-sm"><div className="mb-4"><h3 className="font-semibold">Pré-preencher a viagem pelo PDF</h3><p className="mt-1 text-sm text-slate-600">O PDF é processado no servidor e descartado após a leitura. Confirma os campos antes de guardar; o texto integral não é retido.</p></div><form onSubmit={previewTripPdf} className="flex flex-wrap items-end gap-3"><label className="min-w-64 flex-1 space-y-1 text-sm font-semibold">Orçamento ou documento de reserva (PDF, até 4 MB)<input name="pdf_file" type="file" accept="application/pdf,.pdf" required className={`${inputClass} file:mr-3 file:rounded-full file:border-0 file:bg-orange-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold`} /></label><button disabled={pdfLoading} className="rounded-full bg-orange-800 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{pdfLoading ? "A ler PDF…" : "Extrair campos"}</button></form>{pdfPreview && <form onSubmit={createManualTrip} className="mt-5 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 sm:grid-cols-2"><div className="sm:col-span-2"><p className="font-semibold text-orange-900">Campos sugeridos extraídos</p><p className="mt-1 text-sm text-slate-600">Revê e corrige tudo. Só depois de carregares em “Confirmar e criar viagem” será criado o registo e a checklist.</p></div><TripClientSelect clients={clients} id="crm-pdf-trip-clients" /><label className="space-y-1 text-sm font-semibold">Tipo de viagem<select name="travel_type" defaultValue={"general"} className={inputClass}>{Object.entries(travelTypeLabels).filter(([id])=>id!=="all").map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><label className="space-y-1 text-sm font-semibold">Operador<input name="operator" maxLength={160} defaultValue={pdfPreview.operator} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Referência<input name="reference" maxLength={80} defaultValue={pdfPreview.reference} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Destino<input name="destination" maxLength={240} defaultValue={pdfPreview.destination} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Estado da viagem<select name="status" defaultValue="planning" className={inputClass}>{tripStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label><label className="space-y-1 text-sm font-semibold">Partida<input name="departure_date" type="date" defaultValue={pdfPreview.departure_date} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Regresso<input name="return_date" type="date" defaultValue={pdfPreview.return_date} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Adultos<input name="adults" type="number" min={1} max={20} defaultValue={pdfPreview.adults} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Crianças<input name="children_count" type="number" min={0} max={30} defaultValue={pdfPreview.children_count} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Valor total<input name="total_amount" type="number" min={0} max={9999999999.99} step="0.01" defaultValue={pdfPreview.total_amount} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Moeda<input name="currency" required minLength={3} maxLength={3} pattern="[A-Za-z]{3}" title="Código de moeda de 3 letras, por exemplo EUR" defaultValue={pdfPreview.currency || "EUR"} className={inputClass} /></label><div className="sm:col-span-2 rounded-xl border border-slate-200 p-4"><p className="font-semibold">Voos e hotéis sugeridos ({pdfPreview.services.length})</p>{pdfPreview.services.length === removedPdfServices.length && <p className="mt-1 text-sm text-slate-600">Sem voos ou alojamentos para importar. Podes adicioná-los na ficha da viagem.</p>}<div className="mt-3 space-y-3">{pdfPreview.services.map((service, index) => <fieldset key={index} hidden={removedPdfServices.includes(index)} disabled={removedPdfServices.includes(index)} className={removedPdfServices.includes(index) ? "hidden" : "grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-2"}><input type="hidden" name={`service_${index}_type`} value={service.service_type} /><div className="flex justify-end sm:col-span-2"><button type="button" disabled={saving} aria-label={`Retirar ${service.title} da importação`} className={archiveButton} onClick={() => setRemovedPdfServices(current => [...current, index])}>Retirar da importação</button></div><label className="space-y-1 text-xs font-semibold text-slate-600 sm:col-span-2">{service.service_type === "flight" ? "Voo" : "Hotel/alojamento"}<input name={`service_${index}_title`} required maxLength={240} defaultValue={service.title} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Companhia/fornecedor<input name={`service_${index}_provider`} maxLength={160} defaultValue={service.provider} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">N.º do voo ou referência<input name={`service_${index}_reference`} maxLength={100} defaultValue={service.reference} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Início/check-in<input name={`service_${index}_starts_on`} type="date" defaultValue={service.starts_on} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Fim/check-out<input name={`service_${index}_ends_on`} type="date" defaultValue={service.ends_on} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600 sm:col-span-2">Detalhes extraídos<textarea name={`service_${index}_details`} rows={2} maxLength={1000} defaultValue={service.details} className={inputClass} /></label></fieldset>)}</div>{removedPdfServices.length > 0 && <button type="button" disabled={saving} className={archiveButton + " mt-3"} onClick={() => setRemovedPdfServices([])}>Repor serviços retirados</button>}</div><label className="space-y-1 text-sm font-semibold sm:col-span-2">Notas da viagem<textarea name="trip_notes" rows={3} maxLength={4000} defaultValue={pdfPreview.trip_notes} className={inputClass} placeholder="Outros dados úteis extraídos" /></label><div className="sm:col-span-2 flex justify-end"><button disabled={saving || clients.length === 0} className="rounded-full bg-orange-800 px-6 py-3 font-semibold text-white disabled:opacity-60">{saving ? "A guardar…" : "Confirmar e criar viagem"}</button></div></form>}</section>}
+          {view === "trips" && showTripForm && <form onSubmit={createManualTrip} className="mb-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2">
             <TripClientSelect clients={clients} /><label className="space-y-1 text-sm font-semibold">Tipo de viagem<select name="travel_type" defaultValue={"general"} className={inputClass}>{Object.entries(travelTypeLabels).filter(([id])=>id!=="all").map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
             <label className="space-y-1 text-sm font-semibold">Operador<input name="operator" maxLength={160} className={inputClass} /></label>
             <label className="space-y-1 text-sm font-semibold">Referência<input name="reference" maxLength={80} className={inputClass} placeholder="Opcional" /></label>
@@ -960,11 +1038,52 @@ export default function CrmStudioTool() {
             <label className="space-y-1 text-sm font-semibold sm:col-span-2">Notas da viagem<textarea name="trip_notes" rows={3} maxLength={4000} className={inputClass} /></label>
             <div className="sm:col-span-2 flex justify-end"><button disabled={saving} className="rounded-full bg-orange-800 px-6 py-3 font-semibold text-white hover:bg-orange-900 disabled:opacity-60">{saving ? "A guardar…" : "Criar viagem e checklist"}</button></div>
           </form>}
-          {clients.length === 0 && <p className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Cria primeiro um cliente na secção Clientes para poderes associar-lhe uma viagem.</p>}
-          {trips.length === 0 && <p className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-600">Ainda não há viagens. Podes converter um pedido ganho ou adicionar uma viagem a um cliente.</p>}
-          <div className="grid gap-5 xl:grid-cols-2">{visibleTrips.map((trip) => <article id={"trip-"+trip.id} tabIndex={-1} key={trip.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <div className="mb-5 flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wide text-orange-800">{tripClientName(trip, clients, leads)}{trip.reference ? ` · ${trip.reference}` : ""}</p><h3 className="mt-1 text-xl font-bold">{trip.destination || "Destino por definir"}</h3>{trip.archived_at && <p className="text-sm text-slate-500">Arquivada</p>}</div><div className="flex shrink-0 flex-wrap gap-2"><button type="button" disabled={saving} className={archiveButton} onClick={() => void changeArchive(trip, "trips")}>{trip.archived_at ? "Restaurar viagem" : "Arquivar viagem"}</button><button type="button" disabled={saving} onClick={() => void deleteTrip(trip)} className="shrink-0 rounded-full border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Apagar viagem</button></div></div>
-            <div className="mb-4 flex flex-wrap gap-2"><button className="rounded-full border border-slate-300 px-4 py-2 text-sm" onClick={()=>newProposal({type:"trip",id:trip.id,label:trip.destination||"Viagem"})}>Nova proposta</button><button type="button" className="rounded-full border border-slate-300 px-4 py-2 text-sm" onClick={()=>openFinance(trip.id)}>Pagamentos e comissão</button><button className="rounded-full border border-slate-300 px-4 py-2 text-sm" onClick={()=>showHistory({type:"trip",id:trip.id,label:trip.destination||"Viagem"})}>Histórico</button></div>
+          {view === "trips" && clients.length === 0 && <p className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Cria primeiro um cliente na secção Clientes para poderes associar-lhe uma viagem.</p>}
+          <div className="mb-5 grid gap-3 sm:grid-cols-2">
+            <label className="text-sm">Pagamentos<select className={inputClass} value={tripBalance} onChange={e=>setTripBalance(e.target.value)} disabled={financeListStatus!=="ready"}>
+              <option value="">Todos</option><option value="pending">Com saldo em falta</option><option value="overdue">Com prestações em atraso</option>
+            </select></label>
+            <label className="text-sm">Comissão<select className={inputClass} value={tripCommission} onChange={e=>setTripCommission(e.target.value)} disabled={financeListStatus!=="ready"}>
+              <option value="">Todas</option><option value="pending">Por regularizar</option><option value="collectible">Confirmadas por receber</option>
+              <option value="discrepancy">Com divergência</option>
+              {Object.entries(commissionStates).map(([value,label])=><option key={value} value={value}>{label}</option>)}
+            </select></label>
+            {view==="commissions" && <label className="text-sm">Mês da confirmação da agência
+              <input type="month" className={inputClass} value={commissionPeriod} onChange={event=>setCommissionPeriod(event.target.value)}/>
+            </label>}
+          </div>
+          {view==="commissions" && financeListStatus==="ready" && <CommissionTotals trips={visibleTrips.flatMap(trip => {
+            const finance=financeByTrip.get(trip.id);
+            return finance ? [finance] : [];
+          })}/>}
+          {financeListStatus==="loading" && <p role="status" className="mb-3 text-sm text-slate-600">A carregar valores financeiros…</p>}
+          {financeListStatus==="error" && <div role="status" className="mb-3 text-sm text-slate-600">Dados financeiros indisponíveis. <button type="button" className="underline" onClick={()=>void refreshFinance()}>Tentar novamente</button></div>}
+          {view === "trips" && trips.length === 0 ? <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">Ainda não há viagens. Podes converter um pedido ganho ou adicionar uma viagem a um cliente.</p> :
+            <CrmTripList mode={view} onOpen={id=>openTrip(id, view === "commissions" ? "commission" : "summary", undefined, view)}
+              items={visibleTrips.map(trip => ({
+                id: trip.id, destination: trip.destination || "Destino por definir", client: tripClientName(trip, clients, leads),
+                dates: [trip.departure_date, trip.return_date].filter((date): date is string => Boolean(date)).map(dateLabel).join(" – ") || "Por definir",
+                operator: trip.operator || "—", reference: trip.reference || "",
+                status: trip.archived_at ? "Arquivada" : tripStatuses.find(status=>status.id===trip.status)?.label || trip.status,
+                currency: trip.currency, total: trip.total_amount, finance: financeByTrip.get(trip.id),
+              }))} />}
+          </>}
+          {focused?.type === "trip" && !trips.some(trip=>trip.id===focused.id) && <p role="status" className="text-sm text-slate-600">Não foi possível encontrar esta viagem. <button className="underline" type="button" onClick={()=>setFocused(null)}>Ver viagens</button></p>}
+          {focused?.type === "trip" && trips.filter(trip=>trip.id===focused.id).map((trip) => <article id={"trip-"+trip.id} tabIndex={-1} key={trip.id} className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+            <button type="button" className="mb-4 text-sm font-semibold text-orange-800 underline" onClick={()=>goToView(tripListView)}>{tripListView==="commissions"?"Voltar a Comissões":"Voltar à lista de viagens"}</button>
+            <div className="mb-5 flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wide text-orange-800">{tripClientName(trip, clients, leads)}{trip.reference ? ` · ${trip.reference}` : ""}</p><h3 className="mt-1 text-xl font-bold">{trip.destination || "Destino por definir"}</h3>{trip.archived_at && <p className="text-sm text-slate-500">Arquivada</p>}</div><div className="flex shrink-0 flex-wrap gap-2"><button type="button" disabled={saving} className={archiveButton} onClick={() => void changeArchive(trip, "trips")}>{trip.archived_at ? "Restaurar viagem" : "Arquivar viagem"}</button><button type="button" disabled={saving} onClick={() => void deleteTrip(trip)} className="shrink-0 rounded-full border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">Apagar viagem</button></div></div>
+            <div className="mb-4 flex flex-wrap gap-2">
+              {trip.client_id && <button type="button" className={archiveButton} onClick={()=>openTarget({type:"client",id:trip.client_id!})}>Ficha do cliente</button>}
+              {trip.lead_id && <button type="button" className={archiveButton} onClick={()=>openTarget({type:"lead",id:trip.lead_id!})}>Pedido de origem</button>}
+              <button type="button" className={archiveButton} onClick={()=>{setProposalContext(null);setProposalId("");setProposalStatusFilter("");setProposalTripId(trip.id);goToView("proposals");}}>Propostas da viagem</button>
+              <button type="button" className={archiveButton} onClick={()=>newProposal({type:"trip",id:trip.id,label:trip.destination||"Viagem"})}>Nova proposta</button>
+              <button type="button" className={archiveButton} onClick={()=>showHistory({type:"trip",id:trip.id,label:trip.destination||"Viagem"})}>Histórico</button>
+            </div>
+            <CrmTripTabs id={trip.id} active={tripTab} onChange={tab => {
+              setTripTab(tab);
+              if (tab === "payments" || tab === "commission") setVisitedFinance(true);
+            }} />
+            <CrmTripPanel id={trip.id} tab="summary" active={tripTab}>
             <form key={`${trip.id}-${trip.status}-${trip.departure_date}-${trip.return_date}-${trip.destination}-${trip.operator}-${trip.travel_type}-${trip.adults}-${trip.children_count}-${trip.total_amount}-${trip.client_ids?.join(",")}`} onSubmit={(event) => saveTrip(event, trip)} className="mb-6 grid gap-3 sm:grid-cols-2">
               <TripClientSelect clients={clients} selectedIds={trip.client_ids?.length ? trip.client_ids : trip.client_id ? [trip.client_id] : []} /><label className="space-y-1 text-sm font-semibold">Tipo de viagem<select name="travel_type" defaultValue={trip.travel_type||"general"} className={inputClass}>{Object.entries(travelTypeLabels).filter(([id])=>id!=="all").map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
               <label className="space-y-1 text-xs font-semibold text-slate-600">Estado<select name="status" defaultValue={trip.status} className={inputClass}>{tripStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label>
@@ -979,11 +1098,55 @@ export default function CrmStudioTool() {
               <label className="space-y-1 text-xs font-semibold text-slate-600 sm:col-span-2">Notas da viagem<textarea name="trip_notes" rows={3} defaultValue={trip.trip_notes || ""} maxLength={4000} className={inputClass} /></label>
               <div className="sm:col-span-2"><button disabled={saving} className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60">Guardar viagem</button></div>
             </form>
+            </CrmTripPanel>
+            <CrmTripPanel id={trip.id} tab={tripTab === "commission" ? "commission" : "payments"} active={tripTab}>
+              {visitedFinance && <FinanceTrip authorizedFetch={authorizedFetch} tripId={trip.id}
+                section={tripTab === "commission" ? "commission" : "payments"} onOpenServices={()=>setTripTab("services")} theme={theme} onChanged={refreshAfterFinance}/>}
+            </CrmTripPanel>
+            {tripTab !== "commission" && <CrmTripPanel id={trip.id} tab="commission" active={tripTab}>{null}</CrmTripPanel>}
+            {tripTab === "commission" && <CrmTripPanel id={trip.id} tab="payments" active={tripTab}>{null}</CrmTripPanel>}
+            <CrmTripPanel id={trip.id} tab="documents" active={tripTab}>
+            <div className="mb-5 space-y-2">
+              <h4 className="font-semibold">Documentação dos viajantes</h4>
+              {clients.filter(client => (trip.client_ids || []).includes(client.id) || client.id === trip.client_id).map(client => {
+                const clientDocuments = documents.filter(document=>document.client_id===client.id);
+                return <div key={client.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-3">
+                  <div><p className="font-medium">{client.full_name}</p>
+                    {clientDocuments.length ? <ul className="text-sm text-slate-600">{clientDocuments.map(document=>
+                      <li key={document.id}>{documentTypeLabels[document.document_type]} · validade {dateLabel(document.expires_on)}</li>)}</ul> :
+                      <p className="text-sm text-slate-600">Sem documentos registados.</p>}
+                  </div>
+                  <button type="button" className={archiveButton} onClick={()=>openTarget({type:"client",id:client.id})}>Abrir ficha e OCR</button>
+                </div>;
+              })}
+            </div>
             <CrmDriveDocuments authorizedFetch={authorizedFetch} tripId={trip.id} title={trip.reference || trip.destination || "Viagem"} initialFile={pdfToArchive?.tripId === trip.id ? pdfToArchive.file : null} onUploaded={() => setPdfToArchive(null)} />
+            </CrmTripPanel>
+            <CrmTripPanel id={trip.id} tab="communications" active={tripTab}>
+            {!trip.archived_at && trip.status !== "cancelled" && <CrmTripAlerts active={tripTab === "communications"} tripId={trip.id} today={today}
+              authorizedFetch={authorizedFetch} onOpen={openTarget}
+              localAlerts={tripContextAlerts(trip, today, expiryAlertsForTrip(trip, clients, documents), followUpForTrip(trip, leads))}/>}
+            <div className="mb-4 flex flex-wrap gap-2">
+              <button type="button" className={archiveButton} onClick={()=>{setCalendarKind("");setCalendarDay(trip.departure_date || "");goToView("calendar");}}>Abrir calendário</button>
+              <button type="button" className={archiveButton} onClick={()=>setTripTab("tasks")}>Ver tarefas da viagem</button>
+              {!trip.archived_at && trip.status!=="cancelled" && (() => {
+                const finance=financeByTrip.get(trip.id);
+                return finance && hasOpenCommission(finance) && <button type="button" className={archiveButton+" text-amber-800"}
+                  onClick={()=>{setVisitedFinance(true);setTripTab("commission");}}>Ver comissão por regularizar</button>;
+              })()}
+            </div>
             <CrmEmailPanel authorizedFetch={authorizedFetch} scope="trip" id={trip.id} recipientRevision={trip.client_ids?.join(",") ?? trip.client_id ?? ""} />
+            </CrmTripPanel>
+            <CrmTripPanel id={trip.id} tab="services" active={tripTab}>
             <h4 className="mt-5 border-t border-slate-200 pt-5 text-sm font-semibold">Serviços e reservas</h4>
-            {trip.services.length > 0 && <div className="mt-3 space-y-3">{trip.services.map((service) => <form key={service.id} onSubmit={(event) => saveTripService(event, trip, service)} className="grid gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-2"><label className="space-y-1 text-xs font-semibold text-slate-600">Tipo<select name="service_type" defaultValue={service.service_type} className={inputClass}>{Object.entries(tripServiceTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="space-y-1 text-xs font-semibold text-slate-600">Serviço<input name="title" required maxLength={240} defaultValue={service.title} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Fornecedor<input name="provider" maxLength={160} defaultValue={service.provider || ""} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Referência<input name="reference" maxLength={100} defaultValue={service.reference || ""} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Início<input name="starts_on" type="date" defaultValue={service.starts_on || ""} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Fim<input name="ends_on" type="date" defaultValue={service.ends_on || ""} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600 sm:col-span-2">Detalhes<textarea name="details" rows={2} maxLength={4000} defaultValue={service.details || ""} className={inputClass} /></label><div className="sm:col-span-2 flex gap-2"><button disabled={saving} className="rounded-full bg-orange-800 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60">Guardar serviço</button><button type="button" disabled={saving} onClick={() => void deleteTripService(trip, service)} className="rounded-full border border-slate-300 px-4 py-2 text-xs text-slate-600">Remover</button></div></form>)}</div>}
+            <p className="mb-3 mt-2 text-sm text-slate-600">Os preços por serviço ficam por preencher depois da importação. Confirma os valores e a sua origem antes de guardar.</p>
+            <CrmServiceFinanceSummary tripId={trip.id} currency={trip.currency} contracted={trip.total_amount} services={trip.services} authorizedFetch={authorizedFetch}/>
+            {trip.services.length > 0 && <div className="mt-3 space-y-3">{trip.services.map((service) => <section key={service.id} className="space-y-2"><form onSubmit={(event) => saveTripService(event, trip, service)} className="grid gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-2"><label className="space-y-1 text-xs font-semibold text-slate-600">Tipo<select name="service_type" defaultValue={service.service_type} className={inputClass}>{Object.entries(tripServiceTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="space-y-1 text-xs font-semibold text-slate-600">Serviço<input name="title" required maxLength={240} defaultValue={service.title} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Fornecedor<input name="provider" maxLength={160} defaultValue={service.provider || ""} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Referência<input name="reference" maxLength={100} defaultValue={service.reference || ""} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Início<input name="starts_on" type="date" defaultValue={service.starts_on || ""} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Fim<input name="ends_on" type="date" defaultValue={service.ends_on || ""} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600 sm:col-span-2">Detalhes<textarea name="details" rows={2} maxLength={4000} defaultValue={service.details || ""} className={inputClass} /></label><div className="sm:col-span-2 flex gap-2"><button disabled={saving} className="rounded-full bg-orange-800 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60">Guardar serviço</button><button type="button" disabled={saving} onClick={() => void deleteTripService(trip, service)} className="rounded-full border border-slate-300 px-4 py-2 text-xs text-slate-600">Remover</button></div></form>
+              <CrmServiceFinanceEditor tripId={trip.id} service={service} authorizedFetch={authorizedFetch} onChanged={reloadTrips}/>
+              </section>)}</div>}
             <form onSubmit={(event) => saveTripService(event, trip)} className="mt-3 grid gap-3 rounded-xl border border-dashed border-slate-300 p-4 sm:grid-cols-2"><label className="space-y-1 text-xs font-semibold text-slate-600">Tipo<select name="service_type" defaultValue="flight" className={inputClass}>{Object.entries(tripServiceTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="space-y-1 text-xs font-semibold text-slate-600">Serviço *<input name="title" required maxLength={240} className={inputClass} placeholder="Ex.: voo de ida" /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Fornecedor<input name="provider" maxLength={160} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Referência<input name="reference" maxLength={100} className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Início<input name="starts_on" type="date" className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600">Fim<input name="ends_on" type="date" className={inputClass} /></label><label className="space-y-1 text-xs font-semibold text-slate-600 sm:col-span-2">Detalhes<textarea name="details" rows={2} maxLength={4000} className={inputClass} /></label><div className="sm:col-span-2"><button disabled={saving} className="rounded-full border border-orange-800 px-4 py-2 text-xs font-semibold text-orange-800 disabled:opacity-60">Adicionar serviço</button></div></form>
+            </CrmTripPanel>
+            <CrmTripPanel id={trip.id} tab="tasks" active={tripTab}>
             <h4 className="border-t border-slate-200 pt-5 text-sm font-semibold">Checklist <span className="font-normal text-slate-500">({trip.tasks.filter((task) => task.completed).length}/{trip.tasks.length})</span></h4><p className="mt-1 text-xs text-slate-500">O CRM cria uma tarefa dois dias antes de cada voo com data definida. Recebes também um lembrete diário por email quando há check-ins por concluir, sem repetir o mesmo aviso.</p>
             <CrmTripTemplatePicker authorizedFetch={authorizedFetch} tripId={trip.id} onChanged={reloadTrips}/><div className="mt-3 space-y-3">{trip.tasks.map((task) => <form key={`${task.id}-${task.title}-${task.due_at}-${task.completed}`} onSubmit={(event) => saveTask(event, trip, task)} className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl bg-slate-50 p-3">
               <input type="checkbox" name="completed" defaultChecked={task.completed} aria-label={`Concluída: ${task.title}`} className="size-4 accent-orange-800" />
@@ -991,10 +1154,11 @@ export default function CrmStudioTool() {
               <div className="flex flex-col gap-2"><button disabled={saving} className="rounded-lg bg-orange-800 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">Guardar</button>{task.template_item_id && task.template_override && !task.completed && <button type="button" disabled={saving} onClick={()=>void resetTemplateTask(task.id)} className="rounded-lg border border-orange-300 px-3 py-2 text-xs text-orange-800">Retomar automatismo</button>}{!task.source_service_id && <button type="button" disabled={saving} onClick={() => void deleteTask(trip, task)} className="rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-600">Remover</button>}</div>
             </form>)}</div>
             <form onSubmit={(event) => addTask(event, trip)} className="mt-4 grid gap-2 sm:grid-cols-[1fr_160px_auto]"><label className="sr-only" htmlFor={`new-task-${trip.id}`}>Nova tarefa</label><input id={`new-task-${trip.id}`} name="title" required maxLength={240} placeholder="Adicionar tarefa à checklist" className={inputClass} /><label className="sr-only" htmlFor={`new-task-date-${trip.id}`}>Prazo da nova tarefa</label><input id={`new-task-date-${trip.id}`} name="due_date" type="date" className={inputClass} /><button disabled={saving} className="rounded-full bg-orange-800 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-900 disabled:opacity-60">Adicionar</button></form>
-          </article>)}</div>
+            </CrmTripPanel>
+          </article>)}
         </>}
 
-        {!loading && view === "calendar" && <CrmCalendar authorizedFetch={authorizedFetch} clients={clients} onOpen={openTarget}/>}
+        {!loading && view === "calendar" && <CrmCalendar key={calendarKind + ":" + calendarDay} initialKind={calendarKind} initialDay={calendarDay} authorizedFetch={authorizedFetch} clients={clients} onOpen={openTarget}/>}
 
       </section>
 
@@ -1022,6 +1186,36 @@ export default function CrmStudioTool() {
 
 function leadName(leadId: string | null, leads: Lead[]) {
   return leadId ? leads.find((lead) => lead.id === leadId)?.full_name || "Cliente" : "Cliente";
+}
+
+function CommissionTotals({trips}:{trips:FinanceSummary[]}) {
+  const totals = new Map<string, { expected:number; confirmed:number; received:number; toReceive:number; estimates:number; confirmations:number }>();
+  for (const trip of trips) {
+    const sum = totals.get(trip.currency) ?? { expected:0, confirmed:0, received:0, toReceive:0, estimates:0, confirmations:0 };
+    if (trip.commission_expected != null) { sum.expected += Math.round(trip.commission_expected*100); sum.estimates++; }
+    if (trip.commission_confirmed != null) { sum.confirmed += Math.round(trip.commission_confirmed*100); sum.confirmations++; }
+    sum.received += Math.round(trip.commission_net*100);
+    sum.toReceive += Math.max(0,Math.round((trip.commission_to_receive ?? 0)*100));
+    totals.set(trip.currency,sum);
+  }
+  return <div className="mb-4 space-y-2">{[...totals].map(([currency,sum])=><p key={currency} className="rounded-xl border border-slate-200 bg-white p-3 text-sm">
+    <strong>{currency}</strong> · Prevista {sum.estimates?formatMoney(sum.expected/100,currency):"—"} · Confirmada {sum.confirmations?formatMoney(sum.confirmed/100,currency):"—"} · Recebida {formatMoney(sum.received/100,currency)} · Por receber {sum.confirmations?formatMoney(sum.toReceive/100,currency):"—"}
+  </p>)}</div>;
+}
+
+function expiryAlertsForTrip(trip: Trip, clients: Client[], documents: ClientDocument[]): TripAlert[] {
+  const travelers = new Set([trip.client_id, ...(trip.client_ids || [])]);
+  return documents.filter(document => travelers.has(document.client_id)).map(document => ({
+    id: document.id, date: document.expires_on, kind: "Documento",
+    title: (clients.find(client => client.id === document.client_id)?.full_name ?? "Viajante") + " · " + documentTypeLabels[document.document_type],
+    target: { type: "client", id: document.client_id },
+  }));
+}
+
+function followUpForTrip(trip: Trip, leads: Lead[]): TripAlert | null {
+  const lead = activeLeadFollowups(leads).find(item => item.id === trip.lead_id);
+  return lead?.follow_up_date ? { id: lead.id, date: lead.follow_up_date, kind: "Seguimento", title: lead.full_name,
+    target: { type: "lead", id: lead.id } } : null;
 }
 
 function tripClientName(trip: Trip, clients: Client[], leads: Lead[]) {

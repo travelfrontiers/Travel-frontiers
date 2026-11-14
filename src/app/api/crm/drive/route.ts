@@ -53,6 +53,10 @@ export async function DELETE(request: NextRequest) {
   if (!config) return NextResponse.json({ error: "Base de dados não configurada." }, { status: 503 });
   try {
     const response = await fetch(`${config.url}/rest/v1/crm_drive_files?id=eq.${encodeURIComponent(id)}&select=id`, { method: "DELETE", headers: { ...config.headers, Prefer: "return=representation" }, cache: "no-store" });
+    if (response.status === 409) {
+      const error = await response.json().catch(() => null);
+      if (error?.code === "23503") return NextResponse.json({ error: "A ligação é um comprovativo associado a uma confirmação ou regularização de comissão." }, { status: 409 });
+    }
     if (!response.ok) throw new Error("delete_failed");
     const rows = await response.json();
     if (!rows.length) return NextResponse.json({ error: "A ligação já não existe." }, { status: 404 });
