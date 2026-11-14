@@ -87,7 +87,7 @@ export const emailTemplates: Record<EmailTemplateKey, Template> = {
   document_renewal: {
     label: "Automático · renovação de documento", scopes: [],
     copy: {
-      pt: ["Lembrete de renovação do teu documento · Travel Frontiers", "O documento registado na tua ficha ({{tipo_documento}}) termina a sua validade em {{validade}}. Recomendo que inicies a renovação com antecedência junto da entidade emissora, para teres tempo de receber o novo documento antes de viajar.\n\nSe já pediste a renovação, podes ignorar este lembrete. Quando tiveres o novo documento, responde a este email para combinarmos a atualização da ficha em segurança."],
+      pt: ["Lembrete de renovação do teu documento · Travel Frontiers", "O teu {{tipo_documento}} termina a sua validade em {{validade}}. Recomendo que inicies a renovação com antecedência junto da entidade emissora, para teres tempo de receber o novo documento antes da tua próxima viagem.\n\nSe já pediste a renovação, podes ignorar este lembrete.\nQuando tiveres o novo documento, responde a este email para combinarmos a atualização dos teus dados junto connosco e, quem sabe, vermos onde te vamos levar."],
       en: ["A reminder to renew your travel document · Travel Frontiers", "The document on your Travel Frontiers record ({{tipo_documento}}) expires on {{validade}}. I recommend starting the renewal with the issuing authority early so you have time to receive the new document before travelling.\n\nIf you have already applied for renewal, you can disregard this reminder. Once you receive the new document, please reply so we can arrange a secure update to your record."],
       fr: ["Rappel de renouvellement de ton document · Travel Frontiers", "Le document enregistré dans ton dossier ({{tipo_documento}}) expire le {{validade}}. Je te conseille de commencer les démarches auprès de l’autorité compétente suffisamment tôt pour recevoir le nouveau document avant de voyager.\n\nSi tu as déjà demandé le renouvellement, tu peux ignorer ce rappel. Dès réception du nouveau document, réponds à cet e-mail afin que nous puissions mettre à jour ton dossier en toute sécurité."],
     },
@@ -96,6 +96,9 @@ export const emailTemplates: Record<EmailTemplateKey, Template> = {
 
 export function baseEmailTemplate(key: EmailTemplateKey, language: EmailLanguage) {
   const [subject, body] = emailTemplates[key].copy[language];
+  if (key === "document_renewal" && language === "pt") {
+    return { subject, body: `Olá {{cliente}},\n\n${body}\n\nCom os melhores cumprimentos,\nTiago Ferreira` };
+  }
   const greeting = { pt: "Olá", en: "Hi", fr: "Bonjour" }[language];
   const signoff = (key === "document_renewal" ? { pt: "Com os melhores cumprimentos", en: "Kind regards", fr: "Cordialement" }
     : { pt: "Um abraço", en: "Best wishes", fr: "À bientôt" })[language];

@@ -187,19 +187,28 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  result=await renewal.GET(request({},bearer));assert.deepEqual(result.body,{skipped:true});assert.equal(calls.length,0);
  env.VERCEL_ENV="production";
  const common={id,document_type:"passport",expires_on:"2027-04-06",full_name:"Sofia <Exemplo>",language:"fr",email:"customer@example.invalid"};
- const jobs=[{...common,audience:"customer"},{...common,audience:"internal",email:null},null], finishes=[];
+ const jobs=[{...common,audience:"customer"},{...common,audience:"internal",email:null},
+  {...common,audience:"customer",language:"pt",full_name:"Sofia Exemplo",expires_on:"2026-12-14"},null], finishes=[];
  reply=async(url,init)=>{
   const json=data=>({ok:true,status:200,json:async()=>data,text:async()=>JSON.stringify(data)});
   if(url.endsWith("crm_claim_document_renewal"))return json(jobs.shift());
   if(url.endsWith("crm_finish_document_renewal")){finishes.push(JSON.parse(init.body));return json(null);}
-  if(url.includes("crm_email_templates"))return json([{template_key:"document_renewal",subject:"Renouvellement · {{tipo_documento}}",body:"Bonjour {{cliente}}. Expire le {{validade}}."}]);
+  if(url.includes("crm_email_templates"))return json(url.includes("language=eq.fr")
+   ? [{template_key:"document_renewal",subject:"Renouvellement · {{tipo_documento}}",body:"Bonjour {{cliente}}. Expire le {{validade}}."}] : []);
   throw new Error("Unexpected mock request");
  };
- result=await renewal.GET(request({},bearer));assert.equal(result.status,200);assert.equal(result.body.sent,2);
- assert.deepEqual(renewalMails.map(mail=>mail.to),["customer@example.invalid","synthetic@example.invalid"]);
+ result=await renewal.GET(request({},bearer));assert.equal(result.status,200);assert.equal(result.body.sent,3);
+ assert.deepEqual(renewalMails.map(mail=>mail.to),["customer@example.invalid","synthetic@example.invalid","customer@example.invalid"]);
  assert.ok(renewalMails.every(mail=>!mail.cc&&!mail.bcc&&mail.attachments[0].content.length>0));
  assert.match(renewalMails[0].subject,/Passeport/);assert.match(renewalMails[0].html,/Sofia &lt;Exemplo&gt;.*6 avril 2027/);
  assert.match(renewalMails[1].text,/não tem um email válido/);
+ const portuguese=renewalMails[2];
+ assert.match(portuguese.text,/^Olá Sofia Exemplo,\n\nO teu Passaporte termina a sua validade em 14 de dezembro de 2026\./);
+ assert.match(portuguese.text,/ignorar este lembrete\.\nQuando tiveres o novo documento, responde a este email para combinarmos a atualização dos teus dados junto connosco e, quem sabe, vermos onde te vamos levar\./);
+ assert.match(portuguese.text,/Com os melhores cumprimentos,\nTiago Ferreira\n\nTravel Frontiers · GupiTravel/);
+ assert.equal(portuguese.text.match(/Tiago Ferreira/g)?.length,1);
+ assert.equal(portuguese.attachments[0].contentDisposition,"inline");
+ assert.ok(portuguese.html.includes('src="cid:'+portuguese.attachments[0].cid+'"'));
  assert.ok(finishes.every(item=>item.p_state==="sent"));
  const drive=load("src/app/api/crm/drive/route.ts");
  authorized=false;calls=[];result=await drive.GET(request({}));assert.equal(result.status,401);assert.equal(calls.length,0);
