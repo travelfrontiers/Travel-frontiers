@@ -166,7 +166,9 @@ function isCompleteReading(reading: DocumentReading) {
   return Boolean(reading.document_type && reading.full_name && reading.birth_date && reading.expires_on && reading.document_number);
 }
 
-export async function scanClientDocument(files:File[],signal:AbortSignal,onProgress:(message:string)=>void) {
+export async function scanClientDocument(
+  files: File[], signal: AbortSignal, onProgress: (message: string) => void, onPages: (pages: Blob[]) => void,
+) {
   if(files.length<1||files.length>2||files.some(file=>!file.size||file.size>identityFileLimit||!identityFileTypes.includes(file.type))) {
     throw new Error("Escolhe até dois ficheiros JPG, PNG, WebP ou PDF, até 15 MB cada.");
   }
@@ -181,6 +183,14 @@ export async function scanClientDocument(files:File[],signal:AbortSignal,onProgr
       else pages.push({ image: await imagePage(file), text: "" });
     }
     signal.throwIfAborted();
+    const previews = await Promise.all(pages.map(({ image }) => new Promise<Blob>((resolve, reject) => {
+      image.toBlob(blob => {
+        if (blob) resolve(blob);
+        else reject(new Error("Não foi possível mostrar uma das páginas do documento."));
+      }, "image/jpeg", 0.94);
+    })));
+    signal.throwIfAborted();
+    onPages(previews);
     onProgress("A carregar o leitor de documentos…");
     const {createWorker,OEM,PSM}=await import("tesseract.js");
     const initialization=createWorker(["por","eng"],OEM.LSTM_ONLY,{

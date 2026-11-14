@@ -935,12 +935,18 @@ export default function CrmStudioTool() {
             const clientTrips = trips.filter((trip) => trip.client_id === client.id || trip.client_ids.includes(client.id));
             const clientLeads = leads.filter((lead) => lead.client_id === client.id);
             const birthDate = client.birth_date ? localDateInput(client.birth_date).split("-").reverse().join("/") : "";
-            return <article id={"client-"+client.id} tabIndex={-1} key={client.id} className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            return <article id={"client-"+client.id} tabIndex={-1} key={client.id} className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm has-[[data-document-preview]]:col-span-full">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2"><h3 className="min-w-0 break-words text-lg font-semibold">{client.full_name}</h3><CopyClientField label="nome" value={client.full_name} /></div>
-                  <p className="mt-2 break-all text-sm text-slate-600">{client.email || "Sem email"}</p>
-                  <p className="text-sm text-slate-600">{client.phone || "Sem telefone"}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                    <span className="min-w-0 break-all">{client.email || "Sem email"}</span>
+                    {client.email && <CopyClientField label="email" value={client.email} />}
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                    <span>{client.phone || "Sem telefone"}</span>
+                    {client.phone && <CopyClientField label="telemóvel" value={client.phone} />}
+                  </div>
                   {client.nif && <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                     <span>NIF: {client.nif}</span>
                     <CopyClientField label="NIF" value={client.nif} />
