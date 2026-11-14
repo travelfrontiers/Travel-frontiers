@@ -24,6 +24,9 @@ import CrmWorkspaceNavigation, { type CrmView as View } from "./crm-workspace-na
 import CrmTripList from "./crm-trip-list";
 import { CrmTripTabs, CrmTripPanel, type TripTab } from "./crm-trip-tabs";
 import type { FinanceSummary } from "@/lib/crm-finance";
+import CrmTripAlerts from "./crm-trip-alerts";
+import { tripContextAlerts, type TripAlert } from "@/lib/crm-trip-alerts";
+import { lisbonDay } from "@/lib/crm-calendar";
 import type { TripPdfFields } from "@/lib/crm-trip-pdf";
 
 const adminEmail = "tf.travel.frontiers@gmail.com";
@@ -767,14 +770,14 @@ export default function CrmStudioTool() {
     ...activeLeadFollowups(leads).map((lead) => ({ date: lead.follow_up_date!, title: `Seguimento · ${lead.full_name}`, detail: lead.destination || "Pedido de viagem", kind: "Seguimento" as const, target: { type: "lead", id: lead.id } as OpenTarget })),
     ...currentTrips.filter(trip=>trip.status!=="cancelled").flatMap((trip) => trip.tasks
       .filter((task) => !task.completed && task.due_at)
-      .map((task) => ({ date: task.due_at!.slice(0, 10), title: task.title, detail: tripClientName(trip, clients, leads), kind: "Tarefa" as const, target: { type: "trip", id: trip.id, taskId: task.id } as OpenTarget }))),
+      .map((task) => ({ date: lisbonDay(task.due_at!), title: task.title, detail: tripClientName(trip, clients, leads), kind: "Tarefa" as const, target: { type: "trip", id: trip.id, taskId: task.id } as OpenTarget }))),
     ...activeTrips.flatMap((trip) => [
       ...(trip.departure_date ? [{ date: trip.departure_date, title: `Partida · ${trip.destination || "Viagem"}`, detail: tripClientName(trip, clients, leads), kind: "Viagem" as const, target: { type: "trip", id: trip.id } as OpenTarget }] : []),
       ...(trip.return_date ? [{ date: trip.return_date, title: `Regresso · ${trip.destination || "Viagem"}`, detail: tripClientName(trip, clients, leads), kind: "Viagem" as const, target: { type: "trip", id: trip.id } as OpenTarget }] : []),
     ]),
   ].filter((item) => item.date <= dateAfterDays(14) && (item.kind === "Tarefa" || item.kind === "Seguimento" || item.date >= today)).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 8);
   const overdueFollowups = activeLeadFollowups(leads).filter((lead) => lead.follow_up_date! < today).length;
-  const overdueTasks = currentTrips.filter(trip=>trip.status!=="cancelled").reduce((count, trip) => count + trip.tasks.filter((task) => !task.completed && task.due_at && task.due_at.slice(0, 10) < today).length, 0);
+  const overdueTasks = currentTrips.filter(trip=>trip.status!=="cancelled").reduce((count, trip) => count + trip.tasks.filter((task) => !task.completed && task.due_at && lisbonDay(task.due_at) < today).length, 0);
   const recentLeads = [...currentLeads].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 5);
   const maxStageCount = Math.max(1, ...leadStatuses.map((status) => currentLeads.filter((lead) => lead.status === status.id).length));
   const dashboardMetrics = [
@@ -884,7 +887,7 @@ export default function CrmStudioTool() {
 
             <section className={`rounded-3xl border p-5 shadow-sm sm:p-6 xl:col-span-1 ${expiryAlerts.length ? "border-amber-300 bg-gradient-to-br from-amber-50 to-white" : "border-slate-200 bg-white"}`}>
               <div className="mb-4 flex items-center justify-between gap-3"><div><p className={`text-xs font-bold uppercase tracking-[0.16em] ${expiryAlerts.length ? "text-amber-800" : "text-emerald-800"}`}>Proteção dos viajantes</p><h3 className="mt-1 text-lg font-bold">Documentação</h3></div><span className={`flex size-10 items-center justify-center rounded-xl ${expiryAlerts.length ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>{expiryAlerts.length ? <FileWarning className="size-5" /> : <ShieldCheck className="size-5" />}</span></div>
-              {expiryAlerts.length === 0 ? <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/60 p-4"><p className="font-semibold text-emerald-900">Tudo em dia</p><p className="mt-1 text-sm text-emerald-800">Sem documentos vencidos ou a vencer nos próximos 30 dias.</p></div> : <><p className="mb-3 text-sm text-amber-900">{expiryAlerts.length} {expiryAlerts.length === 1 ? "documento requer" : "documentos requerem"} atenção.</p><ul className="space-y-2">{expiryAlerts.slice(0, 5).map(({ document, client: documentClient, days }) => <li key={document.id} className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2.5"><span className="min-w-0"><span className="block truncate text-sm font-semibold text-slate-900">{documentClient?.full_name || "Cliente"}</span><span className="mt-0.5 block text-xs text-slate-500">{documentTypeLabels[document.document_type]} · {dateLabel(document.expires_on)}</span></span><span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${days < 0 ? "bg-rose-100 text-rose-800" : "bg-amber-100 text-amber-900"}`}>{days < 0 ? `Vencido ${Math.abs(days)}d` : days === 0 ? "Hoje" : `${days}d`}</span></li>)}</ul>{expiryAlerts.length > 5 && <p className="mt-3 text-xs text-slate-500">Mais {expiryAlerts.length - 5} documentos na secção Clientes.</p>}</>}
+              {expiryAlerts.length === 0 ? <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/60 p-4"><p className="font-semibold text-emerald-900">Tudo em dia</p><p className="mt-1 text-sm text-emerald-800">Sem documentos vencidos ou a vencer nos próximos 30 dias.</p></div> : <><p className="mb-3 text-sm text-amber-900">{expiryAlerts.length} {expiryAlerts.length === 1 ? "documento requer" : "documentos requerem"} atenção.</p><ul className="space-y-2">{expiryAlerts.slice(0, 5).map(({ document, client: documentClient, days }) => <li key={document.id}><button type="button" onClick={() => openTarget({type:"client",id:document.client_id})} className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-white px-3 py-2.5 text-left hover:bg-slate-100"><span className="min-w-0"><span className="block truncate text-sm font-semibold text-slate-900">{documentClient?.full_name || "Cliente"}</span><span className="mt-0.5 block text-xs text-slate-500">{documentTypeLabels[document.document_type]} · {dateLabel(document.expires_on)}</span></span><span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${days < 0 ? "bg-rose-100 text-rose-800" : "bg-amber-100 text-amber-900"}`}>{days < 0 ? `Vencido ${Math.abs(days)}d` : days === 0 ? "Hoje" : `${days}d`}</span></button></li>)}</ul>{expiryAlerts.length > 5 && <p className="mt-3 text-xs text-slate-500">Mais {expiryAlerts.length - 5} documentos na secção Clientes.</p>}</>}
               <p className="mt-3 text-xs text-slate-500">Os números/IDs dos documentos não aparecem no dashboard.</p><button type="button" onClick={() => goToView("clients")} className="mt-3 w-full rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-700 hover:text-orange-800">Ver clientes</button>
             </section>
           </div>
@@ -1102,6 +1105,9 @@ export default function CrmStudioTool() {
             <CrmDriveDocuments authorizedFetch={authorizedFetch} tripId={trip.id} title={trip.reference || trip.destination || "Viagem"} initialFile={pdfToArchive?.tripId === trip.id ? pdfToArchive.file : null} onUploaded={() => setPdfToArchive(null)} />
             </CrmTripPanel>
             <CrmTripPanel id={trip.id} tab="communications" active={tripTab}>
+            {!trip.archived_at && trip.status !== "cancelled" && <CrmTripAlerts active={tripTab === "communications"} tripId={trip.id} today={today}
+              authorizedFetch={authorizedFetch} onOpen={openTarget}
+              localAlerts={tripContextAlerts(trip, today, expiryAlertsForTrip(trip, clients, documents), followUpForTrip(trip, leads))}/>}
             <div className="mb-4 flex flex-wrap gap-2">
               <button type="button" className={archiveButton} onClick={()=>{setCalendarKind("");setCalendarDay(trip.departure_date || "");goToView("calendar");}}>Abrir calendário</button>
               <button type="button" className={archiveButton} onClick={()=>setTripTab("tasks")}>Ver tarefas da viagem</button>
@@ -1153,6 +1159,21 @@ export default function CrmStudioTool() {
 
 function leadName(leadId: string | null, leads: Lead[]) {
   return leadId ? leads.find((lead) => lead.id === leadId)?.full_name || "Cliente" : "Cliente";
+}
+
+function expiryAlertsForTrip(trip: Trip, clients: Client[], documents: ClientDocument[]): TripAlert[] {
+  const travelers = new Set([trip.client_id, ...(trip.client_ids || [])]);
+  return documents.filter(document => travelers.has(document.client_id)).map(document => ({
+    id: document.id, date: document.expires_on, kind: "Documento",
+    title: (clients.find(client => client.id === document.client_id)?.full_name ?? "Viajante") + " · " + documentTypeLabels[document.document_type],
+    target: { type: "client", id: document.client_id },
+  }));
+}
+
+function followUpForTrip(trip: Trip, leads: Lead[]): TripAlert | null {
+  const lead = activeLeadFollowups(leads).find(item => item.id === trip.lead_id);
+  return lead?.follow_up_date ? { id: lead.id, date: lead.follow_up_date, kind: "Seguimento", title: lead.full_name,
+    target: { type: "lead", id: lead.id } } : null;
 }
 
 function tripClientName(trip: Trip, clients: Client[], leads: Lead[]) {
