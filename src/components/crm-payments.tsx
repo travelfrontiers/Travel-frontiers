@@ -208,6 +208,9 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
   const back=<div className="flex flex-wrap gap-2">{onBack&&<button className={secondary} onClick={onBack}>← Todos os pagamentos</button>}{onOpenTrip&&<button className={secondary} onClick={onOpenTrip}>Abrir viagem</button>}<button className={secondary} disabled={loading||busy} onClick={()=>void reload()}>Atualizar ficha</button></div>;
   if(!detail) return <div className="space-y-4">{back}{loading?<p role="status">A carregar ficha…</p>:<p role="alert" className="text-red-700">{error}</p>}</div>;
   const summary=detail.summary,currency=summary.currency;
+  const participantDeduction=(detail.discounts ?? []).reduce((total,discount) =>
+    discount.kind==="participant" && !discount.included_in_total ? total+discount.amount : total,0);
+  const agencyPayable=summary.total_amount===null ? null : roundEuro(summary.total_amount-participantDeduction);
   const today=todayInLisbon(),soon=addDays(today,7);
   const people=(detail.adults??0)+(detail.children_count??0)||detail.traveler_count||1;
   const initialValues:CommissionInputs=detail.commission?.inputs||{commission:0,travelerCount:people,
@@ -226,8 +229,9 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
     {message&&<p role="status" className="text-sm text-orange-800">{message}</p>}
     {editor&&editor.type!=="commission"&&<div hidden={section!==undefined&&(section==="commission")!==Boolean(isCommissionEditor)} ref={editorRef}><PaymentEditor key={editor.type+("item" in editor?editor.item?.id||String(editor.type==="receipt"&&editor.commission):"")} editor={editor} detail={detail} busy={busy} onSubmit={mutate} onClose={()=>setEditor(null)}/></div>}
     {section!=="commission"&&<>
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       <MoneyCard label="Total da reserva" value={formatMoney(summary.total_amount,currency)}/>
+      <MoneyCard label="Total a pagar à agência" value={formatMoney(agencyPayable,currency)}/>
       <MoneyCard label="Recebido após reembolsos" value={formatMoney(summary.customer_net,currency)}/>
       <MoneyCard label={summary.balance!==null&&summary.balance<0?"Valor recebido a mais":"Saldo em falta"} value={formatMoney(summary.balance===null?null:Math.abs(summary.balance),currency)}/>
       <MoneyCard label="Prestações em atraso" value={formatMoney(summary.overdue_amount,currency)} warning={summary.overdue_amount>0}/>
