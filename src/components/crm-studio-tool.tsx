@@ -22,6 +22,7 @@ import CrmChecklistTemplates, { CrmTripTemplatePicker } from "./crm-checklist-te
 import { travelTypeLabels, type EntityContext, type OpenTarget } from "@/lib/crm-office-types";
 import CrmWorkspaceNavigation, { type CrmView as View } from "./crm-workspace-navigation";
 import CrmTripList from "./crm-trip-list";
+import CrmCommissionWorkspace, { hasOpenCommission, type CommissionSort, type CommissionView } from "./crm-commission-workspace";
 import { CrmTripTabs, CrmTripPanel, type TripTab } from "./crm-trip-tabs";
 import { commissionStates, formatMoney, type FinanceSummary } from "@/lib/crm-finance";
 import CrmTripAlerts from "./crm-trip-alerts";
@@ -200,6 +201,8 @@ export default function CrmStudioTool() {
   const [financeListStatus, setFinanceListStatus] = useState<"loading"|"ready"|"error">("loading");
   const [tripBalance, setTripBalance] = useState("");
   const [tripCommission, setTripCommission] = useState("");
+  const [commissionSort, setCommissionSort] = useState<CommissionSort>("confirmation");
+  const [commissionView, setCommissionView] = useState<CommissionView>("all");
   const [commissionPeriod, setCommissionPeriod] = useState("");
   const [showArchivedLeads, setShowArchivedLeads] = useState(false);
   const [showLeadForm, setShowLeadForm] = useState(false);
@@ -332,8 +335,6 @@ export default function CrmStudioTool() {
       .sort((a,b)=>clientSort==="newest"?b.created_at.localeCompare(a.created_at):a.full_name.localeCompare(b.full_name));
   }, [clients,clientSearch,focused,clientLanguage,clientFilter,clientSort,trips,documents]);
   const financeByTrip = useMemo(() => new Map(financeSummaries.map(item => [item.trip_id, item])), [financeSummaries]);
-  const hasOpenCommission = (finance: FinanceSummary) => Number(finance.commission_to_receive) > 0 ||
-    (finance.commission_has_discrepancy === true && finance.commission_state !== "settled");
   const visibleTrips = trips.filter(t => {
     const finance = financeByTrip.get(t.id);
     const travelerIds = t.client_ids ?? [];
@@ -832,9 +833,35 @@ export default function CrmStudioTool() {
     } },
     { label: "Comissões por regularizar", value: financeListStatus === "ready" ? financeSummaries.filter(item=>!item.archived_at && item.status!=="cancelled" && hasOpenCommission(item)).length : "—", note: "Saldo confirmado ou divergência em aberto", icon: ListTodo, tone: "amber", action: () => {
       setShowArchivedTrips(false); setTripState(""); setTripType(""); setTripPerson(""); setTripQuery(""); setTripFrom(""); setTripTo("");
-      setTripBalance(""); setTripCommission("pending"); setCommissionPeriod(""); goToView("commissions");
+      setTripBalance(""); setTripCommission(""); setCommissionPeriod(""); setCommissionView("pending"); goToView("commissions");
     } },
   ];
+
+  const tripItems = (view === "trips" || view === "commissions") && focused?.type !== "trip" ? visibleTrips.map(trip => ({
+    id: trip.id, destination: trip.destination || "Destino por definir", client: tripClientName(trip, clients, leads),
+    dates: [trip.departure_date, trip.return_date].filter((date): date is string => Boolean(date)).map(dateLabel).join(" – ") || "Por definir",
+    operator: trip.operator || "—", reference: trip.reference || "",
+    status: trip.archived_at ? "Arquivada" : tripStatuses.find(status=>status.id===trip.status)?.label || trip.status,
+    currency: trip.currency, total: trip.total_amount, finance: financeByTrip.get(trip.id),
+  })) : [];
+  const tripFilters = <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">{view === "trips" && <label className="text-sm">Pesquisar<input className={inputClass} value={tripQuery} onChange={e=>setTripQuery(e.target.value)} placeholder="Destino, cliente, operador ou referência"/></label>}<label className="text-sm">Estado<select className={inputClass} value={tripState} onChange={e=>setTripState(e.target.value)}><option value="">Todos</option>{tripStatuses.map(st=><option key={st.id} value={st.id}>{st.label}</option>)}</select></label>
+    <label className="text-sm">Tipo<select className={inputClass} value={tripType} onChange={e=>setTripType(e.target.value)}><option value="">Todos</option>{Object.entries(travelTypeLabels).filter(([id])=>id!=="all").map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+    <label className="text-sm">Cliente<select className={inputClass} value={tripPerson} onChange={e=>setTripPerson(e.target.value)}><option value="">Todos</option>{clients.map(c=><option key={c.id} value={c.id}>{c.full_name}</option>)}</select></label>
+    <label className="text-sm">Partida desde<input type="date" className={inputClass} value={tripFrom} onChange={e=>setTripFrom(e.target.value)}/></label>
+    <label className="text-sm">Partida até<input type="date" min={tripFrom} className={inputClass} value={tripTo} onChange={e=>setTripTo(e.target.value)}/></label>{view === "trips" && <label className="text-sm">Ordenar<select className={inputClass} value={tripSort} onChange={e=>setTripSort(e.target.value)}><option value="departure">Partida</option><option value="destination">Destino</option></select></label>}{view === "trips" && <p className="self-end pb-3 text-sm text-slate-500">{visibleTrips.length} viagens</p>}<button type="button" className={archiveButton} aria-pressed={showArchivedTrips} onClick={() => { setFocused(null); setShowArchivedTrips(!showArchivedTrips); }}>{showArchivedTrips ? "Voltar às viagens" : "Viagens arquivadas"}</button></div>;
+  const financeFilters = <div className="grid gap-3 sm:grid-cols-2">
+            <label className="text-sm">Pagamentos<select className={inputClass} value={tripBalance} onChange={e=>setTripBalance(e.target.value)} disabled={financeListStatus!=="ready"}>
+              <option value="">Todos</option><option value="pending">Com saldo em falta</option><option value="overdue">Com prestações em atraso</option>
+            </select></label>
+            <label className="text-sm">Comissão<select className={inputClass} value={tripCommission} onChange={e=>setTripCommission(e.target.value)} disabled={financeListStatus!=="ready"}>
+              <option value="">Todas</option><option value="pending">Por regularizar</option><option value="collectible">Confirmadas por receber</option>
+              <option value="discrepancy">Com divergência</option>
+              {Object.entries(commissionStates).map(([value,label])=><option key={value} value={value}>{label}</option>)}
+            </select></label>
+            {view==="commissions" && <label className="text-sm">Mês da confirmação da agência
+              <input type="month" className={inputClass} value={commissionPeriod} onChange={event=>setCommissionPeriod(event.target.value)}/>
+            </label>}
+          </div>;
 
   return (
     <main data-theme={theme} className={`${styles.root} min-h-screen bg-slate-50 text-slate-900`}>
@@ -1059,17 +1086,17 @@ export default function CrmStudioTool() {
         </>}
 
         {!loading && (view === "trips" || view === "commissions") && <>
-          {focused?.type !== "trip" && <>
-          {view === "trips" ? <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-lg font-semibold">Viagens</h2><p className="text-sm text-slate-500">Cria uma viagem manualmente ou pré-preenche-a a partir de um PDF.</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => { setShowPdfImport(false); setPdfPreview(null); setPdfSource(null); setShowTripForm((open) => !open); }} className="rounded-full border border-orange-800 px-5 py-2.5 text-sm font-semibold text-orange-800 hover:bg-orange-50">{showTripForm ? "Fechar formulário" : "Adicionar manualmente"}</button><button type="button" onClick={() => { setShowTripForm(false); setShowPdfImport((open) => !open); setPdfPreview(null); setPdfSource(null); }} className="rounded-full bg-orange-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-900">{showPdfImport ? "Fechar importação" : "Ler PDF e criar viagem"}</button></div></div> : <div className="mb-5">
-            <h2 className="text-xl font-semibold">Comissões</h2>
-            <p className="text-sm text-slate-600">Comissões previstas, confirmações da agência, recebimentos e divergências por viagem.</p>
-          </div>}
-
-          <div className="mb-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-4"><label className="text-sm">Pesquisar<input className={inputClass} value={tripQuery} onChange={e=>setTripQuery(e.target.value)} placeholder="Destino, cliente, operador ou referência"/></label><label className="text-sm">Estado<select className={inputClass} value={tripState} onChange={e=>setTripState(e.target.value)}><option value="">Todos</option>{tripStatuses.map(st=><option key={st.id} value={st.id}>{st.label}</option>)}</select></label><label className="text-sm">Tipo<select className={inputClass} value={tripType} onChange={e=>setTripType(e.target.value)}><option value="">Todos</option>{Object.entries(travelTypeLabels).filter(([id])=>id!=="all").map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><label className="text-sm">Cliente<select className={inputClass} value={tripPerson} onChange={e=>setTripPerson(e.target.value)}><option value="">Todos</option>{clients.map(c=><option key={c.id} value={c.id}>{c.full_name}</option>)}</select></label><label className="text-sm">Partida desde<input type="date" className={inputClass} value={tripFrom} onChange={e=>setTripFrom(e.target.value)}/></label><label className="text-sm">Partida até<input type="date" min={tripFrom} className={inputClass} value={tripTo} onChange={e=>setTripTo(e.target.value)}/></label><label className="text-sm">Ordenar<select className={inputClass} value={tripSort} onChange={e=>setTripSort(e.target.value)}><option value="departure">Partida</option><option value="destination">Destino</option></select></label><p className="self-end pb-3 text-sm text-slate-500">{visibleTrips.length} viagens</p><button type="button" className={archiveButton} aria-pressed={showArchivedTrips} onClick={() => { setFocused(null); setShowArchivedTrips(!showArchivedTrips); }}>{showArchivedTrips ? "Voltar às viagens" : "Viagens arquivadas"}</button></div>
-          {view === "trips" && showPdfImport && <section className="mb-6 rounded-2xl border border-orange-200 bg-orange-50/50 p-5 shadow-sm"><div className="mb-4"><h3 className="font-semibold">Pré-preencher a viagem pelo PDF</h3><p className="mt-1 text-sm text-slate-600">O PDF é processado no servidor e descartado após a leitura. Confirma os campos antes de guardar; o texto integral não é retido.</p></div><form onSubmit={previewTripPdf} className="flex flex-wrap items-end gap-3"><label className="min-w-64 flex-1 space-y-1 text-sm font-semibold">Orçamento ou documento de reserva (PDF, até 4 MB)<input name="pdf_file" type="file" accept="application/pdf,.pdf" required className={`${inputClass} file:mr-3 file:rounded-full file:border-0 file:bg-orange-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold`} /></label><button disabled={pdfLoading} className="rounded-full bg-orange-800 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{pdfLoading ? "A ler PDF…" : "Extrair campos"}</button></form>{pdfPreview && <form onSubmit={createManualTrip} className="mt-5 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 sm:grid-cols-2"><div className="sm:col-span-2"><p className="font-semibold text-orange-900">Campos sugeridos extraídos</p><p className="mt-1 text-sm text-slate-600">Revê e corrige tudo. Só depois de carregares em “Confirmar e criar viagem” será criado o registo e a checklist.</p></div><TripClientSelect clients={clients} id="crm-pdf-trip-clients" /><label className="space-y-1 text-sm font-semibold">Tipo de viagem<select name="travel_type" defaultValue={"general"} className={inputClass}>{Object.entries(travelTypeLabels).filter(([id])=>id!=="all").map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><label className="space-y-1 text-sm font-semibold">Operador<input name="operator" maxLength={160} defaultValue={pdfPreview.operator} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Localizador<input name="reference" maxLength={80} defaultValue={pdfPreview.reference} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Destino<input name="destination" maxLength={240} defaultValue={pdfPreview.destination} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Estado da viagem<select name="status" defaultValue="planning" className={inputClass}>{tripStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label><label className="space-y-1 text-sm font-semibold">Partida<input name="departure_date" type="date" defaultValue={pdfPreview.departure_date} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Regresso<input name="return_date" type="date" defaultValue={pdfPreview.return_date} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Adultos<input name="adults" type="number" min={1} max={20} defaultValue={pdfPreview.adults} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Crianças<input name="children_count" type="number" min={0} max={30} defaultValue={pdfPreview.children_count} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Valor total<input name="total_amount" type="number" min={0} max={9999999999.99} step="0.01" defaultValue={pdfPreview.total_amount} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Moeda<input name="currency" required minLength={3} maxLength={3} pattern="[A-Za-z]{3}" title="Código de moeda de 3 letras, por exemplo EUR" defaultValue={pdfPreview.currency || "EUR"} className={inputClass} /></label><div className="sm:col-span-2 rounded-xl border border-slate-200 p-4"><p className="font-semibold">Voos e hotéis sugeridos ({pdfPreview.services.length})</p>{pdfPreview.services.length === removedPdfServices.length && <p className="mt-1 text-sm text-slate-600">Sem voos ou alojamentos para importar. Podes adicioná-los na ficha da viagem.</p>}<div className="mt-3 space-y-3">{pdfPreview.services.map((service, index) => !removedPdfServices.includes(index) &&
+          {focused?.type !== "trip" && (view === "commissions" ?
+            <CrmCommissionWorkspace items={tripItems} tab={commissionView} onTab={setCommissionView}
+              sort={commissionSort} onSort={setCommissionSort} query={tripQuery} onQuery={setTripQuery} filters={<>{tripFilters}{financeFilters}</>}
+              status={financeListStatus} onRetry={()=>void refreshFinance()}
+              onOpen={id=>openTrip(id,"commission",undefined,"commissions")} /> : <>
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-lg font-semibold">Viagens</h2><p className="text-sm text-slate-500">Cria uma viagem manualmente ou pré-preenche-a a partir de um PDF.</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => { setShowPdfImport(false); setPdfPreview(null); setPdfSource(null); setShowTripForm((open) => !open); }} className="rounded-full border border-orange-800 px-5 py-2.5 text-sm font-semibold text-orange-800 hover:bg-orange-50">{showTripForm ? "Fechar formulário" : "Adicionar manualmente"}</button><button type="button" onClick={() => { setShowTripForm(false); setShowPdfImport((open) => !open); setPdfPreview(null); setPdfSource(null); }} className="rounded-full bg-orange-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-900">{showPdfImport ? "Fechar importação" : "Ler PDF e criar viagem"}</button></div></div>
+          <div className="mb-5">{tripFilters}</div>
+          {showPdfImport && <section className="mb-6 rounded-2xl border border-orange-200 bg-orange-50/50 p-5 shadow-sm"><div className="mb-4"><h3 className="font-semibold">Pré-preencher a viagem pelo PDF</h3><p className="mt-1 text-sm text-slate-600">O PDF é processado no servidor e descartado após a leitura. Confirma os campos antes de guardar; o texto integral não é retido.</p></div><form onSubmit={previewTripPdf} className="flex flex-wrap items-end gap-3"><label className="min-w-64 flex-1 space-y-1 text-sm font-semibold">Orçamento ou documento de reserva (PDF, até 4 MB)<input name="pdf_file" type="file" accept="application/pdf,.pdf" required className={`${inputClass} file:mr-3 file:rounded-full file:border-0 file:bg-orange-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold`} /></label><button disabled={pdfLoading} className="rounded-full bg-orange-800 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{pdfLoading ? "A ler PDF…" : "Extrair campos"}</button></form>{pdfPreview && <form onSubmit={createManualTrip} className="mt-5 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 sm:grid-cols-2"><div className="sm:col-span-2"><p className="font-semibold text-orange-900">Campos sugeridos extraídos</p><p className="mt-1 text-sm text-slate-600">Revê e corrige tudo. Só depois de carregares em “Confirmar e criar viagem” será criado o registo e a checklist.</p></div><TripClientSelect clients={clients} id="crm-pdf-trip-clients" /><label className="space-y-1 text-sm font-semibold">Tipo de viagem<select name="travel_type" defaultValue={"general"} className={inputClass}>{Object.entries(travelTypeLabels).filter(([id])=>id!=="all").map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><label className="space-y-1 text-sm font-semibold">Operador<input name="operator" maxLength={160} defaultValue={pdfPreview.operator} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Localizador<input name="reference" maxLength={80} defaultValue={pdfPreview.reference} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Destino<input name="destination" maxLength={240} defaultValue={pdfPreview.destination} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Estado da viagem<select name="status" defaultValue="planning" className={inputClass}>{tripStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}</select></label><label className="space-y-1 text-sm font-semibold">Partida<input name="departure_date" type="date" defaultValue={pdfPreview.departure_date} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Regresso<input name="return_date" type="date" defaultValue={pdfPreview.return_date} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Adultos<input name="adults" type="number" min={1} max={20} defaultValue={pdfPreview.adults} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Crianças<input name="children_count" type="number" min={0} max={30} defaultValue={pdfPreview.children_count} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Valor total<input name="total_amount" type="number" min={0} max={9999999999.99} step="0.01" defaultValue={pdfPreview.total_amount} className={inputClass} /></label><label className="space-y-1 text-sm font-semibold">Moeda<input name="currency" required minLength={3} maxLength={3} pattern="[A-Za-z]{3}" title="Código de moeda de 3 letras, por exemplo EUR" defaultValue={pdfPreview.currency || "EUR"} className={inputClass} /></label><div className="sm:col-span-2 rounded-xl border border-slate-200 p-4"><p className="font-semibold">Voos e hotéis sugeridos ({pdfPreview.services.length})</p>{pdfPreview.services.length === removedPdfServices.length && <p className="mt-1 text-sm text-slate-600">Sem voos ou alojamentos para importar. Podes adicioná-los na ficha da viagem.</p>}<div className="mt-3 space-y-3">{pdfPreview.services.map((service, index) => !removedPdfServices.includes(index) &&
               <CrmPdfServiceFields key={index} service={service} index={index}
                 onRemove={() => setRemovedPdfServices(previous => [...previous, index])} />)}</div>{removedPdfServices.length > 0 && <button type="button" disabled={saving} className={archiveButton + " mt-3"} onClick={() => setRemovedPdfServices([])}>Repor serviços retirados</button>}</div><label className="space-y-1 text-sm font-semibold sm:col-span-2">Notas da viagem<textarea name="trip_notes" rows={3} maxLength={4000} defaultValue={pdfPreview.trip_notes} className={inputClass} placeholder="Outros dados úteis extraídos" /></label><div className="sm:col-span-2 flex justify-end"><button disabled={saving || clients.length === 0} className="rounded-full bg-orange-800 px-6 py-3 font-semibold text-white disabled:opacity-60">{saving ? "A guardar…" : "Confirmar e criar viagem"}</button></div></form>}</section>}
-          {view === "trips" && showTripForm && <form onSubmit={createManualTrip} className="mb-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2">
+          {showTripForm && <form onSubmit={createManualTrip} className="mb-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2">
             <TripClientSelect clients={clients} /><label className="space-y-1 text-sm font-semibold">Tipo de viagem<select name="travel_type" defaultValue={"general"} className={inputClass}>{Object.entries(travelTypeLabels).filter(([id])=>id!=="all").map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
             <label className="space-y-1 text-sm font-semibold">Operador<input name="operator" maxLength={160} className={inputClass} /></label>
             <label className="text-sm">Localizador<input name="reference" maxLength={80} className={inputClass} placeholder="Opcional" /></label>
@@ -1085,36 +1112,13 @@ export default function CrmStudioTool() {
             <label className="space-y-1 text-sm font-semibold sm:col-span-2">Notas da viagem<textarea name="trip_notes" rows={3} maxLength={4000} className={inputClass} /></label>
             <div className="sm:col-span-2 flex justify-end"><button disabled={saving} className="rounded-full bg-orange-800 px-6 py-3 font-semibold text-white hover:bg-orange-900 disabled:opacity-60">{saving ? "A guardar…" : "Criar viagem e checklist"}</button></div>
           </form>}
-          {view === "trips" && clients.length === 0 && <p className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Cria primeiro um cliente na secção Clientes para poderes associar-lhe uma viagem.</p>}
-          <div className="mb-5 grid gap-3 sm:grid-cols-2">
-            <label className="text-sm">Pagamentos<select className={inputClass} value={tripBalance} onChange={e=>setTripBalance(e.target.value)} disabled={financeListStatus!=="ready"}>
-              <option value="">Todos</option><option value="pending">Com saldo em falta</option><option value="overdue">Com prestações em atraso</option>
-            </select></label>
-            <label className="text-sm">Comissão<select className={inputClass} value={tripCommission} onChange={e=>setTripCommission(e.target.value)} disabled={financeListStatus!=="ready"}>
-              <option value="">Todas</option><option value="pending">Por regularizar</option><option value="collectible">Confirmadas por receber</option>
-              <option value="discrepancy">Com divergência</option>
-              {Object.entries(commissionStates).map(([value,label])=><option key={value} value={value}>{label}</option>)}
-            </select></label>
-            {view==="commissions" && <label className="text-sm">Mês da confirmação da agência
-              <input type="month" className={inputClass} value={commissionPeriod} onChange={event=>setCommissionPeriod(event.target.value)}/>
-            </label>}
-          </div>
-          {view==="commissions" && financeListStatus==="ready" && <CommissionTotals trips={visibleTrips.flatMap(trip => {
-            const finance=financeByTrip.get(trip.id);
-            return finance ? [finance] : [];
-          })}/>}
+          {clients.length === 0 && <p className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Cria primeiro um cliente na secção Clientes para poderes associar-lhe uma viagem.</p>}
+          <div className="mb-5">{financeFilters}</div>
           {financeListStatus==="loading" && <p role="status" className="mb-3 text-sm text-slate-600">A carregar valores financeiros…</p>}
           {financeListStatus==="error" && <div role="status" className="mb-3 text-sm text-slate-600">Dados financeiros indisponíveis. <button type="button" className="underline" onClick={()=>void refreshFinance()}>Tentar novamente</button></div>}
-          {view === "trips" && trips.length === 0 ? <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">Ainda não há viagens. Podes converter um pedido ganho ou adicionar uma viagem a um cliente.</p> :
-            <CrmTripList mode={view} onOpen={id=>openTrip(id, view === "commissions" ? "commission" : "summary", undefined, view)}
-              items={visibleTrips.map(trip => ({
-                id: trip.id, destination: trip.destination || "Destino por definir", client: tripClientName(trip, clients, leads),
-                dates: [trip.departure_date, trip.return_date].filter((date): date is string => Boolean(date)).map(dateLabel).join(" – ") || "Por definir",
-                operator: trip.operator || "—", reference: trip.reference || "",
-                status: trip.archived_at ? "Arquivada" : tripStatuses.find(status=>status.id===trip.status)?.label || trip.status,
-                currency: trip.currency, total: trip.total_amount, finance: financeByTrip.get(trip.id),
-              }))} />}
-          </>}
+          {trips.length === 0 ? <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">Ainda não há viagens. Podes converter um pedido ganho ou adicionar uma viagem a um cliente.</p> :
+            <CrmTripList mode="trips" onOpen={id=>openTrip(id)} items={tripItems} />}
+          </>)}
           {focused?.type === "trip" && !trips.some(trip=>trip.id===focused.id) && <p role="status" className="text-sm text-slate-600">Não foi possível encontrar esta viagem. <button className="underline" type="button" onClick={()=>setFocused(null)}>Ver viagens</button></p>}
           {focused?.type === "trip" && trips.filter(trip=>trip.id===focused.id).map((trip) => <article id={"trip-"+trip.id} tabIndex={-1} key={trip.id} className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             <button type="button" className="mb-4 text-sm font-semibold text-orange-800 underline" onClick={()=>goToView(tripListView)}>{tripListView==="commissions"?"Voltar a Comissões":"Voltar à lista de viagens"}</button>
@@ -1289,21 +1293,6 @@ export default function CrmStudioTool() {
 
 function leadName(leadId: string | null, leads: Lead[]) {
   return leadId ? leads.find((lead) => lead.id === leadId)?.full_name || "Cliente" : "Cliente";
-}
-
-function CommissionTotals({trips}:{trips:FinanceSummary[]}) {
-  const totals = new Map<string, { expected:number; confirmed:number; received:number; toReceive:number; estimates:number; confirmations:number }>();
-  for (const trip of trips) {
-    const sum = totals.get(trip.currency) ?? { expected:0, confirmed:0, received:0, toReceive:0, estimates:0, confirmations:0 };
-    if (trip.commission_expected != null) { sum.expected += Math.round(trip.commission_expected*100); sum.estimates++; }
-    if (trip.commission_confirmed != null) { sum.confirmed += Math.round(trip.commission_confirmed*100); sum.confirmations++; }
-    sum.received += Math.round(trip.commission_net*100);
-    sum.toReceive += Math.max(0,Math.round((trip.commission_to_receive ?? 0)*100));
-    totals.set(trip.currency,sum);
-  }
-  return <div className="mb-4 space-y-2">{[...totals].map(([currency,sum])=><p key={currency} className="rounded-xl border border-slate-200 bg-white p-3 text-sm">
-    <strong>{currency}</strong> · Prevista {sum.estimates?formatMoney(sum.expected/100,currency):"—"} · Confirmada {sum.confirmations?formatMoney(sum.confirmed/100,currency):"—"} · Recebida {formatMoney(sum.received/100,currency)} · Por receber {sum.confirmations?formatMoney(sum.toReceive/100,currency):"—"}
-  </p>)}</div>;
 }
 
 function expiryAlertsForTrip(trip: Trip, clients: Client[], documents: ClientDocument[]): TripAlert[] {
