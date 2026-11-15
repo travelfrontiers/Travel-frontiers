@@ -186,6 +186,7 @@ function load(file, mocks = {}, env = {}, network = fetch) {
             "./crm-email-context": { emailRest: async () => [] },
             "./crm-email-templates": load("src/lib/crm-email-templates.ts"),
         }),
+        "@/lib/crm-precontract-email": { readPrecontractTemplate: async () => null },
         "@/lib/crm-email-signature": signature,
         "@/lib/crm-email-recipients": recipientHelpers,
         "@/lib/studio-request": controls,

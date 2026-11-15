@@ -10,6 +10,7 @@ import { readStoredTemplates, saveStoredTemplate, validTemplate } from "@/lib/cr
 import { configuredQuoteDocuments, formatCrmEmail, quoteBodyWithLinks } from "@/lib/crm-email-signature";
 import { agencyCopyAddress, maxEmailRecipients, parseEmailRecipients } from "@/lib/crm-email-recipients";
 import { readBounded } from "@/lib/studio-request";
+import { fetchPrecontractFile, readPrecontractTemplate } from "@/lib/crm-precontract-email";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -33,12 +34,12 @@ function verifyText(subject: unknown, body: unknown) {
   return { subject: subject.trim(), body: body.trim() };
 }
 
-async function contextFor(config: EmailConfig, scope: unknown, id: unknown, version: unknown) {
+async function contextFor(config: EmailConfig, scope: unknown, id: unknown, version: unknown, includePrecontract = false) {
   if (!isEmailScope(scope) || !uuid(id)) throw new CrmError("Ficha inválida.");
   if (version !== undefined && version !== null && (!Number.isInteger(version) || Number(version) < 1)) {
     throw new CrmError("Versão inválida.");
   }
-  return loadEmailContext(config, scope, id, Number(version) || undefined);
+  return loadEmailContext(config, scope, id, Number(version) || undefined, includePrecontract);
 }
 
 function templateFor(context: EmailContext, key: unknown) {
@@ -59,21 +60,24 @@ export async function GET(request: NextRequest) {
   try {
     const config = await crmConfig(request);
     const params = request.nextUrl.searchParams;
-    const context = await contextFor(config, params.get("scope"), params.get("id"), params.has("version") ? Number(params.get("version")) : undefined);
-    const [history, stored] = await Promise.all([
+    const context = await contextFor(config, params.get("scope"), params.get("id"), params.has("version") ? Number(params.get("version")) : undefined, true);
+    const [history, stored, precontract] = await Promise.all([
       emailRest<EmailRow[]>(config, "crm_emails", {
         ...emailScopeFilter(context), select: columns, order: "occurred_at.desc,id", limit: "60",
       }),
       readStoredTemplates(config, context.language),
+      context.scope === "lead" ? null : readPrecontractTemplate(config),
     ]);
     const quoteDocuments = configuredQuoteDocuments();
     const templates = Object.entries(emailTemplates).flatMap(([key, template]) => {
       if (!template.scopes.includes(context.scope) || key === "quote" && (context.currentVersion !== context.proposal_version || context.proposalStatus !== "draft" && context.proposalStatus !== "sent")) return [];
       const edited = stored.find(entry => entry.template_key === key);
-      const copy = edited ?? baseEmailTemplate(key as EmailTemplateKey, context.language);
+      const copy = edited ?? (key === "precontract" ? precontract : baseEmailTemplate(key as EmailTemplateKey, context.language));
+      if (!copy || key === "precontract" && !precontract) return [];
       const linkedQuote = key === "quote" && quoteDocuments;
-      return [{ key, label: template.label, required: linkedQuote ? ["quote"] : template.required ?? [], subject: copy.subject,
-        body: copy.body }];
+      return [{ key, label: template.label + (key === "precontract" && !edited && context.language !== "pt" ? " (PT)" : ""),
+        required: linkedQuote ? ["quote"] : template.required ?? [], subject: copy.subject, body: copy.body,
+        ...(key === "precontract" && { standardAttachments: precontract?.attachments }) }];
     });
     return privateJson({ context, templates, history, quoteDocuments, driveClientId: process.env.GOOGLE_DRIVE_CLIENT_ID || null });
   } catch (error) { return failure(error); }
@@ -99,6 +103,22 @@ async function attachmentsFrom(form: FormData) {
   return attachments;
 }
 
+async function precontractAttachments(config: EmailConfig): Promise<Attachment[]> {
+  const template = await readPrecontractTemplate(config);
+  if (!template) throw new CrmError("O modelo pré-contratual está temporariamente indisponível.", 503);
+  return Promise.all(template.attachments.map(async filename => {
+    try {
+      const response = await fetchPrecontractFile(config, filename);
+      if (!response.ok) throw new Error();
+      const content = await readBounded(response.body, maxAttachmentBytes);
+      if (content.subarray(0, 5).toString("ascii") !== "%PDF-") throw new Error();
+      return { filename, content, contentType: "application/pdf", role: "other" } satisfies Attachment;
+    } catch {
+      throw new CrmError(`Anexo do modelo indisponível: ${filename}. Tenta novamente.`, 503);
+    }
+  }));
+}
+
 async function send(config: EmailConfig, request: Request, type: string) {
   let form: FormData;
   try {
@@ -120,7 +140,16 @@ async function send(config: EmailConfig, request: Request, type: string) {
   if (context.archived) throw new CrmError("Restaura a ficha antes de enviar.");
   const { subject, body } = verifyText(form.get("subject"), form.get("body"));
   if (missingEmailFields(subject + "\n" + body).length) throw new CrmError("Preenche os campos pendentes do modelo antes de enviar.");
+  if (key === "precontract" && roles.some(role => role !== "other" && form.has("file_" + role))) {
+    throw new CrmError("Usa o campo Outro documento para juntar ficheiros às condições pré-contratuais.");
+  }
   const attachments = await attachmentsFrom(form);
+  if (key === "precontract") {
+    attachments.unshift(...await precontractAttachments(config));
+    if (attachments.length > 10 || attachments.reduce((total, file) => total + file.content.length, 0) > maxAttachmentBytes) {
+      throw new CrmError("Os anexos do modelo e os ficheiros adicionais excedem 3,8 MB ou dez ficheiros.", 413);
+    }
+  }
   const quoteDocuments = key === "quote" ? configuredQuoteDocuments() : null;
   const required = quoteDocuments ? ["quote" as const] : emailTemplates[key].required;
   const missing = required?.filter(role => !attachments.some(file => file.role === role));
@@ -140,7 +169,9 @@ async function send(config: EmailConfig, request: Request, type: string) {
   }
 
   const signatureCid = `tf-signature-${id}@travelfrontiers.pt`;
-  const message = formatCrmEmail(quoteDocuments ? quoteBodyWithLinks(body, context.language) : body, context.language, quoteDocuments, signatureCid);
+  const messageLanguage = key === "precontract" ? "pt" : context.language;
+  const documentLinks = key === "precontract" ? configuredQuoteDocuments() : quoteDocuments;
+  const message = formatCrmEmail(quoteDocuments ? quoteBodyWithLinks(body, context.language) : body, messageLanguage, documentLinks, signatureCid);
   if ([...message.text].length > mailBodyLimit) throw new CrmError("Encurta a mensagem para incluir a assinatura e os links.");
   const signature = await readFile(join(process.cwd(), "public", "email-signature-inline.jpg")).catch(() => {
     throw new CrmError("Não foi possível incluir a assinatura. Tenta novamente.", 503);

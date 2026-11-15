@@ -13,7 +13,7 @@ export type CrmEmailMessage = {
   sender: string; recipient: string; cc: string | null; subject: string; body: string;
   attachments: { filename: string }[]; proposal_version: number | null;
 };
-type Template = { key: EmailTemplateKey; label: string; subject: string; body: string; required: EmailAttachmentRole[] };
+type Template = { key: EmailTemplateKey; label: string; subject: string; body: string; required: EmailAttachmentRole[]; standardAttachments?: string[] };
 type EmailData = { context: EmailContext; templates: Template[]; history: CrmEmailMessage[]; quoteDocuments: QuoteDocumentLinks | null; driveClientId: string | null };
 type Candidate = { key: string; subject: string; date: string };
 type Draft = { template: Template; subject: string; body: string; operationId: string; to: string; copyAgency: boolean; reply?: CrmEmailMessage };
@@ -186,9 +186,13 @@ export default function CrmEmailPanel({ authorizedFetch, scope, id, version, sug
             {/* The same remote image is used by email clients. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={emailSignatureImage} alt={emailSignatureName} width={600} className="h-auto max-w-full" />
-            {draft.template.key === "quote" && quoteDocumentItems(data.context.language, data.quoteDocuments).map(({ label, url }) =>
+            {(draft.template.key === "quote" || draft.template.key === "precontract") && quoteDocumentItems(draft.template.key === "precontract" ? "pt" : data.context.language, data.quoteDocuments).map(({ label, url }) =>
               <a className="block text-sm underline" key={url} href={url} target="_blank" rel="noreferrer">{label}</a>)}
           </div>
+          {draft.template.standardAttachments?.length ? <div className="space-y-1 text-sm">
+            <p className="font-semibold">Anexos incluídos automaticamente</p>
+            <ul className="list-disc pl-5">{draft.template.standardAttachments.map(filename => <li key={filename}>{filename}</li>)}</ul>
+          </div> : null}
           <fieldset className="grid gap-3 sm:grid-cols-2">
             <legend className="mb-2 text-sm font-semibold">Anexos · até 3,8 MB no total</legend>
             {roles.filter(role => role === "other" || draft.template.required.includes(role)).map(role => <div key={role}>
@@ -246,7 +250,7 @@ export default function CrmEmailPanel({ authorizedFetch, scope, id, version, sug
             {!!message.attachments.length && <p className="mt-2 break-all text-xs">Anexos: {message.attachments.map(file => file.filename).join(", ")}</p>}
             {message.direction === "in" && (scope !== "proposal" || message.proposal_version === version) && <div className="mt-2 flex flex-wrap gap-2">
               <button type="button" className={secondary} disabled={busy || Boolean(draft)} onClick={() => {
-                const template = data.templates.find(item => !item.required.length);
+                const template = data.templates.find(item => !item.required.length && !item.standardAttachments?.length);
                 if (template) compose(template, message);
               }}>Responder</button>
               {onAcceptReply && <button type="button" className={secondary} disabled={busy} onClick={() => onAcceptReply(message)}>Preparar registo de aceitação</button>}
