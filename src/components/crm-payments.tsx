@@ -8,6 +8,7 @@ import {officeInput as input,officeButton as primary,officeSecondary as secondar
 import {TripCommissionCalculator} from "./commission-calculator";
 import type {TripFinanceTab} from "./crm-trip-tabs";
 import CrmDriveDocuments from "./crm-drive-documents";
+import { CrmTripDiscounts } from "./crm-trip-discounts";
 import CrmCommissionReview from "./crm-commission-review";
 
 const panel="rounded-2xl border border-slate-200 bg-white p-5";
@@ -236,6 +237,14 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
       <button className={primary} disabled={busy||summary.total_amount===null} onClick={()=>setEditor({type:"receipt"})}>Registar pagamento</button>
     </div>
 
+    <CrmTripDiscounts detail={detail} busy={busy}
+      onSave={values => mutate("discount_save", values)}
+      onReverse={id => {
+        if(window.confirm("Anular o desconto? O saldo será recalculado. Os pagamentos e prestações já corrigidos mantêm a correção.")) {
+          void mutate("discount_reverse",{id}).catch(()=>{});
+        }
+      }}/>
+
     <section className={panel}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><h3 className="text-lg font-bold">Plano de prestações</h3>
@@ -248,11 +257,13 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
       </div>
       {detail.schedule.length===0?<p className="mt-4 text-sm text-slate-500">Ainda não há prestações.</p>:<ul className="mt-4 divide-y divide-slate-200">
         {detail.schedule.map(item=>{
+          const payable=item.amount_after_discount ?? item.amount;
           const settled=item.amount_remaining===0;
           const overdue=!settled&&item.due_on<today;
           return <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-            <div><p className="font-semibold">{item.label} · {formatMoney(item.amount,currency)}</p>
-              <p className={"text-sm "+(overdue?"text-red-700":"text-slate-500")}>{formatFinanceDate(item.due_on)} · {settled?"Paga":overdue?"Em atraso":item.due_on<=soon?"A vencer":"Por pagar"}{!settled?" · "+formatMoney(item.amount_remaining,currency)+" em falta":""}</p></div>
+            <div><p className="font-semibold">{item.label} · {formatMoney(payable,currency)}</p>
+              {payable<item.amount && <p className="text-sm text-slate-600">Desconto aplicado · {formatMoney(roundEuro(item.amount-payable),currency)}</p>}
+              <p className={"text-sm "+(overdue?"text-red-700":"text-slate-500")}>{formatFinanceDate(item.due_on)} · {payable===0?"Coberta por desconto":settled?"Paga":overdue?"Em atraso":item.due_on<=soon?"A vencer":"Por pagar"}{!settled?" · "+formatMoney(item.amount_remaining,currency)+" em falta":""}</p></div>
             <div className="flex gap-2"><button className={secondary} disabled={busy} onClick={()=>setEditor({type:"schedule",item})}>Editar</button><button className={secondary} disabled={busy} onClick={()=>remove("schedule_delete",item.id)}>Remover</button></div>
           </li>;
         })}
@@ -267,6 +278,9 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
       </div>
       {stale&&<p role="status" className="text-sm text-orange-800">O total ou o número de viajantes mudou depois do cálculo. Revê os dados da comissão.</p>}
       <p className="text-sm text-slate-600">Último recebimento · {lastCommissionReceipt ? formatFinanceDate(lastCommissionReceipt) : "Sem recebimentos registados"}</p>
+      {Boolean(summary.commission_discount) && <p className="text-sm text-slate-600">
+        Descontos a clientes deduzidos da comissão prevista · {formatMoney(summary.commission_discount ?? 0,currency)}
+      </p>}
       <CrmCommissionReview detail={detail} today={today} busy={busy} onSave={mutate} onServices={onOpenServices}/>
       {editor?.type==="commission"&&<TripCommissionCalculator initialValues={initialValues} theme={theme}
         onSave={(inputs,apply_to_total)=>mutate("commission_save",{inputs,apply_to_total})}/>}

@@ -51,6 +51,11 @@ A leitura é feita no navegador. O CRM guarda os campos revistos. Para guardar t
 2. Confirma o total da reserva e define o sinal e o restante valor ou as prestações com vencimento.
 3. Regista pagamentos e reembolsos quando confirmados. Indica a referência e, se necessário, associa o comprovativo já guardado no Drive. O saldo é atualizado pelos movimentos.
 4. Em **Comissão da viagem**, usa a calculadora para estimar e guardar a comissão em euros. Regista a comissão recebida na mesma ficha financeira.
+
+Em **Pagamentos → Descontos**, regista a poupança de participante ou um desconto a clientes. Para o desconto a clientes, escolhe se o montante também sai da comissão prevista. Marca **O desconto já está refletido no total da reserva** quando o preço já for líquido.
+
+Para corrigir um desconto lançado como prestação ou incluído num recebimento, indica o valor e abre **Corrigir um desconto registado como prestação ou recebimento**. Seleciona apenas as linhas que incluem o desconto e confirma. O CRM atualiza os saldos e regista a alteração no histórico.
+
 5. Consulta **Pagamentos a acompanhar** no resumo para ver atrasos e prazos nos próximos sete dias.
 
 ## 7. Usar os modelos de email e o Drive

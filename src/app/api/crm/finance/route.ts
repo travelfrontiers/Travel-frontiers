@@ -68,6 +68,25 @@ export async function POST(request:NextRequest) {
     const id=body.id||null;
     let data:Record<string,unknown>;
     switch(body.action) {
+      case "discount_save":
+      case "discount_reverse": {
+        if(body.action==="discount_reverse") {
+          if(!uuid(id)) throw new CrmError("Seleciona o desconto a anular.");
+          data={id};
+        } else {
+          if(!["participant","customer"].includes(String(body.kind)) ||
+            typeof body.charge_commission!=="boolean" || typeof body.included_in_total!=="boolean" ||
+            (body.charge_commission && body.kind!=="customer") ||
+            !nullableId(body.source_schedule_id) || !nullableId(body.source_receipt_id)) {
+            throw new CrmError("Revê o tipo, o efeito do desconto e os registos a reclassificar.");
+          }
+          data={kind:body.kind,amount:money(body.amount,0.01),charge_commission:body.charge_commission,
+            included_in_total:body.included_in_total,notes:cleanText(body.notes,2000),
+            source_schedule_id:body.source_schedule_id || null,source_receipt_id:body.source_receipt_id || null};
+        }
+        await rpc(config,"crm_mutate_trip_discount",{p_trip_id:body.trip_id,p_version:body.expected_version,p_action:body.action,p_data:data});
+        return privateJson({ok:true});
+      }
       case "total_save":
         data={amount:money(body.amount)};
         break;

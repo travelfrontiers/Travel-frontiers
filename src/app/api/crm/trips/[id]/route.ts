@@ -79,6 +79,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (!response.ok) {
       const failure = await response.json().catch(() => null) as { message?: string; code?: string } | null;
       if (failure?.code === "23505") return NextResponse.json({ error: "Já existe uma viagem com este localizador." }, { status: 409 });
+      if (failure?.message?.includes("discount_exceeds_total")) return NextResponse.json({error:"Os descontos a deduzir excedem o total da reserva."},{status:409});
       if (failure?.message?.includes("payment_plan_exceeds_total")) return NextResponse.json({error:"Ajusta as prestações antes de reduzir o valor total."},{status:409});
       if (failure?.message?.includes("finance_currency_locked")) return NextResponse.json({error:"A moeda está associada a pagamentos, prestações ou comissão já registados."},{status:409});
       if (failure?.message?.includes("payment_total_required")) return NextResponse.json({error:"Mantém o valor total enquanto a viagem tiver pagamentos registados."},{status:409});
