@@ -4,7 +4,7 @@
 
 const forumTranslations = {
     pt: {
-        nav: { home: 'Início', services: 'Serviços', forum: 'Fórum', contact: 'Contacto' },
+        nav: { home: 'Início', services: 'Serviços', forum: 'Fórum', contact: 'Contacto', about: 'Sobre', testimonials: 'Testemunhos', promotions: 'Promoções' },
         hero: { subtitle: 'Descubra destinos, restaurantes e dicas de viagem compartilhadas pela comunidade' },
         search: { placeholder: '🔍 Pesquisar posts...' },
         filter: { all: 'Todos', destinations: 'Destinos', restaurants: 'Restaurantes', tips: 'Dicas de Viagem', activities: 'Atividades' },
@@ -46,7 +46,7 @@ const forumTranslations = {
         footer: { rights: 'Todos os direitos reservados.', backToSite: 'Voltar ao site' }
     },
     en: {
-        nav: { home: 'Home', services: 'Services', forum: 'Forum', contact: 'Contact' },
+        nav: { home: 'Home', services: 'Services', forum: 'Forum', contact: 'Contact', about: 'About', testimonials: 'Testimonials', promotions: 'Promotions' },
         hero: { subtitle: 'Discover destinations, restaurants and travel tips shared by the community' },
         search: { placeholder: '🔍 Search posts...' },
         filter: { all: 'All', destinations: 'Destinations', restaurants: 'Restaurants', tips: 'Travel Tips', activities: 'Activities' },
@@ -88,7 +88,7 @@ const forumTranslations = {
         footer: { rights: 'All rights reserved.', backToSite: 'Back to site' }
     },
     fr: {
-        nav: { home: 'Accueil', services: 'Services', forum: 'Forum', contact: 'Contact' },
+        nav: { home: 'Accueil', services: 'Services', forum: 'Forum', contact: 'Contact', about: 'À propos', testimonials: 'Témoignages', promotions: 'Promotions' },
         hero: { subtitle: 'Découvrez des destinations, restaurants et conseils de voyage partagés par la communauté' },
         search: { placeholder: '🔍 Rechercher des posts...' },
         filter: { all: 'Tous', destinations: 'Destinations', restaurants: 'Restaurants', tips: 'Conseils de Voyage', activities: 'Activités' },
@@ -161,6 +161,7 @@ function changeForumLanguage(lang) {
     const langDropdown = document.getElementById('langDropdown');
     if (langCode) langCode.textContent = lang.toUpperCase();
     if (langDropdown) langDropdown.classList.remove('show');
+    document.getElementById('currentLang')?.setAttribute('aria-expanded', 'false');
     document.documentElement.lang = lang;
 
     // Update URL without reload
@@ -184,6 +185,18 @@ function changeForumLanguage(lang) {
 }
 
 function updateForumContent() {
+    const homePath = currentForumLang === 'pt' ? '/' : `/${currentForumLang}/`;
+    document.querySelectorAll('[data-site-home]').forEach(link => { link.href = homePath; });
+    document.querySelectorAll('[data-site-section]').forEach(link => {
+        link.href = `${homePath}#${link.dataset.siteSection}`;
+    });
+    document.querySelectorAll('[data-forum-nav]').forEach(link => {
+        link.href = `/forum/?lang=${currentForumLang}`;
+    });
+    document.querySelectorAll('[data-promo-nav]').forEach(link => {
+        link.href = `https://promo.travelfrontiers.pt/${currentForumLang}`;
+    });
+
     document.querySelectorAll('[data-request-form-link]').forEach(link => {
         link.href = `https://promo.travelfrontiers.pt/${currentForumLang}/pedido`;
     });
@@ -919,21 +932,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const langButton = document.getElementById('currentLang');
     const langDropdown = document.getElementById('langDropdown');
     if (langButton && langDropdown) {
-        langButton.addEventListener('click', () => langDropdown.classList.toggle('show'));
+        langButton.addEventListener('click', () => {
+            langButton.setAttribute('aria-expanded', String(langDropdown.classList.toggle('show')));
+        });
         document.addEventListener('click', (e) => {
             if (!langButton.contains(e.target) && !langDropdown.contains(e.target)) {
                 langDropdown.classList.remove('show');
+                langButton.setAttribute('aria-expanded', 'false');
             }
         });
     }
 
     // Mobile menu toggle
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const navMenu = document.getElementById('navMenu');
+    const navMenu = document.getElementById('mobileMenu');
     if (mobileMenuBtn && navMenu) {
         mobileMenuBtn.addEventListener('click', () => {
-            navMenu.classList.toggle('show');
-            mobileMenuBtn.classList.toggle('active');
+            mobileMenuBtn.setAttribute('aria-expanded', String(navMenu.classList.toggle('show')));
         });
     }
 });

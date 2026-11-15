@@ -5,7 +5,7 @@ const translations = {
             home: 'Início',
             about: 'Sobre',
             services: 'Serviços',
-            forum: 'Guias',
+            forum: 'Fórum',
             testimonials: 'Testemunhos',
             contact: 'Contacto',
             promotions: 'Promoções'
@@ -145,7 +145,7 @@ const translations = {
             home: 'Home',
             about: 'About',
             services: 'Services',
-            forum: 'Guides',
+            forum: 'Forum',
             testimonials: 'Testimonials',
             contact: 'Contact',
             promotions: 'Promotions'
@@ -285,7 +285,7 @@ const translations = {
             home: 'Accueil',
             about: 'À propos',
             services: 'Services',
-            forum: 'Guides',
+            forum: 'Forum',
             testimonials: 'Témoignages',
             contact: 'Contact',
             promotions: 'Promotions'
@@ -482,13 +482,17 @@ function updateContent() {
     if (translation) element.textContent = translation;
   });
 
+  document.querySelectorAll('a[data-translate="nav.forum"]').forEach((link) => {
+    link.href = currentLanguage === 'pt' ? '/forum/?lang=pt' : `/forum/?lang=${currentLanguage}`;
+  });
+
   // Synchronize promo links across desktop & mobile nav to match active language
   const requestFormLinks = document.querySelectorAll('[data-request-form-link]');
   requestFormLinks.forEach((link) => {
     link.href = `https://promo.travelfrontiers.pt/${currentLanguage}/pedido`;
   });
 
-  const promoLinks = document.querySelectorAll('a[href*="promo.travelfrontiers.pt"]:not([data-admin-link]):not([data-request-form-link])');
+  const promoLinks = document.querySelectorAll('a[href*="promo.travelfrontiers.pt"]:not([data-request-form-link])');
   promoLinks.forEach((link) => {
     link.href = `https://promo.travelfrontiers.pt/${currentLanguage}`;
   });
