@@ -1435,36 +1435,6 @@ a {
     cursor: pointer;
 }
 
-.share-wa {
-    background: #25D366;
-    color: white;
-}
-.share-wa:hover {
-    background: #20ba5a;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
-}
-
-.share-fb {
-    background: #1877F2;
-    color: white;
-}
-.share-fb:hover {
-    background: #1464cc;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
-}
-
-.share-tw {
-    background: #0f1419;
-    color: white;
-}
-.share-tw:hover {
-    background: #272c30;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(15, 20, 25, 0.3);
-}
-
 .share-copy {
     background: #f3f4f6;
     color: #374151;
@@ -1777,36 +1747,6 @@ a {
     cursor: pointer;
 }
 
-.share-wa {
-    background: #25D366;
-    color: white;
-}
-.share-wa:hover {
-    background: #20ba5a;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
-}
-
-.share-fb {
-    background: #1877F2;
-    color: white;
-}
-.share-fb:hover {
-    background: #1464cc;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
-}
-
-.share-tw {
-    background: #0f1419;
-    color: white;
-}
-.share-tw:hover {
-    background: #272c30;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(15, 20, 25, 0.3);
-}
-
 .share-ig {
     background: #a12568;
     color: white;
@@ -1820,6 +1760,74 @@ a {
     outline-offset: 3px;
 }
 
+.share-bar .share-icon {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--share-border);
+    border-radius: 50%;
+    background: var(--share-background);
+    color: var(--share-color);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.share-icon svg {
+    width: 19px;
+    height: 19px;
+}
+
+.share-icon-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.share-bar .share-icon:hover,
+.share-bar .share-icon[aria-expanded="true"] {
+    border-color: var(--share-color);
+    background: var(--share-hover);
+}
+
+.share-bar .share-icon:focus-visible {
+    outline: 2px solid var(--share-color);
+    outline-offset: 3px;
+}
+
+.share-wa {
+    --share-color: #087b50;
+    --share-background: #ecfdf3;
+    --share-border: #caead8;
+    --share-hover: #d2f4e2;
+}
+
+.share-fb {
+    --share-color: #145dc5;
+    --share-background: #eff6ff;
+    --share-border: #d5e5fc;
+    --share-hover: #dbeafe;
+}
+
+.share-tw {
+    --share-color: #16181d;
+    --share-background: #f6f7f8;
+    --share-border: #e1e4e8;
+    --share-hover: #e9eaee;
+}
+
+.share-ig {
+    --share-color: #a12568;
+    --share-background: #fff1f7;
+    --share-border: #f4d6e6;
+    --share-hover: #f9deeb;
+}
+
 .instagram-share {
     margin-top: 12px;
     padding: 14px;
@@ -1827,6 +1835,15 @@ a {
     border-radius: 10px;
     color: #374151;
     font-size: 0.9rem;
+}
+
+.instagram-share .share-ig {
+    background: var(--share-background);
+    color: var(--share-color);
+}
+
+.instagram-share .share-ig:hover {
+    background: var(--share-hover);
 }
 
 .instagram-share label {
