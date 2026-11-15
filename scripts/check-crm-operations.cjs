@@ -109,6 +109,26 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  assert.deepEqual(duplicateHotel.map(s=>[s.title,s.starts_on,s.ends_on]),[
   ["Hotel Exemplo by Operador Hotels","2027-04-17","2027-04-21"], ["Hotel Segunda Paragem","",""],
  ]);
+ const wrappedStays = importServices([
+  "Itinerário",
+  "11 de abr. de 2027 14 de abr. de 2027",
+  "Acomodação:Morning Sun Hotel",
+  "Sem o transporte selecionado: De Yangshuopara Zhangjiajie",
+  "14/04/2027",
+  "17/04/2027",
+  "Alojamento: Hotel Segunda Paragem",
+  "Pagamento: 18/04/2027 20/04/2027",
+  "Alojamento: Hotel Sem Datas",
+ ].join("\n"));
+ assert.deepEqual(wrappedStays.map(s=>[s.title,s.starts_on,s.ends_on]),[
+  ["Morning Sun Hotel","2027-04-11","2027-04-14"],
+  ["Hotel Segunda Paragem","2027-04-14","2027-04-17"],
+  ["Hotel Sem Datas","",""],
+ ]);
+ assert.deepEqual(importServices("Hotéis\n11 de abr. de 2027 14 de abr. de 2027\nAcomodação:Morning Sun Hotel")
+  .map(s=>[s.title,s.starts_on,s.ends_on]),[["Morning Sun Hotel","2027-04-11","2027-04-14"]]);
+ assert.deepEqual(importServices("10 de abr. de 2027\uF06112 de abr. de 2027\nAcomodação:Morning Sun Hotel")
+  .map(s=>[s.title,s.starts_on,s.ends_on]),[["Morning Sun Hotel","2027-04-10","2027-04-12"]]);
  const repeatStays = importServices("Alojamento: Hotel Exemplo\nCheck-in: 03/04/2027\nCheck-out: 05/04/2027\nAlojamento: Hotel Exemplo\nCheck-in: 17/04/2027\nCheck-out: 21/04/2027\nAlojamento no Hotel Exemplo, no centro.");
  assert.deepEqual(repeatStays.map(s=>s.starts_on),["2027-04-03","2027-04-17"]);
  const repeatFlights = importServices("Voo TP 123 LIS → FNC 05/04/2027\nTAP Air Portugal - TP 123\nLisboa (LIS) 05/04/2027\nFunchal (FNC) 05/04/2027");

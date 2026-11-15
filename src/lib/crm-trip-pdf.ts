@@ -243,6 +243,28 @@ function extractDateBounds(text: string) {
   return { departure_date: ordered[0], return_date: ordered.at(-1) || ordered[0] };
 }
 
+// PDF table cells may be emitted separately from the accommodation on the same row.
+const dateCellPattern = new RegExp(
+  `(?<!\\d)(?:\\d{4}-\\d{1,2}-\\d{1,2}|\\d{1,2}[/.]\\d{1,2}[/.]\\d{4}|\\d{1,2}\\s+(?:de\\s+)?(?:${monthExpression})\\s+(?:de\\s+)?\\d{4})(?!\\d)`,
+  "gi",
+);
+
+function dateCells(line: string) {
+  const cells = line.match(dateCellPattern) || [];
+  const remainder = line.replace(dateCellPattern, "").replace(/\b(?:a|at[eé]|to|au)\b/gi, "");
+  if (!cells.length || /[^\s\p{Co},;|→➜➝–—-]/u.test(remainder)) return [];
+  const dates = cells.map(extractSingleDate);
+  return dates.every(Boolean) ? dates : [];
+}
+
+function precedingStayDates(lines: string[], index: number) {
+  const last = dateCells(lines[index - 1] ?? "");
+  if (last.length === 2) return last[0] < last[1] ? last : [];
+  if (last.length !== 1) return [];
+  const first = dateCells(lines[index - 2] ?? "");
+  return first.length === 1 && first[0] < last[0] ? [first[0], last[0]] : [];
+}
+
 function extractItineraryDateRange(text: string) {
   const lines = text.split(/\r?\n/).map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
   const start = lines.findIndex((line) => /^(?:itiner[aá]rio|roteiro|itinerary|travel itinerary)\b/i.test(line));
@@ -332,26 +354,26 @@ function extractTravelServices(text: string): TripPdfService[] {
     const hotelMatch = /(?:hot[eé]l|alojamento|acomoda[cç][aã]o|accommodation|hospedagem|estadia|resort|hostel|property)\s*[:\-–—]\s*(.{3,180})/i.exec(line)
       || /(?:alojamento|acomoda[cç][aã]o|hospedagem|estadia)\s+(?:no|na|em|at)\s+(.{3,180}?)(?:[,.;]|$)/i.exec(line);
     const hotelMetadata = /^(?:check[- ]?in|check[- ]?out|entrada|sa[ií]da|noites?|cidade|city|destino|destination|regime|board|meal plan|quarto|tipo de quarto|room|e-?mail|telefone|phone|tel\.?|refer[eê]ncia|localizador|booking reference|operador|fornecedor|provider|supplier)\b/i;
-    const isHotelLine = !hotelMetadata.test(line) && (Boolean(hotelMatch) || inHotelSection && !sectionEnd.test(line));
+    const isHotelLine = !hotelMetadata.test(line) && (Boolean(hotelMatch) || inHotelSection && !sectionEnd.test(line) && !dateCells(line).length);
     if (isHotelLine) {
       const rawName = hotelMatch?.[1] || line;
       let title = rawName.replace(/^\s*(?:no|na|em|at)\s+/i, "").replace(/\s+(?:check[- ]?in|check[- ]?out|entrada|sa[ií]da|regime|refei[cç][oõ]es?)\b.*$/i, "").replace(/[,;].*$|\.\s.*$/, "").trim();
-      const serviceContext = lines.slice(Math.max(0, index - 1), index + 3).join(" ");
       const following = lines.slice(index + 1, index + 3);
       const checkIn = /^(?:check[- ]?in|entrada)\b/i;
       const checkOut = /^(?:check[- ]?out|sa[ií]da)\b/i;
       const bounds = extractDateBounds(line);
-      if (bounds.departure_date && bounds.return_date !== bounds.departure_date) {
-        const nights = (Date.parse(bounds.return_date) - Date.parse(bounds.departure_date)) / 86400000;
-        const datePrefix = line.slice(0, hotelMatch?.index ?? 0);
-        const tableRow = extractDateBounds(datePrefix);
-        if (tableRow.departure_date && tableRow.departure_date !== tableRow.return_date) {
-          title = title.replace(new RegExp(`\\s+${nights}(?:\\s+(?:noites?|nights?))?$`, "i"), "");
-        }
-      }
-      const start = bounds.departure_date || extractSingleDate(following.find(value => checkIn.test(value)) ?? "");
-      const end = (bounds.return_date !== bounds.departure_date ? bounds.return_date : "") ||
+      const inlineStart = bounds.departure_date || extractSingleDate(following.find(value => checkIn.test(value)) ?? "");
+      const inlineEnd = (bounds.return_date !== bounds.departure_date ? bounds.return_date : "") ||
         extractSingleDate(following.find(value => checkOut.test(value)) ?? "");
+      const wrapped = hotelMatch && !inlineStart && !inlineEnd ? precedingStayDates(lines, index) : [];
+      const start = inlineStart || wrapped[0] || "";
+      const end = inlineEnd || wrapped[1] || "";
+      const datePrefix = extractDateBounds(line.slice(0, hotelMatch?.index ?? 0));
+      if (start && end && start < end && (wrapped.length || datePrefix.departure_date !== datePrefix.return_date)) {
+        const nights = (Date.parse(end) - Date.parse(start)) / 86400000;
+        title = title.replace(new RegExp(`\\s+${nights}(?:\\s+(?:noites?|nights?))?$`, "i"), "");
+      }
+      const serviceContext = lines.slice(Math.max(0, index - (wrapped.length && dateCells(lines[index - 1]).length === 1 ? 2 : 1)), index + 3).join(" ");
       const hotelBlock = lines.slice(index + 1, index + 12).filter((_, offset, followingLines) =>
         !followingLines.slice(0, offset + 1).some(item => /^(?:hotel|alojamento|accommodation|voo|flight|total)\s*[:–—-]/i.test(item)));
       const booking: BookingDetails = {};
