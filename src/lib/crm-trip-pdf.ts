@@ -143,56 +143,53 @@ function extractPassengerCount(text: string, kind: "adults" | "children") {
 }
 
 function extractPrice(text: string) {
-  const lines = text.split(/\r?\n/).map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
-  const totalLabel = /(?:pre[cç]o|valor|importe|montante|price|amount|cost)?\s*(?:total(?:\s+(?:da\s+viagem|da\s+reserva|package|trip|booking))?|grand\s+total|total\s+(?:price|amount|cost)|valor\s+final)\b/i;
-  const genericPriceLabel = /(?:pre[cç]o|valor|importe|montante|price|amount|cost)\b/i;
-  const money = /(?:\b(EUR|USD|GBP)\b|([€$£]))?\s*([0-9][0-9., '\u00a0]{0,18})\s*(?:\b(EUR|USD|GBP)\b|([€$£]))?/i;
-  const toAmount = (raw: string) => {
-    let amount = raw.replace(/[\s'\u00a0]/g, "");
-    if (amount.includes(",") && amount.includes(".")) amount = amount.lastIndexOf(",") > amount.lastIndexOf(".") ? amount.replace(/\./g, "").replace(",", ".") : amount.replace(/,/g, "");
-    else if (amount.includes(",")) amount = /,\d{3}$/.test(amount) ? amount.replace(/,/g, "") : amount.replace(",", ".");
-    else if (/\.\d{3}$/.test(amount)) amount = amount.replace(/\./g, "");
-    return /^\d+(?:\.\d{1,2})?$/.test(amount) ? amount : "";
-  };
-  const currencyFor = (match: RegExpExecArray) => {
-    const token = (match[1] || match[2] || match[4] || match[5] || "EUR").toUpperCase();
-    return token === "$" || token === "USD" ? "USD" : token === "£" || token === "GBP" ? "GBP" : "EUR";
+  const lines = text.split(/\r?\n/).map(line => line.replace(/\p{Co}/gu, " ").replace(/\s+/g, " ").trim()).filter(Boolean);
+  const totalHeading = /^(?:(?:pre[cç]o|valor|importe|montante|price|amount|cost|prix)\s+total|grand\s+total|total(?:\s+(?:da\s+viagem|da\s+reserva|del\s+viaje|du\s+voyage|package|trip|booking|price|amount|cost|a\s+pagar|due))?|valor\s+final)\b/i;
+  const spacedTotal = /^(?:p\s+r\s+e\s+[cç]\s+o|v\s+a\s+l\s+o\s+r|p\s+r\s+i\s+c\s+e|i\s+m\s+p\s+o\s+r\s+t\s+e)?\s*t\s+o\s+t\s+a\s+l\b/i;
+  const genericHeading = /^(?:pre[cç]o|valor|importe|montante|price|amount|cost|prix)\b/i;
+  const money = /^(?:(EUR|USD|GBP|[€$£])\s*)?([0-9]+(?:[., '\u00a0][0-9]+)*)\s*(EUR|USD|GBP|[€$£])?$/i;
+  const readAmount = (value: string, requireCurrency = false) => {
+    const match = money.exec(value.trim());
+    if (!match || (requireCurrency && !match[1] && !match[3])) return null;
+    const raw = match[2].replace(/[\s'\u00a0]/g, "");
+    const decimal = raw.search(/[.,]\d{1,2}$/);
+    const normalized = decimal < 0 ? raw.replace(/[.,]/g, "") :
+      raw.slice(0, decimal).replace(/[.,]/g, "") + "." + raw.slice(decimal + 1);
+    const amount = Number(normalized);
+    if (!Number.isFinite(amount) || amount > 9999999999.99) return null;
+    const token = (match[1] || match[3] || "EUR").toUpperCase();
+    return { amount: normalized, currency: token === "$" || token === "USD" ? "USD" : token === "£" || token === "GBP" ? "GBP" : "EUR" };
   };
 
-  // Some itinerary builders show a per-person amount and a package amount as
-  // two unlabeled figures. Infer the package total only when the passenger
-  // count confirms the arithmetic; otherwise keep relying on explicit labels.
-  const adults = Number(extractPassengerCount(text, "adults"));
-  const children = Number(extractPassengerCount(text, "children"));
-  const passengers = adults + children;
-  const summaryLines = lines.slice(0, Math.min(45, lines.length));
-  const currencyAmounts = summaryLines.flatMap((line, index) => {
-    const matches = [...line.matchAll(/(?:\b(EUR|USD|GBP)\b\s*|([€$£])\s*)?([0-9][0-9., '\u00a0]{0,18})\s*(?:\b(EUR|USD|GBP)\b|([€$£]))/gi)];
-    return matches.map((match) => {
-      const amount = toAmount(match[3]);
-      return amount ? { amount: Number(amount), currency: currencyFor(match as unknown as RegExpExecArray), index } : null;
-    }).filter((value): value is { amount: number; currency: string; index: number } => value !== null);
-  });
-  if (passengers > 0) {
-    for (const total of currencyAmounts) {
-      const perPerson = currencyAmounts.find((candidate) => candidate !== total && candidate.currency === total.currency && Math.abs(candidate.amount * passengers - total.amount) <= Math.max(2, passengers));
-      if (perPerson && total.amount > perPerson.amount) return { amount: String(total.amount), currency: total.currency };
+  // Match a total on its label's line or in the immediately following cell.
+  const perPerson = /^(?:por\s+(?:pessoa|adulto|crian[cç]a)|per\s+(?:person|adult|child)|par\s+(?:personne|adulte|enfant))\b/i;
+  for (const heading of [[totalHeading, spacedTotal], [genericHeading]]) {
+    for (const [index, line] of lines.entries()) {
+      const label = heading.map(pattern => pattern.exec(line)?.[0]).find(Boolean);
+      if (!label) continue;
+      const value = line.slice(label.length).replace(/^\s*[:–—-]\s*|^\s+/, "").trim();
+      if (heading[0] === genericHeading && perPerson.test(lines[index + (value ? 1 : 2)] || "")) continue;
+      const price = readAmount(value || lines[index + 1] || "");
+      if (price) return price;
     }
   }
 
-  const candidates = lines.flatMap((line, index) => {
-    const joined = lines.slice(index, index + 3).join(" ");
-    if (/por\s+(?:pessoa|adulto|crian[cç]a|person|adult|child)|per\s+(?:person|adult|child)/i.test(joined.slice(0, 90))) return [];
-    const priority = totalLabel.test(line) ? 0 : genericPriceLabel.test(line) ? 1 : -1;
-    return priority < 0 ? [] : [{ text: joined, priority, index }];
-  }).sort((a, b) => a.priority - b.priority || a.index - b.index);
-
-  for (const candidate of candidates) {
-    const match = money.exec(candidate.text);
-    if (!match) continue;
-    const amount = toAmount(match[3]);
-    if (!amount) continue;
-    return { amount, currency: currencyFor(match) };
+  // Some builders omit the labels. Only suggest a package total when the
+  // two amounts are nearby and the passenger count corroborates the total.
+  const passengers = Number(extractPassengerCount(text, "adults")) + Number(extractPassengerCount(text, "children"));
+  const amounts = lines.slice(0, 45).flatMap((line, index) => {
+    const price = readAmount(line, true);
+    return price ? [{ ...price, index }] : [];
+  });
+  if (passengers > 1) {
+    const totals = amounts.filter(total => amounts.some(unit =>
+      total.index > unit.index && total.index - unit.index <= 5 && unit.currency === total.currency &&
+      Number(total.amount) > Number(unit.amount) &&
+      Math.abs(Number(unit.amount) * passengers - Number(total.amount)) <= Math.max(2, passengers)));
+    const [total] = totals;
+    if (total && totals.every(candidate => candidate.amount === total.amount && candidate.currency === total.currency)) {
+      return { amount: total.amount, currency: total.currency };
+    }
   }
   return { amount: "", currency: "EUR" };
 }
