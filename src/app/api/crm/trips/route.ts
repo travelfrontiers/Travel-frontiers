@@ -152,7 +152,7 @@ async function previewTripPdf(request: NextRequest) {
     const pdfParse = require("pdf-parse") as (input: Buffer) => Promise<{ text?: string; numpages?: number }>;
     const parsed = await pdfParse(buffer);
     let text = typeof parsed.text === "string" ? parsed.text : "";
-    if (text.trim().length < 40 && parsed.numpages) text = await tryLocalOcr(buffer, Math.min(parsed.numpages, 10));
+    if (text.trim().length < 40 && parsed.numpages && formData.get("text_only") !== "true") text = await tryLocalOcr(buffer, Math.min(parsed.numpages, 10));
     if (text.trim().length < 40) return NextResponse.json({ error: "Não consegui ler texto neste PDF. Confirma que não está protegido por palavra-passe e que a leitura OCR local está disponível." }, { status: 422 });
     const fields = extractTripFieldsFromPdfText(text);
     const found = Object.entries(fields).filter(([key, value]) => key !== "currency" && key !== "operator" && key !== "trip_notes" && (key !== "services" || Array.isArray(value) && value.length > 0) && value !== "" && value !== null).length;

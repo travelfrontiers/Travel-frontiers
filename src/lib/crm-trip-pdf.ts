@@ -303,6 +303,36 @@ function mergeHotelMentions(services: TripPdfService[]): TripPdfService[] {
   return result.sort((a, b) => a.position - b.position).map(item => item.service);
 }
 
+const otherServiceHeading = /^(transfer(?:es|s)?|transf[eê]r(?:es)?|atividades?|actividades?|activit(?:y|ies)|excurs[aã]o|excurs[oõ]es|bilhetes?|tickets?|seguro(?: de viagem)?|travel insurance|outro servi[cç]o)\s*:\s*(.{3,240})$/i;
+
+function extractOtherServices(lines: string[]) {
+  const services: TripPdfService[] = [];
+  for (const [index, line] of lines.entries()) {
+    const heading = otherServiceHeading.exec(line);
+    if (!heading) continue;
+    const [, label, title] = heading;
+    const type = /^transf/i.test(label) ? "transfer" : /seguro|insurance/i.test(label) ? "insurance" :
+      /^outro/i.test(label) ? "other" : "activity";
+    const metadata = lines.slice(index + 1, index + 6);
+    const value = (pattern: RegExp) => {
+      for (const item of metadata) {
+        const match = pattern.exec(item);
+        if (match) return match[1].trim();
+        if (!/^(?:fornecedor|provider|localizador|refer[eê]ncia|data|date|in[ií]cio|fim|hora)\s*:/i.test(item)) break;
+      }
+      return "";
+    };
+    services.push({
+      service_type: type, title, details: line,
+      provider: value(/^(?:fornecedor|provider)\s*:\s*(.+)$/i).slice(0, 160),
+      reference: value(/^(?:localizador|refer[eê]ncia)\s*:\s*(.+)$/i).slice(0, 100),
+      starts_on: extractSingleDate(value(/^(?:data|date|in[ií]cio)\s*:\s*(.+)$/i) || title),
+      ends_on: extractSingleDate(value(/^fim\s*:\s*(.+)$/i)),
+    });
+  }
+  return services;
+}
+
 function extractTravelServices(text: string): TripPdfService[] {
   const lines = text.split(/\r?\n/).map((line) => line.replace(/[\t ]+/g, " ").trim()).filter(Boolean);
   const services: TripPdfService[] = [];
@@ -403,7 +433,7 @@ function extractTravelServices(text: string): TripPdfService[] {
   const detailedFlights: TripPdfService[] = headings.map((heading, index) => {
     const end = Math.min(headings[index + 1]?.index ?? lines.length, heading.index + 12);
     const segmentLines = lines.slice(heading.index + 1, end);
-    const boundary = segmentLines.findIndex(line => /^(?:hotel|alojamento|accommodation|total|condi[cç][oõ]es)\b/i.test(line));
+    const boundary = segmentLines.findIndex(line => /^(?:hotel|alojamento|accommodation|total|condi[cç][oõ]es)\b/i.test(line) || otherServiceHeading.test(line));
     const scoped = (boundary < 0 ? segmentLines : segmentLines.slice(0, boundary)).filter(line => !/^bagagem\b/i.test(line));
     const block = [lines[heading.index], ...scoped].join(" ");
     const airportLines = scoped.flatMap(line => {
@@ -439,7 +469,10 @@ function extractTravelServices(text: string): TripPdfService[] {
     serviceName(previous.title) === serviceName(flight.title) &&
     previous.starts_on === flight.starts_on && previous.ends_on === flight.ends_on
   )));
-  return [...flights, ...mergeHotelMentions(services.filter(service => service.service_type === "accommodation"))].slice(0, 40);
+  const hotels = mergeHotelMentions(services.filter(service => service.service_type === "accommodation"));
+  const otherStart = services.length;
+  for (const service of extractOtherServices(lines)) add(service);
+  return [...flights, ...hotels, ...services.slice(otherStart)].slice(0, 40);
 }
 
 export function extractTripFieldsFromPdfText(text: string): TripPdfFields {

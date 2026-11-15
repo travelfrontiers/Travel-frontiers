@@ -119,7 +119,7 @@ async function imagePage(file:File) {
 
 type ScanPage = { image: HTMLCanvasElement; text: string };
 
-async function pdfPages(file:File,available:number) {
+async function* pdfPages(file: File, available: number, limitMessage: string, signal: AbortSignal) {
   const {getDocument,GlobalWorkerOptions}=await import("pdfjs-dist");
   GlobalWorkerOptions.workerSrc=assets+"/pdf/pdf.worker.min.mjs";
   const task=getDocument({
@@ -129,14 +129,16 @@ async function pdfPages(file:File,available:number) {
   });
   try {
     const pdf=await task.promise;
-    if(pdf.numPages>available) throw new Error("Seleciona até duas páginas ou faces do mesmo documento.");
-    const pages:ScanPage[]=[];
+    if(pdf.numPages>available) throw new Error(limitMessage);
     for(let number=1;number<=pdf.numPages;number++) {
+      signal.throwIfAborted();
       const page=await pdf.getPage(number);
       const size=page.getViewport({scale:1});
       const viewport=page.getViewport({scale:2400/Math.max(size.width,size.height)});
       const {result,context}=canvas(viewport.width,viewport.height);
-      await page.render({canvas:result,canvasContext:context,viewport}).promise;
+      const render = page.render({canvas:result,canvasContext:context,viewport});
+      try { await abortable(render.promise, signal); }
+      catch (cause) { render.cancel(); throw cause; }
       const content = await page.getTextContent().catch(() => null);
       let lineY: number | undefined;
       const text = content?.items.map(item => {
@@ -146,10 +148,9 @@ async function pdfPages(file:File,available:number) {
         lineY = item.hasEOL ? undefined : nextY;
         return separator + item.str + (item.hasEOL ? "\n" : " ");
       }).join("") ?? "";
-      pages.push({ image: result, text });
       page.cleanup();
+      yield { image: result, text, number, count: pdf.numPages };
     }
-    return pages;
   } finally { await task.destroy(); }
 }
 
@@ -160,6 +161,53 @@ function abortable<T>(work:Promise<T>,signal:AbortSignal):Promise<T> {
     signal.addEventListener("abort",abort,{once:true});
     work.then(resolve,reject).finally(()=>signal.removeEventListener("abort",abort));
   });
+}
+
+async function createDocumentWorker(signal: AbortSignal) {
+  signal.throwIfAborted();
+  const { createWorker, OEM } = await import("tesseract.js");
+  signal.throwIfAborted();
+  const initialization = createWorker(["por", "eng"], OEM.LSTM_ONLY, {
+    workerPath: assets + "/worker.min.js", corePath: assets + "/core", langPath: assets + "/lang",
+    workerBlobURL: false, cacheMethod: "none",
+  });
+  void initialization.then(worker => {
+    if (signal.aborted) void worker.terminate().catch(() => {});
+  }, () => {});
+  return abortable(initialization, signal);
+}
+
+export async function scanBookingDocument(file: File, signal: AbortSignal, onProgress: (message: string) => void) {
+  if (!file.size || file.size > identityFileLimit || !identityFileTypes.includes(file.type)) {
+    throw new Error("Seleciona um PDF, JPG, PNG ou WebP com até 15 MB.");
+  }
+  let worker: OcrWorker | undefined;
+  try {
+    onProgress("A preparar o documento…");
+    const pages = file.type === "application/pdf"
+      ? pdfPages(file, 10, "Para usar OCR, divide o PDF em ficheiros de até 10 páginas.", signal)
+      : [{ image: await imagePage(file), text: "", number: 1, count: 1 }];
+    const text: string[] = [];
+    for await (const page of pages) {
+      try {
+        signal.throwIfAborted();
+        if (!worker) {
+          onProgress("A carregar o leitor de documentos…");
+          const { PSM } = await import("tesseract.js");
+          worker = await createDocumentWorker(signal);
+          await worker.setParameters({ tessedit_pageseg_mode: PSM.AUTO });
+        }
+        onProgress(`A ler página ${page.number} de ${page.count}…`);
+        const reading = await abortable(worker.recognize(page.image), signal);
+        text.push(reading.data.text.trim() || page.text);
+      } finally {
+        page.image.width = page.image.height = 0;
+      }
+    }
+    return text.join("\n");
+  } finally {
+    if (worker) await worker.terminate().catch(() => {});
+  }
 }
 
 function isCompleteReading(reading: DocumentReading) {
@@ -179,8 +227,11 @@ export async function scanClientDocument(
     for(const file of files) {
       signal.throwIfAborted();
       if(pages.length>=2) throw new Error("Seleciona até duas páginas ou faces do mesmo documento.");
-      if(file.type==="application/pdf") pages.push(...await pdfPages(file,2-pages.length));
-      else pages.push({ image: await imagePage(file), text: "" });
+      if (file.type === "application/pdf") {
+        for await (const page of pdfPages(file, 2-pages.length, "Seleciona até duas páginas ou faces do mesmo documento.", signal)) {
+          pages.push(page);
+        }
+      } else pages.push({ image: await imagePage(file), text: "" });
     }
     signal.throwIfAborted();
     const previews = await Promise.all(pages.map(({ image }) => new Promise<Blob>((resolve, reject) => {
@@ -192,13 +243,8 @@ export async function scanClientDocument(
     signal.throwIfAborted();
     onPages(previews);
     onProgress("A carregar o leitor de documentos…");
-    const {createWorker,OEM,PSM}=await import("tesseract.js");
-    const initialization=createWorker(["por","eng"],OEM.LSTM_ONLY,{
-      workerPath:assets+"/worker.min.js",corePath:assets+"/core",langPath:assets+"/lang",
-      workerBlobURL:false,cacheMethod:"none",
-    });
-    void initialization.then(instance=>{if(signal.aborted)void instance.terminate();},()=>{});
-    worker=await abortable(initialization,signal);
+    const { PSM } = await import("tesseract.js");
+    worker = await createDocumentWorker(signal);
     const readings: DocumentReading[] = [];
     const today=lisbonDay(new Date().toISOString());
     for(let index=0;index<pages.length;index++) {

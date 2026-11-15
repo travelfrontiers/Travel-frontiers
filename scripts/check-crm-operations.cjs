@@ -112,6 +112,13 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  assert.deepEqual(amount("4 adultos\n1.250 €\n5.000 €"),["5000","EUR"]);
  assert.deepEqual(amount("Preço\n1.286 €\nPor pessoa"),["","EUR"]);
  const importServices = text => extractTripFieldsFromPdfText(text).services;
+ const extraBookings = importServices([
+  "Transfer: Aeroporto para hotel", "Fornecedor: Operador Exemplo", "Localizador: TR-123", "Data: 07/04/2027",
+  "Atividade: Visita guiada", "Data: 08/04/2027", "Seguro de viagem: Plano Base", "Alojamento: Estadia Exemplo",
+ ].join("\n"));
+ assert.deepEqual(extraBookings.filter(service => service.service_type !== "accommodation")
+  .map(service => [service.service_type,service.reference,service.starts_on]),
+ [["transfer","TR-123","2027-04-07"],["activity","","2027-04-08"],["insurance","",""]]);
  const duplicateHotel = importServices([
   "17 de abr. de 2027 21 de abr. de 2027 Acomodação: Hotel Exemplo by Operador Hotels 4",
   "Cidade — 4 noites: alojamento no Hotel Exemplo by Operador, perto do centro.",
