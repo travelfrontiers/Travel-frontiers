@@ -49,7 +49,7 @@ export default function Footer({ lang }: FooterProps) {
         { href: "https://www.travelfrontiers.pt/#home", label: { pt: "Início", en: "Home", fr: "Accueil" } },
         { href: "https://www.travelfrontiers.pt/#about", label: { pt: "Sobre", en: "About", fr: "À propos" } },
         { href: "https://www.travelfrontiers.pt/#services", label: { pt: "Serviços", en: "Services", fr: "Services" } },
-        { href: "https://www.travelfrontiers.pt/forum/", label: { pt: "Guias & Dicas", en: "Guides & Tips", fr: "Guides & Conseils" } },
+        { href: `https://www.travelfrontiers.pt/forum/?lang=${lang}`, label: { pt: "Fórum", en: "Forum", fr: "Forum" } },
         { href: "https://www.travelfrontiers.pt/#testimonials", label: { pt: "Testemunhos", en: "Testimonials", fr: "Témoignages" } },
         { href: `https://promo.travelfrontiers.pt/${lang}/pedido`, label: { pt: "Contacto", en: "Contact", fr: "Contact" } },
     ];
@@ -135,7 +135,7 @@ export default function Footer({ lang }: FooterProps) {
 
                 {/* Copyright and Legal */}
                 <div className="mt-8 pt-8 border-t border-gray-800">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500 public-dark:text-gray-400">
                         <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
                             <p>{t.copyright}</p>
                             <p className="hidden md:block">•</p>

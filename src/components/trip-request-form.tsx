@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import type { Locale } from "@/i18n/dictionaries";
 
-const inputClass = "w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20";
+const inputClass = "w-full rounded-xl border border-slate-300 public-dark:border-slate-600 bg-white public-dark:bg-[#101622] px-4 py-3 text-slate-900 public-dark:text-slate-100 outline-none transition focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20";
 const budgetIds = ["under_500", "500_1000", "1000_1500", "1500_2000", "over_2000", "undecided"] as const;
 
 function nextDate(date: string) {
@@ -115,40 +115,40 @@ export default function TripRequestForm({ lang }: Props) {
     <form onSubmit={submit} className="space-y-7">
       {message && <div ref={confirmationRef} id="trip-request-confirmation" role="status" aria-live="polite" tabIndex={-1} className={`rounded-xl border p-4 text-sm font-medium outline-none ${success ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-red-200 bg-red-50 text-red-800"}`}>{message}</div>}
       <div className="grid gap-5 sm:grid-cols-2">
-        <label className="space-y-2 text-sm font-medium text-slate-800">{t.fullName} *<input className={inputClass} name="full_name" autoComplete="name" required minLength={2} maxLength={160} /></label>
-        <label className="space-y-2 text-sm font-medium text-slate-800">{t.email} *<input className={`${inputClass} ${emailTouched && email.length > 0 && !emailValid ? "border-red-600 focus:border-red-600 focus:ring-red-600/20" : ""}`} name="email" type="email" inputMode="email" autoComplete="email" required maxLength={254} pattern="[^\s@]+@[^\s@]+\.[^\s@]{2,}" value={email} aria-invalid={emailTouched && email.length > 0 && !emailValid} onChange={(event) => setEmail(event.target.value)} onBlur={() => setEmailTouched(true)} /></label>
-        {emailTouched && email.length > 0 && !emailValid && <p role="alert" className="-mt-4 text-sm text-red-700">{t.emailInvalid}</p>}
-        <label className="space-y-2 text-sm font-medium text-slate-800">{t.phone}<input className={inputClass} name="phone" type="tel" autoComplete="tel" maxLength={40} /></label>
-        <label className="space-y-2 text-sm font-medium text-slate-800">{t.destination} *<input className={inputClass} name="destination" maxLength={240} placeholder={t.destinationHint} required /></label>
-        <label className="space-y-2 text-sm font-medium text-slate-800">{t.departure}{dateFlexible ? "" : " *"}<input className={inputClass} name="departure_date" type="date" value={departureDate} onChange={(event) => setDepartureDate(event.target.value)} required={!dateFlexible} /></label>
-        <label className="space-y-2 text-sm font-medium text-slate-800">{t.returning}{dateFlexible ? "" : " *"}<input className={inputClass} name="return_date" type="date" value={returnDate} min={departureDate ? nextDate(departureDate) : undefined} onChange={(event) => setReturnDate(event.target.value)} required={!dateFlexible} /></label>
+        <label className="space-y-2 text-sm font-medium text-slate-800 public-dark:text-slate-100">{t.fullName} *<input className={inputClass} name="full_name" autoComplete="name" required minLength={2} maxLength={160} /></label>
+        <label className="space-y-2 text-sm font-medium text-slate-800 public-dark:text-slate-100">{t.email} *<input className={`${inputClass} ${emailTouched && email.length > 0 && !emailValid ? "border-red-600 focus:border-red-600 focus:ring-red-600/20" : ""}`} name="email" type="email" inputMode="email" autoComplete="email" required maxLength={254} pattern="[^\s@]+@[^\s@]+\.[^\s@]{2,}" value={email} aria-invalid={emailTouched && email.length > 0 && !emailValid} onChange={(event) => setEmail(event.target.value)} onBlur={() => setEmailTouched(true)} /></label>
+        {emailTouched && email.length > 0 && !emailValid && <p role="alert" className="-mt-4 text-sm text-red-700 public-dark:text-red-300">{t.emailInvalid}</p>}
+        <label className="space-y-2 text-sm font-medium text-slate-800 public-dark:text-slate-100">{t.phone}<input className={inputClass} name="phone" type="tel" autoComplete="tel" maxLength={40} /></label>
+        <label className="space-y-2 text-sm font-medium text-slate-800 public-dark:text-slate-100">{t.destination} *<input className={inputClass} name="destination" maxLength={240} placeholder={t.destinationHint} required /></label>
+        <label className="space-y-2 text-sm font-medium text-slate-800 public-dark:text-slate-100">{t.departure}{dateFlexible ? "" : " *"}<input className={inputClass} name="departure_date" type="date" value={departureDate} onChange={(event) => setDepartureDate(event.target.value)} required={!dateFlexible} /></label>
+        <label className="space-y-2 text-sm font-medium text-slate-800 public-dark:text-slate-100">{t.returning}{dateFlexible ? "" : " *"}<input className={inputClass} name="return_date" type="date" value={returnDate} min={departureDate ? nextDate(departureDate) : undefined} onChange={(event) => setReturnDate(event.target.value)} required={!dateFlexible} /></label>
       </div>
       <div className="space-y-2">
-        <label className="flex items-center gap-3 text-sm text-slate-700"><input name="date_flexible" type="checkbox" checked={dateFlexible} onChange={(event) => setDateFlexible(event.target.checked)} className="size-4 accent-teal-800" />{t.flexible}</label>
-        <p className="text-sm text-slate-500">{t.dateRule}</p>
-        {dateFlexible && <label className="block space-y-2 text-sm font-medium text-slate-800">
+        <label className="flex items-center gap-3 text-sm text-slate-700 public-dark:text-slate-200"><input name="date_flexible" type="checkbox" checked={dateFlexible} onChange={(event) => setDateFlexible(event.target.checked)} className="size-4 accent-teal-800" />{t.flexible}</label>
+        <p className="text-sm text-slate-500 public-dark:text-slate-300">{t.dateRule}</p>
+        {dateFlexible && <label className="block space-y-2 text-sm font-medium text-slate-800 public-dark:text-slate-100">
           {t.period}{periodRequired ? " *" : ""}
           <input className={inputClass} name="travel_period" placeholder={t.periodHint} minLength={3} maxLength={120} required={periodRequired} />
         </label>}
-        {returnDateInvalid && <p role="alert" className="text-sm text-red-700">{t.dateOrder}</p>}
+        {returnDateInvalid && <p role="alert" className="text-sm text-red-700 public-dark:text-red-300">{t.dateOrder}</p>}
       </div>
 
       <fieldset className="space-y-3">
-        <legend className="text-base font-semibold text-slate-900">{t.travelers}</legend>
+        <legend className="text-base font-semibold text-slate-900 public-dark:text-slate-100">{t.travelers}</legend>
         <div className="grid gap-5 sm:grid-cols-2">
-          <label className="space-y-2 text-sm font-medium text-slate-800">{t.adults}
+          <label className="space-y-2 text-sm font-medium text-slate-800 public-dark:text-slate-100">{t.adults}
             <select className={inputClass} name="adults" required defaultValue="2">
               {Array.from({ length: 20 }, (_, index) => index + 1).map((count) => <option key={count} value={count}>{count} {count === 1 ? t.adult : t.adultsPlural}</option>)}
             </select>
           </label>
-          <label className="space-y-2 text-sm font-medium text-slate-800">{t.children}
+          <label className="space-y-2 text-sm font-medium text-slate-800 public-dark:text-slate-100">{t.children}
             <select className={inputClass} value={childrenCount} onChange={(event) => setChildrenCount(Number(event.target.value))}>
               {Array.from({ length: 13 }, (_, count) => <option key={count} value={count}>{count}</option>)}
             </select>
           </label>
         </div>
         {childrenCount > 0 && <div className="grid gap-5 sm:grid-cols-2">
-          {Array.from({ length: childrenCount }, (_, index) => <label key={index} className="space-y-2 text-sm font-medium text-slate-800">{lang === "pt" ? `Idade da criança ${index + 1}` : lang === "en" ? `Child ${index + 1} age` : `Âge de l’enfant ${index + 1}`} *
+          {Array.from({ length: childrenCount }, (_, index) => <label key={index} className="space-y-2 text-sm font-medium text-slate-800 public-dark:text-slate-100">{lang === "pt" ? `Idade da criança ${index + 1}` : lang === "en" ? `Child ${index + 1} age` : `Âge de l’enfant ${index + 1}`} *
             <select className={inputClass} name={`child_age_${index + 1}`} required defaultValue="">
               <option value="" disabled>{t.selectAge}</option>
               {Array.from({ length: 18 }, (_, age) => <option key={age} value={age}>{age} {age === 1 ? t.year : t.years}</option>)}
@@ -158,22 +158,22 @@ export default function TripRequestForm({ lang }: Props) {
       </fieldset>
 
       <fieldset className="space-y-3">
-        <legend className="text-base font-semibold text-slate-900">{t.budgetTitle}</legend>
+        <legend className="text-base font-semibold text-slate-900 public-dark:text-slate-100">{t.budgetTitle}</legend>
         <div className="grid gap-3 sm:grid-cols-2">
-          {budgetIds.map((id, index) => <label key={id} className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 transition hover:border-teal-700 has-[:checked]:border-teal-700 has-[:checked]:bg-teal-50">
+          {budgetIds.map((id, index) => <label key={id} className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-slate-300 public-dark:border-slate-600 px-4 py-3 text-sm text-slate-800 public-dark:text-slate-100 transition hover:border-teal-700 has-[:checked]:border-teal-700 has-[:checked]:bg-teal-50 public-dark:has-[:checked]:bg-teal-950">
             <input className="size-4 accent-teal-800" type="radio" name="budget" value={id} required />
             <span>{t.budgets[index]}</span>
           </label>)}
         </div>
-        <p className="text-sm text-slate-500">{t.budgetHint}</p>
+        <p className="text-sm text-slate-500 public-dark:text-slate-300">{t.budgetHint}</p>
       </fieldset>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <label className="space-y-2 text-sm font-medium text-slate-800">{t.style}<input className={inputClass} name="travel_style" maxLength={120} placeholder={t.styleHint} /></label>
-        <label className="space-y-2 text-sm font-medium text-slate-800">{t.details}<textarea className={inputClass} name="notes" rows={4} maxLength={4000} placeholder={t.detailsHint} /></label>
+        <label className="space-y-2 text-sm font-medium text-slate-800 public-dark:text-slate-100">{t.style}<input className={inputClass} name="travel_style" maxLength={120} placeholder={t.styleHint} /></label>
+        <label className="space-y-2 text-sm font-medium text-slate-800 public-dark:text-slate-100">{t.details}<textarea className={inputClass} name="notes" rows={4} maxLength={4000} placeholder={t.detailsHint} /></label>
       </div>
       <label className="hidden" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" /></label>
-      <label className="flex items-start gap-3 text-sm leading-6 text-slate-700"><input name="consent_privacy" type="checkbox" required className="mt-1 size-4 accent-teal-800" /><span>{t.privacy} <a href="https://www.travelfrontiers.pt/privacy.html" target="_blank" rel="noreferrer" className="underline">{t.privacyLink}</a> {t.privacyEnd}</span></label>
+      <label className="flex items-start gap-3 text-sm leading-6 text-slate-700 public-dark:text-slate-200"><input name="consent_privacy" type="checkbox" required className="mt-1 size-4 accent-teal-800" /><span>{t.privacy} <a href="https://www.travelfrontiers.pt/privacy.html" target="_blank" rel="noreferrer" className="underline">{t.privacyLink}</a> {t.privacyEnd}</span></label>
       <button className="rounded-full bg-teal-800 px-7 py-3 font-semibold text-white transition hover:bg-teal-900 disabled:cursor-wait disabled:opacity-60" type="submit" disabled={busy}>{busy ? t.sending : t.send}</button>
     </form>
   );

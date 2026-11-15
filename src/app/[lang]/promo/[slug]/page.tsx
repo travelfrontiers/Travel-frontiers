@@ -115,7 +115,7 @@ export default async function PromotionPage({
             {/* Back Button */}
             <Link
                 href={`/${lang}`}
-                className="inline-flex items-center text-gray-500 hover:text-primary mb-10 transition-colors group"
+                className="inline-flex items-center text-gray-500 public-dark:text-slate-300 hover:text-primary public-dark:hover:text-orange-300 mb-10 transition-colors group"
             >
                 <ChevronLeft className="w-5 h-5 mr-1 group-hover:-translate-x-1 transition-transform" />
                 {(dict as any).promo.back}
@@ -187,35 +187,35 @@ export default async function PromotionPage({
                     {promo.highlights && promo.highlights.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {promo.highlights.map((highlight: string, i: number) => (
-                                <div key={i} className="flex items-center gap-4 bg-orange-50/50 p-5 rounded-2xl border border-orange-100 group hover:border-primary/30 transition-colors">
+                                <div key={i} className="flex items-center gap-4 bg-orange-50/50 public-dark:bg-orange-950/35 p-5 rounded-2xl border border-orange-100 public-dark:border-orange-900 group hover:border-primary/30 transition-colors">
                                     <div className="bg-primary/20 p-2 rounded-lg group-hover:scale-110 transition-transform">
                                         <Star className="w-5 h-5 text-primary fill-primary" />
                                     </div>
-                                    <span className="font-semibold text-gray-800">{highlight}</span>
+                                    <span className="font-semibold text-gray-800 public-dark:text-slate-200">{highlight}</span>
                                 </div>
                             ))}
                         </div>
                     ) : (
                         /* Premium Fallback Style */
-                        <div className="p-8 rounded-3xl bg-gradient-to-r from-gray-50 to-white border border-gray-100">
+                        <div className="p-8 rounded-3xl bg-gradient-to-r from-gray-50 public-dark:from-[#222e41] to-white public-dark:to-[#1b2535] border border-gray-100 public-dark:border-slate-700">
                             <p className="text-sm font-bold text-primary uppercase tracking-widest mb-1">
                                 {(dict as any).promo.exclusive}
                             </p>
-                            <p className="text-gray-500 italic">
+                            <p className="text-gray-500 public-dark:text-slate-300 italic">
                                 {(dict as any).promo.contactPremium}
                             </p>
                         </div>
                     )}
 
                     {/* Detailed Program */}
-                    <section className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-gray-100">
+                    <section className="bg-white public-dark:bg-[#1b2535] rounded-3xl p-8 md:p-12 shadow-sm border border-gray-100 public-dark:border-slate-700">
                         <div className="flex items-center gap-3 mb-8">
                             <div className="w-1.5 h-8 bg-primary rounded-full" />
-                            <h2 className="text-2xl font-bold text-gray-900">
+                            <h2 className="text-2xl font-bold text-gray-900 public-dark:text-slate-100">
                                 {(dict as any).promo.programDetails}
                             </h2>
                         </div>
-                        <div className="prose prose-lg prose-orange max-w-none text-gray-600 leading-relaxed marker:text-primary">
+                        <div className="prose prose-lg prose-orange max-w-none text-gray-600 public-dark:text-slate-200 leading-relaxed marker:text-primary public-dark:marker:text-orange-300">
                             <PortableText value={promo.description} />
                         </div>
                     </section>
@@ -225,28 +225,28 @@ export default async function PromotionPage({
                 <div className="lg:col-span-1">
                     <div className="sticky top-28 space-y-8 h-fit">
                         {/* Price & Booking Card */}
-                        <div className="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100 space-y-8">
+                        <div className="bg-white public-dark:bg-[#1b2535] rounded-3xl p-8 shadow-2xl border border-gray-100 public-dark:border-slate-700 space-y-8">
                             <div>
-                                <span className="text-gray-500 text-sm block mb-1 font-medium">
+                                <span className="text-gray-500 public-dark:text-slate-300 text-sm block mb-1 font-medium">
                                     {(dict as any).promo.finalPrice}
                                 </span>
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-5xl font-black text-gray-900">€{promo.price}</span>
-                                    <span className="text-gray-400 font-medium">/ p.p.</span>
+                                    <span className="text-5xl font-black text-gray-900 public-dark:text-slate-100">€{promo.price}</span>
+                                    <span className="text-gray-400 public-dark:text-slate-300 font-medium">/ p.p.</span>
                                 </div>
                             </div>
 
                             {/* Inclusions */}
                             {promo.inclusions && promo.inclusions.length > 0 && (
                                 <div className="space-y-4">
-                                    <h4 className="font-bold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-2">
+                                    <h4 className="font-bold text-gray-900 public-dark:text-slate-100 flex items-center gap-2 border-b border-gray-100 public-dark:border-slate-700 pb-2">
                                         <CheckCircle2 className="w-5 h-5 text-primary" />
                                         {(dict as any).promo.inclusions}
                                     </h4>
                                     <ul className="space-y-3">
                                         {promo.inclusions.map((item: string, i: number) => (
-                                            <li key={i} className="flex items-start gap-3 text-sm text-gray-600 font-medium">
-                                                <div className="h-5 w-5 rounded-full bg-green-50 flex-shrink-0 flex items-center justify-center mt-0.5">
+                                            <li key={i} className="flex items-start gap-3 text-sm text-gray-600 public-dark:text-slate-200 font-medium">
+                                                <div className="h-5 w-5 rounded-full bg-green-50 public-dark:bg-emerald-950 flex-shrink-0 flex items-center justify-center mt-0.5">
                                                     <div className="w-1.2 h-1.2 rounded-full bg-green-500" />
                                                 </div>
                                                 {item}
@@ -259,7 +259,7 @@ export default async function PromotionPage({
                             <div className="pt-4 space-y-4">
                                 <Link
                                     href={`/${lang}/pedido`}
-                                    className="block w-full bg-primary hover:bg-orange-600 text-white font-black py-5 rounded-2xl transition-all shadow-xl shadow-orange-200 active:scale-[0.98] text-center"
+                                    className="block w-full bg-primary hover:bg-orange-600 text-white font-black py-5 rounded-2xl transition-all shadow-xl shadow-orange-200 public-dark:shadow-none active:scale-[0.98] text-center"
                                 >
                                     {dict.nav.contact}
                                 </Link>
@@ -273,11 +273,11 @@ export default async function PromotionPage({
                                     )}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="block w-full bg-green-500 hover:bg-green-600 text-white font-black py-5 rounded-2xl transition-all shadow-xl shadow-green-200 active:scale-[0.98] text-center"
+                                    className="block w-full bg-green-500 hover:bg-green-600 text-white font-black py-5 rounded-2xl transition-all shadow-xl shadow-green-200 public-dark:shadow-none active:scale-[0.98] text-center"
                                 >
                                     💬 WhatsApp
                                 </a>
-                                <p className="text-center text-xs text-gray-400 font-medium flex items-center justify-center gap-2">
+                                <p className="text-center text-xs text-gray-400 public-dark:text-slate-300 font-medium flex items-center justify-center gap-2">
                                     <Info className="w-3.5 h-3.5" />
                                     {(dict as any).promo.proposalResponse}
                                 </p>

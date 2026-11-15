@@ -2,6 +2,9 @@
 @layer theme, base, sui, components, utilities;
 
 @import "tailwindcss";
+@import "../../public/site-theme.css";
+
+@custom-variant public-dark (&:where([data-public-theme="dark"] .public-promotions, [data-public-theme="dark"] .public-promotions *));
 
 :root {
   --background: #ffffff;
@@ -24,4 +27,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+[data-public-theme="dark"] .public-promotions {
+  color-scheme: dark;
 }

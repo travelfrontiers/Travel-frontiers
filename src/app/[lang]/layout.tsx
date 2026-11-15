@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { client } from "@/sanity/client";
@@ -39,7 +40,8 @@ export default async function LangLayout({ params, children }: Props) {
   const structuredData = generateStructuredData(validLang);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="public-promotions flex flex-col min-h-screen public-dark:bg-[#101622] public-dark:text-slate-200">
+      <Script src="/site-theme.js?v=20261115" strategy="afterInteractive" />
       {/* Structured Data */}
       <script
         type="application/ld+json"

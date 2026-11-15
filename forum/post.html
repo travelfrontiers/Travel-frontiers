@@ -11,10 +11,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+    <script src="/public/site-theme.js?v=20261115"></script>
+    <link rel="stylesheet" href="/public/site-theme.css?v=20261115">
+
     <!-- Styles -->
-    <link rel="stylesheet" href="./style.css?v=20261115-nav">
+    <link rel="stylesheet" href="./style.css?v=20261115-theme">
 </head>
-<body>
+<body class="forum-page">
     <!-- Header — Matching main site glassmorphism style -->
     <header class="header">
         <div class="container">
@@ -38,6 +41,10 @@
                     <a href="https://promo.travelfrontiers.pt/pt" data-promo-nav data-translate="nav.promotions">Promoções</a>
                 </nav>
                 <div class="nav-actions">
+                    <button type="button" class="site-theme-button" data-theme-toggle>
+                        <span class="theme-dark"><span aria-hidden="true">☾</span><span class="theme-action-label" data-translate="theme.dark">Ativar modo escuro</span></span>
+                        <span class="theme-light"><span aria-hidden="true">☀︎</span><span class="theme-action-label" data-translate="theme.light">Ativar modo claro</span></span>
+                    </button>
                     <div class="language-selector">
                         <button type="button" class="lang-button" id="currentLang" aria-controls="langDropdown" aria-expanded="false">
                             <span aria-hidden="true">🌐</span>
@@ -226,6 +233,6 @@
         </div>
     </footer>
 
-    <script src="./script.js?v=20261115-nav"></script>
+    <script src="./script.js?v=20261115-theme"></script>
 </body>
 </html>

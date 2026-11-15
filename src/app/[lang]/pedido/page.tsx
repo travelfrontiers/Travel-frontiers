@@ -39,10 +39,10 @@ export default async function TripRequestPage({ params }: { params: Promise<{ la
     <section className="mx-auto max-w-5xl px-4">
       <div className="mx-auto mb-10 max-w-2xl text-center">
         <Image src="/travel-frontiers-logo-black.webp" alt="Travel Frontiers" width={330} height={180} className="mx-auto mb-6 h-auto w-64 object-contain" priority />
-        <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">{copy.title}</h1>
-        <p className="mt-4 leading-7 text-slate-600">{copy.intro}</p>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-950 public-dark:text-slate-100 sm:text-4xl">{copy.title}</h1>
+        <p className="mt-4 leading-7 text-slate-600 public-dark:text-slate-300">{copy.intro}</p>
       </div>
-      <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-10">
+      <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200 public-dark:border-slate-700 bg-white public-dark:bg-[#1b2535] p-6 shadow-sm sm:p-10">
         <TripRequestForm lang={locale} />
       </div>
     </section>
