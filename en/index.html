@@ -51,9 +51,12 @@
 
   <!-- Styles (absolute path) -->
   <link rel="stylesheet" href="/style.css?v=20261115-nav">
+  <script src="/public/site-theme.js?v=20261115"></script>
+  <link rel="stylesheet" href="/public/site-theme.css?v=20261115">
+  <link rel="stylesheet" href="/landing-theme.css?v=20261115">
 </head>
 
-<body>
+<body class="landing-page">
 
   <!-- Header -->
   <header class="header">
@@ -82,6 +85,10 @@
 
         <!-- Language Selector & Mobile Menu -->
         <div class="nav-actions">
+            <button type="button" class="site-theme-button" data-theme-toggle>
+                <span class="theme-dark"><span aria-hidden="true">☾</span><span class="theme-action-label" data-translate="theme.dark">Switch to dark mode</span></span>
+                <span class="theme-light"><span aria-hidden="true">☀︎</span><span class="theme-action-label" data-translate="theme.light">Switch to light mode</span></span>
+            </button>
           <div class="language-selector">
             <button class="lang-button" id="currentLang">
               <span>🌐</span>
@@ -215,21 +222,21 @@
     </section>
 
     <!-- Team Section -->
-    <section style="padding: 80px 20px; background-color: #fff;">
+    <section style="padding: 80px 20px; background-color: var(--landing-bg, #fff);">
       <div class="container" style="max-width: 1200px; margin: 0 auto; text-align: center;">
-        <h2 data-translate="team.title" style="font-size: 2.5rem; margin-bottom: 50px; color: #1f2937;">Our Team</h2>
+        <h2 data-translate="team.title" style="font-size: 2.5rem; margin-bottom: 50px; color: var(--landing-heading, #1f2937);">Our Team</h2>
         <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 40px; margin-bottom: 60px;">
-          <div style="display: flex; align-items: center; gap: 20px; background: #fff; padding: 15px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: left; min-width: 350px;">
+          <div style="display: flex; align-items: center; gap: 20px; background: var(--landing-surface, #fff); padding: 15px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: left; min-width: min(350px, 100%);">
             <img src="/img/Jessica.webp" alt="Jéssica Ferreira - Travel Consultant" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;">
             <div>
-              <h3 data-translate="team.name" style="margin: 0; font-size: 1.6rem; color: #1f2937;">Jéssica Ferreira</h3>
-              <p data-translate="team.role" style="margin: 5px 0 0; color: #f97316; font-weight: bold; font-size: 1.1rem;">Travel Consultant</p>
+              <h3 data-translate="team.name" style="margin: 0; font-size: 1.6rem; color: var(--landing-heading, #1f2937);">Jéssica Ferreira</h3>
+              <p data-translate="team.role" style="margin: 5px 0 0; color: var(--landing-accent, #f97316); font-weight: bold; font-size: 1.1rem;">Travel Consultant</p>
             </div>
           </div>
         </div>
-        <div style="background: #fff7ed; padding: 40px; border-radius: 24px; border: 2px dashed #f97316; max-width: 800px; margin: 0 auto;">
-          <h3 data-translate="team.ctaTitle" style="font-size: 1.8rem; color: #1f2937; margin-bottom: 15px;">Want to join our team?</h3>
-          <p data-translate="team.ctaText" style="color: #4b5563; font-size: 1.1rem; margin-bottom: 25px;">Become a Travel Frontiers travel consultant and help others explore the world.</p>
+        <div style="background: var(--landing-warm, #fff7ed); padding: 40px; border-radius: 24px; border: 2px dashed #f97316; max-width: 800px; margin: 0 auto;">
+          <h3 data-translate="team.ctaTitle" style="font-size: 1.8rem; color: var(--landing-heading, #1f2937); margin-bottom: 15px;">Want to join our team?</h3>
+          <p data-translate="team.ctaText" style="color: var(--landing-muted, #4b5563); font-size: 1.1rem; margin-bottom: 25px;">Become a Travel Frontiers travel consultant and help others explore the world.</p>
           <a href="https://wa.me/351918376604?text=I%20want%20to%20know%20more%20about%20being%20a%20travel%20consultant!" target="_blank" class="btn" style="background: #25D366; color: white; padding: 14px 30px; border-radius: 12px; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 10px; margin-top: 20px; transition: 0.3s;">
             <span data-translate="team.ctaBtn">Request Information</span>
           </a>
@@ -383,7 +390,7 @@
   </footer>
 
   <!-- Main JS (absolute path) -->
-  <script src="/script.js?v=20261115-nav"></script>
+  <script src="/script.js?v=20261115-landing-theme"></script>
 
   <!-- Cookie Banner -->
   <div id="cookieBanner" class="cookie-banner" style="display: none;">

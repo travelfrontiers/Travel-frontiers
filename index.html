@@ -55,6 +55,9 @@
 
   <!-- Styles -->
   <link rel="stylesheet" href="/style.css?v=20261115-nav">
+  <script src="/public/site-theme.js?v=20261115"></script>
+  <link rel="stylesheet" href="/public/site-theme.css?v=20261115">
+  <link rel="stylesheet" href="/landing-theme.css?v=20261115">
 
   <!-- Analytics Initialization -->
   <script>
@@ -63,7 +66,7 @@
   </script>
 </head>
 
-<body>
+<body class="landing-page">
 	
     <!-- Header -->
     <header class="header">
@@ -94,6 +97,10 @@
 
                 <!-- Language Selector & Mobile Menu -->
                 <div class="nav-actions">
+                    <button type="button" class="site-theme-button" data-theme-toggle>
+                        <span class="theme-dark"><span aria-hidden="true">☾</span><span class="theme-action-label" data-translate="theme.dark">Ativar modo escuro</span></span>
+                        <span class="theme-light"><span aria-hidden="true">☀︎</span><span class="theme-action-label" data-translate="theme.light">Ativar modo claro</span></span>
+                    </button>
                     <!-- Language Selector -->
                     <div class="language-selector">
                         <button class="lang-button" id="currentLang">
@@ -326,26 +333,26 @@
   </div>
 </section>
 
-<section style="padding: 80px 20px; background-color: #fff;">
+<section style="padding: 80px 20px; background-color: var(--landing-bg, #fff);">
     <div class="container" style="max-width: 1200px; margin: 0 auto; text-align: center;">
         
-        <h2 data-translate="team.title" style="font-size: 2.5rem; margin-bottom: 50px; color: #1f2937;">A nossa equipa</h2>
+        <h2 data-translate="team.title" style="font-size: 2.5rem; margin-bottom: 50px; color: var(--landing-heading, #1f2937);">A nossa equipa</h2>
 
         <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 40px; margin-bottom: 60px;">
             
-            <div style="display: flex; align-items: center; gap: 20px; background: #fff; padding: 15px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: left; min-width: 350px;">
+            <div style="display: flex; align-items: center; gap: 20px; background: var(--landing-surface, #fff); padding: 15px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: left; min-width: min(350px, 100%);">
                 <img src="img/Jessica.webp" alt="Jéssica Ferreira - Consultora de Viagem na Travel Frontiers" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;">
                 <div>
-                    <h3 data-translate="team.name" style="margin: 0; font-size: 1.6rem; color: #1f2937;">Jéssica Ferreira</h3>
-                    <p data-translate="team.role" style="margin: 5px 0 0; color: #f97316; font-weight: bold; font-size: 1.1rem;">Consultora de Viagem</p>
+                    <h3 data-translate="team.name" style="margin: 0; font-size: 1.6rem; color: var(--landing-heading, #1f2937);">Jéssica Ferreira</h3>
+                    <p data-translate="team.role" style="margin: 5px 0 0; color: var(--landing-accent, #f97316); font-weight: bold; font-size: 1.1rem;">Consultora de Viagem</p>
                 </div>
             </div>
 
         </div>
 
-        <div style="background: #fff7ed; padding: 40px; border-radius: 24px; border: 2px dashed #f97316; max-width: 800px; margin: 0 auto;">
-            <h3 data-translate="team.ctaTitle" style="font-size: 1.8rem; color: #1f2937; margin-bottom: 15px;">Queres fazer parte da nossa equipa?</h3>
-            <p data-translate="team.ctaText" style="color: #4b5563; font-size: 1.1rem; margin-bottom: 25px;">Torna-te um consultor de viagem Travel Frontiers e ajuda outros a explorar o mundo.</p>
+        <div style="background: var(--landing-warm, #fff7ed); padding: 40px; border-radius: 24px; border: 2px dashed #f97316; max-width: 800px; margin: 0 auto;">
+            <h3 data-translate="team.ctaTitle" style="font-size: 1.8rem; color: var(--landing-heading, #1f2937); margin-bottom: 15px;">Queres fazer parte da nossa equipa?</h3>
+            <p data-translate="team.ctaText" style="color: var(--landing-muted, #4b5563); font-size: 1.1rem; margin-bottom: 25px;">Torna-te um consultor de viagem Travel Frontiers e ajuda outros a explorar o mundo.</p>
          <a href="https://wa.me/351918376604?text=Quero%20saber%20mais%20sobre%20ser%20consultor%20de%20viagens!" 
    target="_blank" 
    class="btn" 
@@ -663,7 +670,7 @@
     </footer>
 
 <!-- Your main JS -->
-<script src="script.js?v=20261115-nav"></script>
+<script src="script.js?v=20261115-landing-theme"></script>
 
 
 <!-- Tars widget code -->

@@ -1,0 +1,94 @@
+[data-public-theme="dark"] .landing-page {
+    color-scheme: dark;
+    --landing-bg: #101622;
+    --landing-surface: #1b2535;
+    --landing-warm: #30251f;
+    --landing-heading: #f4f6fa;
+    --landing-muted: #b5c0d1;
+    --landing-accent: #ffc489;
+    --bg-color: var(--landing-bg);
+    --text-color: #e6eaf0;
+    --border-color: #36445a;
+}
+
+[data-public-theme="dark"] .landing-page :is(.header, .header.scrolled) {
+    background: #141c2a;
+    border-color: var(--border-color);
+}
+
+[data-public-theme="dark"] .landing-page :is(.logo-text, .nav-desktop a, .nav-mobile a, .lang-button, .lang-dropdown button) {
+    color: var(--text-color);
+}
+
+[data-public-theme="dark"] .landing-page :is(.nav-desktop a, .nav-mobile a):hover {
+    color: var(--landing-accent);
+}
+
+[data-public-theme="dark"] .landing-page :is(.lang-button, .lang-dropdown) {
+    background: var(--landing-surface);
+    border-color: var(--border-color);
+}
+
+[data-public-theme="dark"] .landing-page .lang-dropdown button:hover {
+    background: var(--landing-warm);
+}
+
+[data-public-theme="dark"] .landing-page .mobile-menu-btn span {
+    background: var(--text-color);
+}
+
+[data-public-theme="dark"] .landing-page .nav-mobile {
+    border-color: var(--border-color);
+}
+
+[data-public-theme="dark"] .landing-page :is(.about, .services, .testimonials, .contact) {
+    background: var(--landing-bg);
+}
+
+[data-public-theme="dark"] .landing-page :is(.service-card, .testimonial-card, .contact-card, .contact-methods, .nav-btn, .cookie-banner, .cookie-modal-content) {
+    background: var(--landing-surface);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+[data-public-theme="dark"] .landing-page :is(.stats-summary, .achievement-icon, .quote-icon, .cta-card, .cta-box, .plane-icon, .method-icon, .nav-btn:hover) {
+    background: var(--landing-warm);
+}
+
+[data-public-theme="dark"] .landing-page :is(.about h2, .achievement p, .section-header h2, .cta-card h3, .cta-box h3, .author-name, .contact-card h3, .contact-card h4, .contact-methods h3, .method-label) {
+    color: var(--landing-heading);
+}
+
+[data-public-theme="dark"] .landing-page :is(.about p, .stat-item p, .section-header p, .service-description, .cta-card p, .cta-box p, .testimonial-text, .trust-item p, .contact-card > p, .redirect-note, .method-value, .cookie-text p) {
+    color: var(--landing-muted);
+}
+
+[data-public-theme="dark"] .landing-page :is(.stat-value, .trust-value, .quote-icon, .author-location, .nav-btn, .cookie-link) {
+    color: var(--landing-accent);
+}
+
+[data-public-theme="dark"] .landing-page .why-choose-card {
+    background: linear-gradient(135deg, #9e3a17, #79490d);
+}
+
+@media (max-width: 480px) {
+    .landing-page .header > .container {
+        width: 100%;
+    }
+
+    .landing-page .nav-actions {
+        gap: 8px;
+    }
+
+    .landing-page .nav-wrapper .logo {
+        gap: 7px;
+    }
+
+    .landing-page .nav-wrapper .logo-text {
+        font-size: 16px;
+    }
+
+    .landing-page .nav-wrapper .logo-image {
+        height: 38px;
+    }
+}
