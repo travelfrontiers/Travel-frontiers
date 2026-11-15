@@ -53,7 +53,7 @@ export function CrmTripDiscounts({ detail, busy, onSave, onReverse }: {
     <dl className="grid gap-3 rounded-xl bg-slate-50 p-3 text-sm sm:grid-cols-3">
       <div><dt>Desconto de participante</dt><dd className="font-semibold">{formatMoney(summary.participant_discount ?? 0, currency)}</dd></div>
       <div><dt>Descontos a clientes</dt><dd className="font-semibold">{formatMoney(summary.customer_discount ?? 0, currency)}</dd></div>
-      <div><dt>Total a pagar após descontos</dt><dd className="font-semibold">{formatMoney(summary.payable_total ?? summary.total_amount, currency)}</dd></div>
+      <div><dt>Total a cobrar após descontos</dt><dd className="font-semibold">{formatMoney(summary.payable_total ?? summary.total_amount, currency)}</dd></div>
     </dl>
     {open && <form onSubmit={submit} className="grid gap-3 rounded-xl border border-slate-200 p-3 sm:grid-cols-2">
       <label className="text-sm">Tipo de desconto<select className={officeInput} value={kind}
