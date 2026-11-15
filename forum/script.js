@@ -4,6 +4,7 @@
 
 const forumTranslations = {
     pt: {
+        theme: { dark: 'Ativar modo escuro', light: 'Ativar modo claro' },
         nav: { home: 'Início', services: 'Serviços', forum: 'Fórum', contact: 'Contacto', about: 'Sobre', testimonials: 'Testemunhos', promotions: 'Promoções' },
         hero: { subtitle: 'Descubra destinos, restaurantes e dicas de viagem compartilhadas pela comunidade' },
         search: { placeholder: '🔍 Pesquisar posts...' },
@@ -46,6 +47,7 @@ const forumTranslations = {
         footer: { rights: 'Todos os direitos reservados.', backToSite: 'Voltar ao site' }
     },
     en: {
+        theme: { dark: 'Switch to dark mode', light: 'Switch to light mode' },
         nav: { home: 'Home', services: 'Services', forum: 'Forum', contact: 'Contact', about: 'About', testimonials: 'Testimonials', promotions: 'Promotions' },
         hero: { subtitle: 'Discover destinations, restaurants and travel tips shared by the community' },
         search: { placeholder: '🔍 Search posts...' },
@@ -88,6 +90,7 @@ const forumTranslations = {
         footer: { rights: 'All rights reserved.', backToSite: 'Back to site' }
     },
     fr: {
+        theme: { dark: 'Activer le mode sombre', light: 'Activer le mode clair' },
         nav: { home: 'Accueil', services: 'Services', forum: 'Forum', contact: 'Contact', about: 'À propos', testimonials: 'Témoignages', promotions: 'Promotions' },
         hero: { subtitle: 'Découvrez des destinations, restaurants et conseils de voyage partagés par la communauté' },
         search: { placeholder: '🔍 Rechercher des posts...' },

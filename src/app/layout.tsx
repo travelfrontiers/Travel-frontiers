@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -23,9 +23,11 @@ export default async function RootLayout({
 }: Readonly<{
     children: React.ReactNode;
 }>) {
-    const lang = (await headers()).get("x-tf-locale");
+    const [requestHeaders, preferences] = await Promise.all([headers(), cookies()]);
+    const lang = requestHeaders.get("x-tf-locale");
+    const theme = preferences.get("tf_public_theme")?.value === "dark" ? "dark" : undefined;
     return (
-        <html lang={lang === "en" || lang === "fr" ? lang : "pt"} suppressHydrationWarning>
+        <html lang={lang === "en" || lang === "fr" ? lang : "pt"} data-public-theme={theme} suppressHydrationWarning>
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 flex flex-col min-h-screen`}
                 suppressHydrationWarning
