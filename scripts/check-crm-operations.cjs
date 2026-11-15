@@ -119,6 +119,20 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  assert.deepEqual(extraBookings.filter(service => service.service_type !== "accommodation")
   .map(service => [service.service_type,service.reference,service.starts_on]),
  [["transfer","TR-123","2027-04-07"],["activity","","2027-04-08"],["insurance","",""]]);
+ const makeCell = (str, x, y) => ({str,transform:[1,0,0,1,x,y]});
+ const airportTicket = [
+  ...["From","To","Flight","Class","Date","Departure","Arrival","Resa"].map((text,index) => makeCell(text,index*60,800)),
+  makeCell("Booking Reference",0,840),makeCell("TEST42",75,840),makeCell("Office",360,840),
+  ...["Porto","Example Airport","XY0084","O","31Dec","21:30","07:15","Ok"].map((text,index) => makeCell(text,index*60,775)),
+  makeCell("International",60,765),makeCell("Arrival Day+1",180,750),
+  ...["Example Airport","Final Airport","XY1000","O","01Jan","10:30","13:15","Ok"].map((text,index) => makeCell(text,index*60,735)),
+ ];
+ const ticket = extractTripFieldsFromPdfText("Issuing Airline and date: Example Air 25Nov26", [airportTicket]);
+ assert.deepEqual(ticket.services.map(s=>[s.reference,s.starts_on,s.ends_on,s.booking.origin,s.booking.destination_airport,s.booking.status,s.booking.pnr]), [
+  ["XY0084","2026-12-31","2027-01-01","Porto","Example Airport International","confirmed","TEST42"],
+  ["XY1000","2027-01-01","2027-01-01","Example Airport","Final Airport","confirmed","TEST42"],
+ ]);
+ assert.equal(extractTripFieldsFromPdfText("Electronic Ticket Receipt", [airportTicket]).services[0].starts_on,"");
  const duplicateHotel = importServices([
   "17 de abr. de 2027 21 de abr. de 2027 Acomodação: Hotel Exemplo by Operador Hotels 4",
   "Cidade — 4 noites: alojamento no Hotel Exemplo by Operador, perto do centro.",

@@ -475,14 +475,118 @@ function extractTravelServices(text: string): TripPdfService[] {
   return [...flights, ...hotels, ...services.slice(otherStart)].slice(0, 40);
 }
 
-export function extractTripFieldsFromPdfText(text: string): TripPdfFields {
+export type TicketTextItem = { str: string; transform: readonly number[] };
+
+const ticketDate = new RegExp(`^(\\d{1,2})\\s*[-/]?\\s*(${monthExpression})(?:\\s*[-/]?\\s*(\\d{4}|\\d{2}))?$`, "i");
+
+function ticketDateOnOrAfter(value: string, anchor: string) {
+  const explicit = extractSingleDate(value);
+  if (explicit) return explicit;
+  const date = ticketDate.exec(value.trim());
+  if (!date) return "";
+  if (date[3]) return parsePtDate(date[1], date[2], date[3].length === 2 ? "20" + date[3] : date[3]);
+  if (!anchor) return "";
+  const month = monthNumber[date[2].toLowerCase().replace(/\.$/, "")];
+  if (!month) return "";
+  const monthDay = month + "-" + date[1].padStart(2, "0");
+  const year = Number(anchor.slice(0, 4)) + Number(monthDay < anchor.slice(5));
+  return parsePtDate(date[1], date[2], String(year));
+}
+
+function addTicketDays(date: string, days: number) {
+  if (!date) return "";
+  const value = new Date(date + "T00:00:00Z");
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
+}
+
+// Read the itinerary by column position so adjacent PDF cells remain distinct.
+function ticketTable(page: TicketTextItem[]) {
+  const items = page.map(item => ({ text: item.str.trim(), x: item.transform[4], y: item.transform[5] }))
+    .filter(item => item.text && Number.isFinite(item.x) && Number.isFinite(item.y));
+  const headings = ["from", "to", "flight", "class", "date", "departure", "arrival", "resa"];
+  const header = items.find(item => item.text.toLowerCase() === "from");
+  if (!header) return [];
+  const columns = headings.map(name => items.find(item => Math.abs(item.y - header.y) < 2 && item.text.toLowerCase() === name)?.x);
+  if (columns.some((column, index) => column === undefined || index > 0 && column <= (columns[index - 1] ?? Infinity))) return [];
+  const starts = columns as number[];
+  const cellAt = (y: number, column: number) => items
+    .filter(item => Math.abs(item.y - y) < 2 && columnFor(item.x) === column)
+    .sort((first, second) => first.x - second.x).map(item => item.text).join(" ");
+  function columnFor(x: number) {
+    return starts.findLastIndex(start => x >= start - 2);
+  }
+  const rows = items.filter(item => item.y < header.y && columnFor(item.x) === 2 && /^[A-Z0-9]{2}\s?\d{1,4}$/i.test(item.text))
+    .sort((a, b) => b.y - a.y);
+  return rows.flatMap((row, index) => {
+    const date = cellAt(row.y, 4);
+    const departure = cellAt(row.y, 5);
+    const arrival = cellAt(row.y, 6);
+    const clock = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+    if (!date || !clock.test(departure) || !clock.test(arrival)) return [];
+    const bottom = rows[index + 1]?.y ?? -Infinity;
+    const block = items.filter(item => item.y <= row.y + 1 && item.y > bottom + 2);
+    const airport = (column: number) => {
+      const fragments: string[] = [];
+      for (const item of block.filter(item => columnFor(item.x) === column && item.y >= row.y - 32)
+        .sort((a, b) => b.y - a.y || a.x - b.x)) {
+        if (/^(?:terminal|operated by|marketed by|arrival day)\b/i.test(item.text)) break;
+        if (!fragments.includes(item.text)) fragments.push(item.text);
+      }
+      return fragments.join(" ").slice(0, 160);
+    };
+    const operated = block.find(item => /^Operated by$/i.test(item.text));
+    const provider = operated ? block.filter(item => Math.abs(item.y - operated.y) < 2 && item.x > operated.x)
+      .sort((a, b) => a.x - b.x)[0]?.text : undefined;
+    const offset = block.map(item => /^Arrival\s+Day\s*\+\s*([1-2])$/i.exec(item.text)?.[1]).find(Boolean);
+    return [{ date, departure, arrival, provider: provider?.slice(0, 160) || "", offset: Number(offset ?? 0),
+      flight: row.text.toUpperCase().replace(/\s+/g, ""), from: airport(0), to: airport(1), confirmed: block.some(item => Math.abs(item.y - row.y) < 2 && columnFor(item.x) === 7 && /^ok$/i.test(item.text)) }];
+  });
+}
+
+function extractTicketFlights(pages: TicketTextItem[][], text: string): TripPdfService[] {
+  const issueLine = /(?:Issuing\s+Airline\s+and\s+date|Date\s+of\s+issue|Issue\s+date)[^\r\n]*(?:\r?\n[^\r\n]*)?/i.exec(text)?.[0] ?? "";
+  const issued = issueLine.match(new RegExp(`\\b\\d{1,2}\\s*(?:${monthExpression})\\s*(?:\\d{4}|\\d{2})\\b`, "i"))?.[0];
+  let anchor = ticketDateOnOrAfter(issued ?? "", "");
+  const positionedReference = pages.flatMap(page => {
+    const label = page.find(item => /^Booking Reference$/i.test(item.str.trim()));
+    if (!label) return [];
+    return page.filter(item => Math.abs(item.transform[5] - label.transform[5]) < 2 && item.transform[4] > label.transform[4] && item.transform[4] < label.transform[4] + 150)
+      .sort((a, b) => a.transform[4] - b.transform[4])
+      .flatMap(item => /^:?\s*([A-Z0-9]{5,8})$/.exec(item.str.trim())?.[1] ?? []).slice(0, 1);
+  })[0];
+  const pnr = positionedReference ?? /(?:^|\n)\s*_?\s*Booking\s+Reference\s*[:#-]\s*([A-Z0-9]{5,8})\b/i.exec(text)?.[1]?.toUpperCase();
+  return pages.flatMap(ticketTable).map(segment => {
+    const starts = ticketDateOnOrAfter(segment.date, anchor);
+    const ends = addTicketDays(starts, segment.offset);
+    if (ends) anchor = ends;
+    const route = segment.from && segment.to ? segment.from + " → " + segment.to : "";
+    const booking: BookingDetails = { flight_number: segment.flight, departure_time: segment.departure, arrival_time: segment.arrival };
+    if (segment.from) booking.origin = segment.from;
+    if (segment.to) booking.destination_airport = segment.to;
+    if (segment.confirmed) booking.status = "confirmed";
+    if (pnr) booking.pnr = pnr;
+    return {
+      service_type: "flight", title: [segment.flight, route].filter(Boolean).join(" · ").slice(0, 240),
+      provider: segment.provider, reference: segment.flight, starts_on: starts, ends_on: ends, details: "", booking,
+    };
+  });
+}
+
+export function extractTripFieldsFromPdfText(text: string, ticketPages: TicketTextItem[][] = []): TripPdfFields {
   const cleanText = text.replace(/\u00a0/g, " ");
   const labeledReference = /^(?:localizador(?: principal| da viagem)?|refer[eê]ncia(?: da viagem| da reserva)?|booking reference|reserva)\s*[:#-]\s*([A-Z0-9][A-Z0-9/-]{3,24})\s*$/im.exec(cleanText)?.[1];
   const reference = labeledReference || "";
   const adults = extractPassengerCount(cleanText, "adults");
   const children = extractPassengerCount(cleanText, "children");
   const dates = extractDateRange(cleanText);
-  const services = extractTravelServices(cleanText);
+  const ticketFlights = extractTicketFlights(ticketPages, cleanText);
+  const extracted = extractTravelServices(cleanText);
+  const services = ticketFlights.length
+    ? [...ticketFlights, ...extracted.filter(service => service.service_type !== "flight" ||
+      !ticketFlights.some(flight => flight.reference === service.reference.replace(/\s+/g, "").toUpperCase() &&
+        (!flight.starts_on || !service.starts_on || flight.starts_on === service.starts_on)))].slice(0, 40)
+    : extracted;
   const flightDates = [...new Set(services.filter((service) => service.service_type === "flight").flatMap((service) => [service.starts_on, service.ends_on]).filter(isValidDateOnly))].sort();
   const price = extractPrice(cleanText);
   return {
