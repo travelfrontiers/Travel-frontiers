@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="./style.css?v=20261111">
+    <link rel="stylesheet" href="./style.css?v=20261115-instagram">
 </head>
 <body>
     <!-- Header — Matching main site glassmorphism style -->
@@ -139,10 +139,20 @@
                         <a id="shareTwitter" href="#" target="_blank" rel="noopener noreferrer" class="share-btn share-tw" title="Partilhar no X">
                             X
                         </a>
+                        <button id="shareInstagram" type="button" class="share-btn share-ig" aria-controls="instagramShare" aria-expanded="false">
+                            Instagram
+                        </button>
                         <button id="shareCopy" class="share-btn share-copy" title="Copiar link">
                             <span id="copyBtnText" data-translate="post.copyLink">Copiar Link</span>
                         </button>
                     </div>
+                </div>
+                <div id="instagramShare" class="instagram-share" hidden>
+                    <p id="instagramShareStatus" role="status"></p>
+                    <label for="instagramShareUrl" data-translate="post.articleLink">Link do artigo</label>
+                    <input id="instagramShareUrl" type="url" readonly>
+                    <p data-translate="post.instagramHelp">Cola o link numa mensagem ou no sticker Link de um Story.</p>
+                    <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" class="share-btn share-ig" data-translate="post.openInstagram">Abrir Instagram</a>
                 </div>
             </footer>
         </article>
@@ -190,6 +200,6 @@
         </div>
     </footer>
 
-    <script src="./script.js?v=20261111"></script>
+    <script src="./script.js?v=20261115-instagram"></script>
 </body>
 </html>
