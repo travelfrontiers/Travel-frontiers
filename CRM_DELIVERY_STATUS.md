@@ -65,3 +65,40 @@
 - O formulário PT/EN/FR requer datas completas ou um período aproximado quando há flexibilidade. O período aparece no pedido do CRM e no aviso por email.
 - A leitura de documentos analisa cada página e só combina dados quando consegue associar as duas faces. Os campos por ler aparecem vazios para revisão.
 - As listas principais e respetivas relações são lidas por páginas com ordenação estável. A dependência transitiva basic-ftp foi atualizada para 6.2.6 na cadeia do get-uri.
+
+## Ficha operacional das viagens — revisão de 15 de novembro de 2026
+
+- A versão de referência já tinha lista de viagens, ficha com separadores, finanças por
+  serviço, reconciliação de comissões e lembretes de documentação. A ficha evolui essa
+  implementação. «Localizador» reutiliza o campo `reference` existente e aceita viagens
+  sem código. As referências adicionais ficam na ficha, enquanto hotéis e voos guardam
+  as referências próprias. Viajantes, documentos, histórico e comunicações continuam
+  ligados às entidades existentes.
+- Hotéis mostram contactos, noites, quarto, regime, confirmação, data da última
+  confirmação, observações e ligação Drive. Voos mostram os segmentos por partida,
+  datas e horas locais, fusos e PNR. Vários segmentos podem partilhar o mesmo PNR.
+  Ligações de check-in são ativadas depois de confirmação manual do site oficial.
+  O CRM não inicia contactos aos fornecedores.
+- A abertura confirmada do check-in prevalece quando registada. Com data, hora e fuso
+  de partida, a alternativa é uma estimativa de 48 horas decorridas. Sem esses dados,
+  usa a estimativa existente de dois dias de calendário em Lisboa. Horas locais
+  inexistentes são rejeitadas. Na hora repetida da mudança para o horário de inverno,
+  aplica-se a interpretação padrão do PostgreSQL para o fuso indicado. A tarefa é
+  preservada ao concluir, reagendar ou cancelar um voo. O envio por email conserva o
+  agendamento diário e, por isso, pode seguir depois da hora de abertura.
+- A leitura de PDFs textuais reutiliza o leitor e a revisão em propostas, criação de
+  viagens e importação de serviços numa viagem existente. Um PDF pode ter campos
+  ausentes, sobretudo fusos e referências por serviço. A importação mantém os campos
+  operacionais já registados e só completa campos vazios nos serviços correspondentes.
+  A confirmação manual da proposta e a criação ou associação da viagem decorrem na
+  mesma transação. Os PDFs associados às versões das propostas aparecem na secção
+  Documentos e conservam as permissões do Drive.
+- O resumo lê a previsão, os recebimentos e a regularização da ficha financeira.
+  Os movimentos, ajustes, prestações e fórmulas de autoconsumo/venda continuam nas
+  rotinas financeiras existentes. A data do último recebimento usa os movimentos
+  efetivos de comissão.
+- A migração `202611150026_crm_operational_trip.sql` é aditiva para os registos existentes
+  e deve preceder a publicação do código. Faz parte do PR de revisão. A base de
+  produção e o domínio público ficam fora desta entrega. A bateria SQL usa dados
+  sintéticos numa base PostgreSQL descartável e inclui o teste
+  `supabase/tests/crm_operational_trip_regression.sql`.
