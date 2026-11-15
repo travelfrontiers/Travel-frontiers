@@ -1,6 +1,7 @@
 // Multi-language data
 const translations = {
     pt: {
+        theme: { dark: 'Ativar modo escuro', light: 'Ativar modo claro' },
         nav: {
             home: 'Início',
             about: 'Sobre',
@@ -141,6 +142,7 @@ const translations = {
         }
     },
     en: {
+        theme: { dark: 'Switch to dark mode', light: 'Switch to light mode' },
         nav: {
             home: 'Home',
             about: 'About',
@@ -281,6 +283,7 @@ const translations = {
         }
     },
     fr: {
+        theme: { dark: 'Activer le mode sombre', light: 'Activer le mode clair' },
         nav: {
             home: 'Accueil',
             about: 'À propos',
