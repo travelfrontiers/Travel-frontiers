@@ -331,7 +331,8 @@ function extractTravelServices(text: string): TripPdfService[] {
 
     const hotelMatch = /(?:hot[eé]l|alojamento|acomoda[cç][aã]o|accommodation|hospedagem|estadia|resort|hostel|property)\s*[:\-–—]\s*(.{3,180})/i.exec(line)
       || /(?:alojamento|acomoda[cç][aã]o|hospedagem|estadia)\s+(?:no|na|em|at)\s+(.{3,180}?)(?:[,.;]|$)/i.exec(line);
-    const isHotelLine = Boolean(hotelMatch) || inHotelSection && !sectionEnd.test(line) && !/^(?:check[- ]?in|check[- ]?out|entrada|sa[ií]da|noites?)\b/i.test(line);
+    const hotelMetadata = /^(?:check[- ]?in|check[- ]?out|entrada|sa[ií]da|noites?|cidade|city|destino|destination|regime|board|meal plan|quarto|tipo de quarto|room|e-?mail|telefone|phone|tel\.?|refer[eê]ncia|localizador|booking reference|operador|fornecedor|provider|supplier)\b/i;
+    const isHotelLine = !hotelMetadata.test(line) && (Boolean(hotelMatch) || inHotelSection && !sectionEnd.test(line));
     if (isHotelLine) {
       const rawName = hotelMatch?.[1] || line;
       let title = rawName.replace(/^\s*(?:no|na|em|at)\s+/i, "").replace(/\s+(?:check[- ]?in|check[- ]?out|entrada|sa[ií]da|regime|refei[cç][oõ]es?)\b.*$/i, "").replace(/[,;].*$|\.\s.*$/, "").trim();

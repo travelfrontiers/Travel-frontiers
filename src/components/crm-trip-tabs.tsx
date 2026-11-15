@@ -34,7 +34,7 @@ export function CrmTripTabs({ id, active, onChange }: { id: string; active: Trip
       type="button" role="tab" id={id + "-tab-" + tab} aria-controls={id + "-panel-" + tab}
       aria-selected={active === tab} tabIndex={active === tab ? 0 : -1}
       onClick={() => onChange(tab)} onKeyDown={e => move(e, index)}
-      className={`min-h-11 shrink-0 rounded-lg px-3 py-2 text-left text-sm ${active === tab ? "bg-orange-800 font-semibold text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-50"}`}>
+      className={`min-h-11 shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm ${active === tab ? "bg-orange-800 font-semibold text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-50"}`}>
       {label}
     </button>)}
   </div>;

@@ -116,7 +116,7 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  const pdf = extractTripFieldsFromPdfText([
   "Localizador principal: TF-9911", "Finnair - AY 1740", "16:35 Lisbon (LIS) - 06/04/2027", "23:10 Helsinki (HEL) - 06/04/2027",
   "PNR: LOCALZ1", "Fuso da partida: Europe/Lisbon", "Finnair - AY 99", "00:35 Helsinki (HEL) - 07/04/2027",
-  "17:40 Hong Kong (HKG) - 07/04/2027", "PNR: LOCALZ1", "Hotel: Estadia Exemplo", "Check-in: 07/04/2027",
+  "17:40 Hong Kong (HKG) - 07/04/2027", "PNR: LOCALZ1", "Hotéis", "Hotel: Estadia Exemplo", "Check-in: 07/04/2027",
   "Check-out: 10/04/2027", "Cidade: Hong Kong", "Regime: Pequeno-almoço", "Tipo de quarto: Duplo", "Referência do hotel: HT-9191",
  ].join("\n"));
  assert.equal(pdf.reference,"TF-9911");
@@ -125,6 +125,7 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
   [["LOCALZ1","LIS","HEL","16:35"],["LOCALZ1","HEL","HKG","00:35"]]);
  assert.equal(segments[0].booking.departure_zone,"Europe/Lisbon");
  assert.equal(segments[1].booking.departure_zone,undefined);
+ assert.equal(pdf.services.filter(service=>service.service_type==="accommodation").length,1);
  const stay=pdf.services.find(service=>service.service_type==="accommodation");
  assert.equal(stay.reference,"HT-9191");assert.equal(stay.booking.room,"Duplo");assert.equal(stay.booking.city,"Hong Kong");
  assert.equal(extractTripFieldsFromPdfText("PNR: LOCALZ1\nHotel: Exemplo").reference,"");
