@@ -1239,7 +1239,8 @@ export default function CrmStudioTool() {
             <CrmEmailPanel authorizedFetch={authorizedFetch} scope="trip" id={trip.id} recipientRevision={trip.client_ids?.join(",") ?? trip.client_id ?? ""} />
             </CrmTripPanel>
             <CrmTripPanel id={trip.id} tab="services" active={tripTab}>
-            <CrmExistingTripPdf tripId={trip.id} authorizedFetch={authorizedFetch} onImported={reloadTrips} />
+            <CrmExistingTripPdf tripId={trip.id} finance={financeByTrip.get(trip.id)} authorizedFetch={authorizedFetch}
+              onServicesImported={reloadTrips} onTotalSaved={refreshAfterFinance} />
             <h4 className="mt-5 border-t border-slate-200 pt-5 text-sm font-semibold">Serviços e reservas</h4>
             <p className="mb-3 mt-2 text-sm text-slate-600">Os preços por serviço ficam por preencher depois da importação. Confirma os valores e a sua origem antes de guardar.</p>
             <CrmServiceFinanceSummary tripId={trip.id} currency={trip.currency} contracted={trip.total_amount} services={trip.services} authorizedFetch={authorizedFetch}/>

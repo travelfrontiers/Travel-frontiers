@@ -59,7 +59,7 @@ export default function CrmProposals({authorizedFetch,clients,leads,trips,initia
        ...current, document_id: "", imported: { reference: fields.reference, services: fields.services, adults: fields.adults, children_count: fields.children_count },
        destination: fields.destination || current.destination, operator: fields.operator || current.operator,
        departure_date: fields.departure_date || current.departure_date, return_date: fields.return_date || current.return_date,
-       total_amount: fields.total_amount || current.total_amount, currency: fields.currency || current.currency,
+       total_amount: fields.total_amount || current.total_amount, currency: fields.total_amount ? fields.currency : current.currency,
        title: current.title || "Proposta · " + (fields.destination || file.name),
      } : current);
      setMessage("PDF lido. Confirma os dados preenchidos antes de guardar.");

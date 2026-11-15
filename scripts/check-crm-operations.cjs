@@ -100,6 +100,17 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
 
  const {combineIdentityPages,readIdentityPage}=load("src/lib/crm-document-ocr.ts");
  const {extractTripFieldsFromPdfText}=load("src/lib/crm-trip-pdf.ts");
+ const amount = text => {
+  const {total_amount,currency} = extractTripFieldsFromPdfText(text);
+  return [total_amount,currency];
+ };
+ assert.deepEqual(amount("Baseado em 4 adultos\nD E S D E\n1.286 €\nPor pessoa\nP R E Ç O   T O T A L\n5.145 €"),["5145","EUR"]);
+ assert.deepEqual(amount("4 adultos\n1.250 €\n5.000 €\nPreço total: 5.145,50 EUR"),["5145.50","EUR"]);
+ assert.deepEqual(amount("Price per person: $250\nGrand total: USD 1,275.15"),["1275.15","USD"]);
+ assert.deepEqual(amount("Prix total\n1 275,15 €"),["1275.15","EUR"]);
+ assert.deepEqual(amount("Preço por pessoa: 1.286 €\nTotal de taxas: 100 €\nSaldo em dívida: 400 €"),["","EUR"]);
+ assert.deepEqual(amount("4 adultos\n1.250 €\n5.000 €"),["5000","EUR"]);
+ assert.deepEqual(amount("Preço\n1.286 €\nPor pessoa"),["","EUR"]);
  const importServices = text => extractTripFieldsFromPdfText(text).services;
  const duplicateHotel = importServices([
   "17 de abr. de 2027 21 de abr. de 2027 Acomodação: Hotel Exemplo by Operador Hotels 4",
