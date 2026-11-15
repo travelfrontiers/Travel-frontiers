@@ -12,44 +12,57 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="./style.css?v=20261115-social-icons">
+    <link rel="stylesheet" href="./style.css?v=20261115-nav">
 </head>
 <body>
     <!-- Header — Matching main site glassmorphism style -->
-    <header class="navbar">
-        <div class="navbar-container">
-            <div class="navbar-logo">
-                <a href="https://www.travelfrontiers.pt/">
-                    <img src="https://www.travelfrontiers.pt/img/TF_globnobg2.webp" alt="Travel Frontiers Logo" class="logo-img">
-                    <span>Travel Frontiers</span>
-                </a>
-            </div>
-            <ul class="nav-menu" id="navMenu">
-                <li><a href="https://www.travelfrontiers.pt/" class="nav-link" data-translate="nav.home">Início</a></li>
-                <li><a href="https://www.travelfrontiers.pt/#services" class="nav-link" data-translate="nav.services">Serviços</a></li>
-                <li><a href="./" class="nav-link" data-translate="nav.forum">Fórum</a></li>
-                <li><a href="https://promo.travelfrontiers.pt/pt/pedido" data-request-form-link class="nav-link" data-translate="nav.contact">Contacto</a></li>
-            </ul>
-            <div class="nav-actions">
-                <!-- Language Selector -->
-                <div class="language-selector">
-                    <button class="lang-button" id="currentLang">
-                        <span>🌐</span>
-                        <span id="langCode">PT</span>
-                    </button>
-                    <div class="lang-dropdown" id="langDropdown">
-                        <button onclick="changeForumLanguage('pt')">Português</button>
-                        <button onclick="changeForumLanguage('en')">English</button>
-                        <button onclick="changeForumLanguage('fr')">Français</button>
-                    </div>
+    <header class="header">
+        <div class="container">
+            <div class="nav-wrapper">
+                <div class="logo">
+                    <a href="/" data-site-home>
+                        <picture>
+                            <source srcset="/img/TF_globnobg2.webp" type="image/webp">
+                            <img src="/img/logo-new-TF2.png" alt="" class="logo-image">
+                        </picture>
+                        <span class="logo-text">Travel Frontiers</span>
+                    </a>
                 </div>
-                <!-- Mobile Menu Button -->
-                <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
+                <nav class="nav-desktop">
+                    <a href="/#home" data-site-section="home" data-translate="nav.home">Início</a>
+                    <a href="/#about" data-site-section="about" data-translate="nav.about">Sobre</a>
+                    <a href="/#services" data-site-section="services" data-translate="nav.services">Serviços</a>
+                    <a href="/forum/" data-forum-nav aria-current="page" data-translate="nav.forum">Fórum</a>
+                    <a href="/#testimonials" data-site-section="testimonials" data-translate="nav.testimonials">Testemunhos</a>
+                    <a href="https://promo.travelfrontiers.pt/pt/pedido" data-request-form-link data-translate="nav.contact">Contacto</a>
+                    <a href="https://promo.travelfrontiers.pt/pt" data-promo-nav data-translate="nav.promotions">Promoções</a>
+                </nav>
+                <div class="nav-actions">
+                    <div class="language-selector">
+                        <button type="button" class="lang-button" id="currentLang" aria-controls="langDropdown" aria-expanded="false">
+                            <span aria-hidden="true">🌐</span>
+                            <span id="langCode">PT</span>
+                        </button>
+                        <div class="lang-dropdown" id="langDropdown">
+                            <button type="button" onclick="changeForumLanguage('pt')">Português</button>
+                            <button type="button" onclick="changeForumLanguage('en')">English</button>
+                            <button type="button" onclick="changeForumLanguage('fr')">Français</button>
+                        </div>
+                    </div>
+                    <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu" aria-controls="mobileMenu" aria-expanded="false">
+                        <span></span><span></span><span></span>
+                    </button>
+                </div>
             </div>
+            <nav class="nav-mobile" id="mobileMenu">
+                <a href="/#home" data-site-section="home" data-translate="nav.home">Início</a>
+                <a href="/#about" data-site-section="about" data-translate="nav.about">Sobre</a>
+                <a href="/#services" data-site-section="services" data-translate="nav.services">Serviços</a>
+                <a href="/forum/" data-forum-nav aria-current="page" data-translate="nav.forum">Fórum</a>
+                <a href="/#testimonials" data-site-section="testimonials" data-translate="nav.testimonials">Testemunhos</a>
+                <a href="https://promo.travelfrontiers.pt/pt/pedido" data-request-form-link data-translate="nav.contact">Contacto</a>
+                <a href="https://promo.travelfrontiers.pt/pt" data-promo-nav data-translate="nav.promotions">Promoções</a>
+            </nav>
         </div>
     </header>
 
@@ -213,6 +226,6 @@
         </div>
     </footer>
 
-    <script src="./script.js?v=20261115-social-icons"></script>
+    <script src="./script.js?v=20261115-nav"></script>
 </body>
 </html>
