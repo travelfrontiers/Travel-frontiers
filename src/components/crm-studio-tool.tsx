@@ -1223,6 +1223,10 @@ export default function CrmStudioTool() {
             </CrmTripPanel>
             {(["accommodation", "flight"] as const).map(type => <CrmTripPanel key={type} id={trip.id}
               tab={type === "flight" ? "flights" : "hotels"} active={tripTab}>
+              <div className="mb-4">
+                <CrmExistingTripPdf key={trip.id} tripId={trip.id} authorizedFetch={authorizedFetch}
+                  onServicesImported={reloadTrips} />
+              </div>
               <CrmOperationalServices type={type} items={trip.services} tasks={trip.tasks} saving={saving} now={tripClock}
                 onSave={(event, service) => void saveTripService(event, trip, service)}
                 onDelete={service => void deleteTripService(trip, service)}
@@ -1243,7 +1247,7 @@ export default function CrmStudioTool() {
             <CrmEmailPanel authorizedFetch={authorizedFetch} scope="trip" id={trip.id} recipientRevision={trip.client_ids?.join(",") ?? trip.client_id ?? ""} />
             </CrmTripPanel>
             <CrmTripPanel id={trip.id} tab="services" active={tripTab}>
-            <CrmExistingTripPdf tripId={trip.id} finance={financeByTrip.get(trip.id)} authorizedFetch={authorizedFetch}
+            <CrmExistingTripPdf key={trip.id} tripId={trip.id} finance={financeByTrip.get(trip.id)} authorizedFetch={authorizedFetch}
               onServicesImported={reloadTrips} onTotalSaved={refreshAfterFinance} />
             <h4 className="mt-5 border-t border-slate-200 pt-5 text-sm font-semibold">Serviços e reservas</h4>
             <p className="mb-3 mt-2 text-sm text-slate-600">Os preços por serviço ficam por preencher depois da importação. Confirma os valores e a sua origem antes de guardar.</p>
