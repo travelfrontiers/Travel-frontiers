@@ -39,7 +39,9 @@ A leitura é feita no navegador. O CRM guarda os campos revistos. Para guardar t
 
 - Em **Vista operacional → Viagens e checklist**, podes criar uma viagem manualmente ou importar o orçamento em PDF. Seleciona os clientes que viajam juntos e revê datas, estado, voos e hotéis.
 - Usa a checklist para definir prazos e concluir tarefas. Em **Templates**, podes editar modelos por tipo de viagem, com prazos relativos à partida ou ao regresso, e aplicá-los às fichas.
-- Um voo com data de partida cria uma tarefa de check-in dois dias antes. A rotina diária envia o alerta para ti quando a tarefa estiver pendente e a viagem estiver ativa.
+- Abre uma viagem para ver o **Localizador**, os viajantes, as datas e as pendências no **Resumo**. Em **Hotéis** podes contactar o alojamento e registar o estado e a data da confirmação.
+- Em **Voos**, regista cada segmento com hora local e fuso do aeroporto. Podes indicar a abertura confirmada do check-in ou usar a estimativa de 48 horas quando a partida está completa. A rotina diária continua a enviar-te alertas dos check-ins por concluir. Usa **Concluir check-in** para atualizar a checklist.
+- Em **Outros serviços**, usa **Importar voos e hotéis de um PDF** para completar uma viagem existente. Revê os campos e retira qualquer serviço que não queiras importar. Em **Documentos**, podes aceder aos ficheiros do Drive e aos PDFs das propostas associadas.
 - Abre **Calendário** para ver partidas, regressos, tarefas, contactos e validades. Clica no evento para abrir a ficha associada.
 - Usa **Arquivar** para retirar uma viagem da operação ativa. Viagens com pagamentos, cálculos de comissão ou ligações protegidas podem ter restrições à eliminação.
 

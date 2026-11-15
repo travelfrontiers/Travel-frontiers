@@ -215,6 +215,8 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
   const stale=Boolean(previous&&(previous.total_amount!==summary.total_amount||previous.adults!==detail.adults||previous.children_count!==detail.children_count));
   const isCommissionEditor = editor?.type === "commission" ||
     editor?.type === "receipt" && (editor.commission || editor.item?.kind.startsWith("commission_"));
+  const lastCommissionReceipt = detail.receipts.filter(item => item.kind === "commission_payment")
+    .reduce<string | null>((latest, item) => latest && latest > item.paid_on ? latest : item.paid_on, null);
   const receiptGroups=([false,true] as const).map(commission=>({commission,items:detail.receipts.filter(item=>item.kind.startsWith("commission_")===commission)}));
   return <section className="space-y-5">
     {back}
@@ -264,6 +266,7 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
         {currency==="EUR"&&<button className={primary} disabled={busy} onClick={()=>setEditor(editor?.type==="commission"?null:{type:"commission"})}>{editor?.type==="commission"?"Fechar calculadora":detail.commission?"Rever cálculo":"Abrir calculadora"}</button>}
       </div>
       {stale&&<p role="status" className="text-sm text-orange-800">O total ou o número de viajantes mudou depois do cálculo. Revê os dados da comissão.</p>}
+      <p className="text-sm text-slate-600">Último recebimento · {lastCommissionReceipt ? formatFinanceDate(lastCommissionReceipt) : "Sem recebimentos registados"}</p>
       <CrmCommissionReview detail={detail} today={today} busy={busy} onSave={mutate} onServices={onOpenServices}/>
       {editor?.type==="commission"&&<TripCommissionCalculator initialValues={initialValues} theme={theme}
         onSave={(inputs,apply_to_total)=>mutate("commission_save",{inputs,apply_to_total})}/>}

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rows } from "@/lib/crm-office-api";
 import { isAuthorizedStudioUser, supabaseAdminConfig } from "@/lib/crm-api";
 export const runtime = "nodejs";
 const uuid = (value: unknown): value is string => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
@@ -19,9 +20,18 @@ export async function GET(request: NextRequest) {
   if (!config) return NextResponse.json({ error: "Base de dados não configurada." }, { status: 503 });
   try {
     const field = tripId ? "trip_id" : "client_id";
-    const response = await fetch(`${config.url}/rest/v1/crm_drive_files?${field}=eq.${encodeURIComponent(tripId || clientId!)}&select=*&order=created_at.desc`, { headers: config.headers, cache: "no-store" });
+    const includeProposals = tripId && request.nextUrl.searchParams.get("proposals") === "1";
+    const [response, proposalFiles] = await Promise.all([
+      fetch(`${config.url}/rest/v1/crm_drive_files?${field}=eq.${encodeURIComponent(tripId || clientId!)}&select=*&order=created_at.desc`,
+        { headers: config.headers, cache: "no-store" }),
+      includeProposals ? rows(config, "crm_trip_proposal_documents", new URLSearchParams({
+        trip_id: "eq." + tripId, select: "proposal_id,version,proposal_title,document_id,file_name,drive_file_id",
+        order: "proposal_id,version.desc",
+      })) : Promise.resolve(null),
+    ]);
     if (!response.ok) throw new Error("query_failed");
-    return NextResponse.json({ files: await response.json(), ...driveConfig() }, { headers: { "Cache-Control": "private, no-store" } });
+    return NextResponse.json({ files: await response.json(), ...driveConfig(), ...(proposalFiles && { proposalFiles }) },
+      { headers: { "Cache-Control": "private, no-store" } });
   } catch { return NextResponse.json({ error: "Não foi possível carregar os ficheiros do Drive." }, { status: 502 }); }
 }
 export async function POST(request: NextRequest) {

@@ -17,7 +17,7 @@ export default function TripClientSelect({ clients, selectedIds = [], id }: {
   const [search, setSearch] = useState("");
   const query = searchKey(search);
   const matches = (client: Traveler) => searchKey(`${client.full_name} ${client.email ?? ""}`).includes(query);
-  const selectedClients = clients.filter(client => selected.includes(client.id));
+  const selectedClients = selected.flatMap(id => clients.find(client => client.id === id) ?? []);
 
   return <fieldset id={id} className="scroll-mt-16 space-y-3 rounded-xl border border-slate-300 bg-slate-50 p-4 sm:col-span-2">
     <legend className="px-2 text-base font-semibold">Escolher clientes *</legend>
@@ -28,6 +28,15 @@ export default function TripClientSelect({ clients, selectedIds = [], id }: {
       <p role="status" className="text-sm text-slate-600">{selectedClients.length
         ? `Selecionados (${selectedClients.length}): ${selectedClients.map(client => client.full_name).join(", ")}`
         : "Nenhum cliente selecionado. Assinala quem vai viajar."}</p>
+      {selectedClients.map(client => <input type="hidden" name="client_ids" value={client.id} key={client.id} />)}
+      {selectedClients.length > 1 && <label className="block space-y-1 text-sm font-medium">Cliente principal
+        <select className={officeInput} value={selectedClients[0].id} onChange={event => {
+          const primary = event.currentTarget.value;
+          setSelected(current => [primary, ...current.filter(id => id !== primary)]);
+        }}>
+          {selectedClients.map(client => <option key={client.id} value={client.id}>{client.full_name}</option>)}
+        </select>
+      </label>}
       <div className="grid max-h-52 gap-2 overflow-y-auto sm:grid-cols-2">
         {clients.map(client => {
           const checked = selected.includes(client.id);
@@ -35,7 +44,7 @@ export default function TripClientSelect({ clients, selectedIds = [], id }: {
           return <label key={client.id} className={
             `${visible ? "flex" : "hidden"} cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm ${checked ? "border-orange-300 bg-orange-50" : "border-slate-300 bg-white"}`
           }>
-            <input type="checkbox" name="client_ids" value={client.id} checked={checked}
+            <input type="checkbox" value={client.id} checked={checked}
               onChange={event => {
                 const add = event.currentTarget.checked;
                 setSelected(current => add ? [...current, client.id] : current.filter(id => id !== client.id));

@@ -1,3 +1,5 @@
+import { bookingTextFields, type BookingDetails } from "./crm-booking-details";
+
 export type TripPdfService = {
   service_type: "flight" | "accommodation" | "activity" | "transfer" | "insurance" | "other";
   title: string;
@@ -6,6 +8,7 @@ export type TripPdfService = {
   starts_on: string;
   ends_on: string;
   details: string;
+  booking?: BookingDetails;
 };
 
 export type TripPdfFields = {
@@ -276,6 +279,7 @@ function mergeHotelMentions(services: TripPdfService[]): TripPdfService[] {
     existing.ends_on ||= service.ends_on;
     existing.reference ||= service.reference;
     existing.provider ||= service.provider;
+    existing.booking = { ...service.booking, ...existing.booking };
   }
   return result.sort((a, b) => a.position - b.position).map(item => item.service);
 }
@@ -319,12 +323,16 @@ function extractTravelServices(text: string): TripPdfService[] {
       const routeLabel = route ? `${route[1].toUpperCase()} → ${route[2].toUpperCase()}` : airportCodes.length > 1 ? `${airportCodes[0]} → ${airportCodes[1]}` : transportRoute ? `${tidyAirport(transportRoute[1])}${airportCodes.length === 1 ? ` (${airportCodes[0]})` : ""} → ${tidyAirport(transportRoute[2])}` : "";
       const titleBits = [flightCode ? `Voo ${flightCode}` : "Transporte aéreo", routeLabel].filter(Boolean);
       const provider = /\b(TAP(?: Air Portugal)?|Iberia|Air Europa|Ryanair|easyJet|Lufthansa|Vueling|Air France|KLM|British Airways|Wizz Air|Transavia|Iberojet)\b/i.exec(combined)?.[1] || "";
-      add({ service_type: "flight", title: titleBits.join(" · ") || line.slice(0, 240), provider, reference: flightCode, starts_on: dateText, ends_on: "", details: combined.slice(0, 1000) });
+      const booking: BookingDetails = {};
+      if (flightCode) booking.flight_number = flightCode;
+      if (route) { booking.origin = route[1].toUpperCase(); booking.destination_airport = route[2].toUpperCase(); }
+      add({ service_type: "flight", title: titleBits.join(" · ") || line.slice(0, 240), provider, reference: flightCode, starts_on: dateText, ends_on: "", details: combined.slice(0, 1000), booking });
     }
 
     const hotelMatch = /(?:hot[eé]l|alojamento|acomoda[cç][aã]o|accommodation|hospedagem|estadia|resort|hostel|property)\s*[:\-–—]\s*(.{3,180})/i.exec(line)
       || /(?:alojamento|acomoda[cç][aã]o|hospedagem|estadia)\s+(?:no|na|em|at)\s+(.{3,180}?)(?:[,.;]|$)/i.exec(line);
-    const isHotelLine = Boolean(hotelMatch) || inHotelSection && !sectionEnd.test(line) && !/^(?:check[- ]?in|check[- ]?out|entrada|sa[ií]da|noites?)\b/i.test(line);
+    const hotelMetadata = /^(?:check[- ]?in|check[- ]?out|entrada|sa[ií]da|noites?|cidade|city|destino|destination|regime|board|meal plan|quarto|tipo de quarto|room|e-?mail|telefone|phone|tel\.?|refer[eê]ncia|localizador|booking reference|operador|fornecedor|provider|supplier)\b/i;
+    const isHotelLine = !hotelMetadata.test(line) && (Boolean(hotelMatch) || inHotelSection && !sectionEnd.test(line));
     if (isHotelLine) {
       const rawName = hotelMatch?.[1] || line;
       let title = rawName.replace(/^\s*(?:no|na|em|at)\s+/i, "").replace(/\s+(?:check[- ]?in|check[- ]?out|entrada|sa[ií]da|regime|refei[cç][oõ]es?)\b.*$/i, "").replace(/[,;].*$|\.\s.*$/, "").trim();
@@ -344,8 +352,24 @@ function extractTravelServices(text: string): TripPdfService[] {
       const start = bounds.departure_date || extractSingleDate(following.find(value => checkIn.test(value)) ?? "");
       const end = (bounds.return_date !== bounds.departure_date ? bounds.return_date : "") ||
         extractSingleDate(following.find(value => checkOut.test(value)) ?? "");
-      const provider = /\b(Booking\.com|TUI|Soltour|Travelplan|H10|Iberostar|RIU|Meli[aá]|Barcel[oó]|Hilton|Marriott|Hyatt|Pestana)\b/i.exec(title)?.[1] || "";
-      add({ service_type: "accommodation", title: title.slice(0, 240), provider, reference: "", starts_on: start, ends_on: end, details: serviceContext.slice(0, 1000) });
+      const hotelBlock = lines.slice(index + 1, index + 12).filter((_, offset, followingLines) =>
+        !followingLines.slice(0, offset + 1).some(item => /^(?:hotel|alojamento|accommodation|voo|flight|total)\s*[:–—-]/i.test(item)));
+      const booking: BookingDetails = {};
+      const metadata = [
+        ["city", /^(?:cidade|city)\s*:\s*(.+)$/i],
+        ["destination", /^(?:destino|destination)\s*:\s*(.+)$/i],
+        ["room", /^(?:quarto|tipo de quarto|room(?: type)?)\s*:\s*(.+)$/i],
+        ["board", /^(?:regime|meal plan|board(?: basis)?)\s*:\s*(.+)$/i],
+        ["email", /^(?:e-?mail(?: do hotel)?)\s*:\s*([^\s@]+@[^\s@]+\.[^\s@]+)$/i],
+        ["phone", /^(?:telefone|phone|tel\.?)\s*:\s*(\+?[0-9][0-9 ().-]{2,49})$/i],
+      ] as const;
+      for (const [key, pattern] of metadata) {
+        const value = hotelBlock.map(item => pattern.exec(item)?.[1]).find(Boolean);
+        if (value) booking[key] = value.trim().slice(0, bookingTextFields[key]);
+      }
+      const provider = hotelBlock.map(item => /^(?:operador|fornecedor|supplier|provider)\s*:\s*(.+)$/i.exec(item)?.[1]).find(Boolean) || "";
+      const reference = hotelBlock.map(item => /^(?:localizador|refer[eê]ncia|booking reference)\s+(?:do hotel|hotel)\s*[:#-]\s*([A-Z0-9][A-Z0-9/-]{2,})$/i.exec(item)?.[1]).find(Boolean) || "";
+      add({ service_type: "accommodation", title: title.slice(0, 240), provider: provider.slice(0, 160), reference: reference.slice(0, 100), starts_on: start, ends_on: end, details: serviceContext.slice(0, 1000), booking });
     }
   }
 
@@ -359,18 +383,30 @@ function extractTravelServices(text: string): TripPdfService[] {
   });
   const detailedFlights: TripPdfService[] = headings.map((heading, index) => {
     const end = Math.min(headings[index + 1]?.index ?? lines.length, heading.index + 12);
-    const block = lines.slice(heading.index, end).filter((line) => !/^bagagem\b/i.test(line)).join(" ");
-    const airportCodes = [...block.matchAll(/\(([A-Z]{3})\)/g)].map((match) => match[1]);
+    const segmentLines = lines.slice(heading.index + 1, end);
+    const boundary = segmentLines.findIndex(line => /^(?:hotel|alojamento|accommodation|total|condi[cç][oõ]es)\b/i.test(line));
+    const scoped = (boundary < 0 ? segmentLines : segmentLines.slice(0, boundary)).filter(line => !/^bagagem\b/i.test(line));
+    const block = [lines[heading.index], ...scoped].join(" ");
+    const airportLines = scoped.flatMap(line => {
+      const code = /\(([A-Z]{3})\)/.exec(line)?.[1];
+      return code ? [{ code, date: extractSingleDate(line), time: /\b(?:[01]\d|2[0-3]):[0-5]\d\b/.exec(line)?.[0] }] : [];
+    });
+    const [from, to] = airportLines;
     const dates = extractDateBounds(block);
-    const route = airportCodes.length > 1 ? `${airportCodes[0]} → ${airportCodes.at(-1)}` : "";
+    const route = from && to ? `${from.code} → ${to.code}` : "";
+    const departureZone = scoped.map(line => /^(?:fuso da partida|departure time zone)\s*:\s*([A-Za-z_]+(?:\/[A-Za-z0-9_+-]+)+|UTC)\s*$/i.exec(line)?.[1]).find(Boolean);
+    const arrivalZone = scoped.map(line => /^(?:fuso da chegada|arrival time zone)\s*:\s*([A-Za-z_]+(?:\/[A-Za-z0-9_+-]+)+|UTC)\s*$/i.exec(line)?.[1]).find(Boolean);
+    const pnr = scoped.map(line => /^(?:PNR|localizador (?:do voo|a[eé]reo)|airline booking reference)\s*[:#-]\s*([A-Z0-9][A-Z0-9/-]{3,24})\s*$/i.exec(line)?.[1]).find(Boolean);
     return {
       service_type: "flight",
       title: [heading.reference, route].filter(Boolean).join(" · "),
       provider: heading.provider,
       reference: heading.reference,
-      starts_on: dates.departure_date,
-      ends_on: dates.return_date,
+      starts_on: from?.date || dates.departure_date,
+      ends_on: to?.date || (dates.return_date !== dates.departure_date ? dates.return_date : ""),
       details: block.slice(0, 1000),
+      booking: Object.fromEntries(Object.entries({ flight_number: heading.reference, origin: from?.code,
+        destination_airport: to?.code, departure_time: from?.time, arrival_time: to?.time, departure_zone: departureZone, arrival_zone: arrivalZone, pnr }).filter(([, value]) => value)),
     };
   });
   const flightCode = (value: string) => value.replace(/\s/g, "").toUpperCase();
@@ -389,8 +425,8 @@ function extractTravelServices(text: string): TripPdfService[] {
 
 export function extractTripFieldsFromPdfText(text: string): TripPdfFields {
   const cleanText = text.replace(/\u00a0/g, " ");
-  const labeledReference = /(?:localizador|refer[eê]ncia|reserva|booking\s*(?:ref(?:erence)?)?)\s*[:#\-]?\s*([A-Z0-9][A-Z0-9\/-]{3,24})/i.exec(cleanText)?.[1];
-  const reference = labeledReference || /\b([A-Z]{2,8}-\d{4,})\b/.exec(cleanText)?.[1] || "";
+  const labeledReference = /^(?:localizador(?: principal| da viagem)?|refer[eê]ncia(?: da viagem| da reserva)?|booking reference|reserva)\s*[:#-]\s*([A-Z0-9][A-Z0-9/-]{3,24})\s*$/im.exec(cleanText)?.[1];
+  const reference = labeledReference || "";
   const adults = extractPassengerCount(cleanText, "adults");
   const children = extractPassengerCount(cleanText, "children");
   const dates = extractDateRange(cleanText);

@@ -113,6 +113,27 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  assert.deepEqual(repeatStays.map(s=>s.starts_on),["2027-04-03","2027-04-17"]);
  const repeatFlights = importServices("Voo TP 123 LIS → FNC 05/04/2027\nTAP Air Portugal - TP 123\nLisboa (LIS) 05/04/2027\nFunchal (FNC) 05/04/2027");
  assert.equal(repeatFlights.filter(s=>s.service_type==="flight").length,1);
+ const pdf = extractTripFieldsFromPdfText([
+  "Localizador principal: TF-9911", "Finnair - AY 1740", "16:35 Lisbon (LIS) - 06/04/2027", "23:10 Helsinki (HEL) - 06/04/2027",
+  "PNR: LOCALZ1", "Fuso da partida: Europe/Lisbon", "Finnair - AY 99", "00:35 Helsinki (HEL) - 07/04/2027",
+  "17:40 Hong Kong (HKG) - 07/04/2027", "PNR: LOCALZ1", "Hotéis", "Hotel: Estadia Exemplo", "Check-in: 07/04/2027",
+  "Check-out: 10/04/2027", "Cidade: Hong Kong", "Regime: Pequeno-almoço", "Tipo de quarto: Duplo", "Referência do hotel: HT-9191",
+ ].join("\n"));
+ assert.equal(pdf.reference,"TF-9911");
+ const segments=pdf.services.filter(service=>service.service_type==="flight");
+ assert.deepEqual(segments.map(service=>[service.booking.pnr,service.booking.origin,service.booking.destination_airport,service.booking.departure_time]),
+  [["LOCALZ1","LIS","HEL","16:35"],["LOCALZ1","HEL","HKG","00:35"]]);
+ assert.equal(segments[0].booking.departure_zone,"Europe/Lisbon");
+ assert.equal(segments[1].booking.departure_zone,undefined);
+ assert.equal(pdf.services.filter(service=>service.service_type==="accommodation").length,1);
+ const stay=pdf.services.find(service=>service.service_type==="accommodation");
+ assert.equal(stay.reference,"HT-9191");assert.equal(stay.booking.room,"Duplo");assert.equal(stay.booking.city,"Hong Kong");
+ assert.equal(extractTripFieldsFromPdfText("PNR: LOCALZ1\nHotel: Exemplo").reference,"");
+ const {normalizeTripService}=load("src/lib/crm-trip-services.ts");
+ assert.ok(normalizeTripService(segments[0]));
+ assert.equal(normalizeTripService({...segments[0],booking:{departure_zone:"Fake/Zone"}}),null);
+ assert.equal(normalizeTripService({...segments[0],booking:{checkin_url:"javascript:alert(1)"}}),null);
+ assert.equal(normalizeTripService({...stay,booking:{drive_url:"https://example.invalid/file"}}),null);
  const read=(text)=>readIdentityPage([text],"2026-11-11");
  const passport=read("PASSPORT\nFULL NAME: ANA SILVA\nDATE OF BIRTH: 1990-04-06");
  const identityCard=read("CARTÃO DE CIDADÃO\nVALIDADE: 2031-04-06");

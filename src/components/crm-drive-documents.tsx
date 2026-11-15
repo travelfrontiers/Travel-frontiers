@@ -5,6 +5,7 @@ import { officeSecondary } from "@/lib/crm-office-types";
 import { authorizeDrive, drive, loadGoogle } from "@/lib/crm-drive-client";
 import { uploadCrmDriveFile } from "@/lib/crm-drive-upload";
 type StoredFile = { id: string; drive_file_id: string; file_name: string; mime_type: string };
+type ProposalFile = { proposal_id: string; version: number; proposal_title: string; file_name: string; drive_file_id: string };
 type DriveSelection = { id: string; name: string; mimeType: string; source: "upload" | "picker" };
 async function folder(token: string, entity: string, name: string, parent?: string) {
   const q = `trashed = false and mimeType = 'application/vnd.google-apps.folder' and appProperties has { key='tfCrmFolder' and value='${entity}' }`;
@@ -14,9 +15,10 @@ async function folder(token: string, entity: string, name: string, parent?: stri
     body: JSON.stringify({ name: name.slice(0, 200), mimeType: "application/vnd.google-apps.folder", appProperties: { tfCrmFolder: entity }, ...(parent ? { parents: [parent] } : {}) }) });
   return created.id as string;
 }
-export default function CrmDriveDocuments({ authorizedFetch, tripId, clientId, title, initialFile, onUploaded }: {
-  authorizedFetch: (url: string, init?: RequestInit) => Promise<Response>; tripId?: string; clientId?: string; title: string; initialFile?: File | null; onUploaded?: (file: StoredFile) => void;
+export default function CrmDriveDocuments({ authorizedFetch, tripId, clientId, title, initialFile, onUploaded, includeProposalFiles }: {
+  authorizedFetch: (url: string, init?: RequestInit) => Promise<Response>; tripId?: string; clientId?: string; title: string; includeProposalFiles?: boolean; initialFile?: File | null; onUploaded?: (file: StoredFile) => void;
 }) {
+  const [proposalFiles, setProposalFiles] = useState<ProposalFile[]>([]);
   const [files, setFiles] = useState<StoredFile[]>([]);
   const [googleClientId, setGoogleClientId] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
@@ -31,15 +33,17 @@ export default function CrmDriveDocuments({ authorizedFetch, tripId, clientId, t
     let cancelled = false;
     const query = new URLSearchParams();
     query.set(tripId ? "trip_id" : "client_id", tripId || clientId || "");
+    if (includeProposalFiles) query.set("proposals", "1");
     authorizedFetch("/api/crm/drive?" + query).then(async (response) => {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível carregar os documentos.");
       if (cancelled) return;
+      setProposalFiles(result.proposalFiles || []);
       setFiles(result.files); setGoogleClientId(result.clientId); setPicker(result.picker || null);
       if (result.clientId) { await loadGoogle(); if (!cancelled) setReady(true); }
     }).catch((cause) => { if (!cancelled) setError(cause instanceof Error ? cause.message : "Não foi possível ligar ao Drive."); });
     return () => { cancelled = true; pickerRequest.current?.abort(); };
-  }, [authorizedFetch, tripId, clientId]);
+  }, [authorizedFetch, tripId, clientId, includeProposalFiles]);
   async function associate(file: DriveSelection) {
     setPending(file);
     const existing = files.find(item => item.drive_file_id === file.id);
@@ -121,6 +125,16 @@ export default function CrmDriveDocuments({ authorizedFetch, tripId, clientId, t
     {error && <p role="alert" className="mt-2 text-sm text-red-700">{error}</p>}
     {message && <p role="status" className="mt-2 text-sm text-emerald-700">{message}</p>}
     <ul className="mt-3 space-y-2">{files.map((file) => <li key={file.id} className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 p-3 text-sm"><a className="min-w-0 break-all font-medium text-orange-800 underline" href={`https://drive.google.com/file/d/${file.drive_file_id}/view`} target="_blank" rel="noreferrer">{file.file_name}</a><button type="button" disabled={busy} onClick={() => void unlink(file)} className="shrink-0 text-xs text-slate-600 underline">Retirar ligação</button></li>)}</ul>
+    {proposalFiles.length > 0 && <section className="mt-4">
+      <h5 className="text-sm font-semibold">Documentos das propostas</h5>
+      <ul className="mt-2 space-y-2">{proposalFiles.map(file => <li key={file.proposal_id + ":" + file.version}
+        className="rounded-xl bg-slate-50 p-3 text-sm break-words">
+        <p>{file.proposal_title} · versão {file.version}</p>
+        <a className="inline-flex min-h-11 items-center font-medium text-orange-800 underline"
+          href={`https://drive.google.com/file/d/${encodeURIComponent(file.drive_file_id)}/view`}
+          target="_blank" rel="noreferrer">{file.file_name}</a>
+      </li>)}</ul>
+    </section>}
     {picker && <button type="button" className={"mt-3 " + officeSecondary} disabled={!ready || busy || Boolean(pending)} onClick={() => void pick()}>Escolher do Google Drive</button>}
     {picking && <button type="button" className={"ml-2 mt-3 " + officeSecondary} onClick={() => pickerRequest.current?.abort()}>Cancelar seleção</button>}
     {pending && <p className="mt-2 text-xs text-slate-600">Por associar: {pending.name} <button type="button" disabled={busy} className="underline" onClick={() => { setPending(null); setError(""); }}>Cancelar associação</button></p>}
