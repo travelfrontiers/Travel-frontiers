@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { baseEmailTemplate, emailLanguages, emailTemplateKeys, emailTemplates, emailTemplateBodyLimit, missingEmailFields, type EmailLanguage, type EmailTemplateKey } from "@/lib/crm-email-templates";
 import { officeButton, officeInput, officeSecondary, type AuthorizedFetch } from "@/lib/crm-office-types";
 
-type TemplateCopy = { key: EmailTemplateKey; subject: string; body: string };
+type TemplateCopy = { key: EmailTemplateKey; subject: string; body: string; defaultSubject?: string; defaultBody?: string };
 const api = "/api/crm/email/templates";
 const sectionLabels = { lead: "Pedidos", proposal: "Propostas", trip: "Viagens" };
 
@@ -49,11 +49,11 @@ export default function CrmEmailTemplateEditor({ authorizedFetch }: { authorized
     try {
       const response = await authorizedFetch(api, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...editing, language }),
+        body: JSON.stringify({ key, subject: editing.subject, body: editing.body, language }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Não foi possível guardar o modelo.");
-      setTemplates(items => items.map(item => item.key === key ? result.template : item));
+      setTemplates(items => items.map(item => item.key === key ? { ...item, ...result.template } : item));
       setDraft(null);
       setNotice(key === "document_renewal" ? "Modelo guardado para os próximos lembretes neste idioma." : "Modelo guardado. O novo texto será usado nos próximos rascunhos neste idioma.");
     } catch (cause) {
@@ -94,6 +94,7 @@ export default function CrmEmailTemplateEditor({ authorizedFetch }: { authorized
       ? "Enviado automaticamente ao cliente um mês antes de vencer. Campos preenchidos: {{cliente}}, {{tipo_documento}} e {{validade}}."
       : "Disponível em " + emailTemplates[key].scopes.map(scope => sectionLabels[scope]).join(" e ") + "."}</p>
     {loading && <p role="status" className="text-sm">A carregar modelos…</p>}
+    {!loading && !error && key === "precontract" && !current && <p role="status" className="text-sm">O modelo pré-contratual está temporariamente indisponível.</p>}
     {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
     {notice && <p role="status" className="text-sm text-orange-800">{notice}</p>}
     {editing && !loading && <form onSubmit={save} className="space-y-4">
@@ -112,7 +113,9 @@ export default function CrmEmailTemplateEditor({ authorizedFetch }: { authorized
       <div className="flex flex-wrap gap-2">
         <button className={officeButton} disabled={!changed || busy}>{busy ? "A guardar…" : "Guardar modelo"}</button>
         <button type="button" className={officeSecondary} disabled={busy} onClick={() => {
-          setDraft({ key, ...baseEmailTemplate(key, language) }); setNotice("");
+          const defaults = current?.defaultSubject && current.defaultBody
+            ? { subject: current.defaultSubject, body: current.defaultBody } : baseEmailTemplate(key, language);
+          setDraft({ key, ...defaults }); setNotice("");
         }}>Repor texto original</button>
       </div>
     </form>}

@@ -2,7 +2,7 @@ export const emailScopes = ["lead", "proposal", "trip"] as const;
 export type EmailScope = typeof emailScopes[number];
 export const emailLanguages = { pt: "Português", en: "English", fr: "Français" } as const;
 export type EmailLanguage = keyof typeof emailLanguages;
-export const emailTemplateKeys = ["received", "research", "quote", "follow_up", "booking", "before_trip", "during_trip", "after_trip", "document_renewal"] as const;
+export const emailTemplateKeys = ["received", "research", "quote", "precontract", "follow_up", "booking", "before_trip", "during_trip", "after_trip", "document_renewal"] as const;
 export type EmailTemplateKey = typeof emailTemplateKeys[number];
 export const emailTemplateBodyLimit = 16000;
 export type EmailAttachmentRole = "quote" | "fin" | "terms" | "other";
@@ -15,7 +15,7 @@ type Template = {
   label: string;
   scopes: readonly EmailScope[];
   required?: readonly EmailAttachmentRole[];
-  copy: Record<EmailLanguage, readonly [subject: string, body: string]>;
+  copy?: Record<EmailLanguage, readonly [subject: string, body: string]>;
 };
 
 export const emailTemplates: Record<EmailTemplateKey, Template> = {
@@ -43,6 +43,9 @@ export const emailTemplates: Record<EmailTemplateKey, Template> = {
       en: ["Travel proposal for {{destino}} · version {{versao}}", "Please find attached the proposal for {{destino}} for {{periodo}}.\n\nTotal: {{valor}}. Discount: {{desconto}}.\nValid until: {{validade}}.\nPayment: {{condicoes_pagamento}}.\nCancellation: {{cancelamento}}.\nIncluded and optional insurance: {{seguro}}.\nAccommodation and board: {{hotel_regime}}.\nRequired documents: {{documentacao}}.\nAirport arrival: {{aeroporto}}.\nData protection: {{privacidade}}.\n\nThe standard information form and general terms are attached. To accept, please reply confirming that you have read and accept this version of the proposal and its attachments."],
       fr: ["Proposition de voyage à {{destino}} · version {{versao}}", "Voici en pièce jointe la proposition pour {{destino}}, pour la période {{periodo}}.\n\nMontant total : {{valor}}. Remise : {{desconto}}.\nValidité : {{validade}}.\nPaiement : {{condicoes_pagamento}}.\nAnnulation : {{cancelamento}}.\nAssurance incluse et option supplémentaire : {{seguro}}.\nHébergement et pension : {{hotel_regime}}.\nDocuments nécessaires : {{documentacao}}.\nArrivée à l’aéroport : {{aeroporto}}.\nProtection des données : {{privacidade}}.\n\nLe formulaire d’information standard et les conditions générales sont joints. Pour accepter, réponds à cet e-mail en confirmant que tu as lu et accepté cette version de la proposition et les pièces jointes."],
     },
+  },
+  precontract: {
+    label: "Antes da reserva · condições pré-contratuais", scopes: ["proposal", "trip"],
   },
   follow_up: {
     label: "Pós-orçamento · seguimento", scopes: ["proposal"],
@@ -95,7 +98,9 @@ export const emailTemplates: Record<EmailTemplateKey, Template> = {
 };
 
 export function baseEmailTemplate(key: EmailTemplateKey, language: EmailLanguage) {
-  const [subject, body] = emailTemplates[key].copy[language];
+  const copy = emailTemplates[key].copy;
+  if (!copy) return { subject: "", body: "" };
+  const [subject, body] = copy[language];
   if (key === "document_renewal" && language === "pt") {
     return { subject, body: `Olá {{cliente}},\n\n${body}\n\nCom os melhores cumprimentos,\nTiago Ferreira` };
   }

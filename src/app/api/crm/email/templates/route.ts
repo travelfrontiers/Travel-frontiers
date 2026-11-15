@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { crmConfig, CrmError, failure, payload, privateJson } from "@/lib/crm-office-api";
 import { baseEmailTemplate, emailTemplateKeys } from "@/lib/crm-email-templates";
 import { readStoredTemplates, saveStoredTemplate, templateLanguage, validTemplate } from "@/lib/crm-email-template-store";
+import { readPrecontractTemplate } from "@/lib/crm-precontract-email";
 
 export const runtime = "nodejs";
 
@@ -9,11 +10,13 @@ export async function GET(request: NextRequest) {
   try {
     const config = await crmConfig(request);
     const language = templateLanguage(request.nextUrl.searchParams.get("language") ?? "pt");
-    const overrides = await readStoredTemplates(config, language);
-    return privateJson({ templates: emailTemplateKeys.map(key => {
+    const [overrides, precontract] = await Promise.all([readStoredTemplates(config, language), readPrecontractTemplate(config)]);
+    return privateJson({ templates: emailTemplateKeys.flatMap(key => {
       const custom = overrides.find(entry => entry.template_key === key);
-      const copy = custom ?? baseEmailTemplate(key, language);
-      return { key, subject: copy.subject, body: copy.body };
+      const defaults = key === "precontract" ? precontract : baseEmailTemplate(key, language);
+      if (!defaults) return [];
+      const copy = custom ?? defaults;
+      return [{ key, subject: copy.subject, body: copy.body, defaultSubject: defaults.subject, defaultBody: defaults.body }];
     }) });
   } catch (error) { return failure(error); }
 }

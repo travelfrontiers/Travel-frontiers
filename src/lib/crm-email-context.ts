@@ -38,10 +38,12 @@ type Dossier = {
   departure_date: string | null; return_date: string | null; total_amount?: number | null; currency?: string;
   operator?: string | null; archived_at?: string | null;
 };
-type Finance = { customer_net: number; balance: number | null; next_due_on: string | null; currency: string };
+type Finance = { customer_net: number; balance: number | null; next_due_on: string | null; currency: string; total_amount: number | null };
+type PaymentLine = { label: string; due_on: string; amount_remaining: number };
+type Hotel = { title: string; booking?: { board?: string } | null };
 type DriveFile = { drive_file_id: string; file_name: string };
 
-export async function loadEmailContext(config: EmailConfig, scope: EmailScope, id: string, version?: number) {
+export async function loadEmailContext(config: EmailConfig, scope: EmailScope, id: string, version?: number, includePrecontract = false) {
   let proposal: Proposal | undefined;
   let document: ProposalVersion | undefined;
   let source: Dossier;
@@ -63,10 +65,10 @@ export async function loadEmailContext(config: EmailConfig, scope: EmailScope, i
   const [client, finance, hotels, driveFile, travelers] = await Promise.all([
     source.client_id ? row<OfficeClient>(config, "crm_clients", source.client_id, "id,full_name,email,language") : null,
     tripId ? emailRest<Finance[]>(config, "crm_trip_finance_overview", {
-      trip_id: "eq." + tripId, select: "customer_net,balance,next_due_on,currency", limit: "1",
+      trip_id: "eq." + tripId, select: "customer_net,balance,next_due_on,currency,total_amount", limit: "1",
     }).then(result => result[0]) : null,
-    tripId ? emailRest<{ title: string }[]>(config, "crm_trip_services", {
-      trip_id: "eq." + tripId, service_type: "eq.accommodation", select: "title", order: "sort_order.asc,id", limit: "5",
+    tripId ? emailRest<Hotel[]>(config, "crm_trip_services", {
+      trip_id: "eq." + tripId, service_type: "eq.accommodation", select: "title,booking", order: "sort_order.asc,id", limit: "5",
     }) : [],
     document?.document_id ? row<DriveFile>(config, "crm_drive_files", document.document_id, "drive_file_id,file_name") : null,
     tripId ? emailRest<{ client: Pick<OfficeClient, "id" | "full_name" | "email"> | null }[]>(config, "crm_trip_clients", {
@@ -79,6 +81,19 @@ export async function loadEmailContext(config: EmailConfig, scope: EmailScope, i
   const money = (value?: number | null) => value == null ? "" : new Intl.NumberFormat(locale, { style: "currency", currency: source.currency || finance?.currency || "EUR" }).format(Number(value));
   const departure = dates(source.departure_date);
   const returning = dates(source.return_date);
+  // Use plan amounts after payments and discounts, only for the same trip total and currency.
+  const sameTotal = finance && source.total_amount != null && finance.total_amount != null &&
+    Number(source.total_amount) === Number(finance.total_amount) && source.currency === finance.currency;
+  const plan = includePrecontract && tripId && sameTotal && (!proposal || document?.version === proposal.current_version)
+    ? await emailRest<PaymentLine[]>(config, "crm_payment_deadlines", {
+      trip_id: "eq." + tripId, select: "label,due_on,amount_remaining", amount_remaining: "gt.0",
+      order: "due_on.asc,sort_order.asc,id.asc", limit: "50",
+    }).catch(() => []) : [];
+  const payable = plan.map(item => `• ${item.label}: ${money(item.amount_remaining)}, até ${dates(item.due_on)}.`);
+  const cents = (value: number) => Math.round(value * 100);
+  const unplanned = finance?.balance == null ? 0 : cents(finance.balance) - plan.reduce((sum, item) => sum + cents(item.amount_remaining), 0);
+  if (payable.length && unplanned > 0) payable.push(`• ${money(unplanned / 100)} sem prazo registado: {{prazo_restante}}.`);
+  const accommodation: Hotel[] = hotels.length ? hotels : document?.imported?.services.filter(service => service.service_type === "accommodation") ?? [];
   const primaryEmail = [client?.email, source.email].find(emailAddress) ?? null;
   const contacts: EmailContact[] = travelers.flatMap(({ client: traveler }) => traveler ? [{
     id: traveler.id, name: traveler.full_name, email: emailAddress(traveler.email) ? traveler.email.toLowerCase() : null,
@@ -100,7 +115,8 @@ export async function loadEmailContext(config: EmailConfig, scope: EmailScope, i
       partida: departure, regresso: returning, valor: money(source.total_amount),
       versao: document ? String(document.version) : "", validade: dates(document?.valid_until), operador: source.operator || "",
       referencia: source.reference || document?.imported?.reference || "",
-      hotel_regime: (hotels.length ? hotels : document?.imported?.services.filter(service => service.service_type === "accommodation") ?? []).map(hotel => hotel.title).join(" / "),
+      hotel_regime: accommodation.map(hotel => hotel.booking?.board ? `${hotel.title} · ${hotel.booking.board}` : hotel.title).join(" / "),
+      plano_pagamentos: payable.join("\n"),
       pago: money(finance?.customer_net), saldo: money(finance?.balance), prazo: dates(finance?.next_due_on),
       condicoes: document?.conditions || "", incluido: document?.inclusions || "", excluido: document?.exclusions || "",
     },
