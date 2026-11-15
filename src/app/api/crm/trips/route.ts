@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { isAuthorizedStudioUser, supabaseAdminConfig } from "@/lib/crm-api";
 import { rows, travelTypes } from "@/lib/crm-office-api";
-import { extractTripFieldsFromPdfText } from "@/lib/crm-trip-pdf";
+import { extractTripFieldsFromPdfText, type TicketTextItem } from "@/lib/crm-trip-pdf";
 
 export const runtime = "nodejs";
 const execFile = promisify(execFileCallback);
@@ -147,14 +147,27 @@ async function previewTripPdf(request: NextRequest) {
     return NextResponse.json({ error: "O ficheiro tem de ser PDF e não pode ultrapassar 4 MB." }, { status: 400 });
   }
   try {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    if (buffer.subarray(0, 5).toString("ascii") !== "%PDF-") return NextResponse.json({ error: "O ficheiro selecionado não parece ser um PDF válido." }, { status: 400 });
-    const pdfParse = require("pdf-parse") as (input: Buffer) => Promise<{ text?: string; numpages?: number }>;
-    const parsed = await pdfParse(buffer);
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (new TextDecoder().decode(bytes.subarray(0, 5)) !== "%PDF-") return NextResponse.json({ error: "O ficheiro selecionado não parece ser um PDF válido." }, { status: 400 });
+    const pdfParse = require("pdf-parse") as (input: Uint8Array, options: {
+      pagerender: (page: { getTextContent: () => Promise<{ items: TicketTextItem[] }> }) => Promise<string>;
+    }) => Promise<{ text?: string; numpages?: number }>;
+    const ticketPages: TicketTextItem[][] = [];
+    const parsed = await pdfParse(bytes, { pagerender: async page => {
+      const { items } = await page.getTextContent();
+      if (items.some(item => /^(?:From|Flight)$/i.test(item.str.trim()))) ticketPages.push(items);
+      let previousY: number | undefined;
+      return items.map(item => {
+        const y = item.transform[5];
+        const separator = previousY !== undefined && previousY !== y ? "\n" : "";
+        previousY = y;
+        return separator + item.str;
+      }).join("");
+    } });
     let text = typeof parsed.text === "string" ? parsed.text : "";
-    if (text.trim().length < 40 && parsed.numpages && formData.get("text_only") !== "true") text = await tryLocalOcr(buffer, Math.min(parsed.numpages, 10));
+    if (text.trim().length < 40 && parsed.numpages && formData.get("text_only") !== "true") text = await tryLocalOcr(Buffer.from(bytes.buffer), Math.min(parsed.numpages, 10));
     if (text.trim().length < 40) return NextResponse.json({ error: "Não consegui ler texto neste PDF. Confirma que não está protegido por palavra-passe e que a leitura OCR local está disponível." }, { status: 422 });
-    const fields = extractTripFieldsFromPdfText(text);
+    const fields = extractTripFieldsFromPdfText(text, ticketPages);
     const found = Object.entries(fields).filter(([key, value]) => key !== "currency" && key !== "operator" && key !== "trip_notes" && (key !== "services" || Array.isArray(value) && value.length > 0) && value !== "" && value !== null).length;
     if (found === 0) return NextResponse.json({ error: "Não encontrei campos de viagem reconhecíveis. Podes preencher os dados manualmente nesta ficha." }, { status: 422 });
     return NextResponse.json({ fields, message: "Confirma e corrige todos os campos antes de criar a viagem. O texto original do PDF não é guardado nem devolvido." }, { headers: { "Cache-Control": "private, no-store" } });
