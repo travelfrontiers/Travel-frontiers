@@ -1807,6 +1807,48 @@ a {
     box-shadow: 0 4px 12px rgba(15, 20, 25, 0.3);
 }
 
+.share-ig {
+    background: #a12568;
+    color: white;
+}
+.share-ig:hover {
+    background: #821d55;
+    color: white;
+}
+.share-ig:focus-visible {
+    outline: 2px solid #a12568;
+    outline-offset: 3px;
+}
+
+.instagram-share {
+    margin-top: 12px;
+    padding: 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    color: #374151;
+    font-size: 0.9rem;
+}
+
+.instagram-share label {
+    display: block;
+    font-weight: 600;
+}
+
+.instagram-share input {
+    box-sizing: border-box;
+    width: 100%;
+    margin: 4px 0 8px;
+    padding: 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 1rem;
+}
+
+.instagram-share p {
+    margin: 0 0 8px;
+}
+
 .share-copy {
     background: #f3f4f6;
     color: #374151;

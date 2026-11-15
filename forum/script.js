@@ -18,7 +18,11 @@ const forumTranslations = {
             by: 'por',
             share: 'Partilhar:',
             copyLink: 'Copiar Link',
-            copied: 'Link Copiado!'
+            copied: 'Link Copiado!',
+            articleLink: 'Link do artigo',
+            openInstagram: 'Abrir Instagram',
+            instagramHelp: 'Cola o link numa mensagem ou no sticker Link de um Story.',
+            copyManually: 'Copia o link abaixo.'
         },
         author: {
             role: 'Consultor Certificado · RNAVT 3301',
@@ -52,7 +56,11 @@ const forumTranslations = {
             by: 'by',
             share: 'Share:',
             copyLink: 'Copy Link',
-            copied: 'Link Copied!'
+            copied: 'Link Copied!',
+            articleLink: 'Article link',
+            openInstagram: 'Open Instagram',
+            instagramHelp: 'Paste the link into a message or use the Link sticker in a Story.',
+            copyManually: 'Copy the link below.'
         },
         author: {
             role: 'Certified Travel Consultant · RNAVT 3301',
@@ -86,7 +94,11 @@ const forumTranslations = {
             by: 'par',
             share: 'Partager :',
             copyLink: 'Copier le Lien',
-            copied: 'Lien Copié !'
+            copied: 'Lien Copié !',
+            articleLink: 'Lien de l’article',
+            openInstagram: 'Ouvrir Instagram',
+            instagramHelp: 'Collez le lien dans un message ou utilisez le sticker Lien dans une story.',
+            copyManually: 'Copiez le lien ci-dessous.'
         },
         author: {
             role: 'Consultant Voyage Certifié · RNAVT 3301',
@@ -725,6 +737,32 @@ if (currentPage === 'post' && postContent) {
 
         const shareTw = document.getElementById('shareTwitter');
         if (shareTw) shareTw.href = `https://twitter.com/intent/tweet?text=${encodedPostTitle}&url=${encodedPostUrl}`;
+
+        const shareInstagram = document.getElementById('shareInstagram');
+        if (shareInstagram) {
+            const panel = document.getElementById('instagramShare');
+            const status = document.getElementById('instagramShareStatus');
+            const link = document.getElementById('instagramShareUrl');
+            link.value = new URL(forumPostLink(post.id), window.location.href).href;
+            shareInstagram.onclick = async () => {
+                if (!panel.hidden) {
+                    panel.hidden = true;
+                    shareInstagram.setAttribute('aria-expanded', 'false');
+                    return;
+                }
+                panel.hidden = false;
+                shareInstagram.setAttribute('aria-expanded', 'true');
+                status.textContent = '';
+                try {
+                    await navigator.clipboard.writeText(link.value);
+                    status.textContent = getForumTranslation('post.copied');
+                } catch {
+                    status.textContent = getForumTranslation('post.copyManually');
+                    link.focus();
+                    link.select();
+                }
+            };
+        }
 
         const shareCopy = document.getElementById('shareCopy');
         if (shareCopy) {
