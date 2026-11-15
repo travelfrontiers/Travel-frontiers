@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
 
   const clientIds = Array.isArray(body.client_ids) ? body.client_ids : body.client_id ? [body.client_id] : [];
   const reference = typeof body.reference === "string" ? body.reference.trim() : "";
+  const extraReferences = typeof body.extra_references === "string" ? body.extra_references.trim() : "";
   const destination = typeof body.destination === "string" ? body.destination.trim() : "";
   const departureDate = body.departure_date === "" ? null : body.departure_date;
   const returnDate = body.return_date === "" ? null : body.return_date;
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
 };
   const services = normalizeTripServices(body.services === undefined ? [] : body.services);
   if (!services) return NextResponse.json({ error: "Revê os dados dos voos e alojamentos extraídos." }, { status: 400 });
-  if (!travelTypes.includes(travelType as (typeof travelTypes)[number]) || clientIds.length < 1 || clientIds.length > 30 || !clientIds.every(isUuid) || reference.length > 80 || destination.length > 240 || !statuses.includes(status) ||
+  if (!travelTypes.includes(travelType as (typeof travelTypes)[number]) || clientIds.length < 1 || clientIds.length > 30 || !clientIds.every(isUuid) || reference.length > 80 || extraReferences.length > 1000 || destination.length > 240 || !statuses.includes(status) ||
       !validDate(departureDate) || !validDate(returnDate) ||
       typeof departureDate === "string" && typeof returnDate === "string" && returnDate < departureDate ||
       operator.length > 160 || adults !== null && (!Number.isInteger(adults) || adults < 1 || adults > 20) ||
@@ -105,6 +106,7 @@ export async function POST(request: NextRequest) {
         p_travel_type: travelType,
         p_data: {
         reference: reference || null,
+        extra_references: extraReferences || null,
         destination: destination || null,
         departure_date: departureDate,
         return_date: returnDate,
@@ -122,6 +124,7 @@ export async function POST(request: NextRequest) {
     });
     if (!response.ok) {
       const failure = await response.json().catch(() => null) as { message?: string; code?: string } | null;
+      if (failure?.message?.includes("invalid_flight_schedule")) return NextResponse.json({ error: "Revê as datas, horas e fusos dos voos." }, { status: 400 });
       if (failure?.message?.includes("client_not_found")) return NextResponse.json({ error: "O cliente selecionado já não existe." }, { status: 404 });
       if (failure?.code === "23505") return NextResponse.json({ error: "Já existe uma viagem com esta referência." }, { status: 409 });
       console.error("CRM manual trip create failed", response.status);

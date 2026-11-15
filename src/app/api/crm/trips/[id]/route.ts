@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { travelTypes } from "@/lib/crm-office-api";
 import { isAuthorizedStudioUser, supabaseAdminConfig } from "@/lib/crm-api";
 
+import { normalizeTripServices } from "@/lib/crm-trip-services";
+
 export const runtime = "nodejs";
 const tripStatuses = ["planning", "confirmed", "travelling", "completed", "cancelled"] as const;
 const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
@@ -20,6 +22,22 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     try { return await setArchived(config, "crm_trips", id, body.archived); }
     catch (cause) { return failure(cause); }
   }
+  if (body.action === "import_services") {
+    const services = normalizeTripServices(body.services);
+    if (!services?.length) return NextResponse.json({ error: "Revê e seleciona os serviços a importar." }, { status: 400 });
+    try {
+      const response = await fetch(`${config.url}/rest/v1/rpc/crm_import_trip_services`, {
+        method: "POST", headers: config.headers, cache: "no-store", body: JSON.stringify({ p_trip_id: id, p_services: services }),
+      });
+      const result = await response.json();
+      if (response.ok) return NextResponse.json({ imported: result }, { headers: { "Cache-Control": "private, no-store" } });
+      if (result?.message?.includes("invalid_flight_schedule")) return NextResponse.json({ error: "Revê as datas, horas e fusos dos voos." }, { status: 400 });
+      if (result?.message?.includes("trip_not_found")) return NextResponse.json({ error: "A viagem já não existe." }, { status: 404 });
+    } catch { /* Return the same message when the database cannot be reached. */ }
+    return NextResponse.json({ error: "Não foi possível importar os serviços." }, { status: 502 });
+  }
+  const reference = typeof body.reference === "string" ? body.reference.trim() : "";
+  const extraReferences = typeof body.extra_references === "string" ? body.extra_references.trim() : "";
   const travelType = typeof body.travel_type === "string" ? body.travel_type : "general";
   const { status, destination, departure_date, return_date } = body;
   const clientIds = body.client_ids;
@@ -41,7 +59,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       !validDate(departure_date) ||
       !validDate(return_date) ||
       typeof departure_date === "string" && typeof return_date === "string" && return_date < departure_date ||
-      operator.length > 160 || adults !== null && (!Number.isInteger(adults) || adults < 1 || adults > 20) ||
+      operator.length > 160 || reference.length > 80 || extraReferences.length > 1000 || adults !== null && (!Number.isInteger(adults) || adults < 1 || adults > 20) ||
       childrenCount !== null && (!Number.isInteger(childrenCount) || childrenCount < 0 || childrenCount > 30) ||
       totalAmount !== null && (!Number.isFinite(totalAmount) || totalAmount < 0 || totalAmount > 9999999999.99) ||
       !/^[A-Z]{3}$/.test(currency) || tripNotes.length > 4000) {
@@ -54,11 +72,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       body: JSON.stringify({
         p_trip_id: id, p_client_ids: [...new Set(clientIds as string[])],
         p_fields: { travel_type: travelType, status, destination, departure_date, return_date, operator, adults,
-          children_count: childrenCount, total_amount: totalAmount, currency, trip_notes: tripNotes },
+          children_count: childrenCount, total_amount: totalAmount, currency, trip_notes: tripNotes,
+          ...(body.reference !== undefined && { reference }), ...(body.extra_references !== undefined && { extra_references: extraReferences }) },
       }), cache: "no-store",
     });
     if (!response.ok) {
-      const failure = await response.json().catch(() => null) as { message?: string } | null;
+      const failure = await response.json().catch(() => null) as { message?: string; code?: string } | null;
+      if (failure?.code === "23505") return NextResponse.json({ error: "Já existe uma viagem com este localizador." }, { status: 409 });
       if (failure?.message?.includes("payment_plan_exceeds_total")) return NextResponse.json({error:"Ajusta as prestações antes de reduzir o valor total."},{status:409});
       if (failure?.message?.includes("finance_currency_locked")) return NextResponse.json({error:"A moeda está associada a pagamentos, prestações ou comissão já registados."},{status:409});
       if (failure?.message?.includes("payment_total_required")) return NextResponse.json({error:"Mantém o valor total enquanto a viagem tiver pagamentos registados."},{status:409});
