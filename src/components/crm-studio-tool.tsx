@@ -19,9 +19,10 @@ import CrmPayments, { CrmPaymentAlerts, FinanceTrip } from "./crm-payments";
 import CrmActivity from "./crm-activity";
 import CrmDuplicates from "./crm-duplicates";
 import CrmChecklistTemplates, { CrmTripTemplatePicker } from "./crm-checklist-templates";
-import { travelTypeLabels, type EntityContext, type OpenTarget } from "@/lib/crm-office-types";
+import { travelTypeLabels, type EntityContext, type OpenTarget, type TripBoardActivity } from "@/lib/crm-office-types";
 import CrmWorkspaceNavigation, { type CrmView as View } from "./crm-workspace-navigation";
 import CrmTripList from "./crm-trip-list";
+import CrmTripBoard from "./crm-trip-board";
 import CrmCommissionWorkspace, { hasOpenCommission, type CommissionSort, type CommissionView } from "./crm-commission-workspace";
 import { CrmTripTabs, CrmTripPanel, type TripTab } from "./crm-trip-tabs";
 import { commissionStates, formatMoney, type FinanceSummary } from "@/lib/crm-finance";
@@ -252,6 +253,9 @@ export default function CrmStudioTool() {
   const [tripFrom, setTripFrom] = useState("");
   const [tripTo, setTripTo] = useState("");
   const [tripSort, setTripSort] = useState("departure");
+  const [tripLayout, setTripLayout] = useState<"board" | "list">("board");
+  const [boardActivity, setBoardActivity] = useState<Record<string, TripBoardActivity> | null>(null);
+  const boardVisible = view === "trips" && focused?.type !== "trip" && tripLayout === "board" && !showArchivedTrips;
 
   function goToView(nextView: View) {
     setFocused(null);
@@ -366,6 +370,19 @@ export default function CrmStudioTool() {
     return () => controller.abort();
   }, [view, token, user?.email, authorizedFetch]);
 
+  useEffect(() => {
+    if (!boardVisible || !token || user?.email?.toLowerCase() !== adminEmail) return;
+    const controller = new AbortController();
+    authorizedFetch("/api/crm/trips?view=board", { signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error();
+        const data = await response.json();
+        if (!controller.signal.aborted) setBoardActivity(data.board ?? null);
+      })
+      .catch(() => { if (!controller.signal.aborted) setBoardActivity(null); });
+    return () => controller.abort();
+  }, [boardVisible, token, user?.email, authorizedFetch, trips]);
+
   const quietRefresh = useCallback(() => refresh(true), [refresh]);
   const refreshFinance = useCallback(async (signal?: AbortSignal) => {
     try {
@@ -410,6 +427,9 @@ export default function CrmStudioTool() {
     if (target.type==="proposal") { setProposalId(target.id);setProposalStatusFilter("");setProposalTripId("");setProposalContext(null);goToView("proposals");return; }
     goToView("clients"); setFocused(target);
     setClientSearch("");setClientFilter("");setClientLanguage("");
+  }
+  function openTripProposals(id: string) {
+    setProposalContext(null); setProposalId(""); setProposalStatusFilter(""); setProposalTripId(id); goToView("proposals");
   }
   function newProposal(context: EntityContext) { setSelected(null);setProposalId("");setProposalStatusFilter("");setProposalTripId("");setProposalContext(context);goToView("proposals"); }
   function showHistory(context: EntityContext | null) {setSelected(null);setActivityContext(context);goToView("activity");}
@@ -684,6 +704,27 @@ export default function CrmStudioTool() {
     setTrips(result.trips as Trip[]);
   }
 
+  async function moveTrip(tripId: string, status: string) {
+    const trip = trips.find(item => item.id === tripId);
+    if (!trip || trip.archived_at || saving || trip.status === status) return;
+    setSaving(true); setError("");
+    try {
+      const response = await authorizedFetch(`/api/crm/trips/${tripId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "move", status, previous_status: trip.status }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        if (response.status === 409) await reloadTrips().catch(() => {});
+        throw new Error(data.error || "Não foi possível mudar o estado da viagem.");
+      }
+      setTrips(current => current.map(item => item.id === tripId ? { ...item, status: data.trip.status } : item));
+      await Promise.all([reloadTrips(), refreshFinance()]);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível atualizar a viagem.");
+    } finally { setSaving(false); }
+  }
+
   async function saveTripService(event: FormEvent<HTMLFormElement>, trip: Trip, service?: TripService) {
     event.preventDefault(); setSaving(true); setError("");
     const form = event.currentTarget; const data = new FormData(form);
@@ -844,6 +885,20 @@ export default function CrmStudioTool() {
     status: trip.archived_at ? "Arquivada" : tripStatuses.find(status=>status.id===trip.status)?.label || trip.status,
     currency: trip.currency, total: trip.total_amount, finance: financeByTrip.get(trip.id),
   })) : [];
+  const tripBoardItems = boardVisible ? tripItems.map((item, index) => {
+    const trip = visibleTrips[index];
+    const active = trip.status !== "cancelled" && trip.status !== "completed";
+    const alerts = active ? [
+      ...bookingAlerts(trip, today, tripClock),
+      ...tripContextAlerts(trip, today, expiryAlertsForTrip(trip, clients, documents), followUpForTrip(trip, leads))
+        .filter(alert => alert.kind !== "Partida" && alert.kind !== "Regresso"),
+    ].sort((first, second) => first.date.localeCompare(second.date)) : [];
+    const flights = trip.services.filter(service => service.service_type === "flight").length;
+    const hotels = trip.services.filter(service => service.service_type === "accommodation").length;
+    return { ...item, stage: trip.status, flights, hotels, otherServices: trip.services.length - flights - hotels,
+      completedTasks: trip.tasks.filter(task => task.completed).length, totalTasks: trip.tasks.length, alerts,
+      activity: boardActivity ? boardActivity[trip.id] ?? { proposals: 0, emails: 0, documents: 0 } : undefined };
+  }) : [];
   const tripFilters = <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">{view === "trips" && <label className="text-sm">Pesquisar<input className={inputClass} value={tripQuery} onChange={e=>setTripQuery(e.target.value)} placeholder="Destino, cliente, operador ou referência"/></label>}<label className="text-sm">Estado<select className={inputClass} value={tripState} onChange={e=>setTripState(e.target.value)}><option value="">Todos</option>{tripStatuses.map(st=><option key={st.id} value={st.id}>{st.label}</option>)}</select></label>
     <label className="text-sm">Tipo<select className={inputClass} value={tripType} onChange={e=>setTripType(e.target.value)}><option value="">Todos</option>{Object.entries(travelTypeLabels).filter(([id])=>id!=="all").map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
     <label className="text-sm">Cliente<select className={inputClass} value={tripPerson} onChange={e=>setTripPerson(e.target.value)}><option value="">Todos</option>{clients.map(c=><option key={c.id} value={c.id}>{c.full_name}</option>)}</select></label>
@@ -1116,12 +1171,25 @@ export default function CrmStudioTool() {
           <div className="mb-5">{financeFilters}</div>
           {financeListStatus==="loading" && <p role="status" className="mb-3 text-sm text-slate-600">A carregar valores financeiros…</p>}
           {financeListStatus==="error" && <div role="status" className="mb-3 text-sm text-slate-600">Dados financeiros indisponíveis. <button type="button" className="underline" onClick={()=>void refreshFinance()}>Tentar novamente</button></div>}
+          {!showArchivedTrips && <div role="group" aria-label="Vista de viagens" className="mb-4 flex gap-2">
+            {([["board", "Kanban"], ["list", "Lista"]] as const).map(([layout, label]) => <button key={layout} type="button"
+              aria-pressed={tripLayout === layout} onClick={() => setTripLayout(layout)}
+              className={`min-h-11 rounded-xl border px-4 text-sm font-semibold ${tripLayout === layout ? "border-orange-800 bg-orange-800 text-white" : "border-slate-300 bg-white text-slate-700"}`}>
+              {label}
+            </button>)}
+            <button type="button" className={archiveButton} disabled={saving} onClick={() => {
+              setSaving(true);
+              void refreshAfterFinance().finally(() => setSaving(false));
+            }}>Atualizar</button>
+          </div>}
           {trips.length === 0 ? <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">Ainda não há viagens. Podes converter um pedido ganho ou adicionar uma viagem a um cliente.</p> :
-            <CrmTripList mode="trips" onOpen={id=>openTrip(id)} items={tripItems} />}
+            boardVisible ? <CrmTripBoard items={tripBoardItems} stages={tripStatuses} busy={saving}
+              onMove={(id, status) => void moveTrip(id, status)} onOpen={openTrip} onAlert={openTarget}
+              onProposals={openTripProposals} /> : <CrmTripList mode="trips" onOpen={id=>openTrip(id)} items={tripItems} />}
           </>)}
           {focused?.type === "trip" && !trips.some(trip=>trip.id===focused.id) && <p role="status" className="text-sm text-slate-600">Não foi possível encontrar esta viagem. <button className="underline" type="button" onClick={()=>setFocused(null)}>Ver viagens</button></p>}
           {focused?.type === "trip" && trips.filter(trip=>trip.id===focused.id).map((trip) => <article id={"trip-"+trip.id} tabIndex={-1} key={trip.id} className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-            <button type="button" className="mb-4 text-sm font-semibold text-orange-800 underline" onClick={()=>goToView(tripListView)}>{tripListView==="commissions"?"Voltar a Comissões":"Voltar à lista de viagens"}</button>
+            <button type="button" className="mb-4 text-sm font-semibold text-orange-800 underline" onClick={()=>goToView(tripListView)}>{tripListView==="commissions"?"Voltar a Comissões":"Voltar a Viagens"}</button>
             <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="break-words text-sm font-semibold text-orange-800">{tripClientName(trip, clients, leads)}{trip.reference ? ` · Localizador ${trip.reference}` : ""}</p>
@@ -1133,7 +1201,7 @@ export default function CrmStudioTool() {
                 <div className="mt-2 flex flex-wrap gap-2">
                   {trip.client_id && <button type="button" className={archiveButton} onClick={()=>openTarget({type:"client",id:trip.client_id!})}>Ficha do cliente</button>}
                   {trip.lead_id && <button type="button" className={archiveButton} onClick={()=>openTarget({type:"lead",id:trip.lead_id!})}>Pedido de origem</button>}
-                  <button type="button" className={archiveButton} onClick={()=>{setProposalContext(null);setProposalId("");setProposalStatusFilter("");setProposalTripId(trip.id);goToView("proposals");}}>Propostas da viagem</button>
+                  <button type="button" className={archiveButton} onClick={() => openTripProposals(trip.id)}>Propostas da viagem</button>
                   <button type="button" className={archiveButton} onClick={()=>newProposal({type:"trip",id:trip.id,label:trip.destination||"Viagem"})}>Nova proposta</button>
                   <button type="button" disabled={saving} className={archiveButton} onClick={() => void changeArchive(trip, "trips")}>{trip.archived_at ? "Restaurar viagem" : "Arquivar viagem"}</button>
                   <button type="button" disabled={saving} onClick={() => void deleteTrip(trip)}

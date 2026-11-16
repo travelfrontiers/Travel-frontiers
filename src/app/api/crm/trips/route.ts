@@ -6,7 +6,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { isAuthorizedStudioUser, supabaseAdminConfig } from "@/lib/crm-api";
-import { rows, travelTypes } from "@/lib/crm-office-api";
+import { privateJson, rows, travelTypes } from "@/lib/crm-office-api";
+import type { TripBoardActivity } from "@/lib/crm-office-types";
 import { extractTripFieldsFromPdfText, type TicketTextItem } from "@/lib/crm-trip-pdf";
 
 export const runtime = "nodejs";
@@ -18,6 +19,23 @@ export async function GET(request: NextRequest) {
   if (!config) return NextResponse.json({ error: "A ligação segura à base de dados não está configurada." }, { status: 503 });
 
   try {
+    if (request.nextUrl?.searchParams.get("view") === "board") {
+      const fields = new URLSearchParams({ select: "trip_id", trip_id: "not.is.null", order: "id.asc" });
+      const [proposals, emails, documents] = await Promise.all([
+        rows<{ trip_id: string }>(config, "crm_proposals", new URLSearchParams({ ...Object.fromEntries(fields), status: "neq.archived" })),
+        rows<{ trip_id: string }>(config, "crm_emails", new URLSearchParams({ ...Object.fromEntries(fields), state: "in.(sent,received)" })),
+        rows<{ trip_id: string }>(config, "crm_drive_files", fields),
+      ]);
+      const board = new Map<string, TripBoardActivity>();
+      for (const [key, records] of [["proposals", proposals], ["emails", emails], ["documents", documents]] as const) {
+        for (const { trip_id } of records) {
+          const activity = board.get(trip_id) ?? { proposals: 0, emails: 0, documents: 0 };
+          activity[key]++;
+          board.set(trip_id, activity);
+        }
+      }
+      return privateJson({ board: Object.fromEntries(board) });
+    }
     const [trips, tasks, services, tripClients] = await Promise.all([
       rows<{ id: string; client_id: string | null }>(config, "crm_trips", new URLSearchParams({ select: "*", order: "departure_date.asc.nullslast,id" })),
       rows<{ trip_id: string }>(config, "crm_trip_tasks", new URLSearchParams({ select: "*", order: "sort_order.asc,created_at.asc,id" })),
