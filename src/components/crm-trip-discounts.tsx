@@ -25,6 +25,8 @@ export function CrmTripDiscounts({ detail, busy, onSave, onReverse }: {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    const priceTreatment = data.get("price_treatment");
+    if (priceTreatment !== "deduct" && priceTreatment !== "included") return;
     const sourceSchedule = String(data.get("source_schedule_id") || "");
     const sourceReceipt = String(data.get("source_receipt_id") || "");
     if ((sourceSchedule || sourceReceipt) && !window.confirm(
@@ -33,7 +35,7 @@ export function CrmTripDiscounts({ detail, busy, onSave, onReverse }: {
     try {
       await onSave({
         kind, amount, charge_commission: kind === "customer" && data.get("charge_commission") === "commission",
-        included_in_total: data.has("included_in_total"), notes: String(data.get("notes") || ""),
+        included_in_total: priceTreatment === "included", notes: String(data.get("notes") || ""),
         source_schedule_id: sourceSchedule, source_receipt_id: sourceReceipt,
       });
       setOpen(false);
@@ -58,7 +60,8 @@ export function CrmTripDiscounts({ detail, busy, onSave, onReverse }: {
     {open && <form onSubmit={submit} className="grid gap-3 rounded-xl border border-slate-200 p-3 sm:grid-cols-2">
       <label className="text-sm">Tipo de desconto<select className={officeInput} value={kind}
         onChange={event => setKind(event.target.value as TripDiscount["kind"])}>
-        {Object.entries(tripDiscountKinds).map(([value,label]) => <option key={value} value={value}>{label}</option>)}
+        <option value="participant">Desconto de participante (consumo próprio)</option>
+        <option value="customer">{tripDiscountKinds.customer}</option>
       </select></label>
       <label className="text-sm">Valor ({currency})<input type="number" className={officeInput} value={amount}
         onChange={event => setAmount(event.target.value)} required min="0.01" max="9999999999.99" step="0.01" /></label>
@@ -72,9 +75,13 @@ export function CrmTripDiscounts({ detail, busy, onSave, onReverse }: {
         <option value="none">Reduz apenas o valor a pagar</option>
         <option value="commission">Deduz também à minha comissão prevista</option>
       </select><span className="mt-1 block text-sm text-slate-600">Deduz à comissão se o valor ainda não estiver incluído na cedência da calculadora.</span></label>}
-      <label className="flex min-h-11 items-center gap-2 text-sm sm:col-span-2">
-        <input name="included_in_total" type="checkbox" className="size-5 shrink-0 accent-orange-800" />
-        O desconto já está refletido no total da reserva
+      <label className="text-sm sm:col-span-2">Como aplicar o desconto ao preço da reserva?
+        <select name="price_treatment" className={officeInput + " appearance-auto"} required defaultValue="">
+          <option value="" disabled>Escolher como aplicar</option>
+          <option value="deduct">Abater ao total da reserva</option>
+          <option value="included">O total da reserva já inclui o desconto</option>
+        </select>
+        <span className="mt-1 block text-slate-600">Se os {formatMoney(summary.total_amount, currency)} registados são o preço original, escolhe «Abater ao total da reserva».</span>
       </label>
       <label className="text-sm sm:col-span-2">Observações<textarea name="notes" rows={2} maxLength={2000} className={officeInput} /></label>
       <details className="rounded-lg bg-slate-50 p-3 sm:col-span-2">
