@@ -23,6 +23,7 @@ import { travelTypeLabels, type EntityContext, type OpenTarget, type TripBoardAc
 import CrmWorkspaceNavigation, { type CrmView as View } from "./crm-workspace-navigation";
 import CrmTripList from "./crm-trip-list";
 import CrmTripBoard from "./crm-trip-board";
+import CrmHeaderShortcuts from "./crm-header-shortcuts";
 import CrmCommissionWorkspace, { hasOpenCommission, type CommissionSort, type CommissionView } from "./crm-commission-workspace";
 import { CrmTripTabs, CrmTripPanel, type TripTab } from "./crm-trip-tabs";
 import { commissionStates, formatMoney, type FinanceSummary } from "@/lib/crm-finance";
@@ -924,6 +925,7 @@ export default function CrmStudioTool() {
         <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4"><img src="/travel-frontiers-logo-black.webp" alt="Travel Frontiers" width={150} height={80} className={styles.logo} /><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-800">Travel Frontiers</p><h1 className="mt-1 text-2xl font-bold sm:text-3xl">CRM de viagens</h1><p className="mt-1 text-sm text-slate-500">Sessão Google: {user?.email || "a validar"}</p></div></div>
           <div className="flex flex-wrap items-center gap-2"><button type="button" onClick={toggleTheme} aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"} aria-pressed={theme === "dark"} className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">{theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}{theme === "dark" ? "Modo claro" : "Modo escuro"}</button><a href="/admin" className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Studio · Promoções</a></div>
+          <div className="w-full"><CrmHeaderShortcuts authorizedFetch={authorizedFetch} connected={Boolean(token)} /></div>
         </div>
       </header>
 
