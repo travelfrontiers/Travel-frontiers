@@ -22,6 +22,24 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     try { return await setArchived(config, "crm_trips", id, body.archived); }
     catch (cause) { return failure(cause); }
   }
+  if (body.action === "move") {
+    const status = tripStatuses.find(value => value === body.status);
+    const previous = tripStatuses.find(value => value === body.previous_status);
+    if (!status || !previous) return NextResponse.json({ error: "Estado da viagem inválido." }, { status: 400 });
+    const query = new URLSearchParams({ id: "eq." + id, status: "eq." + previous, archived_at: "is.null", select: "id,status" });
+    try {
+      const response = await fetch(config.url + "/rest/v1/crm_trips?" + query, {
+        method: "PATCH", headers: { ...config.headers, Prefer: "return=representation" }, cache: "no-store",
+        body: JSON.stringify({ status, updated_at: new Date().toISOString() }),
+      });
+      if (!response.ok) return NextResponse.json({ error: "Não foi possível mudar o estado da viagem." }, { status: 502 });
+      const [trip] = await response.json();
+      if (!trip) return NextResponse.json({ error: "A viagem foi alterada. Revê o quadro antes de tentar novamente." }, { status: 409 });
+      return NextResponse.json({ trip }, { headers: { "Cache-Control": "private, no-store" } });
+    } catch {
+      return NextResponse.json({ error: "Não foi possível ligar à base de dados." }, { status: 502 });
+    }
+  }
   if (body.action === "import_services") {
     const services = normalizeTripServices(body.services);
     if (!services?.length) return NextResponse.json({ error: "Revê e seleciona os serviços a importar." }, { status: 400 });

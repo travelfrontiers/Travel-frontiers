@@ -1,3 +1,4 @@
+export type TripBoardActivity = { proposals: number; emails: number; documents: number };
 export type AuthorizedFetch=(url:string,init?:RequestInit)=>Promise<Response>;
 export type OfficeClient={id:string;birth_date?:string|null;full_name:string;email:string|null;phone:string|null;nif?:string|null;address?:string|null;language:"pt"|"en"|"fr";internal_notes:string|null};
 export type OfficeLead={id:string;full_name:string;destination:string|null;client_id:string|null;status:string;departure_date:string|null;return_date:string|null};

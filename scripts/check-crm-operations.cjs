@@ -36,6 +36,27 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  calls=[];reply={ok:false,status:400,data:{message:"client_not_found"}};
  result=await trips.PATCH(request(body),{params:Promise.resolve({id})});
  assert.equal(result.status,409);assert.equal(calls.length,1);
+ calls=[];reply={ok:true,status:200,data:[{id,status:"confirmed"}]};
+ const move={action:"move",previous_status:"planning",status:"confirmed"};
+ result=await trips.PATCH(request(move),{params:Promise.resolve({id})});
+ assert.equal(result.status,200);assert.equal(result.body.trip.status,"confirmed");assert.equal(calls.length,1);
+ assert.equal(calls[0].init.method,"PATCH");
+ const moveQuery=new URL(calls[0].url).searchParams;
+ assert.equal(moveQuery.get("id"),"eq."+id);
+ assert.equal(moveQuery.get("status"),"eq.planning");
+ assert.equal(moveQuery.get("archived_at"),"is.null");
+ assert.deepEqual(Object.keys(JSON.parse(calls[0].init.body)).sort(),["status","updated_at"]);
+ calls=[];reply.data=[];
+ assert.equal((await trips.PATCH(request(move),{params:Promise.resolve({id})})).status,409);
+ calls=[];
+ assert.equal((await trips.PATCH(request({...move,status:"unknown"}),{params:Promise.resolve({id})})).status,400);assert.equal(calls.length,0);
+ const tripList=load("src/app/api/crm/trips/route.ts");
+ reply=url=>({
+  ok:true,status:200,headers:new Headers(),
+  json:async()=>Array.from({length:url.includes("/crm_emails?")?2:1},()=>({trip_id:id})),
+ });
+ result=await tripList.GET({...request({}),nextUrl:new URL("https://crm.invalid/api/crm/trips?view=board")});
+ assert.equal(result.status,200);assert.deepEqual(result.body.board[id],{proposals:1,emails:2,documents:1});
  const documents=load("src/app/api/crm/documents/[id]/route.ts");
  calls=[];reply={ok:true,status:200,data:[{id}]};
  result=await documents.DELETE(request({}),{params:Promise.resolve({id})});
