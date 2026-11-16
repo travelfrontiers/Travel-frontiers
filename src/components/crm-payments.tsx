@@ -208,6 +208,10 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
   const back=<div className="flex flex-wrap gap-2">{onBack&&<button className={secondary} onClick={onBack}>← Todos os pagamentos</button>}{onOpenTrip&&<button className={secondary} onClick={onOpenTrip}>Abrir viagem</button>}<button className={secondary} disabled={loading||busy} onClick={()=>void reload()}>Atualizar ficha</button></div>;
   if(!detail) return <div className="space-y-4">{back}{loading?<p role="status">A carregar ficha…</p>:<p role="alert" className="text-red-700">{error}</p>}</div>;
   const summary=detail.summary,currency=summary.currency;
+  const hasOutstandingBalance=(summary.balance??0)>0;
+  const isSettled=summary.balance!==null&&!hasOutstandingBalance;
+  const scheduledBalance=detail.schedule.reduce((total,item)=>total+item.amount_remaining,0);
+  const unscheduledBalance=Math.max(0,roundEuro((summary.balance??0)-scheduledBalance));
   const participantDeduction=(detail.discounts ?? []).reduce((total,discount) =>
     discount.kind==="participant" && !discount.included_in_total ? total+discount.amount : total,0);
   const agencyPayable=summary.total_amount===null ? null : roundEuro(summary.total_amount-participantDeduction);
@@ -252,14 +256,14 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
     <section className={panel}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><h3 className="text-lg font-bold">Plano de prestações</h3>
-          <p className="text-sm text-slate-500">Os pagamentos abatem às prestações por ordem de vencimento.</p>
-          {Number(summary.unscheduled_amount)>0&&<p className="mt-1 text-sm text-orange-800">{formatMoney(summary.unscheduled_amount,currency)} ainda sem prazo.</p>}</div>
-        <div className="flex flex-wrap gap-2">
-          {detail.schedule.length===0&&<button className={secondary} disabled={busy||!summary.total_amount} onClick={()=>setEditor({type:"plan"})}>Criar sinal e restante valor</button>}
-          <button className={secondary} disabled={busy||!summary.total_amount} onClick={()=>setEditor({type:"schedule"})}>Adicionar prestação</button>
-        </div>
+          <p className="text-sm text-slate-500">{isSettled?"Reserva liquidada.":"Os pagamentos abatem às prestações por ordem de vencimento."}</p>
+          {unscheduledBalance>0&&<p className="mt-1 text-sm text-orange-800">{formatMoney(unscheduledBalance,currency)} em falta sem prazo definido.</p>}</div>
+        {hasOutstandingBalance&&summary.total_amount!==null&&summary.total_amount>0&&<div className="flex flex-wrap gap-2">
+          {detail.schedule.length===0&&<button className={secondary} disabled={busy} onClick={()=>setEditor({type:"plan"})}>Criar sinal e restante valor</button>}
+          <button className={secondary} disabled={busy} onClick={()=>setEditor({type:"schedule"})}>Adicionar prestação</button>
+        </div>}
       </div>
-      {detail.schedule.length===0?<p className="mt-4 text-sm text-slate-500">Ainda não há prestações.</p>:<ul className="mt-4 divide-y divide-slate-200">
+      {detail.schedule.length===0?(!isSettled&&<p className="mt-4 text-sm text-slate-500">Ainda não há prestações.</p>):<ul className="mt-4 divide-y divide-slate-200">
         {detail.schedule.map(item=>{
           const payable=item.amount_after_discount ?? item.amount;
           const settled=item.amount_remaining===0;
