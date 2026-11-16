@@ -17,8 +17,8 @@ function canvas(width:number,height:number) {
   return {result,context};
 }
 
-function rotatePage(page: HTMLCanvasElement, angle: 90 | -90 | 180) {
-  const {result,context} = angle === 180 ? canvas(page.width,page.height) : canvas(page.height,page.width);
+function rotatePage(page: HTMLCanvasElement, angle: number) {
+  const {result,context} = Math.abs(angle) === 90 ? canvas(page.height,page.width) : canvas(page.width,page.height);
   context.translate(result.width / 2,result.height / 2);
   context.rotate(angle * Math.PI / 180);
   context.drawImage(page,-page.width / 2,-page.height / 2);
@@ -65,6 +65,64 @@ function cropRegion(page: HTMLCanvasElement, left: number, top: number, right: n
   if (width < 1 || height < 1) return null;
   const {result, context} = canvas(width * zoom, height * zoom);
   context.drawImage(page,x,y,width,height,0,0,result.width,result.height);
+  return result;
+}
+
+type RecognizedLine = { text: string; bbox: {x0: number; y0: number; x1: number; y1: number} };
+
+function locatePassportZone(page: HTMLCanvasElement, lines: RecognizedLine[]) {
+  const compact = (line: RecognizedLine) => line.text.toUpperCase().replace(/\s/g, "");
+  const top = lines.find(line => /^P[A-Z<]{1,3}PRT[A-Z<]{4}/.test(compact(line)));
+  if (!top) return null;
+  const bottom = lines.find(line => line.bbox.y0 > top.bbox.y0 &&
+    line.bbox.y0 - top.bbox.y0 <= 0.08 * page.height &&
+    Math.abs(line.bbox.x0 - top.bbox.x0) < 0.08 * page.width &&
+    /^[A-Z0-9<]{6,12}PRT[A-Z0-9]{2}/.test(compact(line)));
+  if (!bottom) return null;
+  const left = Math.min(top.bbox.x0, bottom.bbox.x0);
+  const gap = bottom.bbox.y0 - top.bbox.y0;
+  const charWidth = Math.min(...[top, bottom].map(line => (line.bbox.x1 - line.bbox.x0) / compact(line).length));
+  if (charWidth < 2) return null;
+  // The sparse pass may capture only part of each TD3 row. Use that fragment
+  // to estimate the full 44-character width and include room for camera tilt.
+  const width = Math.min(page.width - left, 50 * charWidth);
+  return cropRegion(page, left - 2 * charWidth, top.bbox.y0 - gap,
+    left + width, bottom.bbox.y1 + gap / 2, Math.min(2, 2000 / width));
+}
+
+function balanceZoneLighting(zone: HTMLCanvasElement) {
+  const {width, height} = zone;
+  const {result, context} = canvas(width, height);
+  context.drawImage(zone, 0, 0);
+  const image = context.getImageData(0, 0, width, height);
+  const {data} = image;
+  const stride = width + 1;
+  const sums = new Uint32Array(stride * (height + 1));
+  const gray = new Uint8Array(width * height);
+  for (let y = 0; y < height; y++) {
+    let row = 0;
+    for (let x = 0; x < width; x++) {
+      const index = y * width + x;
+      const pixel = index * 4;
+      gray[index] = Math.round(0.299 * data[pixel] + 0.587 * data[pixel + 1] + 0.114 * data[pixel + 2]);
+      row += gray[index];
+      sums[(y + 1) * stride + x + 1] = sums[y * stride + x + 1] + row;
+    }
+  }
+  const radius = Math.max(8, Math.round(width / 55));
+  for (let y = 0; y < height; y++) {
+    const top = Math.max(0, y - radius), bottom = Math.min(height, y + radius + 1);
+    for (let x = 0; x < width; x++) {
+      const left = Math.max(0, x - radius), right = Math.min(width, x + radius + 1);
+      const average = (sums[bottom * stride + right] - sums[top * stride + right] -
+        sums[bottom * stride + left] + sums[top * stride + left]) / ((right - left) * (bottom - top));
+      const index = y * width + x;
+      const pixel = index * 4;
+      const ink = gray[index] < average - 18 ? 0 : 255;
+      data[pixel] = data[pixel + 1] = data[pixel + 2] = ink;
+    }
+  }
+  context.putImageData(image, 0, 0);
   return result;
 }
 
@@ -255,8 +313,28 @@ export async function scanClientDocument(
       const scans = [text, initial.data.text].filter(Boolean);
       let best = readIdentityPage(scans, today);
       let orientedPage = page;
+      const zone = !isCompleteReading(best) && locatePassportZone(page, (initial.data.blocks || []).flatMap(block =>
+        block.paragraphs.flatMap(paragraph => paragraph.lines)));
       try {
+        if (zone) {
+          onProgress("A ler a zona inferior do passaporte…");
+          try {
+            await worker.setParameters({tessedit_pageseg_mode:PSM.SINGLE_BLOCK,tessedit_char_whitelist:"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<"});
+            const balanced = balanceZoneLighting(zone);
+            try {
+              for (const angle of [0, 2, -2]) {
+                const sample = angle === 0 ? balanced : rotatePage(balanced, angle);
+                try {
+                  scans.push((await abortable(worker.recognize(sample),signal)).data.text);
+                  best = readIdentityPage(scans,today);
+                } finally { if (sample !== balanced) sample.width = sample.height = 0; }
+                if (isCompleteReading(best)) break;
+              }
+            } finally { balanced.width = balanced.height = 0; }
+          } finally { zone.width = zone.height = 0; }
+        }
         if (!best.full_name && !best.document_number && (!best.birth_date || !best.expires_on)) {
+          if (zone) await worker.setParameters({tessedit_pageseg_mode:PSM.SPARSE_TEXT,tessedit_char_whitelist:""});
           for (const angle of [90, -90, 180] as const) {
             onProgress("A verificar a orientação do documento…");
             const rotated = rotatePage(page,angle);
