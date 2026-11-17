@@ -5,6 +5,7 @@ import type { AuthorizedFetch } from "@/lib/crm-office-types";
 const partners = [
   { name: "Airmet", url: "https://intranet.airmet.pt/panel/" },
   { name: "Cotur", url: "https://gupitravel.paquetedinamico.com/home?agency=746" },
+  { name: "Gupi", url: "https://gupitravel.genrh.pt/" },
 ];
 const button = "inline-flex min-h-11 items-center gap-1.5 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60";
 
