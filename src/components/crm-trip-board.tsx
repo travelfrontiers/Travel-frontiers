@@ -29,7 +29,7 @@ export default function CrmTripBoard({ items, stages, busy, onMove, onOpen, onAl
 }) {
   const [dragged, setDragged] = useState("");
   const [dropStage, setDropStage] = useState("");
-  const [expandedByDefault, setExpandedByDefault] = useState(true);
+  const [expandedByDefault, setExpandedByDefault] = useState(false);
   const [cardOverrides, setCardOverrides] = useState<Record<string, boolean>>({});
   const detailsPrefix = useId();
   const fromStage = items.find(item => item.id === dragged)?.stage;
