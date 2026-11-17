@@ -94,7 +94,7 @@ export function TripCommissionCalculator({initialValues,onSave,theme}:{initialVa
           <p className="tf-calc-note">{selfTravels
             ? (sharingVisible
               ? `A tua poupança de auto-consumo (${formatEuro(result.potentialSaving)}) é repartida igualmente pelos ${result.people} passageiros. A cedência da comissão é calculada à parte.`
-              : "O teu preço é o preço por viajante menos a comissão por viajante, com 1% de desconto sobre esse valor. Recebes 80% da comissão dos restantes viajantes, antes de qualquer cedência.")
+              : "O teu preço é o preço por viajante menos a comissão por viajante, acrescido de 1% sobre esse valor net (× 101%). Recebes 80% da comissão dos restantes viajantes, antes de qualquer cedência.")
             : "Sem auto-consumo, a comissão antes da cedência corresponde a 80% da comissão total. O montante escolhido é repartido igualmente pelos passageiros."}</p>
         </aside>
       </div>

@@ -8,7 +8,7 @@ export type CommissionInputs = {
   requestedCession: number;
 };
 
-export const commissionRulesVersion = "tf-commission-v2";
+export const commissionRulesVersion = "tf-commission-v3";
 export const roundEuro = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
 const toCents = (value: number) => Math.round(roundEuro(Math.max(0, value)) * 100);
 
@@ -18,8 +18,8 @@ export function calculateCommission(input: CommissionInputs) {
   const commission = toCents(input.commission);
   const price = toCents(input.travelerPrice);
 
-  // Excel uses the unrounded commission per passenger in both formulas.
-  const ownBaseUnrounded = input.selfTravels ? Math.max(0, (price * people - commission) * 99 / (100 * people)) : 0;
+  // Own consumption adds 1% to net cost, using the unrounded commission per passenger.
+  const ownBaseUnrounded = input.selfTravels ? Math.max(0, (price * people - commission) * 101 / (100 * people)) : 0;
   const ownBasePrice = Math.round(ownBaseUnrounded);
   const gross = Math.round(commission * others * 4 / (people * 5));
   const fullPrice = input.selfTravels ? ownBasePrice + price * others : price * people;

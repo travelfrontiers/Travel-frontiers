@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { roundEuro } from "@/lib/commission";
+import { commissionRulesVersion, roundEuro } from "@/lib/commission";
 import { formatMoney, formatFinanceDate, tripDiscountKinds, type FinanceDetail, type TripDiscount } from "@/lib/crm-finance";
 import { officeButton, officeInput, officeSecondary } from "@/lib/crm-office-types";
 
@@ -17,7 +17,7 @@ export function CrmTripDiscounts({ detail, busy, onSave, onReverse }: {
   const { summary, commission, schedule, receipts } = detail;
   const discounts = detail.discounts || [];
   const { currency } = summary;
-  const estimatedSaving = currency === "EUR" && commission?.inputs.selfTravels && commission.result.ownPrice !== null
+  const estimatedSaving = currency === "EUR" && commission?.rules_version === commissionRulesVersion && commission.inputs.selfTravels && commission.result.ownPrice !== null
     ? roundEuro(commission.inputs.travelerPrice - commission.result.ownPrice) : 0;
   const matchingSchedule = schedule.filter(item => item.amount === Number(amount));
   const matchingReceipts = receipts.filter(item => item.kind === "customer_payment" && item.amount >= Number(amount));
