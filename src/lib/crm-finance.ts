@@ -46,6 +46,7 @@ export type FinanceDetail = {
   commission:{inputs:CommissionInputs;result:ReturnType<typeof calculateCommission>;rules_version:string;saved_at:string;
     source:{total_amount:number|null;currency:string;adults:number|null;children_count:number|null}}|null;
   reviews?:CommissionReview[];discounts?:TripDiscount[];
+  manual_commission?:{amount:number;notes:string}|null;
   schedule:PaymentSchedule[];receipts:Receipt[];files:{id:string;file_name:string;drive_file_id:string}[];
 };
 export function formatMoney(value:number|null,currency:string) {

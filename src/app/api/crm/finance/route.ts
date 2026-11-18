@@ -68,6 +68,15 @@ export async function POST(request:NextRequest) {
     const id=body.id||null;
     let data:Record<string,unknown>;
     switch(body.action) {
+      case "commission_manual_save":
+      case "commission_manual_clear": {
+        data=body.action==="commission_manual_save"
+          ? {amount:money(body.amount),notes:cleanText(body.notes,2000,true)} : {};
+        await rpc(config,"crm_set_manual_commission",{p_trip_id:body.trip_id,p_version:body.expected_version,
+          p_amount:body.action==="commission_manual_save"?data.amount:null,
+          p_notes:body.action==="commission_manual_save"?data.notes:null});
+        return privateJson({ok:true});
+      }
       case "discount_save":
       case "discount_reverse": {
         if(body.action==="discount_reverse") {
