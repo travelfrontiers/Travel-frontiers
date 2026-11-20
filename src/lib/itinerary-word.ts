@@ -9,7 +9,7 @@ type Day = {
     number: number; date: string; title: string; base: string; highlight: string; logistics: string;
     morning: string[]; afternoon: string[]; evening: string[]; alternatives: string[]; lunch: Meal | null; dinner: Meal | null;
 };
-type Itinerary = { title: string; introduction: string; route: string[]; tips: string[]; days: Day[] };
+export type Itinerary = { title: string; introduction: string; route: string[]; tips: string[]; days: Day[] };
 
 const ink = "232527";
 const muted = "505961";

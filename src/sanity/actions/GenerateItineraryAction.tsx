@@ -2,14 +2,14 @@ import { type DocumentActionProps, useClient } from "sanity";
 import { useState } from "react";
 import { studioFetch } from "../studio-fetch";
 
-export function GenerateItineraryAction({ type, published, draft, onComplete }: DocumentActionProps) {
+function useItineraryAction({ type, published, draft, onComplete }: DocumentActionProps, format: "pdf" | "docx") {
     const [busy, setBusy] = useState(false);
     const client = useClient({ apiVersion: "2024-01-18" });
     const doc = draft ?? published;
     if (type !== "roteiro" || !doc) return null;
 
     return {
-        label: busy ? "A gerar roteiro…" : "Gerar roteiro com IA",
+        label: busy ? "A gerar roteiro…" : format === "pdf" ? "Gerar guia de viagem (PDF)" : "Gerar roteiro editável (Word)",
         disabled: busy || !doc.privateSource,
         dialog: busy ? {
             type: "dialog" as const,
@@ -22,7 +22,7 @@ export function GenerateItineraryAction({ type, published, draft, onComplete }: 
             try {
                 const response = await studioFetch(client, "/api/generate-itinerary", {
                     method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ key: doc.privateSource, title: doc.title, notes: doc.notes ?? "" }),
+                    body: JSON.stringify({ key: doc.privateSource, title: doc.title, notes: doc.notes ?? "", format }),
                 });
                 if (!response.ok) {
                     const result = await response.json().catch(() => ({}));
@@ -31,7 +31,7 @@ export function GenerateItineraryAction({ type, published, draft, onComplete }: 
                 const url = URL.createObjectURL(await response.blob());
                 const link = document.createElement("a");
                 link.href = url;
-                link.download = `Itinerario_${String(doc.title ?? "viagem").replace(/[^\p{L}\p{N} _-]/gu, "").slice(0, 80)}.docx`;
+                link.download = `Itinerario_${String(doc.title ?? "viagem").replace(/[^\p{L}\p{N} _-]/gu, "").slice(0, 80)}.${format}`;
                 document.body.appendChild(link);
                 link.click();
                 link.remove();
@@ -44,4 +44,12 @@ export function GenerateItineraryAction({ type, published, draft, onComplete }: 
             }
         },
     };
+}
+
+export function GenerateItineraryPdfAction(props: DocumentActionProps) {
+    return useItineraryAction(props, "pdf");
+}
+
+export function GenerateItineraryAction(props: DocumentActionProps) {
+    return useItineraryAction(props, "docx");
 }

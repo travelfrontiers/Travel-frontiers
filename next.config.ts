@@ -13,11 +13,12 @@ const nextConfig: NextConfig = {
     "/api/generate-itinerary": [
       // PDF.js loads these at runtime, outside the static import graph.
       "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+      "./node_modules/pdfkit/js/data/**/*",
       "./node_modules/@napi-rs/canvas/**/*",
       "./node_modules/@napi-rs/canvas-*/**/*",
     ],
   },
-  serverExternalPackages: ["pdf-parse", "pdfjs-dist"],
+  serverExternalPackages: ["pdf-parse", "pdfjs-dist", "pdfkit"],
 };
 
 export default nextConfig;

@@ -74,11 +74,13 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     days[14] = { ...days[14], tipo: "transito", manha: [], tarde: [], noite: [], alternativas: [], logistica: "Chegada e recolha de bagagem." };
     let planMode = "complete";
     const word = load("src/lib/itinerary-word.ts");
+    const pdf = load("src/lib/itinerary-pdf.ts", { pdfkit: { default: require("pdfkit") } });
     let itineraryForWord;
-    const itinerary = load("src/app/api/generate-itinerary/route.ts", {
-        "@/lib/studio-request": controls,
+    const newItineraryRoute = () => load("src/app/api/generate-itinerary/route.ts", {
+        "@/lib/studio-request": load("src/lib/studio-request.ts", { "./crm-api": auth }),
         "@/lib/itinerary-source": { sourceExtension: () => "txt", loadPrivateSource: async () => Buffer.from("Viagem fictícia") },
         "@/lib/itinerary-images": { loadItineraryPhotos: async () => [] },
+        "@/lib/itinerary-pdf": pdf,
         "@/lib/itinerary-word": { createItineraryWord: (value, ...args) => { itineraryForWord = value; return word.createItineraryWord(value, ...args); } },
         "@/lib/gemini": { generateText: async (prompt, options) => {
             if (options.schema.properties.resumo) {
@@ -98,7 +100,8 @@ function load(file, mocks = {}, env = {}, network = fetch) {
             return JSON.stringify({ introducao: "Roteiro", dicas: [], dias: planMode === "partial" ? days.slice(0, -1) : plan });
         } },
     }, {}, async () => Response.json({}));
-    const generate = () => itinerary.POST(request("generate-itinerary", "Bearer studio", { key: "test.txt", title: "Teste" }));
+    let itinerary = newItineraryRoute();
+    const generate = format => itinerary.POST(request("generate-itinerary", "Bearer studio", { key: "test.txt", title: "Teste", format }));
     const generated = await generate();
     assert.equal(generated.status, 200);
     assert.equal(itineraryForWord.days[0].morning.length, 2);
@@ -129,6 +132,16 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     assert.equal((await generate()).status, 502);
     planMode = "timeout";
     assert.equal((await generate()).status, 504);
+
+    itinerary = newItineraryRoute();
+    planMode = "complete";
+    const pdfExport = await generate("pdf");
+    assert.equal(pdfExport.status, 200);
+    assert.equal(pdfExport.headers.get("content-type"), "application/pdf");
+    const pdfBytes = Buffer.from(await pdfExport.arrayBuffer());
+    assert.equal(pdfBytes.subarray(0, 5).toString(), "%PDF-");
+    assert.match(pdfBytes.toString("latin1"), /google.com\/maps\/search/);
+    assert.equal((await generate("html")).status, 400);
 
     let photoRequests = 0;
     const commons = load("src/lib/itinerary-images.ts", { "./studio-request": controls }, {}, async (url, options) => {
