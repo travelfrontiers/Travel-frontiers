@@ -5,6 +5,7 @@ import { generateText } from "@/lib/gemini";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { loadItineraryPhotos } from "@/lib/itinerary-images";
+import { createItineraryPdf } from "@/lib/itinerary-pdf";
 import { createItineraryWord } from "@/lib/itinerary-word";
 import mammoth from 'mammoth';
 
@@ -170,9 +171,9 @@ export async function POST(request: Request) {
     let input: Record<string, unknown>;
     try { input = await studioJson(request, 5000); }
     catch { return NextResponse.json({ error: "Pedido inválido." }, { status: 400 }); }
-    const { key, title, notes } = input;
+    const { key, title, notes, format = "docx" } = input;
     const extension = sourceExtension(key);
-    if (typeof key !== "string" || !extension || typeof title !== "string" || !title.trim() || title.length > 150 ||
+    if ((format !== "pdf" && format !== "docx") || typeof key !== "string" || !extension || typeof title !== "string" || !title.trim() || title.length > 150 ||
         (notes !== undefined && (typeof notes !== "string" || notes.length > 2000))) {
         return NextResponse.json({ error: "Revê o ficheiro privado, o título e as notas." }, { status: 400 });
     }
@@ -242,19 +243,22 @@ ${notes || "Nenhuma"}
         const itineraryData = validatedItinerary(JSON.parse(await generateText(itineraryPrompt, {
             schema: itinerarySchema, maxTokens: 16_000, timeoutMs: 90_000,
         })), dates, transitDates, allowFreeDays, stays);
-        stage = "word";
+        stage = "export";
         const photos = await loadItineraryPhotos(itineraryData.capa_nome_ingles, itineraryData.dias.map(day => day.imagem_nome_ingles));
-        const logo = await readFile(join(process.cwd(), "public", "logo.png")).catch(() => null);
-        const docxBuffer = await createItineraryWord({
+        const logo = await readFile(join(process.cwd(), "public", "logo.png"));
+        const itinerary = {
             title: title.trim(), introduction: itineraryData.introducao, route: itineraryData.percurso, tips: itineraryData.dicas, days: itineraryData.dias,
-        }, photos, logo);
-        return new NextResponse(new Uint8Array(docxBuffer), {
+        };
+        const file = format === "pdf"
+            ? await createItineraryPdf(itinerary, photos, logo, stays, transitDates)
+            : await createItineraryWord(itinerary, photos, logo);
+        return new NextResponse(new Uint8Array(file), {
             status: 200,
             headers: {
-                'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'Content-Disposition': 'attachment; filename=itinerario.docx',
-                'Cache-Control': 'private, no-store'
-            }
+                "Content-Type": format === "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "Content-Disposition": "attachment; filename=itinerario." + format,
+                "Cache-Control": "private, no-store",
+            },
         });
 
     } catch (error) {
@@ -269,8 +273,8 @@ ${notes || "Nenhuma"}
         if (providerStatus === 429) return NextResponse.json({ error: "O serviço de geração atingiu o limite temporário. Tenta novamente mais tarde." }, { status: 429 });
         if (stage === "source") return NextResponse.json({ error: "Não foi possível obter o ficheiro privado. Tenta descarregá-lo no Studio e, se necessário, volta a anexá-lo." }, { status: 502 });
         if (stage === "read") return NextResponse.json({ error: "Não foi possível extrair texto do ficheiro. Confirma se abre, se tem texto selecionável e se não está protegido por palavra-passe." }, { status: 422 });
-        const message = stage === "word"
-            ? "O roteiro foi gerado, mas não foi possível preparar o ficheiro Word. Tenta novamente."
+        const message = stage === "export"
+            ? "O roteiro foi gerado, mas não foi possível preparar o ficheiro. Tenta novamente."
             : "Não foi possível completar a geração do roteiro. Tenta novamente com o mesmo ficheiro.";
         return NextResponse.json({ error: message }, { status: 502 });
     }

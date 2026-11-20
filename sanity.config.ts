@@ -15,7 +15,7 @@ import { GenerateStoryAction } from './src/sanity/actions/GenerateStoryAction'
 import { ArchiveAction } from './src/sanity/actions/ArchiveAction'
 import { ProcessExpiredAction } from './src/sanity/actions/ProcessExpiredAction'
 import CommissionCalculator from './src/components/commission-calculator'
-import { GenerateItineraryAction } from './src/sanity/actions/GenerateItineraryAction'
+import { GenerateItineraryPdfAction, GenerateItineraryAction } from './src/sanity/actions/GenerateItineraryAction'
 import { DeleteLegacyItinerariesAction } from './src/sanity/actions/DeleteLegacyItinerariesAction'
 import CrmStudioTool from './src/components/crm-studio-tool'
 
@@ -36,7 +36,7 @@ export default defineConfig({
                 return [...prev, TranslateAction, GenerateStoryAction, ArchiveAction, ProcessExpiredAction]
             }
             if (context.schemaType === 'roteiro') {
-                return [...prev.filter(action => !["publish", "duplicate", "discardChanges", "unpublish"].includes(action.action ?? "")), GenerateItineraryAction, DeleteLegacyItinerariesAction]
+                return [...prev.filter(action => !["publish", "duplicate", "discardChanges", "unpublish"].includes(action.action ?? "")), GenerateItineraryPdfAction, GenerateItineraryAction, DeleteLegacyItinerariesAction]
             }
             return prev
         },
