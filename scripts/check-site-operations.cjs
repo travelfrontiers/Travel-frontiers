@@ -89,7 +89,7 @@ function load(file, mocks = {}, env = {}, network = fetch) {
             assert.match(prompt, /pelo menos cinco paragens concretas/);
             if (planMode === "timeout") throw new DOMException("timeout", "AbortError");
             const plan = days.map((day, index) => {
-                if (planMode === "thin" && index === 0) return { ...day, manha: ["Visita"], tarde: [], noite: [] };
+                if (planMode === "thin" && index === 1) return { ...day, tipo: "livre", manha: ["Visita"], tarde: [], noite: [] };
                 if (planMode === "generic") return { ...day, sugestao_jantar: { ...emptyMeal, nome: "Wulingyuan Village Restaurants" } };
                 return day;
             });
