@@ -1,3 +1,9 @@
+## Documentação do CRM
+
+- [Guia de utilização do CRM](GUIA_UTILIZADOR_CRM.md), atualizado em 20 de novembro de 2026.
+- [Configuração e manutenção](CRM_SETUP.md).
+- [Estado funcional e histórico de entregas](CRM_DELIVERY_STATUS.md).
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

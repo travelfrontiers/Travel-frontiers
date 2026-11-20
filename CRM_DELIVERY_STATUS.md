@@ -1,4 +1,27 @@
-# Estado funcional do CRM — 8 de novembro de 2026
+# Estado funcional do CRM
+
+## Referência atual — 20 de novembro de 2026
+
+O CRM está publicado em `https://promo.travelfrontiers.pt/admin/crm`. O [guia de utilização](GUIA_UTILIZADOR_CRM.md) acompanha a interface atual e a [configuração](CRM_SETUP.md) descreve a manutenção. As secções datadas abaixo conservam o histórico das entregas.
+
+- A navegação atual reúne Início, Pedidos, Viagens, Clientes e Comissões, com as ferramentas numa segunda linha. O topo tem Airmet, Cotur, Gupi e copiar IBAN.
+- O Kanban de viagens abre com cartões recolhidos. Há controlos por cartão e para todo o quadro. A vista compacta mantém destino, clientes, datas e indicadores de alerta.
+- A ficha financeira distingue preço registado, total a pagar à agência, recebimentos e saldo. Os descontos distinguem consumo próprio e descontos a clientes, com escolha explícita entre abater ao total ou registar um desconto já incluído no preço.
+- Com saldo zero, o plano de prestações mostra Reserva liquidada e dispensa novas prestações. O aviso de falta de prazo considera apenas o saldo ainda por pagar fora do plano.
+- A calculadora partilhada usa a versão `tf-commission-v3`. O consumo próprio é net × 101%. A comissão sobre os restantes passageiros mantém o fator de 80%, com partilha da poupança e cedência configuráveis.
+- Em Viagem → Comissão, Definir comissão manual permite introduzir valor e motivo. O valor substitui a estimativa antes dos descontos a clientes. Retirar valor manual repõe o cálculo guardado.
+- A reconciliação distingue comissão prevista, confirmada e recebida. Confirmações, regularizações e movimentos têm histórico.
+- O email permite seleção de clientes, edição manual de destinatários e escolha de cópia para a agência. A assinatura é apresentada no rascunho e incluída no envio. O modelo pré-contratual usa os anexos padrão configurados e os links da FIN e das condições.
+- O Drive permite escolher ficheiros existentes. Documentos de identidade podem preencher a ficha após revisão e confirmação. A importação de reservas permite completar os serviços de viagens existentes.
+
+### Verificação das últimas entregas
+
+- Alterações integradas nos PRs #81 a #86 e publicadas em produção. Os percursos de desconto, reserva liquidada, recolha dos cartões, atalho Gupi, cálculo a 101% e formulário manual foram verificados no domínio público.
+- Migrações 028 e 029 aplicadas. O teste transacional da comissão manual passou com rollback, incluindo concorrência por versão, dedução única de descontos e reposição do cálculo.
+- Cálculos antigos são sinalizados para revisão. Descontos já registados exigem revisão manual quando a fórmula muda.
+- Exportação, retenção e eliminação integral de informação pessoal em notas livres continuam a exigir avaliação e validação próprias. Os pendentes listados na entrega de 8 de novembro descrevem esse momento; emails e escolha de ficheiros do Drive evoluíram nas entregas seguintes.
+
+## Entrega de 8 de novembro de 2026
 
 ## Pontos 1, 2, 4 e 5
 1. **Propostas e versões**: proposta ligada a cliente, oportunidade/pedido, viagem e documento no Drive. Cada versão guarda título, valor total/moeda, validade, destino/datas, operador, condições, inclusões/exclusões e notas. Versões anteriores preservadas e consulta por versão. Escritas concorrentes rejeitadas pela versão esperada. Estado comercial e nota da aceitação manual por resposta ao email; sem botão público de aceitação. Uma proposta aceite cria/abre uma viagem de forma idempotente. Uma nova versão não altera automaticamente uma viagem já existente.
@@ -35,7 +58,7 @@
 - Testes anteriores de formulário, gravação atómica, Drive e cron: `scripts/check-crm-operations.cjs`.
 - A autorização Google para um upload real mantém-se como ação do utilizador no primeiro envio; não se deve assumir esse consentimento por estes testes.
 
-## O que ainda falta no plano
+## Pendentes registados em 8 de novembro de 2026
 - **Ponto 3**: revisão do PDF lado a lado; indicadores de campos ausentes/ambíguos; cobertura e persistência dos campos comuns ainda em falta.
 - **Emails**: IMAP/histórico, templates editáveis aprovados, envio assistido e comunicações pré/pós-orçamento e pré/pós-viagem.
 - **Reserva**: condições próprias e histórico de alterações da reserva. Os pagamentos e prazos das prestações estão disponíveis na ficha financeira.
