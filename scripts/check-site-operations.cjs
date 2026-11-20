@@ -66,12 +66,12 @@ function load(file, mocks = {}, env = {}, network = fetch) {
 
     const emptyMeal = { nome: "", porque: "", morada: "", preco: "", localidade: "" };
     const days = Array.from({ length: 15 }, (_, i) => ({
-        data: `2030-04-${String(i + 6).padStart(2, "0")}`, titulo_dia: "Visita",
+        data: `2030-04-${String(i + 6).padStart(2, "0")}`, titulo_dia: "Visita", tipo: "visita",
         manha: ["Passeio de teste", "Miradouro"], tarde: ["Mercado", "Museu"], noite: ["Passeio noturno"], alternativas: ["Jardim"], sugestao_jantar: emptyMeal,
         sugestao_almoco: { ...emptyMeal, nome: "Café de Teste", morada: "Rua do Exemplo 14", localidade: "Macau" },
         imagem_nome_ingles: "",
     }));
-    days[14] = { ...days[14], manha: [], tarde: [], noite: [], alternativas: [], logistica: "Chegada e recolha de bagagem." };
+    days[14] = { ...days[14], tipo: "transito", manha: [], tarde: [], noite: [], alternativas: [], logistica: "Chegada e recolha de bagagem." };
     let planMode = "complete";
     const word = load("src/lib/itinerary-word.ts");
     let itineraryForWord;
@@ -86,8 +86,10 @@ function load(file, mocks = {}, env = {}, network = fetch) {
             }
             assert.ok(options.timeoutMs > 20_000);
             assert.match(prompt, /2030-04-06.*2030-04-20/);
+            assert.match(prompt, /pelo menos cinco paragens concretas/);
             if (planMode === "timeout") throw new DOMException("timeout", "AbortError");
-            return JSON.stringify({ introducao: "Roteiro", dicas: [], dias: planMode === "partial" ? days.slice(0, -1) : days });
+            const plan = planMode === "thin" ? days.map((day, index) => index === 0 ? { ...day, manha: ["Visita"], tarde: [], noite: [] } : day) : days;
+            return JSON.stringify({ introducao: "Roteiro", dicas: [], dias: planMode === "partial" ? days.slice(0, -1) : plan });
         } },
     }, {}, async () => Response.json({}));
     const generate = () => itinerary.POST(request("generate-itinerary", "Bearer studio", { key: "test.txt", title: "Teste" }));
@@ -100,7 +102,17 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     assert.equal(mapsLink.searchParams.get("api"), "1");
     assert.equal(mapsLink.searchParams.get("query"), "Café de Teste, Rua do Exemplo 14, Macau");
     assert.match(generated.headers.get("content-type"), /wordprocessingml/);
-    assert.equal(Buffer.from(await generated.arrayBuffer()).subarray(0, 2).toString(), "PK");
+    const generatedBuffer = Buffer.from(await generated.arrayBuffer());
+    assert.equal(generatedBuffer.subarray(0, 2).toString(), "PK");
+    const generatedZip = await require("jszip").loadAsync(generatedBuffer);
+    const documentXml = await generatedZip.file("word/document.xml").async("string");
+    const documentLinks = await generatedZip.file("word/_rels/document.xml.rels").async("string");
+    assert.match(documentXml, /A viagem num relance/);
+    assert.match(documentXml, /<w:tbl>/);
+    assert.match(documentXml, /Abrir no Google Maps/);
+    assert.match(documentLinks, /google.com\/maps\/search/);
+    planMode = "thin";
+    assert.equal((await generate()).status, 502);
     planMode = "partial";
     assert.equal((await generate()).status, 502);
     planMode = "timeout";
