@@ -88,7 +88,11 @@ function load(file, mocks = {}, env = {}, network = fetch) {
             assert.match(prompt, /2030-04-06.*2030-04-20/);
             assert.match(prompt, /pelo menos cinco paragens concretas/);
             if (planMode === "timeout") throw new DOMException("timeout", "AbortError");
-            const plan = planMode === "thin" ? days.map((day, index) => index === 0 ? { ...day, manha: ["Visita"], tarde: [], noite: [] } : day) : days;
+            const plan = days.map((day, index) => {
+                if (planMode === "thin" && index === 0) return { ...day, manha: ["Visita"], tarde: [], noite: [] };
+                if (planMode === "generic") return { ...day, sugestao_jantar: { ...emptyMeal, nome: "Wulingyuan Village Restaurants" } };
+                return day;
+            });
             return JSON.stringify({ introducao: "Roteiro", dicas: [], dias: planMode === "partial" ? days.slice(0, -1) : plan });
         } },
     }, {}, async () => Response.json({}));
@@ -111,6 +115,9 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     assert.match(documentXml, /<w:tbl>/);
     assert.match(documentXml, /Abrir no Google Maps/);
     assert.match(documentLinks, /google.com\/maps\/search/);
+    planMode = "generic";
+    assert.equal((await generate()).status, 200);
+    assert.equal(itineraryForWord.days[0].dinner, null);
     planMode = "thin";
     assert.equal((await generate()).status, 502);
     planMode = "partial";
