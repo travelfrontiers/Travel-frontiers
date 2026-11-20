@@ -82,7 +82,8 @@ function load(file, mocks = {}, env = {}, network = fetch) {
         "@/lib/itinerary-word": { createItineraryWord: (value, ...args) => { itineraryForWord = value; return word.createItineraryWord(value, ...args); } },
         "@/lib/gemini": { generateText: async (prompt, options) => {
             if (options.schema.properties.resumo) {
-                return JSON.stringify({ partida: "2030-04-06", regresso: "2030-04-20", resumo: "Viagem fictícia" });
+                return JSON.stringify({ partida: "2030-04-06", regresso: "2030-04-20", resumo: "Viagem fictícia",
+                    dias_transito: [], alojamentos: planMode === "wrongStay" ? [{ nome: "Hotel de Teste", entrada: "2030-04-07", saida: "2030-04-10" }] : [] });
             }
             assert.ok(options.timeoutMs > 20_000);
             assert.match(prompt, /2030-04-06.*2030-04-20/);
@@ -90,6 +91,7 @@ function load(file, mocks = {}, env = {}, network = fetch) {
             if (planMode === "timeout") throw new DOMException("timeout", "AbortError");
             const plan = days.map((day, index) => {
                 if (planMode === "thin" && index === 1) return { ...day, tipo: "livre", manha: ["Visita"], tarde: [], noite: [] };
+                if (planMode === "wrongStay" && index === 0) return { ...day, logistica: "Check-in no Hotel de Teste." };
                 if (planMode === "generic") return { ...day, sugestao_jantar: { ...emptyMeal, nome: "Wulingyuan Village Restaurants" } };
                 return day;
             });
@@ -118,6 +120,8 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     planMode = "generic";
     assert.equal((await generate()).status, 200);
     assert.equal(itineraryForWord.days[0].dinner, null);
+    planMode = "wrongStay";
+    assert.equal((await generate()).status, 502);
     planMode = "thin";
     assert.equal((await generate()).status, 502);
     planMode = "partial";
