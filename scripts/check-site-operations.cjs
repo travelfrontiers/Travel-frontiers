@@ -92,7 +92,7 @@ function load(file, mocks = {}, env = {}, network = fetch) {
             const plan = days.map((day, index) => {
                 if (planMode === "thin" && index === 1) return { ...day, tipo: "livre", manha: ["Visita"], tarde: [], noite: [] };
                 if (planMode === "wrongStay" && index === 0) return { ...day, logistica: "Check-in no Hotel de Teste." };
-                if (planMode === "generic") return { ...day, sugestao_jantar: { ...emptyMeal, nome: "Wulingyuan Village Restaurants" } };
+                if (planMode === "generic") return { ...day, sugestao_jantar: { ...emptyMeal, nome: index % 2 ? "Restaurante interno do Parque" : "Wulingyuan Village Restaurants" } };
                 return day;
             });
             return JSON.stringify({ introducao: "Roteiro", dicas: [], dias: planMode === "partial" ? days.slice(0, -1) : plan });
@@ -120,6 +120,7 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     planMode = "generic";
     assert.equal((await generate()).status, 200);
     assert.equal(itineraryForWord.days[0].dinner, null);
+    assert.equal(itineraryForWord.days[1].dinner, null);
     planMode = "wrongStay";
     assert.equal((await generate()).status, 502);
     planMode = "thin";

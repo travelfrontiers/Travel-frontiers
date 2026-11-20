@@ -48,6 +48,7 @@ function meal(value: unknown, base: string, dinner = false) {
     const name = textField(data.nome, 200).trim();
     if (!name) return null;
     if (/\b(?:canteen|cantina|restaurants|restaurantes)\b|^(?:local |park view bistro|mountain top cafe|beer fish restaurant$)/i.test(name)) return null;
+    if (/^(?:restaurante\s+(?:interno|do parque|da montanha|de comida)|cozinha de)\b/i.test(name)) return null;
     if (dinner && /\b(?:bakery|pastelaria)\b/i.test(name)) return null;
     const address = textField(data.morada, 250).trim();
     const locality = textField(data.localidade ?? "", 100).trim() || base.trim();
