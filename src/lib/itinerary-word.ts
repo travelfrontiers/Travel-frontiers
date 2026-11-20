@@ -17,11 +17,11 @@ const accent = "A13D13";
 const border = "E8E3DC";
 
 function text(value: string, options: { color?: string; size?: number; bold?: boolean; font?: string } = {}) {
-    return new TextRun({ text: value, font: "Calibri", size: 22, color: ink, ...options });
+    return new TextRun({ text: value, font: "Calibri", size: 21, color: ink, ...options });
 }
 
 function label(value: string, after = 120) {
-    return new Paragraph({ keepNext: true, spacing: { before: 220, after },
+    return new Paragraph({ keepNext: true, spacing: { before: 150, after },
         children: [text(value, { size: 19, color: accent, bold: true })] });
 }
 
@@ -70,7 +70,7 @@ function period(title: string, items: string[]) {
     return entries.length ? [label(title, 100), ...entries.map(value => {
         const separator = value.indexOf(" — ");
         const hasTitle = separator > 0 && separator < 110;
-        return new Paragraph({ keepLines: true, spacing: { after: 135, line: 290 },
+        return new Paragraph({ keepLines: true, spacing: { after: 100, line: 265 },
             children: hasTitle
                 ? [text(value.slice(0, separator), { bold: true }), text("  " + value.slice(separator + 3))]
                 : [text(value)] });
@@ -145,7 +145,7 @@ export async function createItineraryWord(itinerary: Itinerary, images: (Itinera
         const visits = day.morning.length + day.afternoon.length + day.evening.length;
         const previousVisits = previousDay ? previousDay.morning.length + previousDay.afternoon.length + previousDay.evening.length : 0;
         children.push(
-            new Paragraph({ pageBreakBefore: visits >= 5 || previousVisits >= 5, keepNext: true,
+            new Paragraph({ pageBreakBefore: (index === 0 && itinerary.days.length > 7) || visits >= 5 || previousVisits >= 5, keepNext: true,
                 spacing: { before: index > 0 && visits < 5 && previousVisits < 5 ? 320 : 0, after: 95 },
                 children: [text(["Dia " + day.number, formatDate(day.date), day.base].filter(Boolean).join(" · "), { size: 19, color: accent, bold: true })] }),
             new Paragraph({ heading: HeadingLevel.HEADING_1, keepNext: true, spacing: { after: 145 },
@@ -153,7 +153,7 @@ export async function createItineraryWord(itinerary: Itinerary, images: (Itinera
         );
         if (day.highlight) children.push(new Paragraph({ keepLines: true, keepNext: Boolean(image),
             spacing: { after: 170, line: 295 }, children: [text(day.highlight, { color: muted })] }));
-        if (image) children.push(...photo(image, 165));
+        if (image) children.push(...photo(image, 125));
         children.push(...period("Manhã", day.morning), ...meal("Pausa para almoço", day.lunch),
             ...period("Tarde", day.afternoon), ...meal("Onde jantar", day.dinner), ...period("Noite", day.evening));
         children.push(...period("Alternativas", day.alternatives));
