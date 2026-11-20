@@ -22,7 +22,7 @@ const maxPhotos = 8;
 
 function photoQuery(value: string) {
     const query = value.trim().replace(/\s+/g, " ");
-    if (/\b(?:airport|airline|aeroporto)\b/i.test(query)) return "";
+    if (/\b(?:airport|airline|aeroporto|station|railway|metro)\b/i.test(query)) return "";
     return /^[\p{L}][\p{L}\p{M}\d ()'’-]{2,100}$/u.test(query) ? query : "";
 }
 
