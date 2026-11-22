@@ -71,6 +71,7 @@ function load(file, mocks = {}, env = {}, network = fetch) {
         sugestao_almoco: { ...emptyMeal, nome: "Café de Teste", morada: "Rua do Exemplo 14", localidade: "Macau" },
         imagem_nome_ingles: "",
     }));
+    days[0].transportes = [{ route: "Voo Lisboa a Cantão", departure: "06/04 16:05", arrival: "07/04 18:40", tips: "Confirmar o terminal da ligação." }];
     days[14] = { ...days[14], tipo: "transito", manha: [], tarde: [], noite: [], alternativas: [], logistica: "Chegada e recolha de bagagem." };
     let planMode = "complete";
     const guide = { "./itinerary-guide": load("src/lib/itinerary-guide.ts") };
@@ -112,12 +113,15 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     assert.deepEqual(await (await review("load")).json(), { draft: null });
     const { draft } = await (await review("generate")).json();
     assert.equal(draft.itinerary.days.length, 15);
+    assert.equal(draft.itinerary.days[0].transports[0].arrival, "07/04 18:40");
     draft.itinerary.days[0].title = "Partida revista";
+    draft.itinerary.days[0].transports[0].arrival = "07/04 19:10";
     draft.itinerary.days[0].morning = [];
     draft.itinerary.days[0].lunch.maps = "https://maps.app.goo.gl/teste";
     assert.equal((await review("save", draft)).status, 200);
     const reopened = (await (await review("load")).json()).draft;
     assert.equal(reopened.itinerary.days[0].title, "Partida revista");
+    assert.equal(reopened.itinerary.days[0].transports[0].arrival, "07/04 19:10");
     assert.deepEqual(reopened.itinerary.days[0].morning, []);
     planMode = "timeout";
     const preview = await review("preview", reopened);
@@ -151,6 +155,8 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     }
     assert.match(documentXml, /<w:tbl>/);
     assert.match(documentXml, /Abrir no Google Maps/);
+    assert.match(documentXml, /Chegada: 07\/04 18:40/);
+    assert.match(documentXml, /Confirmar o terminal da ligação/);
     assert.match(documentLinks, /google.com\/maps\/search/);
     planMode = "generic";
     assert.equal((await generate()).status, 200);
