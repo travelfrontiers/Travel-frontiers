@@ -22,8 +22,9 @@ const languageNames = { pt: "Português", en: "Inglês", fr: "Francês" };
 const roles = Object.keys(emailAttachmentLabels) as EmailAttachmentRole[];
 const formatDate = (date: string) => new Date(date).toLocaleString("pt-PT");
 
-export default function CrmEmailPanel({ authorizedFetch, scope, id, version, suggestedPdf, recipientRevision, onSent, onAcceptReply }: {
+export default function CrmEmailPanel({ authorizedFetch, scope, id, version, suggestedPdf, recipientRevision, shortcut, onSent, onAcceptReply }: {
   authorizedFetch: AuthorizedFetch; scope: EmailScope; id: string; version?: number; suggestedPdf?: File | null; recipientRevision?: string;
+  shortcut?: "precontract" | "booking";
   onSent?: (quoteSent: boolean) => Promise<void>; onAcceptReply?: (message: CrmEmailMessage) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -46,25 +47,28 @@ export default function CrmEmailPanel({ authorizedFetch, scope, id, version, sug
   }, [authorizedFetch, scope, id, version]);
 
   useEffect(() => {
-    if (open) void load().catch(cause => setError(cause.message));
-  }, [open, load, recipientRevision]);
+    if (open && !shortcut) void load().catch(cause => setError(cause.message));
+  }, [open, load, recipientRevision, shortcut]);
   const canDownload = Boolean(data?.driveClientId && data?.context.driveId);
   useEffect(() => {
     if (canDownload) void loadGoogle().then(() => setDriveReady(true), () => setDriveReady(false));
   }, [canDownload]);
 
-  const suggestedRecipients = [...new Set(data?.context.contacts.flatMap(contact => contact.email ? [contact.email] : []) ?? [])].join(", ");
-
-  function compose(template: Template, reply?: CrmEmailMessage, recipients?: Pick<Draft, "to" | "copyAgency">) {
-    if (!data) return;
+  function recipientsFor(current: EmailData | null) {
+    return [...new Set(current?.context.contacts.flatMap(contact => contact.email ? [contact.email] : []) ?? [])].join(", ");
+  }
+  const suggestedRecipients = recipientsFor(data);
+  function compose(template: Template, reply?: CrmEmailMessage, recipients?: Pick<Draft, "to" | "copyAgency">, contextData = data) {
+    if (!contextData) return;
+    const suggestedRecipients = recipientsFor(contextData);
     setModel(null);
     setError("");
     setDraft({
       template, operationId: crypto.randomUUID(), reply,
       copyAgency: recipients?.copyAgency ?? false,
       to: recipients?.to ?? (reply ? reply.sender : suggestedRecipients),
-      subject: reply ? ( /^re:/i.test(reply.subject) ? reply.subject : "Re: " + reply.subject).slice(0, 240) : fillEmailTemplate(template.subject, data.context.fields),
-      body: reply ? "" : fillEmailTemplate(template.key === "quote" && data.quoteDocuments ? quoteBodyWithLinks(template.body, data.context.language) : template.body, data.context.fields),
+      subject: reply ? ( /^re:/i.test(reply.subject) ? reply.subject : "Re: " + reply.subject).slice(0, 240) : fillEmailTemplate(template.subject, contextData.context.fields),
+      body: reply ? "" : fillEmailTemplate(template.key === "quote" && contextData.quoteDocuments ? quoteBodyWithLinks(template.body, contextData.context.language) : template.body, contextData.context.fields),
     });
     setAttachments(template.key === "quote" && suggestedPdf ? { quote: [suggestedPdf] } : {});
   }
@@ -123,8 +127,17 @@ export default function CrmEmailPanel({ authorizedFetch, scope, id, version, sug
   const oversized = allFiles.length > 10 || allFiles.reduce((sum, file) => sum + file.size, 0) > 3_800_000;
 
   return <section className="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-    <button type="button" aria-expanded={open} className="w-full text-left font-semibold text-slate-900" onClick={() => setOpen(!open)}>
-      Email e modelos <span aria-hidden="true" className="float-right">{open ? "−" : "+"}</span>
+    <button type="button" aria-expanded={open} className="w-full text-left font-semibold text-slate-900" disabled={busy} onClick={() => {
+      if (open || !shortcut) { setOpen(!open); return; }
+      setOpen(true);
+      void run(async () => {
+        const current = await load();
+        const template = current.templates.find(item => item.key === shortcut);
+        if (!template) throw new Error("Este modelo ainda não está disponível para esta viagem.");
+        compose(shortcut === "precontract" ? { ...template, required: ["quote"] } : template, undefined, undefined, current);
+      });
+    }}>
+      {shortcut === "precontract" ? "Rever email pré-contratual" : shortcut === "booking" ? "Rever email pós-contratual" : "Email e modelos"} <span aria-hidden="true" className="float-right">{open ? "−" : "+"}</span>
     </button>
     {open && <>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
@@ -138,7 +151,7 @@ export default function CrmEmailPanel({ authorizedFetch, scope, id, version, sug
               if (template && (!draft || window.confirm("Substituir o rascunho atual pelo novo modelo?"))) compose(template);
             }}>
               <option value="" disabled>Escolhe um modelo</option>
-              {data.templates.map(template => <option key={template.key} value={template.key}>{template.label}</option>)}
+              {data.templates.filter(template => !shortcut || template.key === shortcut).map(template => <option key={template.key} value={template.key}>{template.label}</option>)}
             </select>
           </label>
           <button type="button" className={secondary} disabled={busy || !canSync} onClick={() => void sync()}>Sincronizar respostas</button>

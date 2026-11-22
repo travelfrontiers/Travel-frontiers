@@ -9,7 +9,7 @@ export type EmailContext = {
   scope: EmailScope; id: string;
   client_id: string | null; lead_id: string | null; proposal_id: string | null; proposal_version: number | null; trip_id: string | null;
   recipient: string | null; contacts: EmailContact[]; language: EmailLanguage; fields: Record<string, string>;
-  archived: boolean; driveId: string | null; driveFileName: string | null; currentVersion: number | null; proposalStatus: Proposal["status"] | null;
+  firstPaymentRecorded?: boolean; archived: boolean; driveId: string | null; driveFileName: string | null; currentVersion: number | null; proposalStatus: Proposal["status"] | null;
 };
 export const validEmail = (value: unknown): value is string =>
   typeof value === "string" && value.length <= 254 && /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/.test(value);
@@ -38,7 +38,7 @@ type Dossier = {
   departure_date: string | null; return_date: string | null; total_amount?: number | null; currency?: string;
   operator?: string | null; archived_at?: string | null;
 };
-type Finance = { customer_net: number; balance: number | null; next_due_on: string | null; currency: string; total_amount: number | null };
+type Finance = { customer_received: number; customer_net: number; balance: number | null; next_due_on: string | null; currency: string; total_amount: number | null };
 type PaymentLine = { label: string; due_on: string; amount_remaining: number };
 type Hotel = { title: string; booking?: { board?: string } | null };
 type DriveFile = { drive_file_id: string; file_name: string };
@@ -65,7 +65,7 @@ export async function loadEmailContext(config: EmailConfig, scope: EmailScope, i
   const [client, finance, hotels, driveFile, travelers] = await Promise.all([
     source.client_id ? row<OfficeClient>(config, "crm_clients", source.client_id, "id,full_name,email,language") : null,
     tripId ? emailRest<Finance[]>(config, "crm_trip_finance_overview", {
-      trip_id: "eq." + tripId, select: "customer_net,balance,next_due_on,currency,total_amount", limit: "1",
+      trip_id: "eq." + tripId, select: "customer_received,customer_net,balance,next_due_on,currency,total_amount", limit: "1",
     }).then(result => result[0]) : null,
     tripId ? emailRest<Hotel[]>(config, "crm_trip_services", {
       trip_id: "eq." + tripId, service_type: "eq.accommodation", select: "title,booking", order: "sort_order.asc,id", limit: "5",
@@ -106,6 +106,7 @@ export async function loadEmailContext(config: EmailConfig, scope: EmailScope, i
   const context: EmailContext = {
     scope, id, client_id: source.client_id, lead_id: scope === "lead" ? id : source.lead_id ?? null,
     proposal_id: proposal?.id ?? null, proposal_version: document?.version ?? null, trip_id: tripId,
+    firstPaymentRecorded: Number(finance?.customer_received) > 0,
     archived: Boolean(source.archived_at || proposal?.status === "archived"), recipient, contacts, language,
     driveId: driveFile?.drive_file_id ?? null, driveFileName: driveFile?.file_name ?? null, currentVersion: proposal?.current_version ?? null,
     proposalStatus: proposal?.status ?? null,

@@ -10,6 +10,8 @@ import CrmNewClientForm from "./crm-new-client-form";
 import CrmClientBillingFields from "./crm-client-billing-fields";
 import TripClientSelect from "./crm-trip-client-select";
 import CrmProposals from "./crm-proposals";
+import { deliveryTaskId } from "@/lib/crm-reservation-flow";
+import { ReservationFlow, type FlowEmail } from "./crm-reservation-flow";
 import CrmEmailPanel from "./crm-email-panel";
 import CrmEmailTemplateEditor from "./crm-email-template-editor";
 import CrmManualLeadForm from "./crm-manual-lead-form";
@@ -384,6 +386,15 @@ export default function CrmStudioTool() {
     return () => controller.abort();
   }, [boardVisible, token, user?.email, authorizedFetch, trips]);
 
+  const [flowMessages, setFlowMessages] = useState<FlowEmail[] | null>(null);
+  const loadFlow = useCallback(async () => {
+    try {
+      const response = await authorizedFetch("/api/crm/reservation-flow");
+      if (!response.ok) throw new Error();
+      setFlowMessages((await response.json()).messages);
+    } catch { setFlowMessages(null); }
+  }, [authorizedFetch]);
+  useEffect(() => { if (token && user?.email && (view === "dashboard" || view === "trips")) void loadFlow(); }, [token,user?.email,view,loadFlow,focused?.id]);
   const quietRefresh = useCallback(() => refresh(true), [refresh]);
   const refreshFinance = useCallback(async (signal?: AbortSignal) => {
     try {
@@ -949,6 +960,20 @@ export default function CrmStudioTool() {
         {!loading && view === "payments" && <CrmPayments authorizedFetch={authorizedFetch} tripId="" theme={theme}
           onOpen={openFinance} onChanged={refreshAfterFinance} onOpenTrip={id=>openTarget({type:"trip",id})}/>}
         {!loading && view === "dashboard" && <>
+          {flowMessages && financeListStatus==="ready" && <section className="mb-4 rounded-xl border border-slate-200 p-4">
+            <h3 className="font-semibold">Seguimento das reservas</h3>
+            {(["A aguardar resposta à proposta","Email pós-contratual por confirmar","Roteiro por entregar"] as const).map((label,index)=>{
+              const pending=trips.filter(t=>{
+                if(t.archived_at || t.status==="cancelled" || t.status==="completed") return false;
+                const paid=Number(financeByTrip.get(t.id)?.customer_received)>0;
+                const sent=(key:string)=>flowMessages.some(m=>m.trip_id===t.id && m.template_key===key && m.state==="sent");
+                if(index===0) return !paid && t.status==="planning" && (sent("quote") || sent("precontract"));
+                return paid && (index===1 ? !sent("booking") : !t.tasks.some(task=>task.completed && task.id===deliveryTaskId(t.id)));
+              });
+              return <details key={label} className="mt-2"><summary className="cursor-pointer">{label} · {pending.length}</summary>
+                {pending.map(t=><button key={t.id} className="mr-3 min-h-11 underline" onClick={()=>openTrip(t.id)}>{t.destination || t.reference || "Viagem"}</button>)}</details>;
+            })}
+          </section>}
           <section className="relative mb-6 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#171717] via-[#29231b] to-[#563719] px-6 py-7 text-white shadow-lg sm:px-8 sm:py-8">
             <div className="pointer-events-none absolute -right-12 -top-20 size-72 rounded-full border border-white/10" />
             <div className="pointer-events-none absolute -right-2 -top-10 size-52 rounded-full border border-white/10" />
@@ -1216,6 +1241,12 @@ export default function CrmStudioTool() {
               if (tab === "payments" || tab === "commission") setVisitedFinance(true);
             }} />
             <CrmTripPanel id={trip.id} tab="summary" active={tripTab}>
+            {!trip.archived_at && trip.status!=="cancelled" && <ReservationFlow id={trip.id} title={trip.destination || "Roteiro de viagem"}
+              paid={financeListStatus==="ready" ? Number(financeByTrip.get(trip.id)?.customer_received)>0 : null}
+              delivered={trip.tasks.some(t=>t.completed && t.id===deliveryTaskId(trip.id))}
+              messages={flowMessages?.filter(m=>m.trip_id===trip.id) ?? null} authorizedFetch={authorizedFetch}
+              onUpdated={async()=>{await Promise.all([loadFlow(),reloadTrips()]);}}
+              onPayment={()=>{setTripTab("payments");setVisitedFinance(true);}} onProposals={()=>openTripProposals(trip.id)}/>}
             <dl className="mb-4 grid gap-3 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
               <div><dt className="text-slate-600">Localizador</dt><dd className="break-words text-lg font-bold">{trip.reference || "Por definir"}</dd></div>
               <div><dt className="text-slate-600">Datas</dt><dd>{[trip.departure_date, trip.return_date].filter((value): value is string => Boolean(value)).map(dateLabel).join(" – ") || "Por definir"}</dd></div>
@@ -1314,7 +1345,7 @@ export default function CrmStudioTool() {
                   onClick={()=>{setVisitedFinance(true);setTripTab("commission");}}>Ver comissão por regularizar</button>;
               })()}
             </div>
-            <CrmEmailPanel authorizedFetch={authorizedFetch} scope="trip" id={trip.id} recipientRevision={trip.client_ids?.join(",") ?? trip.client_id ?? ""} />
+            <CrmEmailPanel onSent={loadFlow} authorizedFetch={authorizedFetch} scope="trip" id={trip.id} recipientRevision={trip.client_ids?.join(",") ?? trip.client_id ?? ""} />
             </CrmTripPanel>
             <CrmTripPanel id={trip.id} tab="services" active={tripTab}>
             <CrmExistingTripPdf key={trip.id} tripId={trip.id} finance={financeByTrip.get(trip.id)} authorizedFetch={authorizedFetch}
