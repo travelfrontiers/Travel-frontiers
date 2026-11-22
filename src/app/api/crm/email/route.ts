@@ -70,6 +70,7 @@ export async function GET(request: NextRequest) {
     ]);
     const quoteDocuments = configuredQuoteDocuments();
     const templates = Object.entries(emailTemplates).flatMap(([key, template]) => {
+      if (key === "booking" && !context.firstPaymentRecorded) return [];
       if (!template.scopes.includes(context.scope) || key === "quote" && (context.currentVersion !== context.proposal_version || context.proposalStatus !== "draft" && context.proposalStatus !== "sent")) return [];
       const edited = stored.find(entry => entry.template_key === key);
       const copy = edited ?? (key === "precontract" ? precontract : baseEmailTemplate(key as EmailTemplateKey, context.language));
@@ -137,11 +138,12 @@ async function send(config: EmailConfig, request: Request, type: string) {
   if (!uuid(id)) throw new CrmError("Pedido de envio inválido.");
   const context = await contextFor(config, form.get("scope"), form.get("id"), form.get("version") ? Number(form.get("version")) : undefined);
   const key = templateFor(context, form.get("template"));
+  if (key === "booking" && !context.firstPaymentRecorded) throw new CrmError("Regista o primeiro pagamento do cliente antes do email pós-contratual.", 409);
   if (context.archived) throw new CrmError("Restaura a ficha antes de enviar.");
   const { subject, body } = verifyText(form.get("subject"), form.get("body"));
   if (missingEmailFields(subject + "\n" + body).length) throw new CrmError("Preenche os campos pendentes do modelo antes de enviar.");
-  if (key === "precontract" && roles.some(role => role !== "other" && form.has("file_" + role))) {
-    throw new CrmError("Usa o campo Outro documento para juntar ficheiros às condições pré-contratuais.");
+  if (key === "precontract" && roles.some(role => role !== "other" && role !== "quote" && form.has("file_" + role))) {
+    throw new CrmError("A FIN e as condições gerais já acompanham este modelo.");
   }
   const attachments = await attachmentsFrom(form);
   if (key === "precontract") {
@@ -191,7 +193,7 @@ async function send(config: EmailConfig, request: Request, type: string) {
   });
 
   const started = await rpc<boolean>(config, "crm_begin_email_send", { p_message: {
-    ...associations(context), id, template_key: key, internet_message_id: messageId,
+    ...associations(context), id, template_key: reply ? null : key, internet_message_id: messageId,
     sender: user.toLowerCase(), recipient: recipients.join(", "), cc, subject, body: message.text,
     attachments: attachments.map(({ filename, role }) => ({ filename, role })),
   } });

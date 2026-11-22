@@ -11,6 +11,21 @@ function load(file){
 const request=(body={},query="")=>({text:async()=>JSON.stringify(body),json:async()=>body,headers:new Headers(),nextUrl:new URL("https://synthetic.invalid/"+query)});
 const reset=(...items)=>{calls=[];replies=items;};
 (async()=>{
+ const workflow=load("src/app/api/crm/reservation-flow/route.ts");
+ const paidTrip={status:"confirmed",archived_at:null,customer_received:50};
+ for(const action of ["prepare","delivered"]){
+   reset({data:[{...paidTrip,customer_received:0}]});
+   assert.equal((await workflow.POST(request({trip_id:id,action}))).status,409);
+   assert.equal(calls.length,1);
+ }
+ const deliveryIds=[];
+ for(const amount of [50,100]){
+   reset({data:[{...paidTrip,customer_received:amount}]},{status:201});
+   assert.equal((await workflow.POST(request({trip_id:id,action:"delivered"}))).status,200);
+   const task=JSON.parse(calls[1].init.body);
+   assert.equal(task.completed,true);deliveryIds.push(task.id);
+ }
+ assert.equal(deliveryIds[0],deliveryIds[1]);
  const calendar=load("src/lib/crm-calendar.ts");
  assert.equal(calendar.addDays("2027-03-28",1),"2027-03-29");
  assert.equal(calendar.addDays("2028-02-28",1),"2028-02-29");
