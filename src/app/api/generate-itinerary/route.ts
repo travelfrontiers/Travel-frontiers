@@ -251,7 +251,7 @@ ${notes || "Nenhuma"}
         };
         const file = format === "pdf"
             ? await createItineraryPdf(itinerary, photos, logo, stays, transitDates)
-            : await createItineraryWord(itinerary, photos, logo);
+            : await createItineraryWord(itinerary, photos, logo, stays, transitDates);
         return new NextResponse(new Uint8Array(file), {
             status: 200,
             headers: {

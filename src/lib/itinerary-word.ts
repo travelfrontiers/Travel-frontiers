@@ -1,8 +1,10 @@
 import {
-    AlignmentType, BorderStyle, Document, ExternalHyperlink, Footer, HeadingLevel, ImageRun, Packer,
-    PageNumber, Paragraph, ShadingType, TextRun, Table, TableCell, TableRow, WidthType,
+    AlignmentType, BorderStyle, Document, ExternalHyperlink, Footer, Header, HeadingLevel, ImageRun, Packer,
+    PageNumber, Paragraph, TextRun, Table, TableCell, TableRow, WidthType,
 } from "docx";
 import type { ItineraryPhoto } from "./itinerary-images";
+
+import { guideSections, type Stay } from "./itinerary-guide";
 
 type Meal = { nome: string; porque: string; morada: string; preco: string; maps: string };
 type Day = {
@@ -11,9 +13,9 @@ type Day = {
 };
 export type Itinerary = { title: string; introduction: string; route: string[]; tips: string[]; days: Day[] };
 
-const ink = "232527";
-const muted = "505961";
-const accent = "A13D13";
+const ink = "0D2334";
+const muted = "456071";
+const accent = "9C410D";
 const border = "E8E3DC";
 
 function text(value: string, options: { color?: string; size?: number; bold?: boolean; font?: string } = {}) {
@@ -31,12 +33,16 @@ function link(value: string, url: string) {
 }
 
 function photo(image: ItineraryPhoto, maxHeight: number) {
-    const scale = Math.min(555 / image.width, maxHeight / image.height, 1);
+    const width = 615;
+    const scale = Math.max(width / image.width, maxHeight / image.height);
+    const horizontal = 50 * (1 - width / (image.width * scale));
+    const vertical = 50 * (1 - maxHeight / (image.height * scale));
     return [
         new Paragraph({ keepNext: true, spacing: { before: 120, after: 60 },
             children: [new ImageRun({ type: image.type, data: image.buffer,
                 altText: { name: image.location, title: image.location, description: image.location },
-                transformation: { width: Math.round(image.width * scale), height: Math.round(image.height * scale) } })] }),
+                crop: { left: horizontal, right: horizontal, top: vertical, bottom: vertical },
+                transformation: { width, height: maxHeight } })] }),
         new Paragraph({ spacing: { after: 160 },
             children: [text(image.location, { size: 17, color: muted })] }),
     ];
@@ -77,29 +83,27 @@ function period(title: string, items: string[]) {
     })] : [];
 }
 
-function journeyOverview(days: Day[]) {
-    const widths = [1320, 2730, 5856];
-    const row = (values: string[], heading = false) => new TableRow({
-        tableHeader: heading, cantSplit: true,
-        children: values.map((value, index) => new TableCell({
-            width: { size: widths[index], type: WidthType.DXA },
-            shading: { type: ShadingType.CLEAR, fill: heading ? "F1E9DF" : "FFFFFF" },
-            margins: { top: 115, bottom: 115, left: 130, right: 130 },
-            children: [new Paragraph({ spacing: { after: 0 },
-                children: [text(value, { size: 19, bold: heading, color: heading ? accent : ink })] })],
-        })),
-    });
+function panel(columns: Paragraph[][], fill: string) {
+    const width = Math.floor(9906 / columns.length);
+    const none = { style: BorderStyle.NONE };
     return new Table({
-        width: { size: 9906, type: WidthType.DXA }, columnWidths: widths,
-        borders: {
-            top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE },
-            left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE },
-            insideVertical: { style: BorderStyle.NONE },
-            insideHorizontal: { style: BorderStyle.SINGLE, size: 3, color: border },
-        },
-        rows: [row(["Dia", "Base ou percurso", "O plano"], true),
-            ...days.map(day => row([String(day.number) + (day.date ? "\n" + formatDate(day.date) : ""), day.base, day.title]))],
+        width: { size: 9906, type: WidthType.DXA }, columnWidths: columns.map(() => width),
+        borders: { top: none, bottom: none, left: none, right: none, insideHorizontal: none, insideVertical: none },
+        rows: [new TableRow({ children: columns.map(children => new TableCell({
+            width: { size: width, type: WidthType.DXA }, shading: { fill },
+            margins: { top: 130, bottom: 130, left: 200, right: 200 }, children,
+        })) })],
     });
+}
+
+function heading(title: string) {
+    return new Paragraph({ pageBreakBefore: true, heading: HeadingLevel.HEADING_1, keepNext: true,
+        spacing: { after: 240 }, children: [text(title, { size: 44, bold: true })] });
+}
+
+function card(caption: string, title: string, detail: string) {
+    return [panel([[label(caption, 40), new Paragraph({ keepNext: true, children: [text(title, { size: 26, bold: true })] }),
+        new Paragraph({ spacing: { after: 160 }, children: [text(detail, { color: muted })] })]], "F8F5ED"), new Paragraph({ spacing: { after: 0, line: 100 } })];
 }
 
 function photoCredits(images: (ItineraryPhoto | null)[]) {
@@ -113,57 +117,49 @@ function photoCredits(images: (ItineraryPhoto | null)[]) {
     }))] : [];
 }
 
-export async function createItineraryWord(itinerary: Itinerary, images: (ItineraryPhoto | null)[], logo: Buffer | null) {
-    const [coverImage, ...dayImages] = images;
-    const fallback = coverImage ? -1 : dayImages.findIndex(Boolean);
-    const cover = coverImage ?? dayImages[fallback];
-    if (fallback >= 0) dayImages[fallback] = null;
-    const firstDate = formatDate(itinerary.days[0]?.date ?? "", true);
-    const lastDate = formatDate(itinerary.days.at(-1)?.date ?? "", true);
-    const dates = [...new Set([firstDate, lastDate].filter(Boolean))].join(" – ");
-    const bases = [...new Set(itinerary.route.map(base => base.trim()).filter(Boolean))];
-    const overview = new Paragraph({ heading: HeadingLevel.HEADING_1, pageBreakBefore: true, keepNext: true,
-        spacing: { before: 0, after: 240 }, children: [text("A viagem num relance", { font: "Georgia", size: 44, bold: true })] });
-    const children: (Paragraph | Table)[] = [
-        ...(logo ? [new Paragraph({ keepNext: true, children: [new ImageRun({ data: logo, type: "png", transformation: { width: 62, height: 62 } })] })] : []),
-        label("Roteiro de viagem"),
-        new Paragraph({ style: "Title", keepNext: true, spacing: { before: 100, after: 220 },
-            children: [text(itinerary.title, { font: "Georgia", size: 58, color: "000000", bold: true })] }),
-        new Paragraph({ keepNext: true, spacing: { after: 110 }, children: [text([dates, itinerary.days.length + " dias"].filter(Boolean).join(" · "), { size: 23, color: accent, bold: true })] }),
-        ...(bases.length ? [new Paragraph({ spacing: { after: 230 }, children: [text(bases.join("  →  "), { size: 21, color: muted })] })] : []),
-        ...(cover ? photo(cover, 285) : []),
-        new Paragraph({ spacing: { before: 110, after: 110, line: 310 }, children: [text(itinerary.introduction, { size: 23 })] }),
-        overview,
-        journeyOverview(itinerary.days),
-        new Paragraph({ spacing: { before: 180, after: 120, line: 280 }, children: [
-            text("As propostas de visita e de restauração complementam os serviços da reserva. Confirma disponibilidade e horários antes de reservar atividades.", { size: 19, color: muted }),
-        ] }),
-    ];
+export async function createItineraryWord(itinerary: Itinerary, images: (ItineraryPhoto | null)[], logo: Buffer | null,
+    stays: Stay[] = [], transitDates: string[] = []) {
+    const cover = images[0] ?? images.find(Boolean);
+    const dates = [...new Set([itinerary.days[0]?.date, itinerary.days.at(-1)?.date].filter(Boolean))]
+        .map(date => formatDate(date!, true)).join(" – ");
+    const { groups, hotels, transfers } = guideSections(itinerary, stays, transitDates);
+    function coverLine(value: string, size: number, color = "FFFFFF", bold = false) {
+        return new Paragraph({ spacing: { after: 150 }, children: [text(value, { size, color, bold })] });
+    }
+    const children: (Paragraph | Table)[] = [panel([[
+        ...(logo ? [new Paragraph({ children: [new ImageRun({ data: logo, type: "png", transformation: { width: 68, height: 68 } })] })] : []),
+        coverLine("TRAVEL FRONTIERS", 26, "FFFFFF", true), coverLine("GUIA DE VIAGEM", 20, "F4D191", true),
+        coverLine(itinerary.title.toLocaleUpperCase("pt-PT"), 54, "FFFFFF", true),
+        ...(cover ? photo(cover, 320).slice(0, 1) : []), coverLine(dates, 30),
+        coverLine(itinerary.days.length + " dias", 22, "F4D191"), coverLine(itinerary.route.join("  ·  "), 22),
+        coverLine(itinerary.introduction, 22),
+    ]], ink), heading("A viagem num relance")];
+    for (const group of groups) {
+        const range = [...new Set([group.from, group.to].filter(Boolean))].map(date => formatDate(date)).join(" – ");
+        children.push(...card(range || "Percurso", group.base || "Etapa da viagem", group.days.join(" · ")));
+    }
+    if (hotels.length) children.push(heading("Onde vais ficar"));
+    for (const hotel of hotels) children.push(...card("Alojamento", hotel.nome,
+        ["Entrada " + formatDate(hotel.entrada), "Saída " + formatDate(hotel.saida),
+            hotel.nights > 0 ? hotel.nights + (hotel.nights === 1 ? " noite" : " noites") : ""].filter(Boolean).join(" · ")));
+    if (transfers.length) children.push(heading("De etapa em etapa"));
+    for (const day of transfers) children.push(...card(formatDate(day.date), day.base || day.title, day.logistics));
     for (const [index, day] of itinerary.days.entries()) {
-        const image = dayImages[index];
-        const previousDay = itinerary.days[index - 1];
-        const visits = day.morning.length + day.afternoon.length + day.evening.length;
-        const previousVisits = previousDay ? previousDay.morning.length + previousDay.afternoon.length + previousDay.evening.length : 0;
-        children.push(
-            new Paragraph({ pageBreakBefore: (index === 0 && itinerary.days.length > 7) || visits >= 5 || previousVisits >= 5, keepNext: true,
-                spacing: { before: index > 0 && visits < 5 && previousVisits < 5 ? 320 : 0, after: 95 },
-                children: [text(["Dia " + day.number, formatDate(day.date), day.base].filter(Boolean).join(" · "), { size: 19, color: accent, bold: true })] }),
-            new Paragraph({ heading: HeadingLevel.HEADING_1, keepNext: true, spacing: { after: 145 },
-                children: [text(day.title, { font: "Georgia", size: 34, bold: true })] }),
-        );
-        if (day.highlight) children.push(new Paragraph({ keepLines: true, keepNext: Boolean(image),
-            spacing: { after: 170, line: 295 }, children: [text(day.highlight, { color: muted })] }));
-        if (image) children.push(...photo(image, 125));
-        children.push(...period("Manhã", day.morning), ...meal("Pausa para almoço", day.lunch),
-            ...period("Tarde", day.afternoon), ...meal("Onde jantar", day.dinner), ...period("Noite", day.evening));
-        children.push(...period("Alternativas", day.alternatives));
-        if (day.logistics) children.push(new Paragraph({ keepLines: true, spacing: { before: 130, after: 160, line: 285 },
-            shading: { type: ShadingType.CLEAR, fill: "F4F0E8" }, indent: { left: 160, right: 160 },
-            children: [text("A ter em conta · ", { bold: true, color: accent, size: 20 }), text(day.logistics, { size: 20 })] }));
+        children.push(heading(["Dia " + day.number, formatDate(day.date), day.base].filter(Boolean).join(" · ")),
+            new Paragraph({ keepNext: true, spacing: { after: 100 }, children: [text(day.title, { size: 30, bold: true })] }));
+        const image = images[index + 1] ?? images.slice(1, index + 2).findLast((item, i) => item && itinerary.days[i].base === day.base);
+        if (image) children.push(...photo(image, 100));
+        if (day.highlight) children.push(new Paragraph({ children: [text(day.highlight, { color: muted })] }));
+        children.push(...period("Manhã", day.morning), ...period("Tarde", day.afternoon),
+            ...period("Noite", day.evening), ...period("Alternativas", day.alternatives));
+        const meals = [meal("Almoço", day.lunch), meal("Jantar", day.dinner)].filter(items => items.length);
+        if (meals.length) children.push(panel(meals, "F8F5ED"));
+        if (day.logistics) children.push(panel([[label("Logística", 40),
+            new Paragraph({ children: [text(day.logistics)] })]], "E5F1EF"));
     }
     if (itinerary.tips.length) children.push(
         new Paragraph({ heading: HeadingLevel.HEADING_1, pageBreakBefore: true, keepNext: true, spacing: { before: 0, after: 160 },
-            children: [text("Antes de partir", { font: "Georgia", size: 38, bold: true })] }),
+            children: [text("Antes de partir", { size: 38, bold: true })] }),
         ...itinerary.tips.map(bullet),
     );
     children.push(...photoCredits(images));
@@ -173,6 +169,10 @@ export async function createItineraryWord(itinerary: Itinerary, images: (Itinera
         sections: [{
             properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1000, right: 1000, bottom: 1060, left: 1000 } } },
             children,
+            headers: { default: new Header({ children: [new Paragraph({
+                shading: { fill: ink }, spacing: { before: 0, after: 60 }, indent: { left: 120 },
+                children: [text("TRAVEL FRONTIERS    /    GUIA DE VIAGEM", { size: 17, bold: true, color: "F4D191" })],
+            })] }) },
             footers: { default: new Footer({ children: [new Paragraph({
                 alignment: AlignmentType.RIGHT, spacing: { before: 120 },
                 border: { top: { style: BorderStyle.SINGLE, size: 4, color: border, space: 7 } },
