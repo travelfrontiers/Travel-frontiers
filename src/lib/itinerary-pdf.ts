@@ -2,7 +2,7 @@ import PDFDocument from "pdfkit";
 import type { ItineraryPhoto } from "./itinerary-images";
 import type { Itinerary } from "./itinerary-word";
 
-type Stay = { nome: string; entrada: string; saida: string };
+import { guideSections, type Stay } from "./itinerary-guide";
 
 const navy = "#0D2334";
 const muted = "#456071";
@@ -127,21 +127,7 @@ export async function createItineraryPdf(
 
     addPage("CIRCUITO");
     heading("A viagem num relance");
-    const groups: { base: string; from: string; to: string; days: string[] }[] = [];
-    for (const day of itinerary.days) {
-        const stay = day.date && stays.find(item => day.date >= item.entrada && day.date < item.saida);
-        const base = stay
-            ? itinerary.days.find(item => item.date > stay.entrada && item.date < stay.saida
-                && item.base && !transitDates.includes(item.date))?.base || stay.nome
-            : day.base;
-        const group = groups.at(-1);
-        if (group && group.base === base) {
-            group.to = day.date;
-            group.days.push(day.title);
-        } else {
-            groups.push({ base, from: day.date, to: day.date, days: [day.title] });
-        }
-    }
+    const { groups, hotels, transfers } = guideSections(itinerary, stays, transitDates);
     for (const group of groups) {
         const dates = [...new Set([group.from, group.to].filter(Boolean))].map(value => dateLabel(value)).join(" – ");
         card(dates || "PERCURSO", group.base || "Etapa da viagem", group.days.join(" · "));
@@ -150,14 +136,13 @@ export async function createItineraryPdf(
     if (stays.length) {
         addPage("ALOJAMENTO");
         heading("Onde vais ficar", "Alojamentos identificados no documento da viagem.");
-        for (const stay of stays) {
-            const nights = Math.round((Date.parse(stay.saida) - Date.parse(stay.entrada)) / 86_400_000);
+        for (const stay of hotels) {
+            const { nights } = stay;
             card("ALOJAMENTO", stay.nome, ["Entrada " + dateLabel(stay.entrada), "Saída " + dateLabel(stay.saida),
                 nights > 0 ? nights + (nights === 1 ? " noite" : " noites") : ""].filter(Boolean).join("  ·  "));
         }
     }
 
-    const transfers = itinerary.days.filter(day => transitDates.includes(day.date) && day.logistics);
     if (transfers.length) {
         addPage("TRANSPORTES");
         heading("De etapa em etapa", "Consulta os bilhetes para confirmar os horários e as ligações previstas.");

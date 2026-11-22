@@ -73,8 +73,9 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     }));
     days[14] = { ...days[14], tipo: "transito", manha: [], tarde: [], noite: [], alternativas: [], logistica: "Chegada e recolha de bagagem." };
     let planMode = "complete";
-    const word = load("src/lib/itinerary-word.ts");
-    const pdf = load("src/lib/itinerary-pdf.ts", { pdfkit: { default: require("pdfkit") } });
+    const guide = { "./itinerary-guide": load("src/lib/itinerary-guide.ts") };
+    const word = load("src/lib/itinerary-word.ts", guide);
+    const pdf = load("src/lib/itinerary-pdf.ts", { ...guide, pdfkit: { default: require("pdfkit") } });
     let itineraryForWord;
     const newItineraryRoute = () => load("src/app/api/generate-itinerary/route.ts", {
         "@/lib/studio-request": load("src/lib/studio-request.ts", { "./crm-api": auth }),
@@ -85,7 +86,7 @@ function load(file, mocks = {}, env = {}, network = fetch) {
         "@/lib/gemini": { generateText: async (prompt, options) => {
             if (options.schema.properties.resumo) {
                 return JSON.stringify({ partida: "2030-04-06", regresso: "2030-04-20", resumo: "Viagem fictícia",
-                    dias_transito: [], alojamentos: planMode === "wrongStay" ? [{ nome: "Hotel de Teste", entrada: "2030-04-07", saida: "2030-04-10" }] : [] });
+                    dias_transito: ["2030-04-20"], alojamentos: planMode === "wrongStay" ? [{ nome: "Hotel de Teste", entrada: "2030-04-07", saida: "2030-04-10" }] : [{ nome: "Hotel do Circuito", entrada: "2030-04-06", saida: "2030-04-08" }] });
             }
             assert.ok(options.timeoutMs > 20_000);
             assert.match(prompt, /2030-04-06.*2030-04-20/);
@@ -117,6 +118,12 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     const documentXml = await generatedZip.file("word/document.xml").async("string");
     const documentLinks = await generatedZip.file("word/_rels/document.xml.rels").async("string");
     assert.match(documentXml, /A viagem num relance/);
+    const headings = ["A viagem num relance", "Onde vais ficar", "Hotel do Circuito", "De etapa em etapa", "Dia 1 ·"];
+    let position = -1;
+    for (const title of headings) {
+        position = documentXml.indexOf(title, position + 1);
+        assert.ok(position >= 0, title);
+    }
     assert.match(documentXml, /<w:tbl>/);
     assert.match(documentXml, /Abrir no Google Maps/);
     assert.match(documentLinks, /google.com\/maps\/search/);
