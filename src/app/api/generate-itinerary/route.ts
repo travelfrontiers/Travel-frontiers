@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { authorizeTool, studioJson } from "@/lib/studio-request";
-import { loadPrivateSource, sourceExtension } from "@/lib/itinerary-source";
+import { loadPrivateSource, privateItineraryDraft, sourceExtension } from "@/lib/itinerary-source";
 import { generateText } from "@/lib/gemini";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { loadItineraryPhotos } from "@/lib/itinerary-images";
 import { createItineraryPdf } from "@/lib/itinerary-pdf";
 import { createItineraryWord } from "@/lib/itinerary-word";
+import { parseItineraryDraft } from "@/lib/itinerary-draft";
 import mammoth from 'mammoth';
 
 export const maxDuration = 150;
@@ -166,14 +167,37 @@ function validatedItinerary(value: unknown, dates: string[], transitDates: strin
 }
 
 export async function POST(request: Request) {
-    const denied = await authorizeTool(request, "itinerary");
-    if (denied) return denied;
     let input: Record<string, unknown>;
-    try { input = await studioJson(request, 5000); }
+    try { input = await studioJson(request, 350_000); }
     catch { return NextResponse.json({ error: "Pedido inválido." }, { status: 400 }); }
     const { key, title, notes, format = "docx" } = input;
+    const { operation, draftId } = input;
+    const isReview = operation === "load" || operation === "save" || operation === "preview";
+    const denied = await authorizeTool(request, isReview ? "itinerary-review" : "itinerary");
+    if (denied) return denied;
+    if (isReview) {
+        if (typeof draftId !== "string" || !/^[a-zA-Z0-9_-]{1,128}$/.test(draftId)) {
+            return NextResponse.json({ error: "Roteiro inválido." }, { status: 400 });
+        }
+        try {
+            if (operation === "load") return NextResponse.json({ draft: await privateItineraryDraft(draftId) }, { headers: { "Cache-Control": "private, no-store" } });
+            const draft = parseItineraryDraft(input.draft);
+            if (operation === "save") {
+                await privateItineraryDraft(draftId, JSON.stringify(draft));
+                return NextResponse.json({ draft }, { headers: { "Cache-Control": "private, no-store" } });
+            }
+            const [cover, ...days] = draft.photoQueries;
+            const photos = await loadItineraryPhotos(cover, days);
+            const logo = await readFile(join(process.cwd(), "public", "logo.png"));
+            const file = await createItineraryPdf(draft.itinerary, photos, logo, draft.stays, draft.transitDates, draft.photoQueries);
+            return new NextResponse(new Uint8Array(file), { headers: { "Content-Type": "application/pdf", "Cache-Control": "private, no-store" } });
+        } catch (error) {
+            return NextResponse.json({ error: error instanceof TypeError ? error.message : "Não foi possível preparar ou guardar a revisão do roteiro." },
+                { status: error instanceof TypeError ? 422 : 502 });
+        }
+    }
     const extension = sourceExtension(key);
-    if ((format !== "pdf" && format !== "docx") || typeof key !== "string" || !extension || typeof title !== "string" || !title.trim() || title.length > 150 ||
+    if ((format !== "pdf" && format !== "docx" && operation !== "generate") || typeof key !== "string" || !extension || typeof title !== "string" || !title.trim() || title.length > 150 ||
         (notes !== undefined && (typeof notes !== "string" || notes.length > 2000))) {
         return NextResponse.json({ error: "Revê o ficheiro privado, o título e as notas." }, { status: 400 });
     }
@@ -244,11 +268,14 @@ ${notes || "Nenhuma"}
             schema: itinerarySchema, maxTokens: 16_000, timeoutMs: 90_000,
         })), dates, transitDates, allowFreeDays, stays);
         stage = "export";
-        const photos = await loadItineraryPhotos(itineraryData.capa_nome_ingles, itineraryData.dias.map(day => day.imagem_nome_ingles));
-        const logo = await readFile(join(process.cwd(), "public", "logo.png"));
         const itinerary = {
             title: title.trim(), introduction: itineraryData.introducao, route: itineraryData.percurso, tips: itineraryData.dicas, days: itineraryData.dias,
         };
+        const photoQueries = [itineraryData.capa_nome_ingles, ...itineraryData.dias.map(day => day.imagem_nome_ingles)];
+        if (operation === "generate") return NextResponse.json({ draft: { itinerary, stays, transitDates, photoQueries } },
+            { headers: { "Cache-Control": "private, no-store" } });
+        const photos = await loadItineraryPhotos(photoQueries[0], photoQueries.slice(1));
+        const logo = await readFile(join(process.cwd(), "public", "logo.png"));
         const file = format === "pdf"
             ? await createItineraryPdf(itinerary, photos, logo, stays, transitDates)
             : await createItineraryWord(itinerary, photos, logo, stays, transitDates);

@@ -77,11 +77,14 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     const word = load("src/lib/itinerary-word.ts", guide);
     const pdf = load("src/lib/itinerary-pdf.ts", { ...guide, pdfkit: { default: require("pdfkit") } });
     let itineraryForWord;
+    let savedDraft;
     const newItineraryRoute = () => load("src/app/api/generate-itinerary/route.ts", {
         "@/lib/studio-request": load("src/lib/studio-request.ts", { "./crm-api": auth }),
-        "@/lib/itinerary-source": { sourceExtension: () => "txt", loadPrivateSource: async () => Buffer.from("Viagem fictícia") },
+        "@/lib/itinerary-source": { sourceExtension: () => "txt", loadPrivateSource: async () => Buffer.from("Viagem fictícia"),
+            privateItineraryDraft: async (_id, value) => value === undefined ? savedDraft ?? null : (savedDraft = JSON.parse(value)) },
         "@/lib/itinerary-images": { loadItineraryPhotos: async () => [] },
         "@/lib/itinerary-pdf": pdf,
+        "@/lib/itinerary-draft": load("src/lib/itinerary-draft.ts"),
         "@/lib/itinerary-word": { createItineraryWord: (value, ...args) => { itineraryForWord = value; return word.createItineraryWord(value, ...args); } },
         "@/lib/gemini": { generateText: async (prompt, options) => {
             if (options.schema.properties.resumo) {
@@ -103,6 +106,28 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     }, {}, async () => Response.json({}));
     let itinerary = newItineraryRoute();
     const generate = format => itinerary.POST(request("generate-itinerary", "Bearer studio", { key: "test.txt", title: "Teste", format }));
+    const review = (operation, draft) => itinerary.POST(request("generate-itinerary", "Bearer studio", {
+        key: "test.txt", title: "Teste", draftId: "roteiro-teste", operation, draft,
+    }));
+    assert.deepEqual(await (await review("load")).json(), { draft: null });
+    const { draft } = await (await review("generate")).json();
+    assert.equal(draft.itinerary.days.length, 15);
+    draft.itinerary.days[0].title = "Partida revista";
+    draft.itinerary.days[0].morning = [];
+    draft.itinerary.days[0].lunch.maps = "https://maps.app.goo.gl/teste";
+    assert.equal((await review("save", draft)).status, 200);
+    const reopened = (await (await review("load")).json()).draft;
+    assert.equal(reopened.itinerary.days[0].title, "Partida revista");
+    assert.deepEqual(reopened.itinerary.days[0].morning, []);
+    planMode = "timeout";
+    const preview = await review("preview", reopened);
+    assert.equal(preview.status, 200);
+    assert.match(Buffer.from(await preview.arrayBuffer()).toString("latin1"), /maps.app.goo.gl\/teste/);
+    reopened.itinerary.days[0].lunch.maps = "javascript:alert(1)";
+    assert.equal((await review("save", reopened)).status, 422);
+    assert.equal(savedDraft.itinerary.days[0].lunch.maps, "https://maps.app.goo.gl/teste");
+    planMode = "complete";
+    itinerary = newItineraryRoute();
     const generated = await generate();
     assert.equal(generated.status, 200);
     assert.equal(itineraryForWord.days[0].morning.length, 2);

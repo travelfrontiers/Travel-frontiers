@@ -71,3 +71,21 @@ export function isRecognizedSource(bytes: Buffer, extension: string) {
     try { new TextDecoder("utf-8", { fatal: true }).decode(bytes); return true; }
     catch { return false; }
 }
+
+export async function privateItineraryDraft(id: string, draft?: string) {
+    if (!/^[a-zA-Z0-9_-]{1,128}$/.test(id)) throw new TypeError("Roteiro inválido.");
+    const { url, headers } = storage();
+    const path = `${bucket}/drafts/${id}.json`;
+    const response = await fetch(`${url}/object/${draft === undefined ? "authenticated/" : ""}${path}`, {
+        headers: draft === undefined ? headers : { ...headers, "Content-Type": "application/json", "x-upsert": "true", "Cache-Control": "private, no-store" },
+        method: draft === undefined ? "GET" : "POST",
+        body: draft, cache: "no-store", signal: AbortSignal.timeout(15_000),
+    });
+    if (draft === undefined && response.status === 404) return null;
+    if (draft === undefined && response.status === 400) {
+        const error = await response.json().catch(() => null);
+        if (String(error?.statusCode) === "404" || error?.error === "not_found") return null;
+    }
+    if (!response.ok) throw new Error("O armazenamento privado do roteiro está indisponível.");
+    return draft === undefined ? JSON.parse((await readBounded(response.body, 350_000)).toString("utf8")) : null;
+}

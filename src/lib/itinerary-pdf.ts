@@ -21,7 +21,7 @@ function dateLabel(value: string, format = shortDate) {
 
 export async function createItineraryPdf(
     itinerary: Itinerary, images: (ItineraryPhoto | null)[], logo: Buffer,
-    stays: Stay[], transitDates: string[],
+    stays: Stay[], transitDates: string[], photoQueries?: string[],
 ) {
     const pdf = new PDFDocument({ size: "A4", margin: 0, autoFirstPage: false,
         info: { Title: itinerary.title, Author: "Travel Frontiers" } });
@@ -97,7 +97,7 @@ export async function createItineraryPdf(
     const last = itinerary.days.at(-1)?.date;
     const range = [...new Set([first, last].filter((value): value is string => Boolean(value)))]
         .map(value => dateLabel(value, longDate)).join(" – ");
-    const cover = images[0] ?? images.find((item): item is ItineraryPhoto => Boolean(item));
+    const cover = photoQueries ? images[0] : images[0] ?? images.find(Boolean);
 
     pdf.addPage();
     page++;
@@ -160,7 +160,7 @@ export async function createItineraryPdf(
         y = write(day.title, margin, y, { size: 16, bold: true }) + 8;
         const nearbyPhoto = images.slice(1, index + 2).findLast((item, photoIndex) =>
             item && itinerary.days[photoIndex].base === day.base);
-        const picture = images[index + 1] ?? nearbyPhoto;
+        const picture = photoQueries ? images[index + 1] : images[index + 1] ?? nearbyPhoto;
         if (picture) {
             showPhoto(picture, margin, y, width, 70);
             y = write(picture.location, margin, y + 73, { size: 8, color: muted, align: "right" }) + 6;
