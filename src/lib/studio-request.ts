@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { isAuthorizedStudioUser } from "./crm-api";
 
-type Tool = "story" | "translate" | "itinerary" | "itinerary-source";
-const limits: Record<Tool, number> = { story: 20, translate: 10, itinerary: 6, "itinerary-source": 30 };
+type Tool = "story" | "translate" | "itinerary" | "itinerary-review" | "itinerary-source";
+const limits: Record<Tool, number> = { story: 20, translate: 10, itinerary: 6, "itinerary-review": 30, "itinerary-source": 30 };
 const attempts = new Map<Tool, { count: number; reset: number }>();
 
 export async function authorizeTool(request: Request, tool: Tool) {

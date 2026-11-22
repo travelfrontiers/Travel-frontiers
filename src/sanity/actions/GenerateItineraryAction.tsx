@@ -1,15 +1,17 @@
 import { type DocumentActionProps, useClient } from "sanity";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { ItineraryPdfReview } from "./ItineraryPdfReview";
 import { studioFetch } from "../studio-fetch";
 
-function useItineraryAction({ type, published, draft, onComplete }: DocumentActionProps, format: "pdf" | "docx") {
+export function GenerateItineraryAction({ type, published, draft, onComplete }: DocumentActionProps) {
+    const format = "docx";
     const [busy, setBusy] = useState(false);
     const client = useClient({ apiVersion: "2024-01-18" });
     const doc = draft ?? published;
     if (type !== "roteiro" || !doc) return null;
 
     return {
-        label: busy ? "A gerar roteiro…" : format === "pdf" ? "Gerar guia de viagem (PDF)" : "Gerar roteiro editável (Word)",
+        label: busy ? "A gerar roteiro…" : "Gerar roteiro editável (Word)",
         disabled: busy || !doc.privateSource,
         dialog: busy ? {
             type: "dialog" as const,
@@ -47,9 +49,25 @@ function useItineraryAction({ type, published, draft, onComplete }: DocumentActi
 }
 
 export function GenerateItineraryPdfAction(props: DocumentActionProps) {
-    return useItineraryAction(props, "pdf");
-}
-
-export function GenerateItineraryAction(props: DocumentActionProps) {
-    return useItineraryAction(props, "docx");
+    const [open, setOpen] = useState(false);
+    const dirty = useRef(false);
+    const doc = props.draft ?? props.published;
+    if (props.type !== "roteiro" || !doc) return null;
+    function close() {
+        if (dirty.current && !window.confirm("Fechar e perder as alterações ainda não guardadas?")) return;
+        dirty.current = false;
+        setOpen(false);
+        props.onComplete();
+    }
+    return {
+        label: "Rever e exportar PDF",
+        onHandle: () => setOpen(true),
+        dialog: open ? {
+            type: "dialog" as const, header: "Rever guia de viagem", width: "full" as const,
+            onClose: close,
+            content: <ItineraryPdfReview id={props.id.replace(/^drafts\./, "")} title={String(doc.title ?? "")}
+                source={typeof doc.privateSource === "string" ? doc.privateSource : undefined} notes={String(doc.notes ?? "")}
+                onDirty={value => { dirty.current = value; }} />,
+        } : null,
+    };
 }
