@@ -890,6 +890,35 @@ export default function CrmStudioTool() {
     } },
   ];
 
+  const reservationGroups = [
+    { label: "Propostas à espera de resposta", icon: Send, matches: (paid: boolean, trip: Trip, sent: Set<string>) =>
+      !paid && trip.status === "planning" && (sent.has("quote") || sent.has("precontract")) },
+    { label: "Pós-contratuais por enviar", icon: Inbox, matches: (paid: boolean, _trip: Trip, sent: Set<string>) =>
+      paid && !sent.has("booking") },
+    { label: "Roteiros por entregar", icon: ListTodo, matches: (paid: boolean, trip: Trip) =>
+      paid && !trip.tasks.some(task => task.id === deliveryTaskId(trip.id) && task.completed) },
+  ];
+  const sentByTrip = new Map<string, Set<string>>();
+  if (view === "dashboard") for (const message of flowMessages || []) {
+    if (message.state !== "sent") continue;
+    const sent = sentByTrip.get(message.trip_id) ?? new Set<string>();
+    sent.add(message.template_key);
+    sentByTrip.set(message.trip_id, sent);
+  }
+  const homeGroups = reservationGroups.map(group => ({
+    ...group, pending: view === "dashboard" && flowMessages && financeListStatus === "ready"
+      ? activeTrips.filter(trip => group.matches(Number(financeByTrip.get(trip.id)?.customer_received) > 0, trip, sentByTrip.get(trip.id) ?? new Set<string>()))
+      : null,
+  }));
+  const priorities = [
+    ...dueItems,
+    ...financeSummaries.flatMap(trip => trip.next_due_on && !trip.archived_at && trip.status !== "cancelled" && Number(trip.balance) > 0
+      ? [{date: trip.next_due_on, title: "Prestação a receber", detail: trip.destination || trip.reference || "Viagem", target: {type: "trip", id: trip.trip_id, finance: true} as OpenTarget}]
+      : []),
+    ...activeBookingAlerts.map(alert => ({date: alert.date, title: alert.kind + " · " + alert.title, detail: alert.destination, target: alert.target})),
+    ...expiryAlerts.map(({document, client}) => ({date: document.expires_on, title: "Verificar documento", detail: client?.full_name || "Cliente", target: {type: "client", id: document.client_id} as OpenTarget})),
+  ].filter(item => item.date <= dateAfterDays(14)).sort((a,b) => a.date.localeCompare(b.date)).slice(0,4);
+
   const tripItems = (view === "trips" || view === "commissions") && focused?.type !== "trip" ? visibleTrips.map(trip => ({
     id: trip.id, destination: trip.destination || "Destino por definir", client: tripClientName(trip, clients, leads),
     dates: [trip.departure_date, trip.return_date].filter((date): date is string => Boolean(date)).map(dateLabel).join(" – ") || "Por definir",
@@ -960,38 +989,34 @@ export default function CrmStudioTool() {
         {!loading && view === "payments" && <CrmPayments authorizedFetch={authorizedFetch} tripId="" theme={theme}
           onOpen={openFinance} onChanged={refreshAfterFinance} onOpenTrip={id=>openTarget({type:"trip",id})}/>}
         {!loading && view === "dashboard" && <>
-          {flowMessages && financeListStatus==="ready" && <section className="mb-4 rounded-xl border border-slate-200 p-4">
-            <h3 className="font-semibold">Seguimento das reservas</h3>
-            {(["A aguardar resposta à proposta","Email pós-contratual por confirmar","Roteiro por entregar"] as const).map((label,index)=>{
-              const pending=trips.filter(t=>{
-                if(t.archived_at || t.status==="cancelled" || t.status==="completed") return false;
-                const paid=Number(financeByTrip.get(t.id)?.customer_received)>0;
-                const sent=(key:string)=>flowMessages.some(m=>m.trip_id===t.id && m.template_key===key && m.state==="sent");
-                if(index===0) return !paid && t.status==="planning" && (sent("quote") || sent("precontract"));
-                return paid && (index===1 ? !sent("booking") : !t.tasks.some(task=>task.completed && task.id===deliveryTaskId(t.id)));
-              });
-              return <details key={label} className="mt-2"><summary className="cursor-pointer">{label} · {pending.length}</summary>
-                {pending.map(t=><button key={t.id} className="mr-3 min-h-11 underline" onClick={()=>openTrip(t.id)}>{t.destination || t.reference || "Viagem"}</button>)}</details>;
-            })}
-          </section>}
-          <section className="relative mb-6 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#171717] via-[#29231b] to-[#563719] px-6 py-7 text-white shadow-lg sm:px-8 sm:py-8">
-            <div className="pointer-events-none absolute -right-12 -top-20 size-72 rounded-full border border-white/10" />
-            <div className="pointer-events-none absolute -right-2 -top-10 size-52 rounded-full border border-white/10" />
-            <div className="relative flex flex-wrap items-end justify-between gap-6">
-              <div className="max-w-2xl">
-                <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-orange-100"><BellRing className="size-4" /> O teu negócio, num relance</p>
-                <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Olá, Tiago</h2>
-                <p className="mt-2 text-sm text-orange-50 sm:text-base">O estado atual dos pedidos, clientes, viagens e próximos passos.</p>
-                <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-orange-50"><CalendarDays className="size-4" />{dateLabel(today)}</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => { setShowClientForm(true); goToView("clients"); }} className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-orange-950 shadow-sm transition hover:bg-orange-50"><Users className="size-4" /> Novo cliente</button>
-                <button type="button" onClick={() => { setShowPdfImport(true); setShowTripForm(false); setPdfPreview(null); setPdfSource(null); goToView("trips"); }} className="inline-flex items-center gap-2 rounded-full bg-orange-100/15 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-inset ring-white/30 transition hover:bg-white/15"><Plane className="size-4" /> Importar orçamento</button>
-                <button type="button" onClick={() => void refresh()} disabled={loading} aria-label="Atualizar dados" className="inline-flex items-center gap-2 rounded-full bg-orange-950/25 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-inset ring-white/20 transition hover:bg-orange-950/40 disabled:opacity-60"><ArrowUpRight className="size-4" /> Atualizar</button>
-              </div>
+          <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div><p className="text-sm text-slate-500">{dateLabel(today)}</p><h2 className="text-2xl font-bold">Resumo do dia</h2></div>
+            <div className="flex flex-wrap gap-2">
+              <button className={archiveButton} onClick={() => { setShowClientForm(true); goToView("clients"); }}>Novo cliente</button>
+              <button className={archiveButton} onClick={() => { setShowPdfImport(true); setShowTripForm(false); setPdfPreview(null); setPdfSource(null); goToView("trips"); }}>Importar orçamento</button>
+              <button className={archiveButton} onClick={() => void Promise.all([refresh(), refreshFinance(), loadFlow()])}>Atualizar</button>
             </div>
+          </header>
+          <section aria-label="Seguimento das reservas" className="mb-4 grid grid-cols-2 items-start gap-2 lg:grid-cols-4">
+            <button onClick={dashboardMetrics[0].action} className="rounded-xl border border-slate-200 bg-white p-4 text-left hover:border-orange-500">
+              <Inbox className="size-5 text-orange-800"/><strong className="mt-2 block text-2xl">{newLeads.length}</strong><span className="text-sm">Novos pedidos ↗</span>
+            </button>
+            {homeGroups.map(({label, icon: Icon, pending}) => <details key={label} className="rounded-xl border border-slate-200 bg-white">
+              <summary className="cursor-pointer list-none rounded-xl p-4 hover:bg-slate-50"><Icon className="size-5 text-orange-800"/>
+                <strong className="mt-2 block text-2xl">{pending?.length ?? "—"}</strong><span className="text-sm">{label} ▾</span>
+              </summary>
+              <div className="border-t border-slate-200 px-4 py-2 text-sm">{pending?.length ? pending.map(trip => <button key={trip.id} className="block min-h-11 text-left underline" onClick={() => openTrip(trip.id)}>{trip.destination || "Viagem"} · {trip.reference || tripClientName(trip, clients, leads)}</button>) : <p>{pending ? "Sem viagens pendentes." : "Dados indisponíveis. Atualiza o resumo."}</p>}</div>
+            </details>)}
           </section>
-
+          <section className="mb-4 rounded-xl border border-slate-200 bg-white p-4">
+            <div className="flex items-center justify-between gap-2"><h3 className="flex items-center gap-2 font-bold"><BellRing className="size-4 text-orange-800"/> Próximas prioridades</h3>
+              <button className="min-h-11 text-sm underline" onClick={()=>{setCalendarKind(""); setCalendarDay(""); goToView("calendar");}}>Calendário ↗</button></div>
+            {priorities.length ? <ul className="divide-y divide-slate-200">{priorities.map((item,index)=><li key={index}><button className="flex min-h-11 w-full items-center gap-3 py-2 text-left hover:bg-slate-50" onClick={()=>openTarget(item.target)}>
+              <span className="min-w-0 grow"><strong className="block truncate text-sm">{item.title}</strong><span className="block truncate text-xs text-slate-500">{item.detail}</span></span>
+              <span className="shrink-0 text-xs font-semibold">{item.date < today ? "Em atraso · " : ""}{item.date === today ? "Hoje" : dateLabel(item.date)}</span>
+            </button></li>)}</ul> : <p className="py-2 text-sm text-slate-500">Sem prazos ou alertas nos próximos 14 dias.</p>}
+          </section>
+          <details><summary className="mb-4 cursor-pointer rounded-xl border border-slate-200 p-4 font-semibold">Ver indicadores e detalhe</summary>
           <section aria-label="Estado atual do negócio" className="mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {dashboardMetrics.map((metric) => {
               const Icon = metric.icon;
@@ -1050,6 +1075,7 @@ export default function CrmStudioTool() {
           </section>}
           <div className="mb-5"><CrmPaymentAlerts authorizedFetch={authorizedFetch} onOpen={openFinance}/></div>
           <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-800">Operação de viagens</p><h3 className="mt-1 text-xl font-bold">Partidas nos próximos 30 dias</h3><p className="mt-1 text-sm text-slate-500">Viagens ativas com uma data de partida próxima.</p></div><button type="button" onClick={() => goToView("trips")} className="inline-flex items-center gap-1 text-sm font-semibold text-orange-800 hover:underline">Gerir viagens <ArrowUpRight className="size-4" /></button></div>{upcomingDepartures.length === 0 ? <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">Não há partidas marcadas para os próximos 30 dias.</p> : <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{upcomingDepartures.map((trip) => <article key={trip.id} className="rounded-2xl border border-blue-100 bg-gradient-to-br from-white to-blue-50 p-4"><p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-blue-800"><Plane className="size-4" />{dateLabel(trip.departure_date!)}</p><h4 className="mt-2 font-bold text-slate-900">{trip.destination || "Destino por definir"}</h4><p className="mt-1 text-sm text-slate-600">{tripClientName(trip, clients, leads)}</p><span className="mt-3 inline-flex rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-blue-900 ring-1 ring-blue-100">{tripStatuses.find((status) => status.id === trip.status)?.label}</span></article>)}</div>}</section>
+          </details>
         </>}
 
         {!loading && view === "pipeline" && <>
