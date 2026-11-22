@@ -4,11 +4,13 @@ import {
 } from "docx";
 import type { ItineraryPhoto } from "./itinerary-images";
 
-import { guideSections, type Stay } from "./itinerary-guide";
+import { guideSections, transportDetails, type Stay } from "./itinerary-guide";
 
 type Meal = { nome: string; porque: string; morada: string; preco: string; maps: string };
+export type Transport = { route: string; departure: string; arrival: string; tips: string };
 type Day = {
     number: number; date: string; title: string; base: string; highlight: string; logistics: string;
+    transports?: Transport[];
     morning: string[]; afternoon: string[]; evening: string[]; alternatives: string[]; lunch: Meal | null; dinner: Meal | null;
 };
 export type Itinerary = { title: string; introduction: string; route: string[]; tips: string[]; days: Day[] };
@@ -143,7 +145,11 @@ export async function createItineraryWord(itinerary: Itinerary, images: (Itinera
         ["Entrada " + formatDate(hotel.entrada), "Saída " + formatDate(hotel.saida),
             hotel.nights > 0 ? hotel.nights + (hotel.nights === 1 ? " noite" : " noites") : ""].filter(Boolean).join(" · ")));
     if (transfers.length) children.push(heading("De etapa em etapa"));
-    for (const day of transfers) children.push(...card(formatDate(day.date), day.base || day.title, day.logistics));
+    for (const day of transfers) {
+        const date = formatDate(day.date);
+        if (day.logistics) children.push(...card(date, day.base || day.title, day.logistics));
+        for (const segment of day.transports ?? []) children.push(...card(date, segment.route, transportDetails(segment)));
+    }
     for (const [index, day] of itinerary.days.entries()) {
         children.push(heading(["Dia " + day.number, formatDate(day.date), day.base].filter(Boolean).join(" · ")),
             new Paragraph({ keepNext: true, spacing: { after: 100 }, children: [text(day.title, { size: 30, bold: true })] }));
@@ -154,6 +160,7 @@ export async function createItineraryWord(itinerary: Itinerary, images: (Itinera
             ...period("Noite", day.evening), ...period("Alternativas", day.alternatives));
         const meals = [meal("Almoço", day.lunch), meal("Jantar", day.dinner)].filter(items => items.length);
         if (meals.length) children.push(panel(meals, "F8F5ED"));
+        for (const segment of day.transports ?? []) children.push(...card("Transporte", segment.route, transportDetails(segment)));
         if (day.logistics) children.push(panel([[label("Logística", 40),
             new Paragraph({ children: [text(day.logistics)] })]], "E5F1EF"));
     }

@@ -45,6 +45,18 @@ function meal(value: unknown) {
     return { nome, maps, porque: field(data.porque, 600), morada: field(data.morada, 250), preco: field(data.preco, 60) };
 }
 
+export function parseTransportSegments(value: unknown) {
+    return list(value ?? [], 12, item => {
+        const segment = record(item);
+        return {
+            route: field(segment.route, 220),
+            departure: field(segment.departure, 100),
+            arrival: field(segment.arrival, 100),
+            tips: field(segment.tips, 550),
+        };
+    }).filter(segment => segment.route);
+}
+
 export function parseItineraryDraft(value: unknown): ItineraryDraft {
     const input = record(value);
     const itinerary = record(input.itinerary);
@@ -57,7 +69,7 @@ export function parseItineraryDraft(value: unknown): ItineraryDraft {
             highlight: field(day.highlight, 900), logistics: field(day.logistics, 1200),
             morning: activity(day.morning), afternoon: activity(day.afternoon),
             evening: activity(day.evening), alternatives: activity(day.alternatives),
-            lunch: meal(day.lunch), dinner: meal(day.dinner),
+            lunch: meal(day.lunch), dinner: meal(day.dinner), transports: parseTransportSegments(day.transports),
         };
     }).map((day, index) => ({ ...day, number: index + 1 }));
     if (!title || !days.length || days.some((day, index) => !day.title || (index > 0 && day.date <= days[index - 1].date))) {

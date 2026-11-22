@@ -1,3 +1,4 @@
+import { ItineraryDocumentInput } from "../ItineraryDocumentInput";
 import { PrivateItineraryInput } from "../PrivateItineraryInput";
 import { defineField, defineType } from 'sanity'
 
@@ -5,6 +6,7 @@ export const roteiro = defineType({
     name: 'roteiro',
     title: 'Roteiro (Itinerary Generator)',
     type: 'document',
+    components: { input: ItineraryDocumentInput },
     fields: [
         defineField({
             name: 'title',
@@ -28,9 +30,9 @@ export const roteiro = defineType({
         }),
         defineField({
             name: 'notes',
-            title: 'Additional Notes for AI',
+            title: 'Preferências para gerar o rascunho',
             type: 'text',
-            description: 'Any specific instructions or preferences for this itinerary generation (optional).',
+            description: 'Podes alterar estas preferências antes de gerar um novo rascunho.',
         }),
     ],
     preview: {

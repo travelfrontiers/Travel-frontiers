@@ -1,4 +1,4 @@
-import type { Itinerary } from "./itinerary-word";
+import type { Itinerary, Transport } from "./itinerary-word";
 
 export type Stay = { nome: string; entrada: string; saida: string };
 
@@ -21,6 +21,15 @@ export function guideSections(itinerary: Itinerary, stays: Stay[], transitDates:
     const hotels = stays.map(stay => ({
         ...stay, nights: Math.round((Date.parse(stay.saida) - Date.parse(stay.entrada)) / 86_400_000),
     }));
-    const transfers = itinerary.days.filter(day => transitDates.includes(day.date) && day.logistics);
+    const transfers = itinerary.days.filter(day => day.transports?.length || (transitDates.includes(day.date) && day.logistics));
     return { groups, hotels, transfers };
+}
+
+
+export function transportDetails(segment: Transport) {
+    return [
+        segment.departure && "Partida: " + segment.departure,
+        segment.arrival ? "Chegada: " + segment.arrival : "Chegada: a confirmar",
+        segment.tips && "Dica: " + segment.tips,
+    ].filter(Boolean).join("\n");
 }

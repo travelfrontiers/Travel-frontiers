@@ -54,6 +54,7 @@ export function ItineraryPdfReview({ id, title, source, notes, onDirty }: Props)
             }
             const result = await response.json();
             setDraft(result.draft);
+            if (operation === "generate") { setPreview(""); setSection("cover"); }
             setLoaded(true);
             onDirty(operation === "generate");
             if (operation === "save") setMessage("Rascunho guardado.");
@@ -129,6 +130,22 @@ export function ItineraryPdfReview({ id, title, source, notes, onDirty }: Props)
                 <Field label="Destaque" multiline value={day.highlight} onChange={highlight => updateDay({ highlight })} />
                 {([["morning", "Manhã"], ["afternoon", "Tarde"], ["evening", "Noite"], ["alternatives", "Alternativas"]] as const).map(([key, label]) =>
                     <Field key={key} label={label + " (uma atividade por linha)"} multiline value={day[key].join("\n")} onChange={value => updateDay({ [key]: lines(value) })} />)}
+                <div className="space-y-3 rounded border border-gray-500/40 p-3">
+                    <h3 className="font-semibold">Transportes do dia</h3>
+                    {(day.transports ?? []).map((segment, i) => <div key={i} className="grid gap-2 rounded border border-gray-500/40 p-3">
+                        {([["route", "Transporte e percurso"], ["departure", "Partida (data e hora locais)"],
+                            ["arrival", "Chegada (data e hora locais)"], ["tips", "Dicas para este transporte"]] as const).map(([key, label]) =>
+                            <Field key={key} label={label} multiline={key === "tips"} value={segment[key]} onChange={value => updateDay({
+                                transports: day.transports?.map((item, j) => i === j ? { ...item, [key]: value } : item),
+                            })} />)}
+                        <button className={buttonClass + " justify-self-start"} onClick={() => updateDay({
+                            transports: day.transports?.filter((_, j) => i !== j),
+                        })}>Retirar transporte</button>
+                    </div>)}
+                    <button className={buttonClass} disabled={(day.transports?.length ?? 0) >= 12} onClick={() => updateDay({
+                        transports: [...day.transports ?? [], { route: "", departure: "", arrival: "", tips: "" }],
+                    })}>Adicionar transporte</button>
+                </div>
                 <Field label="Logística do dia" multiline value={day.logistics} onChange={logistics => updateDay({ logistics })} />
                 <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" checked={draft.transitDates.includes(day.date)}
@@ -152,6 +169,11 @@ export function ItineraryPdfReview({ id, title, source, notes, onDirty }: Props)
             <div className="flex flex-wrap gap-2">
                 <button className={buttonClass} onClick={() => void operate("save")}>Guardar rascunho</button>
                 <button className={buttonClass} onClick={() => void operate("preview")}>Pré-visualizar PDF</button>
+                {source && <button className={buttonClass} onClick={() => {
+                    if (window.confirm("Gerar um novo rascunho com as preferências atuais? O rascunho guardado só é substituído se guardares a nova versão.")) {
+                        void operate("generate");
+                    }
+                }}>Gerar novo rascunho</button>}
                 {preview && <a className={buttonClass} href={preview} download={`Itinerario_${safeName}.pdf`}>Descarregar este PDF</a>}
             </div>
             {preview && <>

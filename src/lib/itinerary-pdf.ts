@@ -2,7 +2,7 @@ import PDFDocument from "pdfkit";
 import type { ItineraryPhoto } from "./itinerary-images";
 import type { Itinerary } from "./itinerary-word";
 
-import { guideSections, type Stay } from "./itinerary-guide";
+import { guideSections, transportDetails, type Stay } from "./itinerary-guide";
 
 const navy = "#0D2334";
 const muted = "#456071";
@@ -146,7 +146,11 @@ export async function createItineraryPdf(
     if (transfers.length) {
         addPage("TRANSPORTES");
         heading("De etapa em etapa", "Consulta os bilhetes para confirmar os horários e as ligações previstas.");
-        for (const day of transfers) card(dateLabel(day.date), day.base || day.title, day.logistics);
+        for (const day of transfers) {
+            const date = dateLabel(day.date);
+            if (day.logistics) card(date, day.base || day.title, day.logistics);
+            for (const segment of day.transports ?? []) card(date, segment.route, transportDetails(segment), teal);
+        }
     }
 
     for (const [index, day] of itinerary.days.entries()) {
@@ -207,6 +211,7 @@ export async function createItineraryPdf(
             }
             y += height + 8;
         }
+        for (const segment of day.transports ?? []) card("TRANSPORTE", segment.route, transportDetails(segment), teal);
         if (day.logistics) {
             const height = measure(day.logistics, 10, width - 28) + 33;
             fit(height);
