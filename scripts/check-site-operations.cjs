@@ -336,7 +336,9 @@ function load(file, mocks = {}, env = {}, network = fetch) {
     assert.deepEqual(await removed.json(), { documents: 2, files: 1, retainedFiles: 1 });
     assert.deepEqual(operations, [["patch", "old"], ["delete", "old"], ["patch", "drafts.old2"], ["delete", "drafts.old2"], ["delete", "old-asset"]]);
 
-    const { calculateCommission } = load("src/lib/commission.ts");
+    const { calculateCommission, suggestTripCommission } = load("src/lib/commission.ts");
+    assert.equal(suggestTripCommission(1000.13, 3).commission, 120.02);
+    assert.equal(suggestTripCommission(1000.13, 3).travelerPrice, 333.38);
     const base = { commission: 100, travelerCount: 3, travelerPrice: 100, selfTravels: false, shareSaving: false, cedeCommission: true, requestedCession: 0.01 };
     assert.deepEqual(calculateCommission(base).otherPriceGroups, [{ count: 2, price: 100 }, { count: 1, price: 99.99 }]);
     const workbook = { ...base, commission: 617.49, travelerCount: 4, travelerPrice: 1286, selfTravels: true, cedeCommission: false, requestedCession: 0 };

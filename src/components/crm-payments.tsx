@@ -2,7 +2,7 @@
 
 import {useCallback,useEffect,useRef,useState,type FormEvent} from "react";
 import {addDays,lisbonDay} from "@/lib/crm-calendar";
-import {commissionRulesVersion,roundEuro,type CommissionInputs} from "@/lib/commission";
+import {commissionRulesVersion,roundEuro,suggestTripCommission} from "@/lib/commission";
 import {formatMoney,formatFinanceDate,receiptKinds,receiptMethods,receiptParties,type FinanceDetail,type FinanceSummary,type PaymentSchedule,type Receipt} from "@/lib/crm-finance";
 import {officeInput as input,officeButton as primary,officeSecondary as secondary,type AuthorizedFetch} from "@/lib/crm-office-types";
 import {TripCommissionCalculator} from "./commission-calculator";
@@ -217,8 +217,10 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
   const agencyPayable=summary.total_amount===null ? null : roundEuro(summary.total_amount-participantDeduction);
   const today=todayInLisbon(),soon=addDays(today,7);
   const people=(detail.adults??0)+(detail.children_count??0)||detail.traveler_count||1;
-  const initialValues:CommissionInputs=detail.commission?.inputs||{commission:0,travelerCount:people,
-    travelerPrice:roundEuro((summary.total_amount??0)/people),selfTravels:false,shareSaving:false,cedeCommission:false,requestedCession:0};
+  const initialValues=detail.commission?.inputs ?? suggestTripCommission(summary.total_amount ?? 0, people);
+  const suggestEstimate=currency==="EUR" && !summary.archived_at && !detail.commission && !detail.manual_commission &&
+    summary.commission_confirmed == null && Number(summary.total_amount)>0 && people<=50 &&
+    ((detail.adults??0)+(detail.children_count??0)>0 || detail.traveler_count>0);
   const previous=detail.commission?.source;
   const stale=Boolean(previous&&(previous.total_amount!==summary.total_amount||previous.adults!==detail.adults||previous.children_count!==detail.children_count));
   const isCommissionEditor = editor?.type === "commission" ||
@@ -284,14 +286,21 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
           <p className="text-sm text-slate-500">{currency==="EUR"?"Usa a calculadora para guardar a estimativa nesta viagem.":"A calculadora está disponível para viagens em euros."}</p></div>
         {currency==="EUR"&&<button className={primary} disabled={busy} onClick={()=>setEditor(editor?.type==="commission"?null:{type:"commission"})}>{editor?.type==="commission"?"Fechar calculadora":detail.commission?"Rever cálculo":"Abrir calculadora"}</button>}
       </div>
+      {suggestEstimate && editor?.type!=="commission" && <div className="rounded-xl border border-slate-200 p-4">
+        <p className="font-semibold">Comissão total sugerida · {formatMoney(initialValues.commission,currency)}</p>
+        <p className="mt-1 text-sm">12% de {formatMoney(summary.total_amount,currency)} · {people} {people===1?"viajante":"viajantes"} · {formatMoney(initialValues.travelerPrice,currency)} por pessoa</p>
+        <p className="mb-3 text-sm text-slate-600">Se também viajas ou queres ceder comissão, abre a calculadora antes de guardar.</p>
+        <button type="button" className={secondary} disabled={busy} onClick={()=>void mutate("commission_save",{inputs:initialValues,apply_to_total:false}).catch(()=>{})}>Guardar estimativa</button>
+      </div>}
+      {editor?.type==="commission"&&<TripCommissionCalculator initialValues={initialValues} theme={theme}
+        onSave={(inputs,apply_to_total)=>mutate("commission_save",{inputs,apply_to_total})}/>}
       {stale&&<p role="status" className="text-sm text-orange-800">O total ou o número de viajantes mudou depois do cálculo. Revê os dados da comissão.</p>}
       <p className="text-sm text-slate-600">Último recebimento · {lastCommissionReceipt ? formatFinanceDate(lastCommissionReceipt) : "Sem recebimentos registados"}</p>
       {Boolean(summary.commission_discount) && <p className="text-sm text-slate-600">
         Descontos a clientes deduzidos da comissão prevista · {formatMoney(summary.commission_discount ?? 0,currency)}
       </p>}
       <CrmCommissionReview detail={detail} today={today} busy={busy} onSave={mutate} onServices={onOpenServices}/>
-      {editor?.type==="commission"&&<TripCommissionCalculator initialValues={initialValues} theme={theme}
-        onSave={(inputs,apply_to_total)=>mutate("commission_save",{inputs,apply_to_total})}/>}
+
       {detail.commission && detail.commission.rules_version !== commissionRulesVersion && <p className="text-sm text-amber-800">A comissão guardada foi calculada com a fórmula anterior. Abre a calculadora e guarda o cálculo revisto para atualizar a estimativa.</p>}
       {detail.commission&&<button className={secondary} disabled={busy} onClick={()=>remove("commission_clear")}>Remover cálculo guardado</button>}
     </section>
