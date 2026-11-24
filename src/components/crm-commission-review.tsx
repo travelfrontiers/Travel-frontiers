@@ -55,7 +55,7 @@ export default function CrmCommissionReview({detail,today,busy,onSave,onServices
     {editing && <form key={editing} onSubmit={save} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-2">
       <h5 className="font-semibold sm:col-span-2">{manual?"Comissão prevista manual":settlement?"Regularização de comissão":"Confirmação da agência"}</h5>
       {!settlement && <label className="text-sm">{manual?"Valor previsto antes dos descontos a clientes":"Montante confirmado"} ({summary.currency})
-        <input type="number" name="amount" min="0" max="9999999999.99" step="0.01" className={input} required defaultValue={manual?(detail.manual_commission?.amount ?? detail.commission?.result.netCommission ?? ""):summary.commission_confirmed ?? ""}/></label>}
+        <input type="number" name="amount" min="0" max="9999999999.99" step="0.01" className={input} required defaultValue={manual?(detail.manual_commission?.amount ?? detail.commission?.result.netCommission ?? ""):summary.commission_confirmed ?? summary.commission_expected ?? ""}/></label>}
       {manual && <p className="text-sm text-slate-600">Este valor passa a ser usado na comissão prevista da viagem. Os descontos a clientes marcados para reduzir a comissão continuam a ser deduzidos. Podes retirar o valor manual para voltar à calculadora.</p>}
       {!manual && <>
       <label className="text-sm">Data<input type="date" name="effective_on" className={input} required defaultValue={today} max={today}/></label>

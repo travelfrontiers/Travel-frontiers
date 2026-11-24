@@ -12,6 +12,15 @@ export const commissionRulesVersion = "tf-commission-v3";
 export const roundEuro = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
 const toCents = (value: number) => Math.round(roundEuro(Math.max(0, value)) * 100);
 
+// Apply the usual rate to the whole booking before rounding the per-person price.
+export function suggestTripCommission(total: number, people: number): CommissionInputs {
+  return {
+    commission: Math.round(toCents(total) * 12 / 100) / 100,
+    travelerCount: people, travelerPrice: roundEuro(total / people),
+    selfTravels: false, shareSaving: false, cedeCommission: false, requestedCession: 0,
+  };
+}
+
 export function calculateCommission(input: CommissionInputs) {
   const people = Math.max(1, Math.floor(input.travelerCount) || 1);
   const others = input.selfTravels ? people - 1 : people;
