@@ -221,6 +221,31 @@ function readPortuguesePassportZone(scans: string[], today: string, cover: NonNu
   return found.size === 1 ? [...found][0] : "";
 }
 
+// A finger can hide the start of both passport MRZ lines while the nationality,
+// dates and their check digits remain readable. Use the printed number only
+// when it is beside the printed country code and its MRZ check digit agrees.
+function partialPortuguesePassport(scans: string[], today: string) {
+  const numbers = new Set<string>();
+  const rows: { birth: string; expiry: string; numberCheck: string }[] = [];
+  for (const scan of scans) {
+    const lines = scan.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    for (const [index, line] of lines.entries()) {
+      if (fold(line) === "PRT") {
+        const printed = fold(lines[index + 1] || "").replace(/\s/g, "");
+        if (/^[A-Z]{2}[0-9OQILZSB]{6}$/.test(printed)) numbers.add(printed.slice(0, 2) + numericOcr(printed.slice(2)));
+      }
+      const zone = mrzRow(line).match(/([0-9OQILZSB])PRT([0-9OQILZSB]{6})([0-9OQILZSB])[MFX<]([0-9OQILZSB]{6})([0-9OQILZSB])/);
+      if (!zone) continue;
+      const birth = mrzDate(zone[2], zone[3], today, true);
+      const expiry = mrzDate(zone[4], zone[5], today, false);
+      if (birth && expiry && birth < expiry) rows.push({birth, expiry, numberCheck: numericOcr(zone[1])});
+    }
+  }
+  if (!rows.length || rows.some(r => r.birth !== rows[0].birth || r.expiry !== rows[0].expiry)) return null;
+  const verified = [...numbers].filter(n => rows.every(r => checked(n + "<", r.numberCheck)));
+  return {birth: rows[0].birth, expiry: rows[0].expiry, number: verified.length === 1 ? verified[0] : ""};
+}
+
 export function readIdentityPage(scans: string[], today: string, passportNumbers: string[] = []): DocumentReading {
   const verified = scans.flatMap(scan => readMrz(scan, today));
   const fingerprints = new Set(verified.filter(reading => reading.document_number).map(reading => reading.document_type + ":" + reading.document_number));
@@ -241,6 +266,15 @@ export function readIdentityPage(scans: string[], today: string, passportNumbers
   if (!result.document_type) {
     if (/\bCARTAO\s+DE\s+CIDADAO\b/.test(normalized)) result.document_type = "identity_card";
     else if (/\b(PASSAPORTE|PASSPORT|PASSEPORT)\b/.test(normalized)) result.document_type = "passport";
+  }
+  if (result.document_type === "passport") {
+    const partial = partialPortuguesePassport(scans, today);
+    if (partial && (!result.birth_date || partial.birth === result.birth_date) &&
+        (!result.expires_on || partial.expiry === result.expires_on)) {
+      result.birth_date ||= partial.birth;
+      result.expires_on ||= partial.expiry;
+      result.document_number ||= partial.number;
+    }
   }
   const printedNumber = printedDocumentNumber(lines);
   result.document_number ||= printedNumber;

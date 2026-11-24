@@ -243,6 +243,15 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  const numberCheck = checkDigit(validNumber + "<");
  const dateTail = "F350925" + checkDigit("350925");
  const birthCheck = checkDigit("900912");
+ const printedHeader = "Passaporte\nPRT\n" + validNumber;
+ const partialRow = numberCheck + "PRT900912" + birthCheck + dateTail;
+ const partialPassport = read(printedHeader + "\n" + partialRow);
+ assert.equal(partialPassport.document_number, validNumber);
+ assert.equal(partialPassport.birth_date, "1990-09-12");
+ assert.equal(partialPassport.expires_on, "2035-09-25");
+ assert.equal(read(printedHeader + "\n" + (Number(numberCheck) + 1) % 10 + partialRow.slice(1)).document_number, "");
+ assert.equal(read(printedHeader + "\n" + partialRow.slice(0,-1) + (Number(partialRow.at(-1)) + 1) % 10).expires_on, "");
+ assert.equal(read(printedHeader + "\nPRT\nXY223356\n" + partialRow).document_number, "");
  const foldedRows = ["PRT900912", birthCheck + dateTail].join("\n");
  const damagedRow = numberCheck + "PRTOAO912" + birthCheck + dateTail;
  const recoveredPassport = readIdentityPage([passportCover, foldedRows, damagedRow], "2026-11-13", [validNumber]);
