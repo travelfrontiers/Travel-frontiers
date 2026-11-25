@@ -36,14 +36,18 @@ export function ReservationFlow({id,title,paid,delivered,messages,authorizedFetc
   const post=messages?.find(m=>m.template_key==="booking");
   const quote=messages?.find(m=>m.template_key==="quote");
   return <section className="mb-4 space-y-3 rounded-xl border border-slate-200 p-4">
-    <h3 className="font-semibold">Proposta e entregas ao cliente</h3>
+    <h3 className="font-semibold">Acompanhar a reserva</h3>
     <button type="button" className={officeSecondary} onClick={onProposals}>{quote?"Acompanhar proposta":"Abrir propostas da viagem"}</button>
     {quote && <p className="text-sm">Orçamento · {emailStatus(quote)}</p>}
-    <p className="text-sm">Email pré-contratual obrigatório · {messages?emailStatus(pre):"Estado indisponível"}</p>
+    <details key={pre?.state || "pre"} open={pre?.state !== "sent"}>
+      <summary className="cursor-pointer py-2 text-sm font-semibold">Email pré-contratual obrigatório · {messages?emailStatus(pre):"Estado indisponível"}</summary>
     <CrmEmailPanel scope="trip" id={id} authorizedFetch={authorizedFetch} shortcut="precontract" onSent={onUpdated} />
+    </details>
     {paid ? <>
-      <p className="text-sm">Email pós-contratual obrigatório · {messages?emailStatus(post):"Estado indisponível"}</p>
+      <details key={post?.state || "post"} open={post?.state !== "sent"}>
+        <summary className="cursor-pointer py-2 text-sm font-semibold">Email pós-contratual obrigatório · {messages?emailStatus(post):"Estado indisponível"}</summary>
       <CrmEmailPanel scope="trip" id={id} authorizedFetch={authorizedFetch} shortcut="booking" onSent={onUpdated} />
+      </details>
       <p className="text-sm">Roteiro · {delivered?"Entregue ao cliente":"Por entregar"}</p>
       <div className="flex flex-wrap gap-2">
         <button type="button" className={officeSecondary} disabled={busy} onClick={()=>void act("prepare")}>{source?"Atualizar dados de origem":"Preparar roteiro"}</button>

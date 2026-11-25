@@ -1289,6 +1289,14 @@ export default function CrmStudioTool() {
               if (tab === "payments" || tab === "commission") setVisitedFinance(true);
             }} />
             <CrmTripPanel id={trip.id} tab="summary" active={tripTab}>
+            <dl className="mb-4 grid gap-3 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+              <div><dt className="text-slate-600">Datas</dt><dd>{[trip.departure_date, trip.return_date].filter((value): value is string => Boolean(value)).map(dateLabel).join(" – ") || "Por definir"}</dd></div>
+              <div><dt className="text-slate-600">Operador</dt><dd>{trip.operator || "Por definir"}</dd></div>
+              {financeByTrip.get(trip.id) && <div><dt className="text-slate-600">Saldo do cliente</dt><dd>{formatMoney(financeByTrip.get(trip.id)!.balance, trip.currency)}</dd></div>}
+              <div><dt className="text-slate-600">Estado</dt><dd>{tripStatuses.find(status => status.id === trip.status)?.label}</dd></div>
+              <div><dt className="text-slate-600">Total da reserva</dt><dd><button type="button" className="min-h-11 font-semibold underline"
+                onClick={() => { setTripTab("payments"); setVisitedFinance(true); }}>{formatMoney(financeByTrip.get(trip.id)?.total_amount ?? trip.total_amount, trip.currency)}</button></dd></div>
+            </dl>
             <details key={trip.id + ":" + trip.reference} open={!trip.reference} className="mb-4 rounded-xl border border-slate-200 p-4">
               <summary className="cursor-pointer font-semibold">{trip.reference ? "Referência da reserva · " + trip.reference + " · Editar" : "Adicionar referência da reserva (GBN)"}</summary>
               <form onSubmit={event => saveBookingReference(event, trip)} className="mt-3 flex flex-wrap items-end gap-3">
@@ -1298,37 +1306,7 @@ export default function CrmStudioTool() {
                 <button disabled={saving} className={archiveButton}>Guardar referência</button>
               </form>
             </details>
-            {!trip.archived_at && trip.status!=="cancelled" && <ReservationFlow id={trip.id} title={trip.destination || "Roteiro de viagem"}
-              paid={financeListStatus==="ready" ? Number(financeByTrip.get(trip.id)?.customer_received)>0 : null}
-              delivered={trip.tasks.some(t=>t.completed && t.id===deliveryTaskId(trip.id))}
-              messages={flowMessages?.filter(m=>m.trip_id===trip.id) ?? null} authorizedFetch={authorizedFetch}
-              onUpdated={async()=>{await Promise.all([loadFlow(),reloadTrips()]);}}
-              onPayment={()=>{setTripTab("payments");setVisitedFinance(true);}} onProposals={()=>openTripProposals(trip.id)}/>}
-            <dl className="mb-4 grid gap-3 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
-              <div><dt className="text-slate-600">Datas</dt><dd>{[trip.departure_date, trip.return_date].filter((value): value is string => Boolean(value)).map(dateLabel).join(" – ") || "Por definir"}</dd></div>
-              <div><dt className="text-slate-600">Operador</dt><dd>{trip.operator || "Por definir"}</dd></div>
-              <div><dt className="text-slate-600">Cliente principal</dt><dd>{clients.find(client => client.id === trip.client_id)?.full_name || "Por definir"}</dd></div>
-              <div><dt className="text-slate-600">Estado</dt><dd>{tripStatuses.find(status => status.id === trip.status)?.label}</dd></div>
-              <div><dt className="text-slate-600">Total da reserva</dt><dd><button type="button" className="min-h-11 font-semibold underline"
-                onClick={() => { setTripTab("payments"); setVisitedFinance(true); }}>{formatMoney(financeByTrip.get(trip.id)?.total_amount ?? trip.total_amount, trip.currency)}</button></dd></div>
-            </dl>
-            {financeByTrip.has(trip.id) && (() => {
-              const finance = financeByTrip.get(trip.id)!;
-              return <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-slate-200 p-3 text-sm">
-                <span>Comissão prevista · {formatMoney(finance.commission_expected, finance.currency)}</span>
-                <span>Recebida · {formatMoney(finance.commission_net, finance.currency)}</span>
-                <span>Por regularizar · {formatMoney(finance.commission_to_receive ?? finance.commission_balance, finance.currency)}</span>
-                {finance.commission_expected != null && <span>Diferença face à previsão · {formatMoney(finance.commission_net - finance.commission_expected, finance.currency)}</span>}
-
-                {finance.commission_state && <span>{commissionStates[finance.commission_state]}</span>}
-                <button type="button" className="min-h-11 font-semibold text-orange-800 underline"
-                  onClick={() => { setTripTab("commission"); setVisitedFinance(true); }}>Ver comissão e regularização</button>
-              </div>;
-            })()}
-            {!trip.archived_at && trip.status !== "cancelled" && trip.status !== "completed" &&
-              <CrmTripAlerts active={tripTab === "summary"} tripId={trip.id} today={today} authorizedFetch={authorizedFetch} onOpen={openTarget}
-                localAlerts={[...bookingAlerts(trip, today, tripClock), ...tripContextAlerts(trip, today, expiryAlertsForTrip(trip, clients, documents), followUpForTrip(trip, leads))]}/>}
-            <details className="mb-4 rounded-xl border border-slate-200 p-4">
+            <details id={"trip-editor-" + trip.id} className="mb-4 rounded-xl border border-slate-200 p-4">
               <summary className="mb-3 cursor-pointer font-semibold">Editar dados da viagem e viajantes</summary>
             <form key={`${trip.id}-${trip.reference}-${trip.extra_references}-${trip.status}-${trip.departure_date}-${trip.return_date}-${trip.destination}-${trip.operator}-${trip.travel_type}-${trip.adults}-${trip.children_count}-${trip.total_amount}-${trip.client_ids?.join(",")}`} onSubmit={(event) => saveTrip(event, trip)} className="mb-6 grid gap-3 sm:grid-cols-2">
               <TripClientSelect clients={clients} selectedIds={[...new Set([trip.client_id, ...trip.client_ids].filter((id): id is string => Boolean(id)))]} /><label className="space-y-1 text-sm font-semibold">Tipo de viagem<select name="travel_type" defaultValue={trip.travel_type||"general"} className={inputClass}>{Object.entries(travelTypeLabels).filter(([id])=>id!=="all").map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
@@ -1347,6 +1325,17 @@ export default function CrmStudioTool() {
               <div className="sm:col-span-2"><button disabled={saving} className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60">Guardar viagem</button></div>
             </form>
             </details>
+            {!trip.archived_at && trip.status!=="cancelled" && <ReservationFlow id={trip.id} title={trip.destination || "Roteiro de viagem"}
+              paid={financeListStatus==="ready" ? Number(financeByTrip.get(trip.id)?.customer_received)>0 : null}
+              delivered={trip.tasks.some(t=>t.completed && t.id===deliveryTaskId(trip.id))}
+              messages={flowMessages?.filter(m=>m.trip_id===trip.id) ?? null} authorizedFetch={authorizedFetch}
+              onUpdated={async()=>{await Promise.all([loadFlow(),reloadTrips()]);}}
+              onPayment={()=>{setTripTab("payments");setVisitedFinance(true);}} onProposals={()=>openTripProposals(trip.id)}/>}
+
+            {!trip.archived_at && trip.status !== "cancelled" && trip.status !== "completed" &&
+              <CrmTripAlerts active={tripTab === "summary"} tripId={trip.id} today={today} authorizedFetch={authorizedFetch} onOpen={openTarget}
+                localAlerts={[...bookingAlerts(trip, today, tripClock), ...tripContextAlerts(trip, today, expiryAlertsForTrip(trip, clients, documents), followUpForTrip(trip, leads))]}/>}
+
             </CrmTripPanel>
             <CrmTripPanel id={trip.id} tab={tripTab === "commission" ? "commission" : "payments"} active={tripTab}>
               {visitedFinance && <FinanceTrip authorizedFetch={authorizedFetch} tripId={trip.id}
@@ -1369,7 +1358,14 @@ export default function CrmStudioTool() {
                 </div>;
               })}
             </div>
-            <button type="button" className={archiveButton + " min-h-11"} onClick={() => setTripTab("summary")}>Editar viajantes no resumo</button>
+            <button type="button" className={archiveButton + " min-h-11"} onClick={() => {
+              const editor = document.getElementById("trip-editor-" + trip.id) as HTMLDetailsElement | null;
+              setTripTab("summary");
+              if (editor) {
+                editor.open = true;
+                requestAnimationFrame(() => { editor.querySelector("summary")?.focus(); editor.scrollIntoView({ block: "start" }); });
+              }
+            }}>Editar viajantes</button>
             </CrmTripPanel>
             <CrmTripPanel id={trip.id} tab="documents" active={tripTab}>
             <CrmDriveDocuments authorizedFetch={authorizedFetch} tripId={trip.id} title={trip.reference || trip.destination || "Viagem"} includeProposalFiles initialFile={pdfToArchive?.tripId === trip.id ? pdfToArchive.file : null} onUploaded={() => setPdfToArchive(null)} />
