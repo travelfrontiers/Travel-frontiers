@@ -1,47 +1,36 @@
-import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import { officeInput } from "@/lib/crm-office-types";
 
-const tabs = [
-  ["summary", "Resumo"], ["hotels", "Hotéis"], ["flights", "Voos"], ["travelers", "Viajantes"],
-  ["tasks", "Tarefas"], ["documents", "Documentos"], ["payments", "Pagamentos"], ["commission", "Comissão"],
-  ["history", "Histórico"], ["services", "Outros serviços"], ["communications", "Comunicações e alertas"],
+const groups = [
+  { label: "Viagem", sections: [["summary", "Resumo"], ["travelers", "Viajantes"], ["documents", "Documentos"]] },
+  { label: "Reservas", sections: [["flights", "Voos"], ["hotels", "Hotéis"], ["services", "Outros serviços"]] },
+  { label: "Financeiro", sections: [["payments", "Pagamentos"], ["commission", "Comissão"]] },
+  { label: "Acompanhamento", sections: [["tasks", "Tarefas"], ["communications", "Comunicações e alertas"], ["history", "Histórico"]] },
 ] as const;
-export type TripTab = typeof tabs[number][0];
+export type TripTab = typeof groups[number]["sections"][number][0];
 export type TripFinanceTab = Extract<TripTab, "payments" | "commission">;
+const sections = groups.flatMap(group => [...group.sections] as readonly (readonly [TripTab, string])[]);
+const shortcuts: TripTab[] = ["summary", "flights", "hotels", "payments"];
 
 export function CrmTripTabs({ id, active, onChange }: { id: string; active: TripTab; onChange: (tab: TripTab) => void }) {
-  const buttons = useRef<Array<HTMLButtonElement | null>>([]);
-  useEffect(() => {
-    const button = buttons.current[tabs.findIndex(([tab]) => tab === active)];
-    const list = button?.parentElement;
-    if (button && list && list.scrollWidth > list.clientWidth) {
-      const item = button.getBoundingClientRect();
-      const bounds = list.getBoundingClientRect();
-      if (item.left < bounds.left) list.scrollLeft += item.left - bounds.left;
-      if (item.right > bounds.right) list.scrollLeft += item.right - bounds.right;
-    }
-  }, [active]);
-  function move(event: KeyboardEvent, index: number) {
-    const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 :
-      event.key === "ArrowRight" ? (index + 1) % tabs.length :
-      event.key === "ArrowLeft" ? (index + tabs.length - 1) % tabs.length : null;
-    if (next === null) return;
-    event.preventDefault();
-    onChange(tabs[next][0]);
-    buttons.current[next]?.focus();
-  }
-  return <div role="tablist" aria-label="Secções da viagem" className="mb-5 flex gap-2 overflow-x-auto border-b border-slate-200 pb-3 sm:flex-wrap sm:overflow-visible">
-    {tabs.map(([tab, label], index) => <button key={tab} ref={button => { buttons.current[index] = button; }}
-      type="button" role="tab" id={id + "-tab-" + tab} aria-controls={id + "-panel-" + tab}
-      aria-selected={active === tab} tabIndex={active === tab ? 0 : -1}
-      onClick={() => onChange(tab)} onKeyDown={e => move(e, index)}
-      className={`min-h-11 shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm ${active === tab ? "bg-orange-800 font-semibold text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-50"}`}>
-      {label}
+  return <nav aria-label="Navegação da viagem" className="mb-4 flex flex-wrap items-end gap-2 border-b border-slate-200 pb-3">
+    {shortcuts.map(tab => <button type="button" key={tab} aria-controls={id + "-panel-" + tab}
+      aria-current={active === tab ? "page" : undefined} onClick={() => onChange(tab)}
+      className={`hidden min-h-11 rounded-lg px-3 text-sm sm:block ${active === tab ? "bg-orange-800 font-semibold text-white" : "border border-slate-300 text-slate-700"}`}>
+      {sections.find(([key]) => key === tab)?.[1]}
     </button>)}
-  </div>;
+    <label className="w-full text-xs font-semibold text-slate-600 sm:ml-auto sm:w-auto">Ir para
+      <select value={active} className={officeInput + " min-h-11"} onChange={event => onChange(event.target.value as TripTab)}>
+        {groups.map(group => <optgroup key={group.label} label={group.label}>
+          {group.sections.map(([tab, label]) => <option key={tab} value={tab}>{label}</option>)}
+        </optgroup>)}
+      </select>
+    </label>
+  </nav>;
 }
 
 // Keep mounted editors alive when switching sections of the same trip.
 export function CrmTripPanel({ id, tab, active, children }: { id: string; tab: TripTab; active: TripTab; children: ReactNode }) {
-  return <div role="tabpanel" id={id + "-panel-" + tab} aria-labelledby={id + "-tab-" + tab}
-    hidden={active !== tab} tabIndex={0}>{children}</div>;
+  return <section id={id + "-panel-" + tab} aria-label={sections.find(([key]) => key === tab)?.[1]}
+    hidden={active !== tab}>{children}</section>;
 }
