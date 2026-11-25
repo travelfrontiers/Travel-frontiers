@@ -50,6 +50,16 @@ const request=(body,headers={})=>({json:async()=>body,text:async()=>JSON.stringi
  assert.equal((await trips.PATCH(request(move),{params:Promise.resolve({id})})).status,409);
  calls=[];
  assert.equal((await trips.PATCH(request({...move,status:"unknown"}),{params:Promise.resolve({id})})).status,400);assert.equal(calls.length,0);
+ const bookingReference={action:"booking_reference",reference:" GBN-123456 ",previous_reference:null};
+ calls=[];reply.data=[{id,reference:"GBN-123456"}];
+ result=await trips.PATCH(request(bookingReference),{params:Promise.resolve({id})});
+ assert.equal(result.status,200);
+ assert.equal(new URL(calls[0].url).searchParams.get("reference"),"is.null");
+ const patch=JSON.parse(calls[0].init.body);
+ assert.equal(patch.reference,"GBN-123456");
+ assert.deepEqual(Object.keys(patch).sort(),["reference","updated_at"]);
+ reply.data=[];
+ assert.equal((await trips.PATCH(request(bookingReference),{params:Promise.resolve({id})})).status,409);
  const tripList=load("src/app/api/crm/trips/route.ts");
  reply=url=>({
   ok:true,status:200,headers:new Headers(),

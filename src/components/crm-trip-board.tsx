@@ -102,12 +102,12 @@ export default function CrmTripBoard({ items, stages, busy, onMove, onOpen, onAl
               <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-600">
                 <CalendarDays aria-hidden="true" className="size-3.5 shrink-0" />{item.dates}
               </p>
+              {item.reference && <p className="mt-1 break-words text-sm">Reserva · {item.reference}</p>}
               {item.flightLocators && <button type="button" onClick={() => onOpen(item.id, "flights")} className="mt-1 text-left text-sm font-semibold underline">PNR · {item.flightLocators}</button>}
               {!expanded && item.alerts.length > 0 && <p className="mt-2 rounded-lg bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-900">{alertLabel}</p>}
               {!expanded && !!item.finance?.overdue_count && <button type="button" onClick={() => onOpen(item.id, "payments")}
                 className="mt-1 min-h-8 text-left text-xs font-semibold text-red-700 underline">Pagamentos em atraso</button>}
               <div id={detailsId} hidden={!expanded}>
-                {item.reference && <p className="mt-1 break-words text-xs text-slate-600">Localizador {item.reference}</p>}
                 <div className="my-3 flex flex-wrap gap-x-3 gap-y-1 border-y border-slate-200 py-2 text-xs">
                   <button type="button" onClick={() => onOpen(item.id, "flights")} className="inline-flex min-h-7 items-center gap-1 underline">
                     <Plane aria-hidden="true" className="size-3.5" />{item.flights} {item.flights === 1 ? "voo" : "voos"}
