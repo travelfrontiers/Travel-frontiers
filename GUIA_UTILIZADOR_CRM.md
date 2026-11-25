@@ -8,6 +8,8 @@ O menu principal reúne **Início**, **Pedidos**, **Viagens**, **Clientes** e **
 
 No topo, **Airmet**, **Cotur** e **Gupi** abrem os respetivos portais num novo separador. **Copiar IBAN GupiTravel** copia o IBAN para o colares onde precisares. O botão confirma quando a cópia termina.
 
+Para registar o **GBN** numa viagem existente, abre **Viagens → ficha da viagem → Resumo**. Introduz o código em **Referência da reserva (GBN ou outra)** e carrega em **Guardar referência**. Se já existir um código, escolhe **Editar**. O localizador da companhia aérea para check-in fica no separador **Voos**, no campo **PNR**.
+
 ## 1. Começar o dia em Início
 
 - Abre **Novos pedidos** para ver os contactos que chegaram pelo formulário.

@@ -22,6 +22,25 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     try { return await setArchived(config, "crm_trips", id, body.archived); }
     catch (cause) { return failure(cause); }
   }
+  if (body.action === "booking_reference") {
+    const reference = typeof body.reference === "string" ? body.reference.trim() : "";
+    const previous = body.previous_reference;
+    if (!reference || reference.length > 80 || !(previous === null || typeof previous === "string" && previous.length <= 80)) {
+      return NextResponse.json({ error: "Indica uma referência de reserva com até 80 caracteres." }, { status: 400 });
+    }
+    const query = new URLSearchParams({ id: "eq." + id, select: "id,reference",
+      reference: previous === null ? "is.null" : "eq." + previous });
+    try {
+      const response = await fetch(config.url + "/rest/v1/crm_trips?" + query, {
+        method: "PATCH", headers: { ...config.headers, Prefer: "return=representation" }, cache: "no-store",
+        body: JSON.stringify({ reference, updated_at: new Date().toISOString() }),
+      });
+      if (!response.ok) return NextResponse.json({ error: "Não foi possível guardar a referência." }, { status: 502 });
+      const [trip] = await response.json();
+      if (!trip) return NextResponse.json({ error: "A referência mudou. Atualiza a ficha para rever o valor." }, { status: 409 });
+      return NextResponse.json({ trip }, { headers: { "Cache-Control": "private, no-store" } });
+    } catch (cause) { return failure(cause); }
+  }
   if (body.action === "move") {
     const status = tripStatuses.find(value => value === body.status);
     const previous = tripStatuses.find(value => value === body.previous_status);
