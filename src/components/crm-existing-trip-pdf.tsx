@@ -4,8 +4,8 @@ import { officeButton, officeInput, type AuthorizedFetch } from "@/lib/crm-offic
 import { formatMoney, type FinanceSummary } from "@/lib/crm-finance";
 import { CrmPdfServiceFields, readPdfServices } from "./crm-pdf-service-fields";
 
-export default function CrmExistingTripPdf({ tripId, finance, authorizedFetch, onServicesImported, onTotalSaved }: {
-  tripId: string; finance?: FinanceSummary; authorizedFetch: AuthorizedFetch;
+export default function CrmExistingTripPdf({ tripId, tripDates, finance, authorizedFetch, onServicesImported, onTotalSaved }: {
+  tripId: string; tripDates: { departure_date: string | null; return_date: string | null }; finance?: FinanceSummary; authorizedFetch: AuthorizedFetch;
   onServicesImported: () => Promise<void>; onTotalSaved?: () => Promise<void>;
 }) {
   const [preview, setPreview] = useState<TripPdfFields | null>(null);
@@ -44,7 +44,7 @@ export default function CrmExistingTripPdf({ tripId, finance, authorizedFetch, o
             import("@/lib/crm-document-scan"), import("@/lib/crm-trip-pdf"),
           ]);
           signal.throwIfAborted();
-          const scanned = extractTripFieldsFromPdfText(await scanBookingDocument(file, signal, setProgress));
+          const scanned = extractTripFieldsFromPdfText(await scanBookingDocument(file, signal, setProgress), [], tripDates);
           fields = fields?.total_amount ? {
             ...scanned, total_amount: fields.total_amount, currency: fields.currency,
           } : scanned;
@@ -102,7 +102,7 @@ export default function CrmExistingTripPdf({ tripId, finance, authorizedFetch, o
   }
 
   return <details className="rounded-xl border border-slate-200 p-3 sm:p-4">
-    <summary className="cursor-pointer py-2 font-semibold">Ler documento de reserva (OCR)</summary>
+    <summary className="cursor-pointer py-2 font-semibold">Importar de imagem ou PDF (OCR)</summary>
     <form onSubmit={read} className="my-3 flex flex-wrap items-end gap-3">
       <label className="min-w-0 flex-1 text-sm">Orçamento, confirmação ou bilhete (PDF, JPG, PNG ou WebP até 15 MB)
         <input required name="file" type="file" disabled={busy} accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" className={officeInput} />

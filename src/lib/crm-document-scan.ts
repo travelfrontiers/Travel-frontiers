@@ -256,8 +256,26 @@ export async function scanBookingDocument(file: File, signal: AbortSignal, onPro
           await worker.setParameters({ tessedit_pageseg_mode: PSM.AUTO });
         }
         onProgress(`A ler página ${page.number} de ${page.count}…`);
-        const reading = await abortable(worker.recognize(page.image), signal);
-        text.push(reading.data.text.trim() || page.text);
+        const reading = await abortable(worker.recognize(page.image, {}, { text: true, blocks: true }), signal);
+        let pageText = reading.data.text;
+        if (/Departure\s+\d{1,2}\s*[A-Za-z]{3}/i.test(pageText) && reading.data.blocks) {
+          const lines = reading.data.blocks.flatMap(block => block.paragraphs.flatMap(paragraph => paragraph.lines));
+          const headers = lines.filter(line => /Departure\s+\d{1,2}\s*[A-Za-z]{3}/i.test(line.text))
+            .sort((a, b) => a.bbox.y0 - b.bbox.y0);
+          if (headers.length) {
+            const groups = headers.map(() => [] as typeof lines);
+            for (const line of lines) {
+              const center = (line.bbox.y0 + line.bbox.y1) / 2;
+              let index = headers.length - 1;
+              while (index > 0 && center < headers[index].bbox.y0 - 6) index--;
+              groups[index].push(line);
+            }
+            pageText = groups.map((group, i) => [headers[i], ...group.filter(line => line !== headers[i])
+              .sort((a, b) => a.bbox.y0 - b.bbox.y0 || a.bbox.x0 - b.bbox.x0)]
+              .map(line => line.text.trim()).join("\n")).join("\n");
+          }
+        }
+        text.push(pageText.trim() || page.text);
       } finally {
         page.image.width = page.image.height = 0;
       }

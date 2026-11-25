@@ -573,7 +573,41 @@ function extractTicketFlights(pages: TicketTextItem[][], text: string): TripPdfS
   });
 }
 
-export function extractTripFieldsFromPdfText(text: string, ticketPages: TicketTextItem[][] = []): TripPdfFields {
+type TripDates = { departure_date?: string | null; return_date?: string | null };
+
+function extractFlightSummaries(text: string, trip: TripDates): TripPdfService[] {
+  const headers = [...text.matchAll(/^Departure\s+(\d{1,2})\s*([a-z]+)(?:\s+(20\d{2}))?/gim)];
+  const pnr = /booking reference\s*:\s*([A-Z0-9]{6})\b/i.exec(text)?.[1]?.toUpperCase();
+  const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  return headers.flatMap((header, i) => {
+    const body = text.slice(header.index! + header[0].length, headers[i + 1]?.index);
+    const times = [...body.matchAll(/\b((?:[01]?\d|2[0-3]):[0-5]\d)\s+(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)\b/gi)];
+    const airports = [...body.matchAll(/\(([A-Z]{3})\)/g)].map(match => match[1]);
+    if (times.length !== 2 || airports.length !== 2) return [];
+    const numbers = [...body.matchAll(/\b([A-Z]{2})\s*([0-9O]{2,4})\b/g)]
+      .filter(match => /\d/.test(match[2])).map(match => match[1] + match[2].replace(/O/g, "0"));
+    const lines = body.split("\n").map(line => line.trim());
+    const provider = lines.find(line => /^[A-Z][a-zA-Z -]{2,40}$/.test(line) &&
+      !/economy|business|first class|premium|view details/i.test(line)) || "";
+    const startDay = weekdays.indexOf(times[0][2].toLowerCase());
+    const endDay = weekdays.indexOf(times[1][2].toLowerCase());
+    const years = header[3] ? [header[3]] : [...new Set([trip.departure_date, trip.return_date]
+      .filter(Boolean).map(date => date!.slice(0, 4)))];
+    const candidates = years.map(year => parsePtDate(header[1], header[2], year))
+      .filter(date => date && new Date(date + "T00:00:00Z").getUTCDay() === startDay);
+    const starts = candidates.length === 1 ? candidates[0] : "";
+    const details = [header[0], lines.find(line => /\d\s*stops?\b/i.test(line)),
+      lines.find(line => /economy|business|first class|premium/i.test(line)),
+      ...(!starts ? ["Confirmar o ano da viagem."] : []),
+      ...(!pnr && /booking reference/i.test(text) ? ["Confirmar o localizador da reserva."] : [])].filter(Boolean).join(" · ");
+    return [{ service_type: "flight", title: airports.join(" → "), provider,
+      reference: numbers[0] || "", starts_on: starts, ends_on: addTicketDays(starts, (endDay - startDay + 7) % 7),
+      details, booking: { origin: airports[0], destination_airport: airports[1], flight_number: numbers.join(", "),
+        departure_time: times[0][1].padStart(5, "0"), arrival_time: times[1][1].padStart(5, "0"), pnr } }];
+  });
+}
+
+export function extractTripFieldsFromPdfText(text: string, ticketPages: TicketTextItem[][] = [], trip: TripDates = {}): TripPdfFields {
   const cleanText = text.replace(/\u00a0/g, " ");
   const labeledReference = /^(?:localizador(?: principal| da viagem)?|refer[eê]ncia(?: da viagem| da reserva)?|booking reference|reserva)\s*[:#-]\s*([A-Z0-9][A-Z0-9/-]{3,24})\s*$/im.exec(cleanText)?.[1];
   const reference = labeledReference || "";
@@ -582,7 +616,8 @@ export function extractTripFieldsFromPdfText(text: string, ticketPages: TicketTe
   const dates = extractDateRange(cleanText);
   const ticketFlights = extractTicketFlights(ticketPages, cleanText);
   const extracted = extractTravelServices(cleanText);
-  const services = ticketFlights.length
+  const summaries = ticketFlights.length ? [] : extractFlightSummaries(cleanText, trip);
+  const services = summaries.length ? [...summaries, ...extracted.filter(service => service.service_type !== "flight")].slice(0, 40) : ticketFlights.length
     ? [...ticketFlights, ...extracted.filter(service => service.service_type !== "flight" ||
       !ticketFlights.some(flight => flight.reference === service.reference.replace(/\s+/g, "").toUpperCase() &&
         (!flight.starts_on || !service.starts_on || flight.starts_on === service.starts_on)))].slice(0, 40)
