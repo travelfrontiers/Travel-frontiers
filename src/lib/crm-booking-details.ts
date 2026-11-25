@@ -33,3 +33,12 @@ export function bookingClock(task: { due_at: string | null; completed: boolean }
   if (!task?.due_at) return "Por agendar";
   return Date.parse(task.due_at) <= now ? "Disponível" : "Pendente";
 }
+
+export function flightLocatorSummary(services: readonly { service_type: string; provider?: string | null; booking?: BookingDetails | null }[]) {
+  const flights = services.filter(service => service.service_type === "flight" && service.booking?.status !== "cancelled");
+  const labels = flights.map(flight => {
+    const pnr = flight.booking?.pnr?.trim().toUpperCase() || "Por indicar";
+    return [flight.provider, pnr].filter(Boolean).join(" · ");
+  });
+  return [...new Set(labels)].join(" / ");
+}

@@ -102,6 +102,7 @@ export default function CrmTripBoard({ items, stages, busy, onMove, onOpen, onAl
               <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-600">
                 <CalendarDays aria-hidden="true" className="size-3.5 shrink-0" />{item.dates}
               </p>
+              {item.flightLocators && <button type="button" onClick={() => onOpen(item.id, "flights")} className="mt-1 text-left text-sm font-semibold underline">PNR · {item.flightLocators}</button>}
               {!expanded && item.alerts.length > 0 && <p className="mt-2 rounded-lg bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-900">{alertLabel}</p>}
               {!expanded && !!item.finance?.overdue_count && <button type="button" onClick={() => onOpen(item.id, "payments")}
                 className="mt-1 min-h-8 text-left text-xs font-semibold text-red-700 underline">Pagamentos em atraso</button>}

@@ -577,10 +577,14 @@ type TripDates = { departure_date?: string | null; return_date?: string | null }
 
 function extractFlightSummaries(text: string, trip: TripDates): TripPdfService[] {
   const headers = [...text.matchAll(/^Departure\s+(\d{1,2})\s*([a-z]+)(?:\s+(20\d{2}))?/gim)];
-  const pnr = /booking reference\s*:\s*([A-Z0-9]{6})\b/i.exec(text)?.[1]?.toUpperCase();
+  const locatorPattern = /booking reference\s*:\s*([A-Z0-9]{6})\b/gi;
+  const globalCode = (text.match(/booking reference\s*:/gi) || []).length === 1
+    ? [...text.matchAll(locatorPattern)][0]?.[1].toUpperCase() : undefined;
   const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
   return headers.flatMap((header, i) => {
     const body = text.slice(header.index! + header[0].length, headers[i + 1]?.index);
+    const localCodes = [...new Set([...body.matchAll(locatorPattern)].map(match => match[1].toUpperCase()))];
+    const pnr = localCodes.length === 1 ? localCodes[0] : globalCode;
     const times = [...body.matchAll(/\b((?:[01]?\d|2[0-3]):[0-5]\d)\s+(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)\b/gi)];
     const airports = [...body.matchAll(/\(([A-Z]{3})\)/g)].map(match => match[1]);
     if (times.length !== 2 || airports.length !== 2) return [];

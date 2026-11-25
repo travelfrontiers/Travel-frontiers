@@ -32,6 +32,9 @@ export function CrmPdfServiceFields({ service, index, onRemove }: { service: Tri
     <fieldset hidden={excluded} disabled={excluded} className={excluded ? "hidden" :"grid min-w-0 gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-2"}>
     <legend className="break-words text-sm font-semibold">{serviceLabels[service.service_type]} · {service.title}</legend>
     <input type="hidden" name={prefix + "type"} value={service.service_type} />
+    {flight && <label className="min-w-0 text-sm font-semibold sm:col-span-2">Localizador da companhia (PNR para check-in)
+      <input name={prefix + "pnr"} className={officeInput} maxLength={100} defaultValue={service.booking?.pnr || ""} placeholder="Confirmar no documento da companhia" />
+    </label>}
     <label className="min-w-0 text-sm">Nome<input name={prefix + "title"} className={officeInput} required maxLength={240} defaultValue={service.title} /></label>
     <label className="min-w-0 text-sm">Companhia ou fornecedor<input name={prefix + "provider"} className={officeInput} maxLength={160} defaultValue={service.provider} /></label>
     <label className="min-w-0 text-sm">Referência do serviço<input name={prefix + "reference"} className={officeInput} maxLength={100} defaultValue={service.reference} /></label>
