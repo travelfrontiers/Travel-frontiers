@@ -260,6 +260,29 @@ export async function scanBookingDocument(file: File, signal: AbortSignal, onPro
         let pageText = reading.data.text;
         if (/Departure\s+\d{1,2}\s*[A-Za-z]{3}/i.test(pageText) && reading.data.blocks) {
           const lines = reading.data.blocks.flatMap(block => block.paragraphs.flatMap(paragraph => paragraph.lines));
+          for (const line of lines) {
+            const match = /booking reference\s*:\s*([A-Z0-9]+)/i.exec(line.text);
+            if (!match || match[1].length === 6) continue;
+            const word = line.words.find(word => word.text === match[1]);
+            if (!word) continue;
+            const { x0, y0, x1, y1 } = word.bbox;
+            const width = x1 - x0, height = y1 - y0;
+            if (width <= 0 || height <= 0 || width > 500) continue;
+            const { result, context } = canvas(width * 3 + 30, height * 3 + 30);
+            const { PSM } = await import("tesseract.js");
+            try {
+              context.fillStyle = "white";
+              context.fillRect(0, 0, result.width, result.height);
+              context.drawImage(page.image, x0, y0, width, height, 15, 15, width * 3, height * 3);
+              await worker.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_WORD, tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" });
+              const retry = await abortable(worker.recognize(result), signal);
+              const code = retry.data.text.trim();
+              if (/^[A-Z0-9]{6}$/.test(code)) line.text = line.text.replace(match[0], "Booking reference: " + code);
+            } finally {
+              result.width = result.height = 0;
+              if (!signal.aborted) await worker.setParameters({ tessedit_pageseg_mode: PSM.AUTO, tessedit_char_whitelist: "" });
+            }
+          }
           const headers = lines.filter(line => /Departure\s+\d{1,2}\s*[A-Za-z]{3}/i.test(line.text))
             .sort((a, b) => a.bbox.y0 - b.bbox.y0);
           if (headers.length) {

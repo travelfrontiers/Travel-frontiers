@@ -21,7 +21,7 @@ export function CrmBookingFields({ type, booking, prefix = "" }: { type: string;
     {!!fields.length && <label className="text-sm">Estado da reserva<select name={prefix + "status"} defaultValue={booking?.status || "pending"} className={officeInput}>
       {Object.entries(bookingStates).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
     </select></label>}
-    {[...fields, "drive_url" as const].map(field => field === "checkin_verified" ?
+    {[...fields.filter(field => field !== "pnr" || !prefix), "drive_url" as const].map(field => field === "checkin_verified" ?
       <label className="flex min-h-11 items-center gap-2 text-sm" key={field}>
         <input name={prefix + field} type="checkbox" value="yes" defaultChecked={booking?.[field] === "yes"} className="size-5 accent-orange-800" />
         {labels[field]}

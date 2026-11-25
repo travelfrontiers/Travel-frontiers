@@ -36,6 +36,7 @@ import { CrmServiceFinanceEditor, CrmServiceFinanceSummary } from "./crm-service
 import type { ServiceFinance } from "@/lib/crm-service-finance";
 import { CrmOperationalServices } from "./crm-operational-services";
 import { CrmPdfServiceFields, readPdfServices } from "./crm-pdf-service-fields";
+import { flightLocatorSummary } from "@/lib/crm-booking-details";
 import CrmExistingTripPdf from "./crm-existing-trip-pdf";
 import { readBookingForm, type BookingDetails } from "@/lib/crm-booking-details";
 import type { TripPdfFields } from "@/lib/crm-trip-pdf";
@@ -922,7 +923,7 @@ export default function CrmStudioTool() {
   const tripItems = (view === "trips" || view === "commissions") && focused?.type !== "trip" ? visibleTrips.map(trip => ({
     id: trip.id, destination: trip.destination || "Destino por definir", client: tripClientName(trip, clients, leads),
     dates: [trip.departure_date, trip.return_date].filter((date): date is string => Boolean(date)).map(dateLabel).join(" – ") || "Por definir",
-    operator: trip.operator || "—", reference: trip.reference || "",
+    operator: trip.operator || "—", reference: trip.reference || "", flightLocators: flightLocatorSummary(trip.services),
     status: trip.archived_at ? "Arquivada" : tripStatuses.find(status=>status.id===trip.status)?.label || trip.status,
     currency: trip.currency, total: trip.total_amount, finance: financeByTrip.get(trip.id),
   })) : [];
@@ -1247,6 +1248,7 @@ export default function CrmStudioTool() {
               <div className="min-w-0">
                 <p className="break-words text-sm font-semibold text-orange-800">{tripClientName(trip, clients, leads)}{trip.reference ? ` · Localizador ${trip.reference}` : ""}</p>
                 <h3 className="mt-1 break-words text-xl font-bold">{trip.destination || "Destino por definir"}</h3>
+                {flightLocatorSummary(trip.services) && <button type="button" onClick={() => setTripTab("flights")} className="mt-1 text-left text-sm font-semibold underline">Localizador dos voos (PNR) · {flightLocatorSummary(trip.services)}</button>}
                 {trip.archived_at && <p className="text-sm text-slate-500">Arquivada</p>}
               </div>
               <details className="text-sm">
