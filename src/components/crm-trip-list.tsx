@@ -3,7 +3,7 @@ import { officeSecondary } from "@/lib/crm-office-types";
 
 export type TripListItem = {
   id: string; destination: string; client: string; dates: string; operator: string; reference: string; flightLocators: string;
-  status: string; currency: string; total: number | null; finance?: FinanceSummary;
+  status: string; currency: string; total: number | null; gross: number | null; net: number | null; finance?: FinanceSummary;
 };
 export type TripListMode = "trips" | "commissions";
 
@@ -17,7 +17,7 @@ export default function CrmTripList({ items, mode, onOpen }: { items: TripListIt
       ["Por receber", money(item.finance?.commission_to_receive)],
     ];
     return mode === "commissions" ? [...commission, ["Divergência (estimativa − confirmação)", money(item.finance?.commission_discrepancy)]] : [
-      ["Total", money(item.total)], ["Saldo do cliente", money(item.finance?.balance)], ...commission,
+      ["Valor bruto", money(item.gross)], ["Valor net", item.net == null ? "Por calcular" : money(item.net)], ["Total da reserva", money(item.total)], ["Saldo do cliente", money(item.finance?.balance)], ...commission,
     ];
   };
   const status = (item: TripListItem) => {
