@@ -32,9 +32,11 @@ export function TripCommissionCalculator({initialValues,onSave,theme}:{initialVa
     if (themeReady && !theme) window.localStorage.setItem("tf-commission-theme", darkMode ? "dark" : "light");
   }, [darkMode, themeReady, theme]);
 
+  const bookingGross = Number(travelerCount) === initialValues?.travelerCount && Number(travelerPrice) === initialValues.travelerPrice
+    ? initialValues.bookingGross : undefined;
   const result = useMemo(() => {
-    return calculateCommission({commission:amount(commission),travelerCount:Math.max(1,Math.floor(Number(travelerCount)||1)),travelerPrice:amount(travelerPrice),selfTravels,shareSaving,cedeCommission,requestedCession:amount(requestedCession)});
-  }, [commission, travelerCount, travelerPrice, selfTravels, shareSaving, cedeCommission, requestedCession]);
+    return calculateCommission({bookingGross,commission:amount(commission),travelerCount:Math.max(1,Math.floor(Number(travelerCount)||1)),travelerPrice:amount(travelerPrice),selfTravels,shareSaving,cedeCommission,requestedCession:amount(requestedCession)});
+  }, [bookingGross, commission, travelerCount, travelerPrice, selfTravels, shareSaving, cedeCommission, requestedCession]);
 
   const cessionVisible = result.cessionActive;
   const sharingVisible = result.sharing;
@@ -80,6 +82,8 @@ export function TripCommissionCalculator({initialValues,onSave,theme}:{initialVa
           <div className="tf-calc-summary-head"><div className="tf-calc-section-title"><span>03</span><h2 id="trip-summary-heading">Resumo da viagem</h2></div><p>{selfTravels ? "Auto-consumo · também viajas" : "Sem auto-consumo"}</p></div>
           <div className="tf-calc-hero"><span>A tua comissão depois da cedência</span><output>{formatEuro(result.netCommission)}</output><small>Valor líquido estimado</small></div>
           <div className="tf-calc-breakdown">
+            <div><span>Preço bruto da viagem</span><strong>{formatEuro(result.grossPrice)}</strong></div>
+            <div><span>Preço net da viagem</span><strong>{formatEuro(result.netPrice)}</strong></div>
             <div><span>Comissão bruta por viajante</span><strong>{formatEuro(result.commissionPerTraveler)}</strong></div>
             <div><span>Comissão antes da cedência</span><strong>{formatEuro(result.gross)}</strong></div>
             <div><span>Comissão cedida</span><strong>{formatEuro(result.ceded)}</strong></div>
@@ -98,7 +102,7 @@ export function TripCommissionCalculator({initialValues,onSave,theme}:{initialVa
             : "Sem auto-consumo, a comissão antes da cedência corresponde a 80% da comissão total. O montante escolhido é repartido igualmente pelos passageiros."}</p>
         </aside>
       </div>
-      {onSave ? <div className="tf-calc-card" style={{marginTop:20}}><label className="tf-calc-toggle"><input type="checkbox" checked={applyToTotal} onChange={e=>setApplyToTotal(e.target.checked)}/><span><strong>Atualizar também o valor total da reserva para {formatEuro(result.totalCollected)}</strong><small>Confirma o preço final antes de ativar. O plano de prestações não é reescrito.</small></span></label>{saveError&&<p role="alert" className="tf-calc-warning">{saveError}</p>}<button type="button" className="tf-calc-theme" style={{marginTop:16}} disabled={saving || !travelerCountValid} onClick={async()=>{setSaving(true);setSaveError("");try{await onSave({commission:Number(commission),travelerCount:Number(travelerCount),travelerPrice:Number(travelerPrice),selfTravels,shareSaving,cedeCommission,requestedCession:Number(requestedCession)},applyToTotal);}catch(c){setSaveError(c instanceof Error?c.message:"Não foi possível guardar o cálculo.");}finally{setSaving(false);}}}>{saving?"A guardar…":"Guardar cálculo nesta viagem"}</button><p className="tf-calc-note">O cálculo só é enviado para o CRM quando carregas em Guardar. Não regista pagamentos nem envia dinheiro.</p></div> : <p className="tf-calc-device-note">Os valores são calculados neste dispositivo e não são enviados para nenhum serviço.</p>}
+      {onSave ? <div className="tf-calc-card" style={{marginTop:20}}><label className="tf-calc-toggle"><input type="checkbox" checked={applyToTotal} onChange={e=>setApplyToTotal(e.target.checked)}/><span><strong>Atualizar também o valor total da reserva para {formatEuro(result.totalCollected)}</strong><small>Confirma o preço final antes de ativar. O plano de prestações não é reescrito.</small></span></label>{saveError&&<p role="alert" className="tf-calc-warning">{saveError}</p>}<button type="button" className="tf-calc-theme" style={{marginTop:16}} disabled={saving || !travelerCountValid} onClick={async()=>{setSaving(true);setSaveError("");try{await onSave({bookingGross,commission:Number(commission),travelerCount:Number(travelerCount),travelerPrice:Number(travelerPrice),selfTravels,shareSaving,cedeCommission,requestedCession:Number(requestedCession)},applyToTotal);}catch(c){setSaveError(c instanceof Error?c.message:"Não foi possível guardar o cálculo.");}finally{setSaving(false);}}}>{saving?"A guardar…":"Guardar cálculo nesta viagem"}</button><p className="tf-calc-note">O cálculo só é enviado para o CRM quando carregas em Guardar. Não regista pagamentos nem envia dinheiro.</p></div> : <p className="tf-calc-device-note">Os valores são calculados neste dispositivo e não são enviados para nenhum serviço.</p>}
       <style jsx>{`
         .tf-calc{max-width:1120px;margin:0 auto;padding:26px 20px 64px;color:#374151}
         .tf-calc-intro{margin-bottom:26px}.tf-calc-eyebrow{margin:0;color:#ea580c;font-size:12px;font-weight:750;letter-spacing:.14em;text-transform:uppercase}

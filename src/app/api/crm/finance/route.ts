@@ -31,6 +31,7 @@ function commissionInputs(raw:unknown):CommissionInputs {
     throw new CrmError("Indica um número de viajantes entre 1 e 50 e revê as opções.");
   }
   return {
+    ...(input.bookingGross == null ? {} : {bookingGross:money(input.bookingGross)}),
     commission:money(input.commission,0,1e8),travelerCount:input.travelerCount,travelerPrice:money(input.travelerPrice,0,1e8),
     selfTravels:input.selfTravels,shareSaving:input.shareSaving,
     cedeCommission:input.cedeCommission,requestedCession:money(input.requestedCession,0,1e8),

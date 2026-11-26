@@ -64,7 +64,7 @@ type Client = { id: string; full_name: string; birth_date?: string | null; email
 type ClientDocument = { id: string; client_id: string; document_type: "passport" | "identity_card" | "residence_permit" | "other"; document_number: string; expires_on: string; created_at: string; updated_at: string };
 type TripTask = { id: string; trip_id: string; title: string; due_at: string | null; completed: boolean; sort_order: number; source_service_id?: string | null; template_item_id?: string | null; template_override?: boolean };
 type TripService = Partial<ServiceFinance> & { id: string; trip_id: string; service_type: "flight" | "accommodation" | "activity" | "transfer" | "insurance" | "other"; title: string; provider: string | null; reference: string | null; starts_on: string | null; ends_on: string | null; details: string | null; sort_order: number; booking?: BookingDetails; departure_at?: string | null; checkin_opens_at?: string | null; updated_at?: string };
-type Trip = { archived_at: string | null; travel_type: string; id: string; client_id: string | null; client_ids: string[]; lead_id: string | null; reference: string | null; extra_references?: string | null; destination: string | null; departure_date: string | null; return_date: string | null; status: (typeof tripStatuses)[number]["id"]; operator: string | null; adults: number | null; children_count: number | null; total_amount: number | null; currency: string; trip_notes: string | null; services: TripService[]; tasks: TripTask[] };
+type Trip = { net_price?: number | null; archived_at: string | null; travel_type: string; id: string; client_id: string | null; client_ids: string[]; lead_id: string | null; reference: string | null; extra_references?: string | null; destination: string | null; departure_date: string | null; return_date: string | null; status: (typeof tripStatuses)[number]["id"]; operator: string | null; adults: number | null; children_count: number | null; total_amount: number | null; currency: string; trip_notes: string | null; services: TripService[]; tasks: TripTask[] };
 
 const budgetLabels: Record<string, string> = {
   under_500: "Até 500 €", "500_1000": "500 € – 1.000 €", "1000_1500": "1.000 € – 1.500 €",
@@ -1292,6 +1292,8 @@ export default function CrmStudioTool() {
             <dl className="mb-4 grid gap-3 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
               <div><dt className="text-slate-600">Datas</dt><dd>{[trip.departure_date, trip.return_date].filter((value): value is string => Boolean(value)).map(dateLabel).join(" – ") || "Por definir"}</dd></div>
               <div><dt className="text-slate-600">Operador</dt><dd>{trip.operator || "Por definir"}</dd></div>
+              <div><dt className="text-slate-600">Preço net da viagem</dt><dd><button type="button" className="min-h-11 font-semibold underline"
+                onClick={() => { setTripTab("commission"); setVisitedFinance(true); }}>{trip.net_price == null ? "Por calcular" : formatMoney(trip.net_price, trip.currency)}</button></dd></div>
               {financeByTrip.get(trip.id) && <div><dt className="text-slate-600">Saldo do cliente</dt><dd>{formatMoney(financeByTrip.get(trip.id)!.balance, trip.currency)}</dd></div>}
               <div><dt className="text-slate-600">Estado</dt><dd>{tripStatuses.find(status => status.id === trip.status)?.label}</dd></div>
               <div><dt className="text-slate-600">Total da reserva</dt><dd><button type="button" className="min-h-11 font-semibold underline"

@@ -98,6 +98,9 @@ Se o tipo ou a aplicação estiverem incorretos, usa **Anular desconto** e regis
 
 Abre **Viagem → Comissão → Abrir calculadora** ou **Rever cálculo**. A calculadora também existe no Studio em **Calculadora de comissão** e trabalha em euros.
 
+O **Preço net da viagem** é o preço bruto de todos os viajantes menos a comissão total. Vês o resultado enquanto editas a calculadora. Ao guardar a estimativa, o preço net fica disponível no **Resumo** da viagem. A tua participação, a partilha da poupança e a cedência de comissão não alteram este valor.
+
+
 Introduz a comissão total da reserva, o número total de viajantes e o preço por viajante. Inclui-te no número de pessoas quando assinalares **Também vou nesta viagem**.
 
 | Situação | Fórmula |
