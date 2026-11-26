@@ -1,6 +1,6 @@
 "use client";
 
-import {useCallback,useEffect,useRef,useState,type FormEvent} from "react";
+import {useCallback,useEffect,useState,type FormEvent} from "react";
 import {addDays,lisbonDay} from "@/lib/crm-calendar";
 import {commissionRulesVersion,roundEuro,suggestTripCommission,tripPrices} from "@/lib/commission";
 import {formatMoney,formatFinanceDate,receiptKinds,receiptMethods,receiptParties,type FinanceDetail,type FinanceSummary,type PaymentSchedule,type Receipt} from "@/lib/crm-finance";
@@ -164,10 +164,6 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   const [message,setMessage]=useState("");
-  const editorRef=useRef<HTMLDivElement>(null);
-  useEffect(()=>{
-    if(editor&&editor.type!=="commission") editorRef.current?.scrollIntoView({block:"nearest",behavior:"smooth"});
-  },[editor]);
   const getDetail=useCallback(async(signal?:AbortSignal)=>{
     const response=await authorizedFetch("/api/crm/finance?trip_id="+encodeURIComponent(tripId),{signal});
     const data=await response.json();
@@ -223,17 +219,19 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
     ((detail.adults??0)+(detail.children_count??0)>0 || detail.traveler_count>0);
   const previous=detail.commission?.source;
   const stale=Boolean(previous&&(previous.total_amount!==summary.total_amount||previous.adults!==detail.adults||previous.children_count!==detail.children_count));
-  const isCommissionEditor = editor?.type === "commission" ||
-    editor?.type === "receipt" && (editor.commission || editor.item?.kind.startsWith("commission_"));
+  const inlineEditor = editor && editor.type !== "commission" ? <div className="w-full">
+    {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+    <PaymentEditor key={editor.type + ("item" in editor ? editor.item?.id || "new" : "")} editor={editor}
+      detail={detail} busy={busy} onSubmit={mutate} onClose={()=>{setEditor(null);setError("");}} />
+  </div> : null;
   const lastCommissionReceipt = detail.receipts.filter(item => item.kind === "commission_payment")
     .reduce<string | null>((latest, item) => latest && latest > item.paid_on ? latest : item.paid_on, null);
   const receiptGroups=([false,true] as const).map(commission=>({commission,items:detail.receipts.filter(item=>item.kind.startsWith("commission_")===commission)}));
   return <section className="space-y-5">
     {back}
     <div><h2 className="text-2xl font-bold">{tripLabel(summary)}</h2><p className="text-sm text-slate-500">Ficha financeira · {currency}{summary.archived_at?" · Viagem arquivada":summary.status==="cancelled"?" · Viagem cancelada":""}</p></div>
-    {error&&<p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+    {error&&!inlineEditor&&<p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
     {message&&<p role="status" className="text-sm text-orange-800">{message}</p>}
-    {editor&&editor.type!=="commission"&&<div hidden={section!==undefined&&(section==="commission")!==Boolean(isCommissionEditor)} ref={editorRef}><PaymentEditor key={editor.type+("item" in editor?editor.item?.id||String(editor.type==="receipt"&&editor.commission):"")} editor={editor} detail={detail} busy={busy} onSubmit={mutate} onClose={()=>setEditor(null)}/></div>}
     {section!=="commission"&&<>
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       <MoneyCard label="Total da reserva" value={formatMoney(summary.total_amount,currency)}/>
@@ -247,6 +245,7 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
       <button className={primary} disabled={busy||summary.total_amount===null} onClick={()=>setEditor({type:"receipt"})}>Registar pagamento</button>
     </div>
 
+    {(editor?.type==="total" || (editor?.type==="receipt" && !editor.item && editor.commission===undefined)) && inlineEditor}
     <CrmTripDiscounts detail={detail} busy={busy}
       onSave={values => mutate("discount_save", values)}
       onReverse={id => {
@@ -259,12 +258,13 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><h3 className="text-lg font-bold">Plano de prestações</h3>
           <p className="text-sm text-slate-500">{isSettled?"Reserva liquidada.":"Os pagamentos abatem às prestações por ordem de vencimento."}</p>
-          {unscheduledBalance>0&&<p className="mt-1 text-sm text-orange-800">{formatMoney(unscheduledBalance,currency)} em falta sem prazo definido.</p>}</div>
+          {unscheduledBalance>0&&<p className="mt-1 text-sm text-orange-800">Saldo em falta: {formatMoney(summary.balance,currency)}. Com prestação marcada: {formatMoney(scheduledBalance,currency)}. Falta agendar {formatMoney(unscheduledBalance,currency)}.</p>}</div>
         {hasOutstandingBalance&&summary.total_amount!==null&&summary.total_amount>0&&<div className="flex flex-wrap gap-2">
           {detail.schedule.length===0&&<button className={secondary} disabled={busy} onClick={()=>setEditor({type:"plan"})}>Criar sinal e restante valor</button>}
           <button className={secondary} disabled={busy} onClick={()=>setEditor({type:"schedule"})}>Adicionar prestação</button>
         </div>}
       </div>
+      {(editor?.type==="plan" || (editor?.type==="schedule" && !editor.item)) && inlineEditor}
       {detail.schedule.length===0?(!isSettled&&<p className="mt-4 text-sm text-slate-500">Ainda não há prestações.</p>):<ul className="mt-4 divide-y divide-slate-200">
         {detail.schedule.map(item=>{
           const payable=item.amount_after_discount ?? item.amount;
@@ -275,6 +275,7 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
               {payable<item.amount && <p className="text-sm text-slate-600">Desconto aplicado · {formatMoney(roundEuro(item.amount-payable),currency)}</p>}
               <p className={"text-sm "+(overdue?"text-red-700":"text-slate-500")}>{formatFinanceDate(item.due_on)} · {payable===0?"Coberta por desconto":settled?"Paga":overdue?"Em atraso":item.due_on<=soon?"A vencer":"Por pagar"}{!settled?" · "+formatMoney(item.amount_remaining,currency)+" em falta":""}</p></div>
             <div className="flex gap-2"><button className={secondary} disabled={busy} onClick={()=>setEditor({type:"schedule",item})}>Editar</button><button className={secondary} disabled={busy} onClick={()=>remove("schedule_delete",item.id)}>Remover</button></div>
+            {editor?.type==="schedule" && editor.item?.id===item.id && inlineEditor}
           </li>;
         })}
       </ul>}
@@ -310,6 +311,7 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
         <h3 className="text-lg font-bold">{commission?"Movimentos de comissão":"Pagamentos e reembolsos do cliente"}</h3>
         <button className={secondary} disabled={busy||(!commission&&summary.total_amount===null)} onClick={()=>setEditor({type:"receipt",commission})}>{commission?"Registar comissão":"Adicionar movimento"}</button>
       </div>
+      {editor?.type==="receipt" && !editor.item && editor.commission===commission && inlineEditor}
       {items.length===0?<p className="mt-3 text-sm text-slate-500">Sem movimentos registados.</p>:<ul className="mt-3 divide-y divide-slate-200">
         {items.map(item=>{
           const file=detail.files.find(entry=>entry.id===item.document_id);
@@ -322,6 +324,7 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
             </div>
             {commission ? <span className="text-xs text-slate-600">Corrige através de um novo movimento ou estorno.</span> :
               <div className="flex gap-2"><button className={secondary} disabled={busy} onClick={()=>setEditor({type:"receipt",item})}>Editar</button><button className={secondary} disabled={busy} onClick={()=>remove("receipt_delete",item.id)}>Remover</button></div>}
+            {editor?.type==="receipt" && editor.item?.id===item.id && inlineEditor}
           </li>;
         })}
       </ul>}
