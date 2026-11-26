@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       return privateJson({ board: Object.fromEntries(board) });
     }
     const [trips, tasks, services, tripClients] = await Promise.all([
-      rows<{ id: string; client_id: string | null; finance: { inputs: CommissionInputs | null } | null }>(config, "crm_trips", new URLSearchParams({ select: "*,finance:crm_trip_finance(inputs:commission_snapshot->inputs)", order: "departure_date.asc.nullslast,id" })),
+      rows<{ id: string; client_id: string | null; total_amount: number | null; finance: { inputs: CommissionInputs | null } | null }>(config, "crm_trips", new URLSearchParams({ select: "*,finance:crm_trip_finance(inputs:commission_snapshot->inputs)", order: "departure_date.asc.nullslast,id" })),
       rows<{ trip_id: string }>(config, "crm_trip_tasks", new URLSearchParams({ select: "*", order: "sort_order.asc,created_at.asc,id" })),
       rows<{ trip_id: string }>(config, "crm_trip_services", new URLSearchParams({ select: "*", order: "sort_order.asc,created_at.asc,id" })),
       rows<{ trip_id: string; client_id: string }>(config, "crm_trip_clients", new URLSearchParams({ select: "trip_id,client_id", order: "trip_id,client_id" })),
@@ -57,7 +57,11 @@ export async function GET(request: NextRequest) {
     }
     const clientsByTrip = new Map<string, string[]>();
     for (const relation of tripClients) clientsByTrip.set(relation.trip_id, [...(clientsByTrip.get(relation.trip_id) || []), relation.client_id]);
-    const tripsWithTasks = trips.map(({finance, ...trip}) => ({ ...trip, net_price: finance?.inputs ? tripPrices(finance.inputs).netPrice : null, client_ids: clientsByTrip.get(trip.id) || (trip.client_id ? [trip.client_id] : []), tasks: tasksByTrip.get(trip.id) || [], services: servicesByTrip.get(trip.id) || [] }));
+    const tripsWithTasks = trips.map(({finance, ...trip}) => {
+      const prices = finance?.inputs ? tripPrices(finance.inputs) : null;
+      return { ...trip, gross_price: prices?.grossPrice ?? trip.total_amount, net_price: prices?.netPrice ?? null,
+        client_ids: clientsByTrip.get(trip.id) || (trip.client_id ? [trip.client_id] : []), tasks: tasksByTrip.get(trip.id) || [], services: servicesByTrip.get(trip.id) || [] };
+    });
     return NextResponse.json({ trips: tripsWithTasks }, { headers: { "Cache-Control": "private, no-store" } });
   } catch {
     return NextResponse.json({ error: "Não foi possível ligar à base de dados." }, { status: 502 });
