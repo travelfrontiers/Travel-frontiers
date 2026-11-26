@@ -2,6 +2,7 @@ export type CommissionInputs = {
   commission: number;
   travelerCount: number;
   travelerPrice: number;
+  bookingGross?: number;
   selfTravels: boolean;
   shareSaving: boolean;
   cedeCommission: boolean;
@@ -16,9 +17,16 @@ const toCents = (value: number) => Math.round(roundEuro(Math.max(0, value)) * 10
 export function suggestTripCommission(total: number, people: number): CommissionInputs {
   return {
     commission: Math.round(toCents(total) * 12 / 100) / 100,
-    travelerCount: people, travelerPrice: roundEuro(total / people),
+    bookingGross: total, travelerCount: people, travelerPrice: roundEuro(total / people),
     selfTravels: false, shareSaving: false, cedeCommission: false, requestedCession: 0,
   };
+}
+
+export function tripPrices(input: CommissionInputs) {
+  const count = Math.max(1, Math.floor(input.travelerCount) || 1);
+  const grossCents = input.bookingGross != null && roundEuro(input.bookingGross / count) === input.travelerPrice
+    ? toCents(input.bookingGross) : toCents(input.travelerPrice) * count;
+  return { grossPrice: grossCents / 100, netPrice: (grossCents - toCents(input.commission)) / 100 };
 }
 
 export function calculateCommission(input: CommissionInputs) {
@@ -51,7 +59,7 @@ export function calculateCommission(input: CommissionInputs) {
   }
 
   return {
-    people, others, gross: gross / 100,
+    ...tripPrices(input), people, others, gross: gross / 100,
     commissionPerTraveler: commission / people / 100,
     ownBasePrice: input.selfTravels ? ownBasePrice / 100 : null,
     ownPrice: input.selfTravels ? ownPrice / 100 : null,

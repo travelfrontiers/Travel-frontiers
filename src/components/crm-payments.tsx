@@ -2,7 +2,7 @@
 
 import {useCallback,useEffect,useRef,useState,type FormEvent} from "react";
 import {addDays,lisbonDay} from "@/lib/crm-calendar";
-import {commissionRulesVersion,roundEuro,suggestTripCommission} from "@/lib/commission";
+import {commissionRulesVersion,roundEuro,suggestTripCommission,tripPrices} from "@/lib/commission";
 import {formatMoney,formatFinanceDate,receiptKinds,receiptMethods,receiptParties,type FinanceDetail,type FinanceSummary,type PaymentSchedule,type Receipt} from "@/lib/crm-finance";
 import {officeInput as input,officeButton as primary,officeSecondary as secondary,type AuthorizedFetch} from "@/lib/crm-office-types";
 import {TripCommissionCalculator} from "./commission-calculator";
@@ -286,6 +286,7 @@ export function FinanceTrip({authorizedFetch,tripId,theme,onChanged,onBack,onOpe
           <p className="text-sm text-slate-500">{currency==="EUR"?"Usa a calculadora para guardar a estimativa nesta viagem.":"A calculadora está disponível para viagens em euros."}</p></div>
         {currency==="EUR"&&<button className={primary} disabled={busy} onClick={()=>setEditor(editor?.type==="commission"?null:{type:"commission"})}>{editor?.type==="commission"?"Fechar calculadora":detail.commission?"Rever cálculo":"Abrir calculadora"}</button>}
       </div>
+      {detail.commission && <p className="text-sm font-semibold">Preço net da viagem · {formatMoney(tripPrices(detail.commission.inputs).netPrice,currency)}</p>}
       {suggestEstimate && editor?.type!=="commission" && <div className="rounded-xl border border-slate-200 p-4">
         <p className="font-semibold">Comissão total sugerida · {formatMoney(initialValues.commission,currency)}</p>
         <p className="mt-1 text-sm">12% de {formatMoney(summary.total_amount,currency)} · {people} {people===1?"viajante":"viajantes"} · {formatMoney(initialValues.travelerPrice,currency)} por pessoa</p>
